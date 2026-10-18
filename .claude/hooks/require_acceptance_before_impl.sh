@@ -210,7 +210,7 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
               'gen_core_requirements.py')
-_RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
+_RUN_SUB_J = ('-exec', '-execdir', '-ok', '-okdir', '-delete', '-fprint', '-fprint0', '-fprintf', '-fls', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
 _SYNTAX_J = ('if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'until', 'do',
@@ -282,6 +282,8 @@ def _readonly_seg(seg, _redir_ok=None):
     #   ★_redir_ok＝書く先が土台でないかを見る関数（土台ゲートだけが渡す）。渡さないとき（承認ゲート）は、
     #     今までどおり捨て先のほかは全部 False。
     if _re_j.match(r'^\s*(?:[A-Za-z_][A-Za-z_0-9]*=\S*\s+)*(?:\S*/)?g?awk\b', seg):
+        if _re_j.search(r'\|\s*[' + chr(39) + chr(34) + r']', seg):   # ★2026-10-18（監査 CP81）＝awk の print | "命令" は命令に書かせる
+            return False
         _tgts = _re_j.findall(r'(?<![<>=!])>>?(?!=)\s*([^\s;|&]+)', seg)
     else:
         _mall = _mask_j(seg, True)
@@ -423,11 +425,15 @@ def _readonly_seg(seg, _redir_ok=None):
                 _rest.append(_t)
         if not _rest or _rest[0] not in _GIT_OK_J:
             return False
+        if any(_t.startswith('--output') or _t == '-o' for _t in _toks[1:]):   # ★2026-10-18（監査 CP81）＝git diff --output はファイルを書く
+            return False
     # ⑧sed の書き換え（-i・-i.bak・--in-place）は False
     if _head == 'sed':
         for _t in _toks[1:]:
-            if _t.startswith('-i') or _t == '--in-place':
+            if _re_j.match(r'^-[A-Za-z]*i', _t) or _t.startswith('--in-place'):
                 return False
+        if _re_j.search(r"(?:^|[;'\"])\s*w\s+\S", seg):   # ★2026-10-18（監査 CP81）＝sed の w 命令はファイルを書く
+            return False
     # ★2026-10-16（182回目）＝sort は -o でファイルを書ける＝-o・--output は False
     if _head == 'sort':
         for _t in _toks[1:]:
@@ -537,7 +543,7 @@ except Exception:
     sys.exit(0)
 cmd = ((d.get('tool_input', {}) or {}).get('command') or '')
 hit = ''
-if 'approve_impl.sh' in cmd or 'approve_design.sh' in cmd:
+if 'approve_impl.s' in cmd or 'approve_design.s' in cmd or ('approve_' in cmd and any(ch in cmd for ch in '*?[')):
     hit = _first_bad_seg(cmd)
 print(hit)
 " 2>/dev/null)
@@ -636,7 +642,7 @@ if [ -z "$FILE" ]; then
 import os, re, sys
 $PYJUDGE
 cmd = sys.stdin.read()
-bare = re.sub(r'<<\s*[\'\"]?(\w+)[\'\"]?.*?^\1', ' ', cmd, flags=re.S | re.M)  # ヒアドキュメントの中身を外す
+bare = re.sub(r'(<<-?\s*[\'\"]?(\w+)[\'\"]?[^\n]*)\n.*?^\2', r'\1', cmd, flags=re.S | re.M)  # ヒアドキュメントの中身を外す（★2026-10-18・監査 CP81＝<< の在る行は残す。直す前は行の後ろの > 先・| 命令も消えていた）
 pats = [r'>>?\s*([^\s;|&]+\.py)', r'\btee\s+(?:-a\s+)?([^\s;|&]+\.py)',
         r'\bcp\s+[^\s;|&]+\s+([^\s;|&]+\.py)', r'\bmv\s+[^\s;|&]+\s+([^\s;|&]+\.py)',
         r'\bsed\s+-i[^\s]*\s+(?:[^\s;|&]+\s+)?([^\s;|&]+\.py)',
@@ -731,7 +737,7 @@ BASE_NAMES = ('impl_functions_frozen.json', 'spec_lists.json', 'breaks_frozen.js
 #   ★次に記録を1本 足す人へ＝この一覧と、下の case の両方に足す（2か所ある）。
 BASE_SUFFIX = ('.breaks.json', '.frozen.json', '.dirty.json')
 GATE_RE = re.compile(r'\.claude/hooks/[^\s;|&]*\.sh|\.claude/tools/[^\s;|&]*\.py'
-                     r'|\.claude/breaks/[^\s;|&]*\.sh')
+                     r'|\.claude/breaks/[^\s;|&]*\.sh', re.I)   # ★2026-10-18（監査 CP81）＝APFS は大文字と小文字を区別しない
 raw_cmd = cmd
 # ★ヒアドキュメントの中身を見るのは、それを何かに食わせているときだけ
 #   （2026-09-03 に実測して狭めた＝git commit の本文に道具の名前が出ただけで止まった）。
@@ -754,7 +760,7 @@ feeds = (any(INTERP.search(_l) for _l in _hdl)
 #   監査の逐語＝「GATE_RE は .claude/hooks/ で始まって .sh で終わる形を探すので、
 #     書き込み先が同じファイルでも、書き方を変えると当たりません。」
 _GATE_ABS = re.compile(r'^' + re.escape('$REPO')
-                       + r'/\.claude/(hooks/[^/]+\.sh|tools/[^/]+\.py|breaks/[^/]+\.sh)$')
+                       + r'/\.claude/(hooks/[^/]+\.sh|tools/[^/]+\.py|breaks/[^/]+\.sh)$', re.I)   # ★2026-10-18（監査 CP81）
 # ★2026-10-01（まこさん指示「じゃあその案で修正しろ」＝「書き込みの先が土台のファイルになるときだけ止める」）
 #   直す前＝コマンドのどこかに土台の名前が1つでも在れば、コマンドの断片を全部 読み取りだけの判定に掛け、
 #     1つでも読み取りだけでなければ止めた。＝土台に触れない断片（「| cut」・「> session_todo_posted」・
@@ -769,7 +775,7 @@ _GATE_ABS = re.compile(r'^' + re.escape('$REPO')
 #     ④ヒアドキュメントの中身は、何かに食わせているとき（feeds）だけ、行ごとに断片として見る。
 def _seg_touches(_seg, _cwd):
     for _n in BASE_NAMES:
-        if _n in _seg:
+        if _n in _seg.lower():   # ★2026-10-18（監査 CP81）＝APFS は大文字と小文字を区別しない
             return True
     if GATE_RE.search(_seg):
         return True
@@ -778,12 +784,14 @@ def _seg_touches(_seg, _cwd):
         _t = _t.replace(chr(39) + chr(39), '').replace(chr(34) + chr(34), '')
         if not _t or _t.startswith('-'):
             continue
-        if _t.endswith(BASE_SUFFIX):
+        if _t.lower().endswith(BASE_SUFFIX):   # ★2026-10-18（監査 CP81）
             return True
         if not (_t.endswith(('.sh', '.py', '.json', '.approved')) or '/' in _t):
             continue
         _a = os.path.normpath(_t if os.path.isabs(_t) else os.path.join(_cwd, _t))
         if _GATE_ABS.match(_a):
+            return True
+        if any(_ch in _t for _ch in '*?[') and re.match(r'^' + re.escape('$REPO') + r'/\.claude/(hooks|tools|breaks)/', _a, re.I):
             return True
     return False
 
@@ -1018,6 +1026,7 @@ esac
 #     直す前の実測＝<iter>.breaks.json へ Write rc=0・Bash のリダイレクト rc=0。
 #     ＝run_breaks.py を1回も走らせずに終了コードを書けたので、
 #       E-12（壊し方を機械が走らせて記録に残す）の記録が根拠にならなかった。
+shopt -s nocasematch   # ★2026-10-18（監査 CP81）＝APFS は大文字と小文字を区別しない（Write の …/ACCEPTANCE.APPROVED が通っていた）
 case "$FILE" in
   */.claude/ratchet/impl_functions_frozen.json|*/.claude/ratchet/spec_lists.json|\
 */.claude/ratchet/breaks_frozen.json|\
@@ -1434,7 +1443,7 @@ for kw in "真因" "期待値" "symptom" "ベースアップ"; do
   grep -q "$kw" "$LIST" || MISS_KW="$MISS_KW $kw"
 done
 if [ -n "$MISS_KW" ]; then
-  echo "🔒 [深い分析ゲート] $LIST に深掘り4点の見出しがありません（不足:$MISS_KW）。改善案の前に必須:" >&2
+  echo "🔒 [深い分析ゲート] $LIST に深掘り4点の見出しがありません（不足:${MISS_KW}）。改善案の前に必須:" >&2
   echo "   ①真因(root cause・損/不足の構造的原因) ②期待値分解(勝率/平均利益/敗率/平均損失 のどれを動かすか)" >&2
   echo "   ③root を直すか symptom か(Y/N+理由・symptom 患い＝最易パッチを防ぐ) ④ベースアップ(参照した KB/検索の証跡・記憶ベース禁止)" >&2
   exit 2

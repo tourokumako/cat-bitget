@@ -39,7 +39,9 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 CMD_X=$(printf '%s' "$CMD" | python3 -c "
 import sys, re
 s = sys.stdin.read()
-s = re.sub(r'<<\s*[\"\x27]?(\w+)[\"\x27]?.*?^\1', ' ', s, flags=re.S | re.M)  # ヒアドキュメント本文を除去
+for _m in re.finditer(chr(92) + chr(36) + r'\(([^()]*)\)|' + chr(96) + r'([^' + chr(96) + r']*)' + chr(96), s):
+    s = s + chr(10) + (_m.group(1) or _m.group(2) or '')   # ★2026-10-18（監査 CP81）＝$( ) と逆引用符の中は引用符の中でも走る＝別の区切りとして足す
+s = re.sub(r'(<<-?\s*[\"\x27]?(\w+)[\"\x27]?[^\n]*)\n.*?^\2', r'\1', s, flags=re.S | re.M)  # ヒアドキュメント本文を除去（<< の行は残す・監査 CP81）
 s = re.sub(r'\"[^\"]*\"', ' ', s); s = re.sub(r\"'[^']*'\", ' ', s)             # 引用符の中身を除去
 print(s)" 2>/dev/null)
 [ -z "$CMD_X" ] && CMD_X="$CMD"
@@ -58,14 +60,16 @@ print(s)" 2>/dev/null)
 TARGETS=$(printf '%s\n' "$CMD_X" | python3 -c "
 import sys, re
 s = sys.stdin.read()
-NAME = re.compile(r'(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py')
+NAME = re.compile(r'(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py', re.I)   # ★2026-10-18（監査 CP81）＝APFS は大文字と小文字を区別しない
 ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z_0-9]*=')
 WRAP = set(['time', 'nice', 'nohup', 'timeout', 'exec', 'command', 'env', 'xargs', 'caffeinate'])
 out = set()
 for seg in re.split(r'[;|&\n]+', s):
-    if re.search(r'--selftest|py_compile|--help|--verify', seg):
-        continue
     toks = seg.split()
+    if '#' in toks:
+        toks = toks[:toks.index('#')]   # ★2026-10-18（監査 CP81）＝区切りの後ろの注記（# --help）は旗でない
+    if any(re.fullmatch(r'--selftest\S*|--verify\S*|--help|py_compile', t) for t in toks):   # 旗は語として見る（直す前は部分文字列＝--log /tmp/x--help.log で通った）
+        continue
     i = 0
     while i < len(toks) and (ASSIGN.match(toks[i]) or toks[i] in WRAP or re.fullmatch(r'[0-9.]+[smhd]?', toks[i]) or (i > 0 and toks[i].startswith('-') and toks[i - 1] in WRAP)):
         i += 1
@@ -73,7 +77,11 @@ for seg in re.split(r'[;|&\n]+', s):
         continue
     j = i + 1
     while j < len(toks) and toks[j].startswith('-'):
-        j += 1
+        if toks[j] == '-m' and j + 1 < len(toks):   # ★2026-10-18（監査 CP81）＝-m <モジュール> は最後の名前に .py を付けて見る
+            toks[j + 1] = toks[j + 1].rsplit('.', 1)[-1] + '.py'
+            j += 1
+            break
+        j += 2 if toks[j] in ('-X', '-W') else 1   # 値を1つ取る旗は値ごと飛ばす（CP80 の enforce_purpose_gate._run_target と同じ）
     if j < len(toks) and NAME.fullmatch(toks[j].rsplit('/', 1)[-1]):
         out.add(toks[j].rsplit('/', 1)[-1])
 print(chr(10).join(sorted(out)))

@@ -197,6 +197,16 @@ def hook() -> int:
     if not work:
         return 0
     session = d.get("session_id") or os.path.basename(tp)[:-6]
+    import require_design_check_before_approval as rd
+    from enforce_chat_writing import last_chat_text
+    from require_read_used import _auditor_session
+    # ★2026-10-18（監査 CP81）＝監査のセッションか・お願いの返信かを先に見る。直す前は stage_fails（auto_fix が gen_hook_list.py --write と
+    #   gen_review.py --skeleton で本物のファイルを書く）を、止めないターンでも監査のセッションでも毎ターン走らせていた。
+    if _auditor_session(rd._load_rows(tp)):
+        return 0                                             # ★2026-10-17＝監査のセッションでは止めない（段は、メインの工事の物）
+    text = rd._turn_text(d)
+    if not is_ask(text, work):
+        return 0
     try:
         stage, bad, fixed = stage_fails(work, session)
     except Exception as e:                                   # noqa: BLE001
@@ -205,14 +215,6 @@ def hook() -> int:
     for x in fixed:
         print("[段の条件] 直した＝" + x, file=sys.stderr)
     if not bad:
-        return 0
-    import require_design_check_before_approval as rd
-    from enforce_chat_writing import last_chat_text
-    from require_read_used import _auditor_session
-    if _auditor_session(rd._load_rows(tp)):
-        return 0                                             # ★2026-10-17＝監査のセッションでは止めない（段は、メインの工事の物）
-    text = rd._turn_text(d)
-    if not is_ask(text, work):
         return 0
     _t, uid = last_chat_text(tp)
     n = _count(session, uid or "")

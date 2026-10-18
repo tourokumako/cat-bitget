@@ -9,6 +9,7 @@ needs another tweak."／RegressionLedger「原因の見立てを2〜3個 書く�
 決まり
   相手＝Edit・Write・MultiEdit・NotebookEdit は直すファイル。Bash は走らせる .py・.sh（無ければコマンドの頭の2語）。Agent は "Agent"。
   同じ相手への書き込み・実行が2回続けて失敗した（道具の結果が is_error）ら、その相手への次の操作を止める。
+  ★この hook 自身が止めた操作（結果の文に「[同じ相手で2回 失敗]」）は、失敗に数えない（2026-10-18・195回目・load() の説明）。
   外す＝2回目の失敗の後に、.claude/state/sessions/<セッション>/diagnosis.md を書く。中身＝「相手: <相手>」の行と、
         「見立て」で始まる行を2つ以上（Write で書けば、この強制は止めない）。
   読むだけの操作（Read・Grep・Glob・読むだけの Bash）は止めない。
@@ -76,7 +77,12 @@ def target_of(name, inp) -> str:
 
 
 def load(path: pathlib.Path):
-    """戻り＝[(id, 道具, 入力, 結果が失敗か, 結果の時刻)]（結果の無い呼び出しは失敗でない扱い）。"""
+    """戻り＝[(id, 道具, 入力, 結果が失敗か, 結果の時刻)]（結果の無い呼び出しは失敗でない扱い）。
+    ★2026-10-18（195回目・まこさん「hookの不具合は修正してほしい」）＝この hook 自身が止めた操作（結果の文に MARK）は、一覧に入れない。
+      直す前は、止めた操作も記録では失敗（is_error）なので、止めるたびに「2回目の失敗の時刻」が進んで新しい場面になり、その時点の
+      「相手:」の行の数が控え（diagnosis_need.json）に入った。見立てを足してから打っても、控えが足した後の数になり、永遠に通らなかった
+      （実物＝195回目の diagnosis_need.json に同じ相手の鍵が6つ・控えの数が 0→1→2 と増えた）。effect() の「この hook に止められた
+      操作は、本物の操作に数えない」と同じ扱いにする。別の hook に止められた操作は、今までどおり失敗に数える（意図どおり）。"""
     calls, res = [], {}
     # ★2026-10-15（181回目）＝記録は共通の rows() で読む（会話の本物の行だけ・同じ行は1回）。直す前は行の種類を見ず、
     #   api-request-blob の行（API に送った中身の控え・この日から記録に入った）の中の呼び出しも数え、1回の失敗を2回と数えた
@@ -90,8 +96,10 @@ def load(path: pathlib.Path):
             if b.get("type") == "tool_use":
                 calls.append([b.get("id"), b.get("name"), b.get("input")])
             elif b.get("type") == "tool_result":
-                res[b.get("tool_use_id")] = (bool(b.get("is_error")), o.get("timestamp"))
-    return [(i, n, x, res.get(i, (False, None))[0], res.get(i, (False, None))[1]) for i, n, x in calls]
+                res[b.get("tool_use_id")] = (bool(b.get("is_error")), o.get("timestamp"),
+                                             MARK in json.dumps(b.get("content"), ensure_ascii=False))
+    return [(i, n, x, res.get(i, (False, None, False))[0], res.get(i, (False, None, False))[1])
+            for i, n, x in calls if not res.get(i, (False, None, False))[2]]
 
 
 def two_strikes(rows, tgt):
@@ -375,13 +383,27 @@ def selftest() -> int:
         h.append(("H2 同じ相手で2回続けて失敗 → 止める", run(), 2))
         (d / "diagnosis.md").write_text("相手: /x/y.py\n見立て1\n見立て2\n", encoding="utf-8")
         h.append(("H3 止められた後に見立てを書いた → 通す", run(), 0))
+
+        # ★2026-10-18（195回目）＝この hook が止めた操作（結果の文に MARK・is_error）が記録に足されても、場面（2回目の失敗の時刻）は進まない
+        def blocked(n):
+            return [line("assistant", f"a{n}", f"2026-10-16T00:00:0{2 * n}Z",
+                         [{"type": "tool_use", "id": f"t{n}", "name": "Edit", "input": {"file_path": "/x/y.py"}}]),
+                    line("user", f"u{n}", f"2026-10-16T00:00:0{2 * n + 1}Z",
+                         [{"type": "tool_result", "tool_use_id": f"t{n}", "is_error": True,
+                           "content": f"PreToolUse:Edit hook error: 🔒 {MARK} 「/x/y.py」への操作が2回続けて失敗しています。"}])]
+        tp.write_text("\n".join(edit(0, True) + edit(1, True) + blocked(2) + blocked(3)) + "\n", encoding="utf-8")
+        (d / "diagnosis.md").unlink()
+        h.append(("H4 止められた回が2回 記録に足されても、見立てが無ければ止める。控えの鍵は1つのまま（終了コード, 鍵の数）",
+                  (run(), len(json.loads((d / "diagnosis_need.json").read_text(encoding="utf-8")))), (2, 1)))
+        (d / "diagnosis.md").write_text("相手: /x/y.py\n見立て1\n見立て2\n", encoding="utf-8")
+        h.append(("H5 その後に見立てを書けば通る（直す前は、控えが足した後の数になり通らなかった）", run(), 0))
         for nm, got, want in h:
             ok = got == want
             bad += not ok
             print(f"  {'✅' if ok else '❌'} {nm}（終了コード {got}）")
     finally:
         shutil.rmtree(d, ignore_errors=True)
-    print(f"自己テスト {14 - bad}/14")
+    print(f"自己テスト {16 - bad}/16")
     return 1 if bad else 0
 
 

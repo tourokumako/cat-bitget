@@ -76,7 +76,10 @@ def strip_quotes(cmd: str) -> str:
 
 
 def effective(cmd: str) -> str:
-    """見るべき部分だけにしたコマンドの文字列。"""
+    """見るべき部分だけにしたコマンドの文字列。
+    ★2026-10-18（監査 CP81）＝$( ) と逆引用符の中は引用符の中でもシェルが走らせる＝引用符を外す前に別の区切りとして足す。"""
+    for m in re.finditer(r"\$\(([^()]*)\)|`([^`]*)`", cmd):
+        cmd = cmd + "\n" + (m.group(1) or m.group(2) or "")
     return strip_quotes(strip_comments(strip_heredocs(cmd)))
 
 
@@ -84,6 +87,8 @@ def _runs(cmd: str):
     """区切りごとに、頭の python が走らせる戦略の名前と、その後ろの語を返す。"""
     for seg in re.split(r"[;&|\n]+", effective(cmd)):
         toks = seg.split()
+        if "#" in toks:
+            toks = toks[:toks.index("#")]   # ★2026-10-18（監査 CP81）＝区切りの後ろの注記（# --help）は旗でない
         i = 0
         while i < len(toks) and (_ASSIGN.match(toks[i]) or toks[i] in _WRAP or re.fullmatch(r"[0-9.]+[smhd]?", toks[i])
                                  or (i > 0 and toks[i].startswith("-") and toks[i - 1] in _WRAP)):
@@ -92,7 +97,11 @@ def _runs(cmd: str):
             continue
         j = i + 1
         while j < len(toks) and toks[j].startswith("-"):
-            j += 1
+            if toks[j] == "-m" and j + 1 < len(toks):   # ★2026-10-18（監査 CP81）＝-m <モジュール> は最後の名前に .py を付けて見る
+                toks[j + 1] = toks[j + 1].rsplit(".", 1)[-1] + ".py"
+                j += 1
+                break
+            j += 2 if toks[j] in ("-X", "-W") else 1   # 値を1つ取る旗は値ごと飛ばす（CP80 の enforce_purpose_gate._run_target と同じ）
         if j >= len(toks):
             continue
         name = toks[j].rsplit("/", 1)[-1]

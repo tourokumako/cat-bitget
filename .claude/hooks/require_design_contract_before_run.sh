@@ -128,8 +128,8 @@ base_dir = d.get('cwd') or os.getcwd()
 #   なぜ＝中身は「走らせる形」ではなく「渡す文字」。git commit の本文に python の語が出ただけで
 #   止まった（実測）。承認ゲートは前から外していたので、そちらに合わせる。
 #   ★限界＝ヒアドキュメントを python や sh に食わせる形は、外側の語（python3 - / bash -s）で見る。
-_HD = re.compile(r'<<-?\s*[' + Q + r']?(\w+)[' + Q + r']?.*?^\1', re.S | re.M)
-cmd = _HD.sub(' ', cmd)
+_HD = re.compile(r'(<<-?\s*[' + Q + r']?(\w+)[' + Q + r']?[^\n]*)\n.*?^\2', re.S | re.M)
+cmd = _HD.sub(r'\1', cmd)   # ★2026-10-18（監査 CP81）＝<< の在る行は残す（直す前は行の後ろの | python3 … も消えていた）
 clean = []
 for ln in cmd.splitlines():
     q = None
@@ -165,7 +165,7 @@ INDIRECT = re.compile(r'(?:^|[\s;|&(])(?:sh|bash|zsh|env|xargs|eval|nohup|timeou
 #   ★'bash 何とか.sh' は、走らせる相手がはっきりしているので、いままでどおり通す。
 SH_WRAP = re.compile(r'(?:^|[\s;|&(])source\s+\S+'
                      r'|(?:^|[\s;|&(])\.\s+\S+\.sh'
-                     r'|(?:^|[\s;|&(])\./\S+\.sh')
+                     r'|(?:^|[;|&(\n])\s*\./\S+\.sh')   # ★2026-10-18（監査 CP81）＝./x.sh は区切りの頭のときだけ走らせる形（cp の引数の ./.claude/hooks/x.sh を止めていた）
 VARRUN = re.compile(r'^\s*\\\$\{?\w+')
 # ★引用符の中身は「走らせる形」ではなく「文字」として扱う（2026-09-03 に実測して足した）。
 #   直す前＝printf で見本の JSON を作るだけのコマンドが、その文字列に python3 と書いてあるだけで
@@ -176,6 +176,10 @@ VARRUN = re.compile(r'^\s*\\\$\{?\w+')
 #   「shebang での直実行」と誤判定した。実測（監査 cp15）＝読み取りだけの20通りのうち
 #   2通り（10%）が止まり、監査の最初のコマンド（wc -l で行数を数えるだけ）も止まった。
 cmd = re.sub(r'\\\n', ' ', cmd)
+# ★2026-10-18（監査 CP81）＝二重引用符の中でもシェルが走らせる $( ) と逆引用符の中身を、別の区切りとして足す
+#   （直す前は引用符の中を空白にしていたので、echo "$(python3 …/engine_tuner_gen.py --purpose search)" が通った）。
+for _m in re.finditer(chr(92) + chr(36) + r'\(([^()]*)\)|' + chr(96) + r'([^' + chr(96) + r']*)' + chr(96), cmd):
+    cmd = cmd + chr(10) + (_m.group(1) or _m.group(2) or '')
 blank = []
 q = None
 for ch in cmd:

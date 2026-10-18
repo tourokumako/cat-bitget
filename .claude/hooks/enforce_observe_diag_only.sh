@@ -33,7 +33,9 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 CMD_X=$(printf '%s' "$CMD" | python3 -c "
 import sys, re
 s = sys.stdin.read()
-s = re.sub(r'<<\s*[\"\x27]?(\w+)[\"\x27]?.*?^\1', ' ', s, flags=re.S | re.M)  # ヒアドキュメント本文を除去
+for _m in re.finditer(chr(92) + chr(36) + r'\(([^()]*)\)|' + chr(96) + r'([^' + chr(96) + r']*)' + chr(96), s):
+    s = s + chr(10) + (_m.group(1) or _m.group(2) or '')   # ★2026-10-18（監査 CP81）＝$( ) と逆引用符の中を別の区切りとして足す
+s = re.sub(r'(<<-?\s*[\"\x27]?(\w+)[\"\x27]?[^\n]*)\n.*?^\2', r'\1', s, flags=re.S | re.M)  # ヒアドキュメント本文を除去（<< の行は残す・監査 CP81）
 s = re.sub(r'\"[^\"]*\"', ' ', s); s = re.sub(r\"'[^']*'\", ' ', s)             # 引用符の中身を除去
 print(s)" 2>/dev/null)
 [ -z "$CMD_X" ] && CMD_X="$CMD"
@@ -54,6 +56,7 @@ ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z_0-9]*=')
 WRAP = set(['time', 'nice', 'nohup', 'timeout', 'exec', 'command', 'env', 'xargs', 'caffeinate'])
 COPY = set(['cp', 'mv', 'install', 'ln', 'rsync'])
 out = []
+base = ''   # ★2026-10-18（監査 CP81）＝cd の行き先を覚え、後ろの相対パスにつなぐ（直す前は cd /tmp && python3 x.py が通った）
 for seg in re.split(r'[;|&\n]+', s):
     toks = seg.split()
     i = 0
@@ -61,13 +64,18 @@ for seg in re.split(r'[;|&\n]+', s):
         i += 1
     if i >= len(toks):
         continue
+    if toks[i] == 'cd' and i + 1 < len(toks):
+        base = toks[i + 1] if toks[i + 1].startswith('/') else (base + '/' + toks[i + 1] if base else toks[i + 1])
+        continue
     head = toks[i].rsplit('/', 1)[-1]
     if re.fullmatch(r'python[0-9.]*', head):
         j = i + 1
         while j < len(toks) and toks[j].startswith('-'):
-            j += 1
-        if j < len(toks) and SCR.fullmatch(toks[j]):
-            out.append(toks[j])
+            j += 2 if toks[j] in ('-X', '-W') else 1   # 値を1つ取る旗は値ごと飛ばす（監査 CP81）
+        if j < len(toks):
+            p = toks[j] if toks[j].startswith('/') or not base else base + '/' + toks[j]
+            if SCR.fullmatch(p):
+                out.append(p)
     elif head in COPY:
         out += [t for t in toks[i + 1:] if SCR.fullmatch(t)]
 print(chr(10).join(out))

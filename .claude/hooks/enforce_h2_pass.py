@@ -46,7 +46,7 @@ TARGET = re.compile(r"(engine_tuner|engine_tuner_gen|engine_tuner_exec|e38_prior
 #   直す前の穴＝走行の引数に除外の語の一部（例 --out leak_causality_diag_run）が入ると通った（183回目の enforce_purpose_gate と同じ穴）。
 #   --lint-provenance＝engine_tuner_gen.py の静的検査（データも売買も使わない）＝9月18日に2回 止め、そのたびに H2 を取り直させた。
 EXEMPT_SCRIPT = {"leak_causality_diag.py", "gen_signal_families.py"}
-EXEMPT_FLAG = re.compile(r"(--selftest|--verify)\S*|--help|--identity|--lint-provenance")
+EXEMPT_FLAG = re.compile(r"(--selftest|--verify)(-\S*)?|--help|--identity|--lint-provenance")   # ★2026-10-18（監査 CP81）＝接尾は - で続く形だけ（--verify-nothing のような任意の語は除外にしない）
 _ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z_0-9]*=")
 _WRAP = {"time", "nice", "nohup", "timeout", "exec", "command", "env", "xargs", "caffeinate"}
 
@@ -113,8 +113,14 @@ def _executed(seg: str):
     if i >= len(toks) or not re.fullmatch(r"python[0-9.]*", toks[i].rsplit("/", 1)[-1]):
         return None
     j = i + 1
+    if "#" in toks:
+        toks = toks[:toks.index("#")]   # ★2026-10-18（監査 CP81）＝区切りの後ろの注記（# --selftest）は旗でない
     while j < len(toks) and toks[j].startswith("-"):
-        j += 1
+        if toks[j] == "-m" and j + 1 < len(toks):   # -m <モジュール> は最後の名前に .py を付けて見る（CP80 の enforce_purpose_gate._run_target と同じ）
+            toks[j + 1] = toks[j + 1].rsplit(".", 1)[-1] + ".py"
+            j += 1
+            break
+        j += 2 if toks[j] in ("-X", "-W") else 1   # 値を1つ取る旗は値ごと飛ばす
     if j >= len(toks):
         return None
     return toks[j], toks[j + 1:]
@@ -226,7 +232,9 @@ def hook_main():
     if data.get("tool_name") != "Bash":
         sys.exit(0)
     cmd = (data.get("tool_input") or {}).get("command", "") or ""
-    x = re.sub(r"<<\s*[\"']?(\w+)[\"']?.*?^\1", " ", cmd, flags=re.S | re.M)
+    for _m in re.finditer(r"\$\(([^()]*)\)|`([^`]*)`", cmd):
+        cmd = cmd + "\n" + (_m.group(1) or _m.group(2) or "")   # ★2026-10-18（監査 CP81）＝$( ) と逆引用符の中は引用符の中でも走る＝別の区切りとして足す
+    x = re.sub(r"(<<-?\s*[\"']?(\w+)[\"']?[^\n]*)\n.*?^\2", r"\1", cmd, flags=re.S | re.M)   # <<の行は残す（直す前は行の後ろの | python3 … も消えた）
     x = re.sub(r'"[^"]*"', " ", x)
     x = re.sub(r"'[^']*'", " ", x)
     reason = check(x)

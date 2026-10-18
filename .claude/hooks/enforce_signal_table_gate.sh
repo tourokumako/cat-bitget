@@ -47,6 +47,7 @@ try:
 except Exception:
     print('')" 2>/dev/null)
 
+shopt -s nocasematch   # ★2026-10-18（監査 CP81）＝APFS は大文字と小文字を区別しない（ENGINE_TUNER_GEN.PY は同じファイル）
 case "$(basename "$fp")" in
   engine_tuner_gen.py|engine_tuner_exec.py) ;;
   *) exit 0 ;;

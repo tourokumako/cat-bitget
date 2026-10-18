@@ -65,9 +65,9 @@ def selftest() -> int:
     import tempfile
     import time
     tmp = tempfile.mkdtemp()
-    today = "20260909"
+    today = _dt.date.today().strftime("%Y%m%d")   # ★2026-10-18（監査 CP81）＝直す前は 20260909 に固定で、T2 は 2026-09-09 以外の日に必ず落ちた（書き換えの時刻は本物の今）
     old = os.path.join(tmp, "session_worklog_20260904.md")
-    new = os.path.join(tmp, "session_worklog_20260909.md")
+    new = os.path.join(tmp, f"session_worklog_{today}.md")
     ng = 0
 
     def put(p, t=None):
