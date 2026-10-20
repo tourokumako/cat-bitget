@@ -106,8 +106,9 @@ def _ran_ok(ev: list, path: str, start: int) -> bool:
 def check_stop(ev: list) -> list:
     """止める理由（空なら通す）。ev はこのセッションの全部の並び。"""
     last: dict = {}
+    failed = {e[1] for e in ev if e[0] == "result" and e[2]}   # ★2026-10-20＝別の hook に止められて失敗した Edit・Write は、書き替わっていないので数えない
     for i, e in enumerate(ev):
-        if e[0] == "use" and e[2] in EDIT:
+        if e[0] == "use" and e[2] in EDIT and e[1] not in failed:
             fp = str(e[3].get("file_path") or e[3].get("notebook_path") or "")
             if fp.endswith(RUN_EXT) and not any(k in fp for k in FREE):
                 last[_norm(fp)] = i
@@ -154,6 +155,8 @@ def selftest() -> int:
           ("result", "r2", False)], True),
         ("S9 置き場（sessions）の .py は見ない → 通る",
          [("use", "e5", "Write", {"file_path": "/x/.claude/state/sessions/a/b.py"})], True),
+        ("S10 直そうとした Edit が失敗した（別の hook に止められた）→ 通る",
+         [("use", "e6", "Edit", {"file_path": me}), ("result", "e6", True)], True),
     ]
     bad = 0
     for nm, ev, want in cases:
@@ -167,7 +170,7 @@ def selftest() -> int:
     ok = events(dup) == [("user",)]
     bad += not ok
     print(f"  {'✅' if ok else '❌'} E1 同じ uuid は1回・API の控えの行は数えない")
-    print(f"自己テスト {10 - bad}/10")
+    print(f"自己テスト {11 - bad}/11")
     return 1 if bad else 0
 
 
