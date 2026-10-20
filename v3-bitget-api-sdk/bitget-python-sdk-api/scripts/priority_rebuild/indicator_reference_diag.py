@@ -1729,8 +1729,8 @@ def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):
     x.iloc[kc_length] = seed
     atr = x.ewm(alpha=1.0 / kc_length, adjust=False).mean()
     atr[x.isna().cummin()] = np.nan                       # 種より前は欠損
-    mid, sd = d.close.rolling(bb_length).mean(), d.close.rolling(bb_length).std(ddof=0)
-    km = ((d.high + d.low + d.close) / 3.0).rolling(kc_length).mean()
+    mid, sd = _S(_roll(c, bb_length, "mean"), d), _S(_roll(c, bb_length, "std", ddof=0), d)
+    km = _S(_roll((h + l + c) / 3.0, kc_length, "mean"), d)
     inside = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))
     return inside.astype(float).where(atr.notna() & sd.notna())
 
@@ -3256,11 +3256,13 @@ _r(r"STC", "STC",
    "順張り値", "trend", tb=_tb_stc,
    # ★K-4（監査 CP60 の修正59）＝TA-Lib の逐語「When a range is zero, the fraction keeps its previous value (0 before any).」から導いた
    #   既知答え＝値段が一定なら MACD は 0 で範囲も 0＝2段とも 0 のまま。
-   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind="写し")
+   # ★監査 CP82 の修正1＝±1 を交互に繰り返す足（_alt_pm1）では MACD の符号が毎本変わり範囲は 0 でない＝教科書の式の STC は 0 より大きい。
+   #   ライブラリの誤り（1段目を「MACD の窓の最小値 > 0」のときだけ計算する・pandas_ta_classic momentum/stc.py:180）では 0 のまま＝符号で見分ける。
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_alt_pm1(400), [(-1, "+", 0.0)])], tb_kind="写し")
 _r(r"STCstoch", "STCstoch",
    "上の STC が内部で使う、1回目のストキャスをならした値",
    "同上（Schaff Trend Cycle の1段目）", "順張り値", "trend", tb=_tb_stcstoch,
-   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind="写し")
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_alt_pm1(400), [(-1, "+", 0.0)])], tb_kind="写し")
 
 
 # ── 登録（3回目・アルファベット順 stochf〜willr）────────────────────────────
@@ -3347,7 +3349,7 @@ _r(r"FWMA(\d+)傾き%", "FWMA傾き%",
    "FWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_fwma)
 _r(r"close vs HILO%", "close vs HILO%",
    "終値が Gann の高安切替線から何%離れているか",
-   "Gann HiLo Activator。高値13本平均・安値21本平均を、終値の上抜け／下抜けで切り替える（ライブラリの既定）",
+   "Gann HiLo Activator。高値13本平均・安値21本平均を、終値の上抜け／下抜けで切り替える（ライブラリの既定）。★ライブラリの流儀＝比べる相手は前の足までの高値の平均（前の13本）、線の値は今の足を含む21本の安値の平均（pandas_ta_classic overlap/hilo.py:50）。LuxAlgo の逐語「LoAvg_t = (Σ L_{t-i} over i = 1..n) / n」は今の足を含まない＝1本ごとに 1 上げる足では線が 終値 − 12 になり、この版の 終値 − 11 と違う（監査 CP82）",
    "反転サイン", "none", tb=_tb_pos_hilo,
    # ★K-4（監査 CP60 の修正59）＝定義（Krausz＝前の13本の高値の平均を終値が上抜けたら、21本の安値の平均の線）から導いた既知答え
    #   ＝1本ごとに 1 上げる足（高値＝終値・安値＝前の終値）では、終値は常に高値の平均の上＝線は安値の平均＝終値 − 11。
@@ -3534,20 +3536,23 @@ _r(r"CHOP(\d+)", "CHOP",
 #   答えは定義から導いた（ライブラリは見ていない）＝
 #   ・PSAR（Wilder）＝売り側。SAR_t＝SAR_{t−1}＋AF×(EP_{t−1}−SAR_{t−1})。毎本 新しい安値なので AF は 0.02 ずつ増えて 0.2 で頭打ち。
 #     EP_{t−1}＝前の終値＝c＋1。SAR と EP の差 g は g←0.8×(g＋1) で 4 に収束＝SAR＝c＋5 → close vs PSAR%＝(c/(c+5)−1)×100・加速 0.2・反転 0。
-#   ・SAREXT（TA-Lib）＝買いと売りの加速が同じ値なら PSAR と同じ線（絶対値に直してから割る）＝(c/(c+5)−1)×100。
-#   ・CKSP（TradingView の形 p=10・x=1・q=9・ATR は Wilder）＝真の値幅は毎本 1 → ATR＝1。買い側の逆指値＝直近 q 本の max(10本高値 − ATR)
-#     ＝(c＋2＋8＋10)−1＝c＋17（10本高値は 9本前の高値＝終値＋10、q 本の中で最大は 8本前）→ (c/(c+17)−1)×100。
-#     売り側＝直近 q 本の min(10本安値 ＋ ATR)＝今の安値 c ＋ 1 → (c/(c+1)−1)×100。
+#   ・SAREXT（TA-Lib）＝売り側の加速の上限が既定の 0.2（ta-lib.org の既定 optInAccelerationMaxShort＝0.2）なら、下げ続ける足では PSAR と同じ漸化式の
+#     収束点＝SAR＝c＋5（この文は TA-Lib のページの文ではなく、定義から導いた文）。TA-Lib は売り側を負で返す（ta-lib.org「Output is +SAR when long,
+#     -SAR when short.」）ので、絶対値に直してから割る＝(c/(c+5)−1)×100。
+#   ・CKSP（数は TradingView の組み込みと同じ p=10・x=1・q=9・ATR は Wilder。列の名前はライブラリ pandas_ta_classic の向き）＝真の値幅は毎本 1 → ATR＝1。
+#     CKSPl（ライブラリの long＝直近 q 本の max(10本高値 − ATR)。TradingView の組み込みと ProRealCode は、この線を Stop Short と呼ぶ）
+#     ＝(c＋8＋10)−1＝c＋17（10本高値は 9本前の高値＝終値＋10、q 本の中で最大は 8本前）→ (c/(c+17)−1)×100。
+#     CKSPs（ライブラリの short＝直近 q 本の min(10本安値 ＋ ATR)。TradingView の組み込みは Stop Long と呼ぶ）＝今の安値 c ＋ 1 → (c/(c+1)−1)×100。
 #   ・PMAX（EMA10 ± 3×ATR10・下げでは上の帯）＝1本ごとに 1 下げる足で EMA10 の遅れは (10−1)/2＝4.5・ATR＝1 → 線＝c＋4.5＋3 → (c/(c+7.5)−1)×100。
 #   値段が一定の足（0）だけでは売り側を一度も通らない（監査 CP60 の修正60 の文）。
 _r(r"close vs CKSPl%", "close vs CKSPl%",
-   "終値が Chande Kroll の買い側の逆指値から何%離れているか",
+   "終値が Chande Kroll の売り側の逆指値（TradingView の組み込みの Stop Short＝直近 q 本の max(p 本高値 − x×ATR)）から何%離れているか",
    "Chande & Kroll。★独立実装は書いていないが、定義から導ける既知答えで検証する＝"
    "値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0",
    "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
                                           (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 17.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"close vs CKSPs%", "close vs CKSPs%",
-   "終値が Chande Kroll の売り側の逆指値から何%離れているか", "同上",
+   "終値が Chande Kroll の買い側の逆指値（TradingView の組み込みの Stop Long＝直近 q 本の min(p 本安値 ＋ x×ATR)）から何%離れているか", "同上",
    "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
                                           (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 1.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"DPO%(\d+)", "DPO%",
@@ -4319,7 +4324,7 @@ _r(r"RVI(\d+)", "RVI",
    known=lambda p: [(_up(p[0] * 6 + 40), [(-1, 100.0, 1e-9)])])
 _r(r"THERMO%", "THERMO%",
    "エルダーの温度計＝安値の下げ幅と高値の上げ幅の大きい方を、終値で割って%化",
-   "Alexander Elder（ライブラリの既定 length=20）。値段の単位なので終値で割る（H6）", "ボラ量", "vol",
+   "Alexander Elder（ライブラリの既定 length=20）。値段の単位なので終値で割る（H6）。★ライブラリの流儀＝安値の下げ幅・高値の上げ幅を絶対値にして大きい方を採る（pandas_ta_classic volatility/thermo.py:41-42 の abs）＝内はらみ足でも正の値。Elder の原作（内はらみ足は 0）は THERMO原作%（監査 CP82）", "ボラ量", "vol",
    tb=_tb_thermo_pct,
    # ★K-4（監査 CP60 の修正59）＝流儀の欄の定義（安値の下げ幅と高値の上げ幅の絶対値の大きい方）から導いた既知答え
    #   ＝内はらみ足（高値 101→100.5・安値 99→99.5）では 0.5 を終値 100 で割って%化＝0.5。教科書の版（THERMO原作%）は 0＝別の値になる。

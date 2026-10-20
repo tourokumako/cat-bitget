@@ -141,3 +141,15 @@
 - ToDo の68番（CP82 の結果を読む → 範囲 → 当てる → G2・H2・チェック）を足し、66番の文を短くして、tidy_next_step.py --todo-from で済んでいない行（16・17・66・33・48・63・68）を元データへ写した。
 - 元データの「2 次のセッションでやること」を197回目の中身に、「3-1 いまの状態」を196回目の終わりに書き替えた（あとで直すこと④〜⑥を足した＝next_move.py が K-4 を段5 と読む・pre_audit_check の P7-1・9月30日の一時の置き場2つ）。4-1 の「K-4 の設計書の監査をやり直すか」は「決まった・次の書き替えで消す」にした。
 - 教訓 L-707 を足した（閉じる書き込みは ★いまここを移す前・「1文字も変えずに」「通った」は照らした結果を全部 見てから・決め打ちで見る相手がいまの工事の物かを先に疑う）。
+
+## §16 197回目＝ToDo の68番（監査 CP82 の結果を読み、修正10件を当てた）
+
+- 必読6本を Read で開いた。ToDo を next_step ③ の表のとおりに書いた（63番＝196回目の締めはコミット a39f113e で済）。
+- 監査 CP82 の結果（audits/2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md・497行）を全部 Read で開いた。結論＝CONDITIONAL-GO・Critical 3・Major 4・Minor 3・Process 0。Critical の本体＝STC・STCstoch の既知答え（値段が一定の足で 0）が、監査 CP60 の STC の式の誤り（stc.py:180＝窓の最小値 > 0 のときだけ計算）と教科書の式を見分けられない。
+- まこさん決定（2026-10-20・逐語）＝「案B：説明の文を TradingView の呼び方（売り側・買い側）に書き替えます。」（修正6・7）・「1全部修正する ２当てる」（修正1〜10 を全部・未決の修正4・5 も当てる）。修正8 は監査の文のまま当てた（案B と事実は食い違わない）。
+- apply_audit_fix.py --report <CP82> --severity Critical,Major,Minor,Process --choose 4=確定,5=確定,6=B,7=B＝--dry で当たる9件・実物と合わない件0件 → 本番で9件を indicator_reference_diag.py に当てた（applied_fixes.json に9件）。最後の「照合 FAIL」は、いまの acceptance.md（別の工事 gen_acceptance.py の直し）と照らした結果で、走らせるコマンドの件は0件なので当てた中身に効かない。
+- 修正3（.claude/breaks/b188_stc_library_min_gate.sh）は、Write を受け入れ条件ゲートが止めた（いまの設計書の TARGET の外）。作業場に監査の文字（結果ファイル 287〜313行）のとおりに書き、diff 0行を確かめ、まこさんに cp していただいた（恒久74番）。写した後も diff 0行。
+- b188 は CC が走らせられない（Bash は土台ゲートが止める・run_breaks.py --only は設計書の完成の条件の表に載った物しか走らせない＝:805-809）。まこさんに走らせていただいた＝「STC: 手計算の既知答えと不一致（期待 符号+ / 実測 0.0）」・rc=1（EXPECT_MSG のとおり）。observe_diag.py は git の差分なし（元に戻った）。
+- 確かめ＝observe_diag.py --selftest-match ❌ 0 件・rc=0（1分1秒）／--selftest ✅ 全部 pass・rc=0（2分20秒）／G2 ✅（指紋 3dfa12c6…・50秒）／H2 未来参照 0 件・食い違い 0 件（指紋 45ce332d…・4分52秒・前回と同じ指紋＝h2_pass.json の対象に indicator_reference_diag.py は無い〔grep 0件〕）。
+- 監査に出す前のチェック pre_audit_check.py --run --design <K-4 の控え>＝全部 rc=0（10分10秒・指紋 8068082c…・--verify --design も rc=0）。check_indicator_sources.py は「既知」（出力が同じ・P-6・P-7 で直す）。「まこさんの承認を待つもの 2 件」（型の表・出口の表の --write と --approve）は、この道具が毎回 打たずに出す行で、gen_signal_families.py --verify と gen_exit_families.py --verify が rc=0＝表は入力の正本と一致。ToDo の68番を ✅済 にした。
+- 止められた事＝①ToDo を書く前に Bash を打った ②ToDo の状態の欄に説明を足して「★いまここ」を0件と数えられた（require_work_declaration・lessons.md に書いた）③block_repeat_failure が apply_audit_fix.py の2回の止めを数えた（diagnosis.md に書いた）④作業場の b188 の写しを「走らせた記録が無い」と Stop hook が止めた（bash -n で文法を確かめた）。

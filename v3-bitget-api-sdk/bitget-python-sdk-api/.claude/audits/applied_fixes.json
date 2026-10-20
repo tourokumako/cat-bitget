@@ -5612,6 +5612,69 @@
    "file": ".claude/state/_hook_inventory.py",
    "at": "2026-10-18T20:13:12",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "8",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "9",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-20_k4_reference_known_20261011_impl_cp82_audit_report.md",
+   "num": "10",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-20T15:15:25",
+   "how": "当てた"
   }
  ]
 }
