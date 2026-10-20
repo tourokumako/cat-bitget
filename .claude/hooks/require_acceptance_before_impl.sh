@@ -195,7 +195,7 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #   ★書く先は道具の側で .claude/state/verbatim/<名前>.txt と .meta.json の2本だけ（名前は英数字・_・.・- だけ）。
               #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
-              'gen_verbatim.py', 'gen_review.py', 'try_hooks.py',
+              'gen_verbatim.py', 'gen_review.py', 'try_hooks.py', 'plain_ja_check.py',
               # ★2026-10-10（165回目・まこさん「OK」＝土台ゲートの通す一覧に足してよいか、への答え）
               #   ＝工事の、いまの段・次の一手・まこさんにお願いする前の条件を、実物のファイルから読んで出す道具。
               #   読むだけ。ファイルを1つも書かない（呼ぶのは gen_review.py --check と pre_audit_check.py --verify だけ）。

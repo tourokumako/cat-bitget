@@ -248,7 +248,7 @@ def approve_problem(cmd: str, rows: list) -> str | None:
     return None
 
 
-def verify_problems(design: str | None = None) -> list[str]:
+def verify_problems(design: str | None = None, before_impl: bool = False) -> list[str]:
     """監査に出せる状態かを確かめる。1件でも返れば出せない。design＝問われた設計書（無ければ acceptance.md）。"""
     if not OUT.exists():
         return [f"チェックの1枚が無い（{OUT.name}）＝ python3 .claude/tools/pre_audit_check.py --run を打つ"]
@@ -265,6 +265,10 @@ def verify_problems(design: str | None = None) -> list[str]:
     if got != want:
         ng.append(f"チェックが照らした設計書が違う（照らした {got} ／ 問われた {want}）＝ --run --design {want} を打つ")
     for r in (d.get("rows") or []):
+        # ★2026-10-20（199回目・まこさん「OK」）＝設計書の監査（実装の前）は、設計書と実物の照合の行だけを見ない
+        #   （設計書に書いた新しい関数が、実装の前なので まだ実物に無く、必ず落ちるため）。実装の監査では今までどおり見る。
+        if before_impl and str(r.get("cmd") or "").startswith(DESIGN_DIFF):
+            continue
         # ★2026-10-20＝分かっている食い違い（run が出力のハッシュ値で照らして印を付けた行）は止めない。一覧に無い道具の印は認めない
         if r.get("rc") not in (0, None) and not (r.get("known") and r.get("cmd") in KNOWN_NG):
             ng.append(f"rc が0でない: {r.get('cmd')}（rc={r.get('rc')}）")
@@ -276,8 +280,8 @@ def verify_problems(design: str | None = None) -> list[str]:
     return ng
 
 
-def verify(design: str | None = None) -> int:
-    ng = verify_problems(design)
+def verify(design: str | None = None, before_impl: bool = False) -> int:
+    ng = verify_problems(design, before_impl)
     if ng:
         print("監査に出せません:")
         for x in ng:
@@ -588,7 +592,7 @@ def main() -> int:
     if "--run" in a:
         return run(_dz)
     if "--verify" in a:
-        return verify(_dz)
+        return verify(_dz, "--before-impl" in a)
     if "--check-indicator-sources" in a:
         # ★2026-10-07＝照らしの道具だけを走らせる口（工事の始め・資料を足した直後に、9分の全部を待たずに確かめる）。
         #   この道具は土台ゲートの「走らせてよい道具」の一覧に在るので、ここから呼べば Bash から打てる。
