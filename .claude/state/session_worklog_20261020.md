@@ -153,3 +153,97 @@
 - 確かめ＝observe_diag.py --selftest-match ❌ 0 件・rc=0（1分1秒）／--selftest ✅ 全部 pass・rc=0（2分20秒）／G2 ✅（指紋 3dfa12c6…・50秒）／H2 未来参照 0 件・食い違い 0 件（指紋 45ce332d…・4分52秒・前回と同じ指紋＝h2_pass.json の対象に indicator_reference_diag.py は無い〔grep 0件〕）。
 - 監査に出す前のチェック pre_audit_check.py --run --design <K-4 の控え>＝全部 rc=0（10分10秒・指紋 8068082c…・--verify --design も rc=0）。check_indicator_sources.py は「既知」（出力が同じ・P-6・P-7 で直す）。「まこさんの承認を待つもの 2 件」（型の表・出口の表の --write と --approve）は、この道具が毎回 打たずに出す行で、gen_signal_families.py --verify と gen_exit_families.py --verify が rc=0＝表は入力の正本と一致。ToDo の68番を ✅済 にした。
 - 止められた事＝①ToDo を書く前に Bash を打った ②ToDo の状態の欄に説明を足して「★いまここ」を0件と数えられた（require_work_declaration・lessons.md に書いた）③block_repeat_failure が apply_audit_fix.py の2回の止めを数えた（diagnosis.md に書いた）④作業場の b188 の写しを「走らせた記録が無い」と Stop hook が止めた（bash -n で文法を確かめた）。
+
+## §17 198回目＝ToDo の70番（B-1＋S-1 の読むもの宣言・OK・34件を読んだ）
+
+- 必読6本を Read で開いた。ToDo を next_step ③ の表のとおりに書いた（69番＝197回目の締めはコミット c0f5df71 で済・71番＝この回の締めを足した）。70番の宣言に まこさん「進めてよい」。
+- 1 必読の表に資料の表3つを足すか＝足していない。next_step の232行・243行の「足す」は、2026-10-12 に CC が自分で書いた文（worklog 20261012 §28 の338〜339行・まこさんの言葉は「毎回、作業が異常に遅いので改善して」）。CC の勧め＝戻さない（帯に関わる行だけを宣言の22〜24番で開く）。まこさん「OK」（宣言の OK と一緒の返事＝勧めのとおりと読んだ）。
+- 2 控えのファイル next_step_reference.md の「毎回 必ず読むこと」3〜8番と「指標の修正の中身」（40〜179行）を読んだ。
+- 3 読むもの宣言＝前の K-4 の宣言を read_plan_src_k4-reference-known-20261020.json・design_read_plan_k4-reference-known-20261020.md に控えた（cp -n・cmp で同じ）。read_plan_src.json を工事 m2c15-band-s1-20261020 の中身に書き替え、require_read_plan_before_design.py --write（34件）・--selftest 26/26。next_move.py＝段1。まこさん「OK」→ --ok "OK"・貼った証拠のファイル（design_read_plan_posted）を作った・--verify ✅。
+- 34件を読んだ。分かった事
+  - 修正69 の切り替えを届ける相手＝E38 の帯（e38_logic_parts.py:59 → e37_scalp._apply_rg5_to_5m:548 → _rg5_frames:527 の rgmod.v17._resample）の1時間足は、scripts/dashboard/build_range_gate_dashboard.py:65 の _resample（label=right・closed=right）で束ねている。このファイルは宣言に無かった（宣言の19番 e37_scalp.py の先）。observe_diag.build_range_geometry:2250 も同じ e37._rg5_frames を通る。e37_scalp._zones_v11_1h:426 は別の束ね（labels_v17 の版）。
+  - 法則 R1 の機械が読む判定＝系統「構造・位置」の部品を1本（regime_laws.json:563〜569）・「書けるか」の欄は「✕ 帯を作る形が無い」（:551）。S1＝family が空（:1104〜1105）＝S1 の部品を材料に足しても、法則が名指しするのは工事2（worklog 20261003 §47）。
+  - 帯の部品の数字のうち、出どころが資料に無い物＝S-Rタッチの窓 n（144・288）・固定の許容幅（0.15%・0.3%・0.6%）・倍率（0.5・1.0・1.5）（indicator_params_review.md の S-Rタッチ数・S-Rタッチ1時間ATR の行のメモ）。決まっている物＝タッチ3・4回（worklog 20261003 §35 の3「1,2OK」）・手数料の2〜6倍・許容幅は固定と1時間足の値動きの幅の両方（「１は案ア」）・値は設定ファイルに書いて変えて試せる形。RG-v5 の数字（タッチ2回・幅0.4%）は写さない。
+  - Lee-Mykland の元＝e36_short_oscillation.py:372〜394（spike_threshold・spike_stat・K と α は a-priori）。
+  - 252番の原因は、まだ確かめていない（_sr_touch_atr:512〜521 の 0.15%〜0.6% に収める所で端に張り付く見込み＝設計で測る）。
+
+## §18 198回目＝ToDo の70番（B-1＋S-1 のやることの表の「向きを見る所」を書いた）
+
+- まこさん「進めて良い」。工事のフォルダ .claude/state/verbatim/m2c15-band-s1-20261020/ に やることの表.md を、新しい形のひな型（design_origin_todo_template.md）と手本（k4-reference-known-20261020 の やることの表）の形で書いた。一覧＝F-1〜F-6・G-1・G-2／やらないこと＝Y-1〜Y-9／§1 概要・結ぶ要件と減らす違い・2-1（4行）・目標①〜⑥・3-2（4件）。4-19 は案の後に書く。
+- 2-1 のコマンドを走らせて確かめた＝①最初に書いた jq（"Lee|jump|帯"）は 3 を返した（時刻・曜日・レンジ幾何 帯内位置% に「帯」が当たる）＝書いた読み方「0」と違ったので、Lee|jump だけの形（0）に直し、帯の部品は名前が決まっていないので数えないと書いた ②k3bs_check.json の P-3 は6行（うち S-Rタッチの2部品×2軸＝4行）③build_range_gate_dashboard.py:66〜70 が label=right・closed=right。
+- §1 の「帯に関わる行」の文を直した＝S-Rタッチ確定数（observe_diag.py:657〜675）は今の終値の近くの確定したスイングを数える部品。無いのは「上と下の線のそれぞれで数え、終値がその間かを出す部品」。
+- まこさん「長すぎてよくわからないので、修正内容を簡潔にわかりやすくまとめてほしい。」→ 直すこと6つ・やらないこと3つ・決めてほしいこと4つに短くまとめて出した → まこさん「OK　１〜4もOK」。
+- 逐語のファイルを3本 作った（gen_verbatim.py --write・工事 m2c15-band-s1-20261020）＝okd_direction_20261020（CC のまとめ fda63c51）・ok_direction_20261020（b06e6054）・ok_read_plan_20261020（宣言の OK 1397ba9f）。やることの表の出どころの行と 3-2 に、決まったことを書いた（3-2 の4件＝dashboard の _resample を直す相手に入れる／出どころの無い3つの数字は今の設定の値をそのまま使う／S1 の式は材料に置き E36 はそこから呼ぶ／K＝270）。
+
+## §19 198回目＝ToDo の70番（F-5＝252番の原因を実物の5分足で測る）
+
+- まこさん「進めてよい」。scripts/dashboard/build_range_gate_dashboard.py（289行）を全部 読んだ。区切りは _resample（65〜71行）の1か所。呼ぶ所＝e37_scalp.py:527・build_regime_gate_rg.py:300・rg6_adaptive_band_diag.py:68・同じファイルの :212。
+- 252番を見つけた照らし（.claude/state/indicator_review/r3_draft_build.py:522〜531 の PROBE）は、作り物の5分足（1500本・sin の波・値段 100 前後で1時間の振れが数%）で測っていた＝許容幅が上限 0.6% に張り付く見込み（測っていない）。2026-09-26 の実物の測定（worklog 20260926:412＝検査16）では張り付かない割合が多かった。
+- 測り方を出した（検査16・検査12）→ まこさん「よい」。フロー宣言が 2026-10-06 のままで止められ、書き直して貼る前に打って止められ、証拠のファイルのコマンドと並べて打って止められた（block_repeat_kind・block_repeat_failure＝lessons.md・diagnosis.md に書いた）。
+- 検査16（--inspect <5分足CSV> --only 16・2026-10-20 16:32）＝値決め窓。②（1時間足の ATR%＝S-Rタッチ1時間ATR の形）の上端に張り付く割合は、どの足・期間・倍率でも 7.4%〜90.0%（100% のマスは0）。例＝1h の期間14＝倍率0.5 下端 3.7%・上端 8.0%／倍率1.0 上端 58.9%／倍率1.5 上端 87.3%。期間7・21 も倍率1.0 で上端 56.0〜62.5%。①（その足の ATR%）は 4h 以上の倍率1.0・1.5 で上端 99〜100%（外した形）。保存先＝results/priority_rebuild/ratchet/observe/observe_inspect_BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe_20261020.txt（検査12 で同じ名前に上書きされる）。
+- 検査12（--only 12・裏で・16:33:09〜16:39:10＝6分1秒・rc 0）＝値決め窓の 20000 本 × 529 列（5m・build_catalog の全部＝_dup_pairs:5045）・測れなかった列の行は出ていない。実質 同じもの（|相関| ≥ 0.99999）6組・近い組（≥ 0.999）12組。S-Rタッチの列はどの組にも出ない（結果ファイルを grep -c "S-Rタッチ" で 0）＝実物の5分足では、S-Rタッチ1時間ATR・S-Rタッチ確定1時間ATR の倍率違い・期間違いの列どうしの相関は 0.999 より小さい。
+- ＝252番の「倍率と期間が列を変えない」は、照らし（r3_draft_build.py の PROBE）が作り物の値動きで測ったためと読める。材料の作りの不具合ではない見込み。★確かめていないこと＝5分足より長い足での列どうしの比べ（検査12 は 5m だけ）・作り物の値動きで許容幅が本当に上限に張り付いているか（PROBE の中身は数字を出さない）。
+- まこさん「A」（F-5＝材料は直さず、照らしの道具を直す）→ やることの表の F-5 を書き替えた。直し方（r3_draft_build.py の PROBE の判定に実物の5分足の確かめを足す・--probe の口）を、直す前の行と後の行で出した → まこさん「よい」。
+- 直した物＝.claude/state/indicator_review/r3_draft_build.py（1ファイル・4か所＝頭の使い方の行・PROBE に real_bars と synth・same_all の分かれ・入口の --probe）。run_probe を使う道具（k3a・k3b・k3c・k3s・k3bs・k3cs ほか）は h["edge"] だけを読むので、形は変わらない（edge_synth は足した鍵）。
+- 確かめ＝python3 .claude/state/indicator_review/r3_draft_build.py --probe（24.5秒・rc 0）＝端の値が効いていない軸 2（PVO の軸3・TSI の軸3＝実物の5分足でも列が同じ）／作り物の値動きでだけ列が同じ 4（S-Rタッチ1時間ATR・S-Rタッチ確定1時間ATR の軸2・軸3＝実物では列が3通り）。一時の _r3_probe_tmp.py は消えている・scripts の git の差分は無い（?? の4本は前から在る物）。
+- ★新しく分かった事＝PVO の軸3（5・7・9）と TSI の軸3（7・10・12）は、実物の5分足でも列を変えない。next_step 控えと10月の worklog に記録が無い（grep 0件）。この工事の範囲の外（P-6・P-7 の範囲の扱い）＝締めで控えの §6 に積む案をまこさんに出す。
+
+## §20 198回目＝ToDo の70番（案を書く段＝写しの道具 b1s1_draft_build.py）
+
+- まこさん「ok」（案を書く宣言）。手本＝k3b_draft_build.py（861行）を読んだ。出どころを確かめた＝§2.2 の段1 の表（engine_tuner_milestones2.md:457＝窓144〜288・許容幅0.0015〜0.006・タッチ2〜4・幅の床0.08%×2〜6倍）・R7（regime_detection_kb.md:863）・取れる距離（まこさん「OK」worklog 20261003 §36）・名前に出さない値の今の扱い（material_first_hidden は計算に使わない・渡すのは工事2）。
+- 決めていただいた3つ（まこさん「OK」＝ok_three_points_20261020・案＝okd_three_points_20261020）＝①名前に出すのは窓・許容幅・タッチの回数／手数料の倍数は設定ファイル（最初の値 2）②3種類の全部に固定と1時間足 ATR% の両方 ③S1 の式は材料の表に置き E36 はそこから呼ぶ。
+- 写しの道具 .claude/state/indicator_review/b1s1_draft_build.py を作った＝直し25件（observe_diag.py 7・indicator_reference_diag.py 6・e37_scalp.py 4・e38_logic_parts.py 2・tuner_adapters/e38.py 1・e38_logics.json 1・e36_short_oscillation.py 1・scripts/dashboard/build_range_gate_dashboard.py 1・observe_config.json 1・recipes/search_limits.json 1）。--plan＝25件とも直す前の文字が1か所・文法と json が通る。
+- --check 1回目（16:59〜17:04）＝写しの自己テスト2つが「material_param_ranges に、カタログに無い指標の種類: 帯スイング」で rc 1。原因＝engine_tuner_gen.material_ranges:277 がオン・オフの表（indicator_switch.json）で「使う」でない種類を外す＝新しい7種は G-1 で表を作り直すまで外れる。★gen_indicator_switch.py は書く先が SDK/.claude/ratchet/indicator_switch.json（:50）＝r1.make_copy の写しでは本物への近道なので、写しで --write を打つと本物を書き換える＝打たなかった。K-3a と同じ写しの作り（k3a.make_copy＝その表だけ本物の写し）に替え、近道なら止める確かめを足した。
+- --check 2回目（17:05:29〜17:11:27）＝❌ 0件。G-1 の写し＝使うに増えた7種だけ・減った 0。カタログ 679 列（新しい列 145 本＝帯6種 144・LeeMykland 1）・参照表で引けない名前 0・既知答え 14 件の食い違い 0・独立の実装（帯スイング・帯スイング1時間ATR・LeeMykland）と実物の5分足6000本の食い違い 0・E36 の Lee-Mykland の値＝同じ（np.array_equal）・F-4＝right は今と同じ・hour は違う・hour を3点で切り詰めて値が変わった点 0・写しの --selftest-catalog 11.0秒・--selftest-match 120.5秒・--selftest-atr1h 5.6秒・--selftest 208.0秒 すべて rc 0。本物の indicator_switch.json の指紋は走らせる前後で 9f6b8dbe… のまま。
+- 測った数字＝1列の計算（実物の5分足6000本）帯スイング 0.64秒・帯スイング1時間ATR 0.62秒・帯pivot 0.16秒・帯VA 0.18秒・LeeMykland 0.00秒／observe_diag の読み込み 1.49秒（E36 が読み込む重さ）。帯が 1 の割合（実物6000本・最初の組＝窓144・許容幅0.0015・タッチ3）＝帯スイング 11.2%・帯スイング1時間ATR 5.0%・帯VA 1.2%・帯VA1時間ATR 1.1%・帯pivot 0.0%・帯pivot1時間ATR 0.0%。
+- ★分かった事＝帯pivot は、最初の組では6000本で1回も 1 にならない（前の日の R1・S1 のそれぞれに、確定したスイングが3回以上 そろう足が無い）。ほかの組（許容幅0.006 など）は測っていない。
+- 残りの確かめ（--slow-only＝写しで検査4・8・13 を新しい列で）1回目（17:13:06〜17:43:11）＝道具の上限30分で打ち切り・結果なし。原因＝検査4 は1つの名前を11本の時間足で作り、3つの時点で切り詰めて計算し直す＝145の名前で約1,600列分だった（見込み6〜9分は軽い S-Rタッチの列の記録から立て、帯の部品の重さを測っていなかった）。★副作用＝観察の道具は今日の日付の同じ名前の結果ファイルに書くので、検査12 の結果ファイル（results/priority_rebuild/ratchet/observe/observe_inspect_…_20261020.txt）が 0 バイトで上書きされた（検査12 の数字は §19 に写してある）。17:28（15分）にお伺いすると書いて、お伺いできていなかった。
+- まこさん「A」（小さく測る）→ --only 4 を1列（帯スイング1時間ATR(144,0.5,7,3)）で＝268.6秒・全 11 列 → 不一致 0 列・✅ 検査4: 異常なし。見込み（7列で約16分）を出して まこさん「A」→ 7列（種類ごとに1列）で --only 4＝838.9秒（17:56:37〜18:10:41）・全 77 列 → 不一致 0 列・✅ 検査4: 異常なし（記録＝.claude/state/indicator_review/b1s1_check_slow.json）。
+- 検査8・13 を7列で（18:11:34〜18:12:08＝28.7秒・rc 0）＝検査8「切り詰め再計算: サンプル時点 3点 × 8 列 × 帯2種（RG-v5・RG-v6）× 区切り2つ（今・正時） → 不一致 0 列」・検査13「値が変わらなかった列 = 7 種 ／ 値が変わった列 = 0 種」・✅ 検査8・✅ 検査13。＝写しの確かめは全部 済（--check ❌ 0件・検査4・8・13 ✅）。
+
+## §21 198回目＝帯pivot の作りが pivot の役割と合わない（まこさんの指摘）・決定 A・使い方の照らし U-1 を足した
+
+- まこさん（逐語）「pivotの役割を間違って教科書に記述してる？」→ CC の答え＝資料の役割（indicator_roles_thresholds.md:105＝構造・位置（位置）・逐語✅）に誤りは見つかっていない。0% の原因は CC が §37 で決めた使い方（前の日の R1・S1 に、直近 n 本の確定したスイングが m 回触れることを求める＝法則 R1 を pivot に当てた）の見込み。
+- まこさんが貼った文（AI の概要）＝ピボット・ポイントは「当日の目処となる価格レーン」「どこで価格が止まりやすいか」＝前もって引く壁。→ CC の案 A（帯pivot・帯VA から触れた回数の条件を外し、①終値が S1〜R1〔VAL〜VAH〕の間 ②線どうしの距離が手数料の床以上〔R7〕だけにする・名前からタッチの回数と窓を外す）／B（そのまま）／C（外す）。まこさん「Aでいいが、他にも無理やりここで作ったトレードの法則集に合わせて、本来の役割から逸脱している指標があるかもしれないということかな？」。逐語＝req_pivot_role_20261020・ok_pivot_a_20261020（工事のフォルダ）。★A は、直す前に StockCharts の Pivot Points の原文で役割を確かめる（貼った文は AI の要約）。
+- CC の答え＝その恐れがある。分かっている物＝R-1（役割の食い違い26種・疑い30種）・法則 R1 の判定が系統「構造・位置」なら何でも1本で満たす（regime_laws.json:563〜569）・違反の記録 #27。まだ照らしていない所＝指標の使い方（法則の判定・段の候補・部品の作り）と教科書の役割の照らし。
+- まこさん（逐語）「→これは、今後確認修正するので、指標修正のフローtodoに追加して」（req_usage_check_20261020）。→ m2_todo.json の M2-C-15 の中身に「④b U-1＝使い方の照らし」を R-1 の後に足し、状態の残りに U-1 を足した（jq empty ✅）。gen_regime_kb.py --write todo（§3 hash c2a4a1fc…）・--verify all ❌ 0。m2c15_全体の表.md の一覧・進み具合・順番の7 に U-1 を足した（置く場所＝R-1 の直後は CC が決めた・理由＝R-1 で直した系統の名札の表で照らすため）。自己テスト＝gen_regime_kb 18/18・require_read_plan_before_design 26/26・gen_acceptance 28/28・gen_audit_docs 56/56。
+- 止められた事＝自己テスト4本を for と変数で1つのコマンドにまとめて、土台ゲートに止められた（L-685 の形）。1本ずつ単独で打ち直して通った。
+
+## §22 198回目＝決定 A を写しの道具に入れた・写しの確かめ
+
+- まこさん「進めて良い」。pivot の役割を、調べる係の記録の原文で確かめた（新しく Web は調べない）＝research/out_w3.json:527〜548（StockCharts）「Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.」「Support and resistance levels based on Pivot Points can be used like traditional support and resistance levels.」・TradingView「displays levels at which price might meet support or resistance」。
+- b1s1_draft_build.py を A の形に直した＝_band_lines は触れた回数を数えず、①終値が 下の線×(1+t/2) と 上の線×(1−t/2) の間 ②その差 ÷ 終値 が床以上 だけ。名前＝帯pivot(t)・帯pivot1時間ATR(倍率,ATR の期間)・帯VA(t)・帯VA1時間ATR(倍率,期間)。カタログ＝帯pivot・帯VA は sr_tol と sr_atr1h_k×atr_periods だけで作る。既知答え＝_line_case（終値 105＝1・112＝0）。名前に出さない引数の番人の帯pivot・帯VA の合成の足を外した（引数を持たない）。設定の範囲・タッチの回数の説明・業界の対応表の文・mako の欄（ok_pivot_a_20261020）をそろえた。_band_case は swing だけにした。--plan＝25件・文法 ✅。
+- --check（18:35:04〜18:40:15）＝❌ 0件。カタログ 607 列・新しい列 73 本（帯スイング 12・帯スイング1時間ATR 36・帯pivot 3・帯pivot1時間ATR 9・帯VA 3・帯VA1時間ATR 9・LeeMykland 1）・既知答え 14 件の食い違い 0・E36 同じ・F-4 ✅・自己テスト4つ rc 0（--selftest 179.6秒）。本物の indicator_switch.json の指紋 9f6b8dbe… のまま。1列の計算（6000本）＝帯pivot 0.01秒・帯VA 0.02秒。帯が 1 の割合（6000本）＝帯pivot(0.0015) 72.1%・帯pivot1時間ATR(0.5,7) 71.5%・帯VA(0.0015) 45.3%・帯VA1時間ATR(0.5,7) 43.3%。
+- 作りの変わった4種で --slow-only --only 4,13（18:40:49〜18:41:28・33.6秒）＝検査4 全 44 列 → 不一致 0 列・検査13 値が変わった列 0 種・✅✅。
+
+## §23 198回目＝案を組む（壊すプログラム・軽い口・案の道具・設計書の試し）
+
+- まこさん「A」（このまま続ける・見込み2〜3時間と伝えた）。やることの表の F-2・F-3 を決定 A の文に直した。
+- 壊すプログラムは承認の前の仮当ての 900 秒に収める＝軽い口 selftest_band（T-B1 既知答え・T-B2 独立の実装・T-B3 正時の区切り・T-B4 E36 の式の置き場）を observe_diag.py に足す指示3件（関数・全体の自己テストから呼ぶ・入口の --selftest-band）。既知答えを2つ足した（まだ確定していない山・谷を置いた足・幅が床より狭い帯）。壊すプログラム6本（b189 確定していない山谷を数える・b190 床を外す・b191 上の線の条件を外す・b192 L の符号を落とす・b193 正時の1時間足を次の正時に置く・b194 E36 に自前の式）。
+- --check 1回目＝全体の自己テストの番人「期間を手打ちしている: pd.Timestamp('2026-01-01 10:55')」で落ちた＝軽い口の日付を作り物の足の最初の時刻からの差に直した。2回目＝❌ 0件・壊すプログラム6本とも決めた文で落ちた（25秒）。
+- 案を組む道具 b1s1_proposal_build.py とひな型 _b1s1_template.txt を作った（手本＝k3b_proposal_build.py）。止まった所と直し＝①新しく入る数字69件の出どころ（NUM_SRC）②前からの壊すプログラム b169・b158 が探す search_limits.json の複数行の間に6行を入れていた＝足す場所を範囲の表の始まりの行の直後に替えた ③項目の抜けの検算（gen_design_sections.py --check）が C-41（2026-10-18 の まこさんの要望＝手書きの監査依頼）で止まっていた＝前からの止まり。design_section_map.json は hook 12（CP41 の修正9 が当たっていない）に止められ、恒久74番で まこさんにエディタで直していただいた（外-3「設計書と関係のない行」に C-41）→ --check ✅（出どころ129件・項目33件）④表のマスのコマンドの「|」⑤2-1 の読み方の数字（名前の中の数字も止まる＝gen_acceptance.py:2084）⑥2-1 のコマンドは grep・sed ほかと決まった道具だけ（gen_acceptance.py:2024〜2062）。
+- 写しを通す前の指示（--plan --plan-instr）で、案を組む道具と設計書の試しが通った（指示34件＝コードと設定28・壊すプログラム6・案 778 行・設計書の試し 2,572 行）。
+- ★あとで直すこと＝design_section_map.json に、監査 CP41（2026-09-24_impl_instruction_design_cp41_audit_report.md）の修正9 がまだ当たっていない（hook 12 が止めた）。
+
+## §24 198回目＝案を出す前の試しの検査で止まった所を直した（範囲の指示を外し、文書の囲みの指示を足した）
+
+- 写しの確かめ（19:26〜19:32・❌ 0件・指示34件）の後、案の全文を5回に分けてチャットに出した。★案を出す前の試しの検査（trial_design.py）を走らせていなかった＝ターンの終わりの検査（require_trial_before_proposal）に止められて気づいた（教訓 L-709）。
+- 試しの検査で順に出た止まりと直し＝①直すファイルと手本をこのセッションの Read で開いていない（e38_logics.json・observe_config.json・search_limits.json・b152・build_regime_gate_rg.py・indicator_params_review.md・core_requirements.md）→ 開いた ②A13＝4-3 の部品の表に触る関数13個が無い → ひな形に行を足した ③A2＝塞げないものに Q5 の1〜5 が無い（require_acceptance_before_impl.sh:1349〜1358）→ 足した ④A2＝目的の照合（purpose_check.md）が 2026-10-15 の別の工事のまま → この工事の分に書き直した（対象に acceptance.md・目的の行に「変えない」の語を使わない）⑤A12＝仮当ての自己テストが「material_param_ranges に、カタログに無い指標の種類: 帯スイング」で落ちた。
+- ⑤の原因＝承認の前の仮当て（require_design_check_before_approval.py:811〜）は、実装の指示を当てた後にオン・オフの表を作り直さずに自己テストを走らせる。engine_tuner_gen.py:297〜299 は、オフの種類の範囲が範囲の表に在ると止める。★範囲の表に書かなくても、engine_tuner はカタログの値の最小と最大から範囲を作る（同 :286〜293）。その範囲は書くつもりだった範囲と同じ（写しで照らした・違い0件）→ 28番（search_limits.json）を外した。前の工事も同じ順番（K-3b は範囲を書かず、次の工事 m2c15-shape-settings-20261009 で書いた＝設計書の控えで数えた）。外したので、前からの壊すプログラムの一覧から search_limits.json を名指しする6本が外れた。
+- まこさん（逐語）「なにをやっている？」「時間かかりすぎなんだけど。」「何の案を作り直してる？」「良いけど、ミスが多すぎるから確認してから進めてほしい。できる？」→ 確かめる5つの順（案の差分・試しの検査・試しの設計書を全部 読んで見直し表・もう一度 試しの検査・出した文と案のファイルの照らし）を出して進めた。
+- 範囲の指示を外した後の試しの検査で、仮当ての gen_materials.py --selftest が F6・T6・B3・B4 で落ちた（許すのは T6 だけ＝require_design_check_before_approval.py:702〜710）。本物では gen_materials.py --verify が一致＝当てると数が変わる差し込みの囲み（知識の文書の件数の囲み・マイルストーン2本の照合の表）。手本＝K-3a・K-3c（worklog 20261008 §13）＝写しで gen_materials.py が書いた文を実装の指示にする。まこさん「よい」→ 写しの道具に足した（文書3本と materials.md・materials.json を写しの中で本物の写しにする safe_copy・写しで gen_materials.py --write → 本物との違いを r3.hunks で指示に・仮当てと同じ自己テスト4本を同じ状態で走らせる）。写しの確かめ（20:41〜20:51・22:51 の前の回）＝❌ 0件・文書の直し5か所（指標の種類 291→298・材料の一覧の行 297→304・決まった数字だけの一覧 38→40・囲みのハッシュ値）・本物の文書は走らせる前と後でハッシュ値が同じ。
+- 次の試しの検査で A9（設計↔実装ゲートの照合）が出た＝TARGET に入れた engine_tuner_milestones2.md に、§21 の U-1 の commit 前の変更が在ったため照らしが走り、まだ当てていない関数を「設計書に書いたのに実装に無い」（verify_design_contract.py:1051）と出した。A9 が当てる前として外す言葉は「実装していない」「実装にその関数が無い」だけ（require_design_check_before_approval.py:461・467）＝hook の食い違い（§6 に積む）。まこさん「A」→ U-1 の2本（m2_todo.json・engine_tuner_milestones2.md）を commit した（0717307b）。
+- 試しの設計書（2,641行）を全部 読んだ。見つけた抜け11か所＝§1 の⑤（材料を直さない決定と食い違い）・2-0 の順番に U-1 が無い・2-0b の F-6 と 3-0 の⑥が「3-2 で決める」のまま・3-0 の②が「案を書いた後に書き足す」のまま・4-19 が空・4-21 の「同上」3行（288・4・80）がすぐ上の行と違う物を指す・実装27 の説明の文が範囲の表を名指し・4-12 に仮当てと同じ自己テストの結果が無い（ほか 4-3・4-7・4-9・4-10・5・6-2・7-3b・7-4・7-5 は前の直しで済）。直して、写しの確かめ（21:51〜22:02・❌ 0件・指示38件）→ 案（832行）→ 見直し表（94項目・止める理由0件・根拠125件）→ 試しの検査（22:14〜22:21・A群 0件・古い語 0件）。
+- 止められた事＝①古い語の指定に、区切りのカンマを含む語を入れた ②python3 - <<EOF と python3 -c が設計↔実装ゲートに止められた（block_repeat_kind・lessons.md に書いた）③cd した後の相対のパスの py_compile が「走らせた記録」に数えられなかった（同）④見直し表の根拠を「やることの表.md」の名前だけで書き、別の工事の同じ名前のファイルに当たった（根からのパスに直した）。
+
+## §25 198回目＝案に まこさんの OK・設計書を作った（ToDo の70番の設計書の段まで）
+
+- 案の全文（832行）を6回に分けてチャットに出した（uuid e7145a20…・ab9d64d8…・ad7a058b…・ffdeb541…・af8f9311…・4fed6620…）。一時の工事名で写して案のファイルと diff＝違いは返信の区切りの空行・頭の空白（実装の指示の項目の間）と最後の改行だけ。
+- まこさん「OK」（da63018b…）→ 逐語のファイル okd_b1s1_proposal_20261020（797行）・ok_b1s1_proposal_20261020（1行）を工事のフォルダに書いた（--verify 2本とも1文字も違わない）。
+- gen_acceptance.py --work m2c15-band-s1-20261020 --write → .claude/state/acceptance.md（2,642行・試しとの違いは 0-1 の節だけ）。見直し表 .claude/state/reviews/acceptance.review.md（試しの表の中身を引き継ぎ、128行目より後の根拠を1行ずらし、0-1 の行を書き直した・止める理由 0件）。require_design_check_before_approval.py --try（22:35〜22:41）＝A1〜A8・B1・B2 全部 通る（不足 0件）。
+- 次＝設計書の監査の依頼書（ToDo の48番の Q8 が当たる）→ まこさんに起動していただく → 結果 → 直す範囲 → 修正を入れる → 承認。
+
+## §26 198回目＝締め（ToDo の71番）
+
+- まこさん「セッション締めたほうがいいよね？」→ 勧め（締める）→「OK」。宣言 →「OK」。
+- ToDo＝48番を「まだ（次＝B-1＋S-1 の設計書の監査の依頼書で当たる）」、70番を「まだ（次の回は、ここから）」に書き替え、71番＝締め。next_step の元データを書き替え、§6 に4件を足した（A9 の言葉の食い違い・PVO と TSI の軸3・design_section_map.json の CP41 の修正9・同じ日の --inspect の上書き）。教訓 L-709 を足した。
