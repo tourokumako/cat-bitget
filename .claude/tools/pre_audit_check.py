@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -124,7 +125,47 @@ def _run(cmd: str) -> int:
     return int(r.returncode)
 
 
-def run() -> int:
+# ★2026-10-20（196回目・まこさん「OK」）＝照らす設計書を選べる旗 --design。
+#   なぜ＝一覧の「設計書と実物の照合」が acceptance.md に決め打ちで、前の工事（承認の控え）の監査の依頼書を作るとき、
+#   その工事と関係の無い いまの設計書を照らして落ちた（K-4 の実装の監査・記録 20261020 §12）。
+#   旗が無いときは今までどおり acceptance.md。照らした設計書は記録に書き、--verify で問われた設計書と同じかを見る。
+DESIGN_DIFF = "verify_design_contract.py --diff "
+DEFAULT_DESIGN = str(ROOT / ".claude/state/acceptance.md")
+
+
+def checks_for(design: str | None = None) -> list:
+    """CHECKS のうち、設計書と実物の照合の行だけを、渡された設計書に替えた一覧。"""
+    d = os.path.abspath(design) if design else DEFAULT_DESIGN
+    return [DESIGN_DIFF + d if c.startswith(DESIGN_DIFF) else c for c in CHECKS]
+
+
+# ★2026-10-20（196回目・まこさん決定「B」）＝分かっている食い違い。rc≠0 で、出力（標準出力＋標準エラー）のハッシュ値が
+#   ここと1文字も同じときだけ、記録の行に known の印を付け、--verify は止めない。出力が違えば（新しい食い違い）今までどおり止める。
+#   直して rc=0 になれば、この行は使われなくなる（そのときは消してよい）。
+KNOWN_NG = {
+    INDICATOR_SOURCES_CHECK: dict(
+        sha="13c462ef1acd6db611d7492fc7f3e4c138e0d33914889d869a48103d3f92cf6a",
+        why="②observe_config.json の material_params が、いまの資料の表から写し直した物と42行違う＝10-18 の22番で資料の表の代表の値を"
+            "1つにした後、material を作り直していない（next_step の あとで直すこと①・P-6・P-7 で直す）",
+        ok="まこさん「B」（2026-10-20・K-4 の実装の監査の依頼書を作るため・記録 20261020 §13）"),
+}
+
+
+def _run_out(cmd: str) -> tuple:
+    """_run と同じ走らせ方で、(終了コード, 標準出力＋標準エラー) を返す（分かっている食い違いの照らし用）。"""
+    parts = cmd.split()
+    r = subprocess.run([sys.executable, parts[0] if parts[0].startswith("/") else str(PR / parts[0])] + parts[1:],
+                       cwd=str(SDK), capture_output=True, text=True)
+    return int(r.returncode), (r.stdout or "") + (r.stderr or "")
+
+
+def known_ng(cmd: str, rc: int, out: str) -> bool:
+    """rc≠0 で、出力のハッシュ値が KNOWN_NG と同じか。"""
+    k = KNOWN_NG.get(cmd)
+    return bool(k) and rc != 0 and hashlib.sha256(out.encode("utf-8")).hexdigest() == k["sha"]
+
+
+def run(design: str | None = None) -> int:
     """決まった順番で走らせ、結果を json に書く。"""
     rows = []
     print("=" * 70)
@@ -145,16 +186,25 @@ def run() -> int:
         print(f"  {'OK' if rc == 0 else 'NG'} {cmd}  rc={rc}（{time.time() - t0:.1f}秒）")
         rows.append(dict(cmd=cmd, kind=kind, rc=rc, note=why))
     print("-" * 70)
-    for cmd in CHECKS:
+    for cmd in checks_for(design):
         t0 = time.time()
-        rc = _run(cmd)
+        if cmd in KNOWN_NG:
+            rc, out = _run_out(cmd)
+            if known_ng(cmd, rc, out):
+                print(f"  既知 {cmd}  rc={rc}（{time.time() - t0:.1f}秒）＝分かっている食い違い（出力が同じ）: {KNOWN_NG[cmd]['why']}")
+                rows.append(dict(cmd=cmd, kind="check", rc=rc, known=True,
+                                 note=f"分かっている食い違い（{KNOWN_NG[cmd]['why']}・{KNOWN_NG[cmd]['ok']}）"))
+                continue
+        else:
+            rc = _run(cmd)
         print(f"  {'OK' if rc == 0 else 'NG'} {cmd}  rc={rc}（{time.time() - t0:.1f}秒）")
         rows.append(dict(cmd=cmd, kind="check", rc=rc, note="監査に出す前の検査"))
     data = dict(_これは何か="監査に出す前のチェックの結果（pre_audit_check.py が書く＝手で書き換えない）",
-                at=time.strftime("%Y-%m-%d %H:%M:%S"), fingerprint=code_fingerprint(), rows=rows)
+                at=time.strftime("%Y-%m-%d %H:%M:%S"), fingerprint=code_fingerprint(),
+                design=os.path.abspath(design) if design else DEFAULT_DESIGN, rows=rows)
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"[作成] {OUT}（指紋 {data['fingerprint'][:16]}…）")
-    ng = [r for r in rows if r.get("rc") not in (0, None)]
+    ng = [r for r in rows if r.get("rc") not in (0, None) and not r.get("known")]
     waiting = [r for r in rows if r.get("rc") is None]
     if ng:
         print(f"NG rc が0でないもの {len(ng)} 件＝このままでは監査に出せません")
@@ -198,8 +248,8 @@ def approve_problem(cmd: str, rows: list) -> str | None:
     return None
 
 
-def verify_problems() -> list[str]:
-    """監査に出せる状態かを確かめる。1件でも返れば出せない。"""
+def verify_problems(design: str | None = None) -> list[str]:
+    """監査に出せる状態かを確かめる。1件でも返れば出せない。design＝問われた設計書（無ければ acceptance.md）。"""
     if not OUT.exists():
         return [f"チェックの1枚が無い（{OUT.name}）＝ python3 .claude/tools/pre_audit_check.py --run を打つ"]
     try:
@@ -209,8 +259,14 @@ def verify_problems() -> list[str]:
     ng = []
     if d.get("fingerprint") != code_fingerprint():
         ng.append("チェックの後にコードが変わっている（指紋の不一致）＝ --run をもう一度 打つ")
+    # ★2026-10-20＝チェックが照らした設計書が、問われた設計書と同じか（記録に名前が無い前の記録は acceptance.md と読む）
+    want = os.path.abspath(design) if design else DEFAULT_DESIGN
+    got = d.get("design") or DEFAULT_DESIGN
+    if got != want:
+        ng.append(f"チェックが照らした設計書が違う（照らした {got} ／ 問われた {want}）＝ --run --design {want} を打つ")
     for r in (d.get("rows") or []):
-        if r.get("rc") not in (0, None):
+        # ★2026-10-20＝分かっている食い違い（run が出力のハッシュ値で照らして印を付けた行）は止めない。一覧に無い道具の印は認めない
+        if r.get("rc") not in (0, None) and not (r.get("known") and r.get("cmd") in KNOWN_NG):
             ng.append(f"rc が0でない: {r.get('cmd')}（rc={r.get('rc')}）")
         if r.get("rc") is None and r.get("kind") == "approve":
             # ★2026-09-06＝承認の印を見る（直す前は、打っても打たなくても止めていた）
@@ -220,8 +276,8 @@ def verify_problems() -> list[str]:
     return ng
 
 
-def verify() -> int:
-    ng = verify_problems()
+def verify(design: str | None = None) -> int:
+    ng = verify_problems(design)
     if ng:
         print("監査に出せません:")
         for x in ng:
@@ -273,6 +329,44 @@ def selftest() -> int:
         for _m in _MUST_IN_CHECKS:
             if _m not in CHECKS:
                 ng.append(f"P8: 監査の前に走らせる一覧から外されている: {_m}")
+        # ★P9（2026-10-20）＝照らした設計書が問われた設計書と違えば止まり、同じなら通る。一覧の照合の行だけが替わる
+        _other = str(ROOT / ".claude/state/_selftest_other_design.md")
+        OUT.write_text(ok_json, encoding="utf-8")            # 記録に設計書の名前が無い＝acceptance.md を照らした記録
+        if not any("照らした設計書が違う" in x for x in verify_problems(_other)):
+            ng.append("P9-1: 照らした設計書が問われた設計書と違うのに通る")
+        OUT.write_text(json.dumps(dict(fingerprint=fp, design=_other, rows=[
+            dict(cmd="gen_materials.py --verify", kind="check", rc=0)]), ensure_ascii=False), encoding="utf-8")
+        if verify_problems(_other):
+            ng.append(f"P9-2: 同じ設計書を照らした記録なのに落ちる: {verify_problems(_other)}")
+        if not any("照らした設計書が違う" in x for x in verify_problems()):
+            ng.append("P9-3: 別の設計書を照らした記録で、acceptance.md を問うと通る")
+        _cf = checks_for(_other)
+        if (len(_cf) != len(CHECKS) or DESIGN_DIFF + _other not in _cf
+                or [c for c in _cf if not c.startswith(DESIGN_DIFF)] != [c for c in CHECKS if not c.startswith(DESIGN_DIFF)]):
+            ng.append("P9-4: 一覧の照合の行のほかが替わった／照合の行が替わらない")
+        # ★P10（2026-10-20・まこさん「B」）＝分かっている食い違いは、出力のハッシュ値が同じときだけ印が付き、--verify は止めない。
+        #   出力が違えば印は付かない。一覧に無い道具の行に印が在っても、--verify は止める。
+        _kc = INDICATOR_SOURCES_CHECK
+        _ko = "見本の出力"
+        _saved_k = dict(KNOWN_NG[_kc])
+        KNOWN_NG[_kc]["sha"] = hashlib.sha256(_ko.encode("utf-8")).hexdigest()
+        try:
+            if not known_ng(_kc, 1, _ko):
+                ng.append("P10-1: 出力のハッシュ値が同じなのに、分かっている食い違いと見ない")
+            if known_ng(_kc, 1, _ko + "（1行 違う）"):
+                ng.append("P10-2: 出力が違うのに、分かっている食い違いと見る")
+            if known_ng(_kc, 0, _ko) or known_ng("gen_materials.py --verify", 1, _ko):
+                ng.append("P10-3: rc=0 か一覧に無い道具なのに、分かっている食い違いと見る")
+        finally:
+            KNOWN_NG[_kc] = _saved_k
+        OUT.write_text(json.dumps(dict(fingerprint=fp, rows=[dict(cmd=_kc, kind="check", rc=1, known=True)]),
+                                  ensure_ascii=False), encoding="utf-8")
+        if verify_problems():
+            ng.append(f"P10-4: 印の付いた分かっている食い違いの行で止まる: {verify_problems()}")
+        OUT.write_text(json.dumps(dict(fingerprint=fp, rows=[dict(cmd="gen_materials.py --verify", kind="check", rc=1, known=True)]),
+                                  ensure_ascii=False), encoding="utf-8")
+        if not any("gen_materials.py --verify" in x for x in verify_problems()):
+            ng.append("P10-5: 一覧に無い道具の行に印が在ると通る")
         # P6（実経路）hook を呼ぶ＝依頼書の Write が止まるか／この判定で止まらないか
         hook = ROOT / ".claude/hooks/require_acceptance_before_impl.sh"
         inp = json.dumps(dict(tool_name="Write", tool_input=dict(
@@ -328,7 +422,7 @@ def selftest() -> int:
         elif OUT.exists():
             OUT.unlink()
     print("=" * 70)
-    print("pre_audit_check 自己検査（番人 P1〜P8）")
+    print("pre_audit_check 自己検査（番人 P1〜P10）")
     print("=" * 70)
     for x in ng:
         print(f"  NG {x}")
@@ -487,15 +581,25 @@ def main() -> int:
     if "--check-design" in a:
         i = a.index("--check-design")
         return check_design(a[i + 1] if len(a) > i + 1 else None)
+    _dz = a[a.index("--design") + 1] if "--design" in a and len(a) > a.index("--design") + 1 else None
+    if _dz and not os.path.isfile(_dz):
+        print(f"❌ --design の設計書が無い: {_dz}")
+        return 2
     if "--run" in a:
-        return run()
+        return run(_dz)
     if "--verify" in a:
-        return verify()
+        return verify(_dz)
     if "--check-indicator-sources" in a:
         # ★2026-10-07＝照らしの道具だけを走らせる口（工事の始め・資料を足した直後に、9分の全部を待たずに確かめる）。
         #   この道具は土台ゲートの「走らせてよい道具」の一覧に在るので、ここから呼べば Bash から打てる。
         #   --only-1（①だけ）と --selftest（照らしの道具の自己テスト）は、そのまま渡す＝この道具の --selftest より先に見る。
         return subprocess.run([sys.executable, INDICATOR_SOURCES_CHECK] + [x for x in a if x in ("--only-1", "--selftest")]).returncode
+    if "--known-hash" in a:
+        # ★2026-10-20＝分かっている食い違いの道具を、--run と同じ走らせ方で1回 走らせ、出力のハッシュ値と、一覧の値と同じかを出す（書かない）
+        for cmd in KNOWN_NG:
+            rc, out = _run_out(cmd)
+            print(f"{cmd}  rc={rc}  sha={hashlib.sha256(out.encode('utf-8')).hexdigest()}  一覧と同じ={known_ng(cmd, rc, out)}")
+        return 0
     if "--selftest" in a:
         return selftest()
     print(__doc__)

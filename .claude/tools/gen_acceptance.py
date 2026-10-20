@@ -141,6 +141,10 @@ def forbidden_items():
 #   ★項目をここ以外に書かない（2か所に書くと片方だけ直って食い違う）。
 MAP = RATCHET / "design_section_map.json"
 DEST = STATE / "acceptance.md"
+# ★2026-10-20（まこさん「塞ぐ」・ToDo の24番）＝承認の控えの置き場。--out はここへ書けない（控え＝承認した設計書の証拠）
+ARCHIVE = RATCHET / "acceptance_archive"
+# ★2026-10-20（ToDo の26番・監査 CP78 の Major の残りと Minor G）＝監査の結果ファイルの置き場。自己テストは一時の置き場に替えて、見本の結果ファイルで 6-4 の行を測る
+AUDITS = SDK / ".claude" / "audits"
 
 # ── 正本（この道具が読む相手・手で写さない）─────────────────────────
 SWITCH = RATCHET / "indicator_switch.json"
@@ -834,6 +838,10 @@ def _indicator_rows(text: str) -> list:
                  f"| {_esc(p.get('最初の値（デイトレ）', '（置き場に行が無い）'))}（{_esc(p.get('最初の値の出どころ（デイトレ）', '—'))}） "
                  f"| {'在る' if (k in on or k in off) else '無い'} | {'在る' if k in in_table else '無い'} "
                  f"| {'オン' if k in on else ('オフ' if k in off else 'オンとオフの一覧に名前が無い')} | {_esc(th_s)} |")
+    # ★2026-10-20（ToDo の26番・監査 CP78 の Minor B・まこさん「CCの勧めでよい」）＝カタログの列は、行が出る指標ではいつも「在る」。
+    #   カタログに無い名前は行が出ないだけで、このプログラムは見つけられない。そのことを表の下に出す（列は外さない）
+    L += ["", "行が出るのは、カタログ（指標の定義の表）に在る名前だけです。カタログに無い名前を案に書いても、"
+              "このプログラムは見つけられません（その名前の行は出ません）。"]
     return L + [""]
 
 
@@ -886,7 +894,7 @@ def _design_audit_reports(d: dict) -> list:
     key = str(d.get("iter") or "").replace("-", "_")
     if not key:
         return []
-    return sorted(str(p.relative_to(ROOT)) for p in (SDK / ".claude" / "audits").glob(f"*_{key}_design_cp*_audit_report.md"))
+    return sorted(str(p.relative_to(ROOT)) for p in AUDITS.glob(f"*_{key}_design_cp*_audit_report.md"))
 
 
 def _sections_rc() -> tuple:
@@ -2276,6 +2284,14 @@ def page(d: dict) -> str:
     add(build("ACCEPT_TABLE", d))
     add(_end("ACCEPT_TABLE"))
     add("")
+    # ★2026-10-20（ToDo の26番・監査 CP78 の Minor C）＝検査が読む「行が無いやることの番号と、その理由」の行を、設計書にも写す
+    #   （直す前は、検査が読むのに設計書に出ず、監査が理由を見られなかった）。新しい形だけ（案の文は新しい形にだけ在る）
+    _excuse = [ln.strip() for ln in (d.get("案の文") or {}).get("7-6") or [] if ln.strip().startswith("- 行が無いやることの番号")] if new else []
+    if _excuse:
+        add(_wtag("自動", "まこさんが OK した案の【7-6】の、行が無いやることの番号と理由の行"))
+        for ln in _excuse:
+            add(ln)
+        add("")
     # ★2026-09-09（設計書 gen-acceptance-tool-20260909）＝見出しに SPEC の語を入れない。
     #   なぜ＝突き合わせの道具（verify_design_contract.extract_block）は、見出しに語が在れば
     #   それを目印として数え、その後ろの最初の囲みを読む。見出しに SPEC と書くと、
@@ -2626,7 +2642,9 @@ def selftest() -> int:
     """
     import copy as _copy
     import shutil
-    global WORK
+    # ★2026-10-20（ToDo の26番・監査 CP78 の Minor G）＝置き場3本と監査の結果ファイルの置き場を、T25 と T26 の間だけ一時の写しに替える
+    global WORK, PARAMS, ROLES, SWITCH, AUDITS
+    _saved_paths = (PARAMS, ROLES, SWITCH, AUDITS)
     ok = 0
     total = 0
 
@@ -2999,7 +3017,25 @@ def selftest() -> int:
         _tp.write_text(_o21, encoding="utf-8")
         # 置き場から写す行（法則の原文・指標の行）と、新しく入る数字の抜き出し
         total += 1
+        # ★2026-10-20（ToDo の26番・監査 CP78 の Minor G）＝本物の置き場3本（資料の表2本・オンとオフの一覧）と、監査の結果ファイルに頼らない。
+        #   見本の写しを一時の置き場に作り、T25 と T26 の間だけ差し替える（外の finally で必ず戻す）
+        _fx = tmpd / "fixture"
+        (_fx / "audits").mkdir(parents=True, exist_ok=True)
+        PARAMS, ROLES, SWITCH, AUDITS = _fx / "params.json", _fx / "roles.json", _fx / "switch.json", _fx / "audits"
+        PARAMS.write_text(json.dumps({"指標": [{"種類": "ADX", "パラメータの名前": ["期間"],
+                                               "範囲": [{"下限": 7, "上限": 30, "出どころ": "見本の出どころ"}],
+                                               "最初の値（スキャル）": 7, "最初の値の出どころ（スキャル）": "見本",
+                                               "最初の値（デイトレ）": 14, "最初の値の出どころ（デイトレ）": "見本"}]},
+                                     ensure_ascii=False), encoding="utf-8")
+        ROLES.write_text(json.dumps([{"種類": "ADX", "出どころの役割": "見本の役割", "役割の印": "filter"},
+                                     {"種類": "POC", "出どころの役割": "見本の役割", "役割の印": "location",
+                                      THRESHOLD_KEY: {"最初の値（スキャル）": 1, "最初の値（デイトレ）": 2, "範囲": "0〜5", "出どころ": "見本の出どころ"}}],
+                                    ensure_ascii=False), encoding="utf-8")
+        SWITCH.write_text(json.dumps({"on": ["ADX", "POC", "前日POC"], "off": ["見本のオフの指標"]}, ensure_ascii=False), encoding="utf-8")
+        _rep_fx = AUDITS / f"2026-01-01_{WORK.replace('-', '_')}_design_cp1_audit_report.md"
+        _rep_fx.write_text("# 見本の監査の結果\n", encoding="utf-8")
         _r47 = "\n".join(_auto_rows("4-7", ["ADX に関わる"], {}))
+        _rpoc = "\n".join(_auto_rows("4-7", ["POC に関わる"], {}))                          # 閾値の欄が在れば写す
         _r46 = "\n".join(_auto_rows("4-6", ["法則 C1 を守る"], {}))
         _n25 = _new_numbers({"実装の指示": [{"番号": 1, "対象のファイル": "scripts/priority_rebuild/x.py",
                                          "直す前の文字": "a = 1", "中身": "a = 1\nb = 250  # 300 は使わない"}]})
@@ -3024,15 +3060,68 @@ def selftest() -> int:
                 "場面の決まり": "| R1 |" in _rscn and "掛かる場面" in _rscn,
                 "型の名前": f"| {_fam0.get('id')} |" in _rfam,
                 "探す材料": "この工事が関わる指標＝2種" in _mat,
-                "監査の結果ファイル": any("design_cp77_audit_report" in p for p in _design_audit_reports({"iter": "design-doc-gen-form-20261013"})),
-                "数字": _n25 == [("1", "250")]}
+                "監査の結果ファイル": _design_audit_reports({"iter": WORK}) == [str(_rep_fx.relative_to(ROOT))],
+                "数字": _n25 == [("1", "250")],
+                # ★2026-10-20（監査 CP78 の Minor D・Minor B）
+                "閾値の欄を写す": "スキャル 1／デイトレ 2／範囲 0〜5" in _rpoc,
+                "閾値の未決": f"未決（置き場 {ROLES.name} に「{THRESHOLD_KEY}」の欄が無い）" in _r47,
+                "カタログの注記": "カタログに無い名前を案に書いても" in _r47}
         if all(_c25.values()):
             ok += 1
-            print(f"   T{total} 置き場から、指標の行（カタログ・型の表・オンとオフ）・時間足・法則と場面の決まりの原文・型を写す。関わる指標だけを数える。新しく入る数字を抜き出す → pass")
+            print(f"   T{total} 置き場から、指標の行（カタログ・型の表・オンとオフ・閾値の欄と未決）・時間足・法則と場面の決まりの原文・型を写す。関わる指標だけを数える。新しく入る数字を抜き出す → pass")
         else:
             print(f"   T{total} 置き場から写す行・数字の抜き出し → fail（落ちた物＝{[k for k, v in _c25.items() if not v]}）")
+
+        # 新しい形の設計書の 6-4・7-6・4-19・§4 の並び（2026-10-20・ToDo の26番・監査 CP78 の Major の残り・Minor C・Minor D。出る番号は T26）
+        #   ＝見本の監査の結果ファイル（上の写しの置き場）で 6-4 の行が出るか／案の【7-6】の理由の行が設計書に写るか／
+        #     4-19 が新しい形の名前で出るか／§4 の項目が項目の正本の並び順で出るか
+        total += 1
+        try:
+            _d26 = src()
+            _d26.setdefault("案の文", {}).setdefault("7-6", []).append("- 行が無いやることの番号と、その理由：見本の理由")
+            _p26 = page(_d26)
+            _m26 = _load(MAP)
+            _n419 = next((str(x.get("新しい形の名前")) for x in _m26.get("項目") or [] if isinstance(x, dict) and x.get("番号") == "4-19"), "")
+            _heads = [h for h in re.findall(r"^### (4-\d+) ", _p26, flags=re.M)]
+            _ord = [x for x in (_m26.get("_§4の並び順") or []) if x in _heads]
+            _c26 = {"6-4 の行": "**6-4 この設計書が受けた設計書の監査**＝" in _p26 and _rep_fx.name in _p26,
+                    "7-6 の理由の行": "- 行が無いやることの番号と、その理由：見本の理由" in _p26,
+                    "4-19 の新しい名前": bool(_n419) and f"### 4-19 {_n419}" in _p26,
+                    "§4 の並び順": bool(_heads) and list(dict.fromkeys(_heads)) == _ord}
+        except SystemExit as e:
+            _c26 = {f"止まった（{str(e)[:120]}）": False}
+        if all(_c26.values()):
+            ok += 1
+            print(f"   T{total} 新しい形の設計書に、6-4 の監査の結果ファイル・7-6 の理由の行・4-19 の新しい名前が出て、§4 が並び順どおり → pass")
+        else:
+            print(f"   T{total} 新しい形の設計書の 6-4・7-6・4-19・§4 の並び → fail（落ちた物＝{[k for k, v in _c26.items() if not v]}）")
+        PARAMS, ROLES, SWITCH, AUDITS = _saved_paths
         WORK = _keep_work
         _NEW_FORM = False
+
+        # --out の控えの止め（2026-10-20・まこさん「塞ぐ」・ToDo の24番。出る番号は T27、最後の T14 の項目は T28 になる）＝--out は承認の控えの置き場へ書けない。ほかの置き場へは今までどおり書ける
+        #   main() を旗つきで呼び、旗 → 判定 → 書く／止める のつながりごと試す。控えの置き場には存在しない名前だけを渡す
+        total += 1
+        _argv = sys.argv
+        _miss = ARCHIVE / "_selftest_out_block.md"
+        _c27 = {}
+        try:
+            # 見本のやり取りの記録は1本を共有し、T19 の新しい形の見本が書き替えている＝古い形の見本を作り直してから使う
+            WORK = _sample_work(tmpd)
+            for _key, _o in (("控えの置き場", _miss), ("大文字の控えの置き場", Path(str(_miss).replace("acceptance_archive", "ACCEPTANCE_ARCHIVE")))):
+                sys.argv = ["gen_acceptance.py", "--work", WORK, "--out", str(_o)]
+                _c27[_key] = main() == 2 and not _miss.exists()
+            _okp = tmpd / "out_ok.md"
+            sys.argv = ["gen_acceptance.py", "--work", WORK, "--out", str(_okp)]
+            _c27["ほかの置き場"] = main() == 0 and _okp.is_file()
+        finally:
+            sys.argv = _argv
+            WORK = _keep_work
+        if all(_c27.values()):
+            ok += 1
+            print(f"   T{total} --out が承認の控えの置き場（大文字にしたパスも）を指すと止まり、ほかの置き場には書ける → pass")
+        else:
+            print(f"   T{total} --out の控えの置き場の止め → fail（落ちた物＝{[k for k, v in _c27.items() if not v]}）")
 
         # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない
         total += 1
@@ -3044,6 +3133,7 @@ def selftest() -> int:
             print(f"   T{total} 本物のファイルが変わった → fail（{changed[:3]}）")
     finally:
         WORK, gv.VERBATIM_DIR, gv.ARCHIVE_DIR = saved
+        PARAMS, ROLES, SWITCH, AUDITS = _saved_paths
         shutil.rmtree(tmpd, ignore_errors=True)
     print(f"\n{'✅' if ok == total else '❌'} selftest {ok}/{total} pass")
     return 0 if ok == total else 1
@@ -3070,6 +3160,11 @@ def main() -> int:
         out = Path(a.out).resolve()
         if not a.work or out == DEST.resolve() or out.suffix != ".md":
             print("❌ --out は --work と一緒のときだけ・本物の設計書以外の .md にだけ書けます")
+            return 2
+        # 大文字小文字だけ違うパスも同じ置き場に書けてしまう（macOS）ので、casefold して比べる
+        arch = str(ARCHIVE.resolve()).casefold()
+        if str(out).casefold() == arch or str(out).casefold().startswith(arch + "/"):
+            print(f"❌ --out は承認の控えの置き場（{ARCHIVE}）の中には書けません")
             return 2
         return write(dest=out)
     if a.write:

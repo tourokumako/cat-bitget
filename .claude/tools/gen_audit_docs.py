@@ -399,23 +399,37 @@ def write_out(path: str, text: str, kind: str) -> bool:
     return True
 
 
-def inputs_gate(out_path: str) -> list:
-    """inputs に依頼書を書くときの照らし（いまの監査依頼書ゲートと同じ）。inputs でなければ何も見ない。"""
+def inputs_gate(out_path: str, target: str = "") -> list:
+    """inputs に依頼書を書くときの照らし（いまの監査依頼書ゲートと同じ）。inputs でなければ何も見ない。
+    target＝依頼書の元データのメタ「監査の相手」（リポジトリからの相対のパス）。"""
     if not INPUT_REQUEST_RE.search(os.path.realpath(out_path)):
         return []
     errs = []
+    # ★2026-10-20（196回目・まこさん「OK」）＝監査の相手が承認の控え（acceptance_archive の .md）のときは、その控えを照らす。
+    #   直す前は、前の工事の控えの依頼書でも、いまの設計書（acceptance.md＝別の工事）を照らして落ちた（K-4・記録 20261020 §12）。
+    arch = os.path.join(ROOT, target) if (target and "/acceptance_archive/" in target and target.endswith(".md")) else ""
     # ★2026-10-18（ToDo の15番）＝設計書の無い直しの監査（名前に _nodesign_）は、承認する設計書が無いので、承認との照らしをしない。
     #   監査に出す前のチェック（下）は、ほかの監査と同じく掛ける。
     if "_design_" not in os.path.basename(out_path) and "_nodesign_" not in os.path.basename(out_path):
-        now = sha256_file(DESIGN) if os.path.isfile(DESIGN) else ""
-        want = open(APPROVED, encoding="utf-8").read().strip() if os.path.isfile(APPROVED) else ""
-        if not want or now != want:
-            errs.append(f"設計書が承認と食い違うので、依頼書を作れない（承認 {want[:16]}… ／ いまの設計書 {now[:16]}…）")
+        if arch:
+            # 控えは承認のときに作られて git に入る＝git の版（HEAD）と1文字も違わなければ、承認した版のまま
+            r = subprocess.run(["git", "-C", ROOT, "show", f"HEAD:{target}"], capture_output=True)
+            now = sha256_file(arch) if os.path.isfile(arch) else ""
+            want = hashlib.sha256(r.stdout).hexdigest() if r.returncode == 0 else ""
+            if not want or now != want:
+                errs.append(f"承認の控えが git の版と食い違うので、依頼書を作れない（git {want[:16]}… ／ 控え {now[:16]}…・{target}）")
+        else:
+            now = sha256_file(DESIGN) if os.path.isfile(DESIGN) else ""
+            want = open(APPROVED, encoding="utf-8").read().strip() if os.path.isfile(APPROVED) else ""
+            if not want or now != want:
+                errs.append(f"設計書が承認と食い違うので、依頼書を作れない（承認 {want[:16]}… ／ いまの設計書 {now[:16]}…）")
     if os.path.isfile(PRE_AUDIT_CHECK):
-        r = subprocess.run([sys.executable, PRE_AUDIT_CHECK, "--verify"], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, PRE_AUDIT_CHECK, "--verify"] + (["--design", arch] if arch else []),
+                           capture_output=True, text=True)
         if r.returncode != 0:
             errs.append("監査に出す前のチェック（pre_audit_check.py --verify）が通っていない。"
-                        "python3 .claude/tools/pre_audit_check.py --run を打ち、全部 rc=0 にしてから作る")
+                        "python3 .claude/tools/pre_audit_check.py --run" + (f" --design {arch}" if arch else "")
+                        + " を打ち、全部 rc=0 にしてから作る")
     return errs
 
 
@@ -741,7 +755,7 @@ def build_request(src_path: str, out_path: str) -> int:
              f"body_sha256={sha256_text(text)} -->\n")
     errs += consistency_errors(src)                   # ★2026-10-01（工事 point5-q5label-20261001）＝節どうしの食い違いが在れば書かない
     errs += request_content_errors(text)              # ★2026-10-02（144回目）＝中身（必読・経緯・問い2）が監査に要る形でなければ書かない
-    errs += inputs_gate(out_path)
+    errs += inputs_gate(out_path, meta.get("監査の相手", ""))
     for e in errs:
         print(f"❌ {e}")
     if errs and INPUT_REQUEST_RE.search(os.path.realpath(out_path)):

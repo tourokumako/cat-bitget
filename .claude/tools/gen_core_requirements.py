@@ -52,20 +52,31 @@ OUT_FULL = ROOT / ".claude" / "rules" / "core_requirements_full.md"    # 全文�
 HEAD = "<!-- CORE_REQUIREMENTS gen_core_requirements.py が逐語のファイルから作った＝手で書き換えない -->"
 HEAD_FULL = "<!-- CORE_REQUIREMENTS_FULL gen_core_requirements.py が逐語のファイルから作った＝手で書き換えない -->"
 
-# 切り出す所＝（逐語のファイル, 始まりの行の頭, 終わりの行の頭〔この行は入れない〕, 上に付ける見出し〔None＝付けない〕）
+# ★2026-10-20（まこさん決定「確定して良い」・設計書の監査を付けるかは置き場で決める）＝その決定の逐語のファイルの置き場
+WORK2 = "design-audit-scope-20261020"
+# 切り出す所＝（工事のフォルダ, 逐語のファイル, 始まりの行の頭, 終わりの行の頭〔この行は入れない〕, 上に付ける見出し〔None＝付けない〕,
+#               この部分を決定にした まこさんの発言〔(逐語のファイル, 日付) か None〕）
 PARTS = (
-    ("okd_requirements_core_20261012.txt", "# 要件定義（CAT プロジェクトと engine_tuner の目的と要件）", "---", None),
-    ("okd_work_flow_20261012.txt", "## 流れ（", "## いま起きていること",
-     "# 工事の流れ（やることリストの1件を進める順）"),
-    ("okd_design_audit_scope_20261012.txt", "| 直す物 | 設計書の監査 |", "2行目は、私の考えです",
-     "# 設計書の監査が要る物・要らない物"),
+    (WORK, "okd_requirements_core_20261012.txt", "# 要件定義（CAT プロジェクトと engine_tuner の目的と要件）", "---", None, None),
+    (WORK, "okd_work_flow_20261012.txt", "## 流れ（", "## いま起きていること",
+     "# 工事の流れ（やることリストの1件を進める順）", None),
+    # ★2026-10-20＝10-12 の表は消さない（固定・消さない）。見出しで「置き替わった」と分かるようにする
+    (WORK, "okd_design_audit_scope_20261012.txt", "| 直す物 | 設計書の監査 |", "2行目は、私の考えです",
+     "# 設計書の監査が要る物・要らない物（2026-10-12 の決定・下の 2026-10-20 の決定で置き替わった）",
+     ("ok_design_audit_scope_20261012.txt", "2026-10-12")),
+    (WORK2, "okd_design_audit_scope_20261020.txt", "1. 売買のロジック・材料", "**確定した後",
+     "# 設計書の監査が要る物・要らない物（2026-10-20 の決定・いまの決まり）",
+     ("ok_design_audit_scope_20261020.txt", "2026-10-20")),
 )
-DECISION = "ok_design_audit_scope_20261012.txt"          # 上の3つ目の表を決定にした、まこさんの発言
 # ★2026-10-18＝要約（まこさんが OK した CC の文）。「■ 1. 」の行から、囲みの終わり「```」の手前まで。
 SUMMARY = "okd_summary_20261018.txt"
 SUMMARY_OK = "ok_summary_20261018.txt"
 SUMMARY_START = "■ 1. "
 SUMMARY_END = "```"
+# ★2026-10-20＝要約の 10 だけは、まこさんが OK した次の案（WORK2 の逐語のファイル）から写す。「## 10. 題」の行から「```」の手前まで
+SUMMARY10 = "okd_summary10_20261020.txt"
+SUMMARY10_OK = "ok_summary10_20261020.txt"
+SUMMARY10_START = "## 10. "
 CORE_SECTIONS = ("1", "2", "3", "7", "8", "10")            # いつも載せる芯
 ENGINE_SECTIONS = ("4", "5", "6", "9")                      # 売買のロジックに触る工事のときだけ足す
 
@@ -74,16 +85,16 @@ class CoreError(SystemExit):
     pass
 
 
-def _read(name: str) -> list:
-    p = SRC / name
+def _read(name: str, work: str = WORK) -> list:
+    p = SRC.parent / work / name
     if not p.is_file():
         raise CoreError(f"[gen_core_requirements] 逐語のファイルが無い（fail-closed）: {p}")
     return p.read_text(encoding="utf-8").splitlines()
 
 
-def _cut(name: str, start: str, end: str) -> list:
+def _cut(name: str, start: str, end: str, work: str = WORK) -> list:
     """逐語のファイルから、start で始まる行から、その後の end で始まる行の手前までを返す。前後の空の行は落とす。"""
-    lines = _read(name)
+    lines = _read(name, work)
     i0 = next((i for i, ln in enumerate(lines) if ln.startswith(start)), None)
     if i0 is None:
         raise CoreError(f"[gen_core_requirements] {name} に、始まりの行「{start}」が無い（fail-closed）")
@@ -100,27 +111,30 @@ def _cut(name: str, start: str, end: str) -> list:
 
 def build_full_lines() -> list:
     """全文（core_requirements_full.md）の全部の行を、逐語のファイルから作る。"""
-    names = "・".join(p[0] for p in PARTS)
+    works = list(dict.fromkeys(p[0] for p in PARTS))
+    names = "／".join(f"`.claude/state/verbatim/{w}/` の " + "・".join(p[1] for p in PARTS if p[0] == w) for w in works)
     out = [HEAD_FULL,
            "# 要件定義と工事の流れ（全文・固定・消さない）",
            "",
            "★この文書は、まこさんが OK した文を、プログラムが逐語のファイルから写した物です。"
            "見出しの3行と、この説明の4行だけが、プログラムの中の決まった文です。",
-           f"★出どころ＝`.claude/state/verbatim/{WORK}/` の {names}"
-           f"（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify {WORK}/<名前>`）。",
+           f"★出どころ＝{names}"
+           "（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。",
            "★作り直し＝`python3 .claude/tools/gen_core_requirements.py --write`。検出＝`--verify`。",
            "★毎回 載せる物は、この全文の要約（`.claude/rules/core_requirements.md`）です。設計書の監査の要件ごとの問いは、この全文から組みます。",
            ""]
-    for name, start, end, title in PARTS:
+    for work, name, start, end, title, decision in PARTS:
         if title:
             out += [title, ""]
-        out += _cut(name, start, end)
+        out += _cut(name, start, end, work)
         out.append("")
-    dec = [ln.strip() for ln in _read(DECISION) if ln.strip()]
-    if not dec:
-        raise CoreError(f"[gen_core_requirements] {DECISION} が空（fail-closed）")
-    out.append(f"まこさんの決定（逐語 2026-10-12）＝「{'／'.join(dec)}」")
-    out.append("")
+        if decision:
+            dname, ddate = decision
+            dec = [ln.strip() for ln in _read(dname, work) if ln.strip()]
+            if not dec:
+                raise CoreError(f"[gen_core_requirements] {dname} が空（fail-closed）")
+            out.append(f"まこさんの決定（逐語 {ddate}）＝「{'／'.join(dec)}」")
+            out.append("")
     return out
 
 
@@ -157,6 +171,17 @@ def summary_sections() -> list:
         raise CoreError(f"[gen_core_requirements] 要約の節が 1〜10 の順でない（{nums}・fail-closed）")
     if set(CORE_SECTIONS) | set(ENGINE_SECTIONS) != set(nums):
         raise CoreError("[gen_core_requirements] 芯と追加の節の分け方が、要約の節と合わない（fail-closed）")
+    # ★2026-10-20＝10 の本文は、まこさんが OK した次の案（SUMMARY10）に替える。題が前の要約と違えば止まる（題は変えない）
+    new10 = _cut(SUMMARY10, SUMMARY10_START, SUMMARY_END, WORK2)
+    m10 = re.match(r"^## 10\. (.+)$", new10[0])
+    if not m10 or m10.group(1).strip() != out[9][1]:
+        raise CoreError(f"[gen_core_requirements] {SUMMARY10} の 10 の題が、要約の 10 の題「{out[9][1]}」と違う（fail-closed）")
+    body10 = new10[1:]
+    while body10 and not body10[0].strip():
+        body10.pop(0)
+    if not body10:
+        raise CoreError(f"[gen_core_requirements] {SUMMARY10} の 10 の本文が空（fail-closed）")
+    out[9][2] = body10
     return out
 
 
@@ -165,7 +190,8 @@ def build_lines() -> list:
     out = [HEAD,
            "# 要件定義と工事の流れ（固定・毎回 読む・消さない）",       # ★題は変えない（設計書・next_step・依頼書が、この題を「固定の文が在る目印」にしている）
            "",
-           f"★この文書は、まこさんが OK した要約（2026-10-18・逐語のファイル `{SUMMARY}`・OK の発言＝`{SUMMARY_OK}`）を、"
+           f"★この文書は、まこさんが OK した要約（2026-10-18・逐語のファイル `{SUMMARY}`・OK の発言＝`{SUMMARY_OK}`。"
+           f"10 だけは 2026-10-20 の `{WORK2}/{SUMMARY10}`・OK の発言＝`{SUMMARY10_OK}`）を、"
            "プログラムが写した物です。見出しの行と、この説明の4行だけが、プログラムの中の決まった文です。",
            f"★全文＝`.claude/rules/{OUT_FULL.name}`（同じプログラムが逐語のファイルから作る）。要約の中の まこさんの言葉"
            "（「」の行と、機能要件の6行）が全文に1文字も違わずに在ることを、`--verify` が照らします。",
