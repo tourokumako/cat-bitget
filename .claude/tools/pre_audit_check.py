@@ -144,10 +144,14 @@ def checks_for(design: str | None = None) -> list:
 #   直して rc=0 になれば、この行は使われなくなる（そのときは消してよい）。
 KNOWN_NG = {
     INDICATOR_SOURCES_CHECK: dict(
-        sha="13c462ef1acd6db611d7492fc7f3e4c138e0d33914889d869a48103d3f92cf6a",
-        why="②observe_config.json の material_params が、いまの資料の表から写し直した物と42行違う＝10-18 の22番で資料の表の代表の値を"
-            "1つにした後、material を作り直していない（next_step の あとで直すこと①・P-6・P-7 で直す）",
-        ok="まこさん「B」（2026-10-20・K-4 の実装の監査の依頼書を作るため・記録 20261020 §13）"),
+        # ★2026-10-21（工事 m2c15-band-s1-20261020 の実装の後・まこさん「OK」）＝出力が設計書 4-12 の見込みどおりに変わったので取り直した。
+        #   直す前＝sha 13c462ef…（material_params の42行だけ・まこさん「B」2026-10-20・K-4 の実装の監査の依頼書を作るため・記録 20261020 §13）
+        sha="222dadd4f4ee492802b52183bea5c0efb34c549d870e056f23a89f7303c813c5",
+        why="②observe_config.json の material_params が、いまの資料の表から写し直した物と44行違う（10-18 の22番で資料の表の代表の値を"
+            "1つにした後、material を作り直していない42行と、工事 m2c15-band-s1-20261020 で足した LeeMykland・LeeMykland_E36版 の2行）。"
+            "search_limits.json の material_param_ranges が10行違う（同じ工事の新しい10種の範囲＝設計書の 4-9 で、範囲の表には書かないと"
+            "決めた分）。next_step の あとで直すこと①・P-6・P-7 で直す",
+        ok="まこさん「OK」（2026-10-21・B-1＋S-1 の実装の監査の依頼書を作るため・記録 20261021）"),
 }
 
 

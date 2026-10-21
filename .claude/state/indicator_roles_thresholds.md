@@ -8,12 +8,12 @@
 
 | 数 | 件数 |
 |---|---|
-| 役割が出どころで確かめられた | 79 |
+| 役割が出どころで確かめられた | 89 |
 | 役割が食い違う | 30 |
 | 役割が食い違う疑い（語の数だけ） | 34 |
-| 閾値が数字で確かめられた | 12 |
-| 閾値は文だけ | 113 |
-| 閾値が無い | 50 |
+| 閾値が数字で確かめられた | 14 |
+| 閾値は文だけ | 119 |
+| 閾値が無い | 52 |
 
 | 種類 | 今の系統（答える問いの区分） | 今の向き | 出どころの役割 | 役割の印 | 閾値 |
 |---|---|---|---|---|---|
@@ -192,3 +192,13 @@
 | close vs HT_TRENDLINE_HL% | 構造・位置（位置） | 反転サイン | 無い |  | 無い |
 | close vs MAMA_HL% | 構造・位置（位置） | 反転サイン | 係の調べ（逐語✅）：向き | 食い違い | 無い |
 | close vs FAMA_HL% | 構造・位置（位置） | 反転サイン | 係の調べ（逐語✅）：向き | 食い違い | 無い |
+| LeeMykland | ボラ（値動きの幅） | 向きつき＝大きいほど統計的にありえない上げ・小さいほど下げ | 係の調べ（逐語✅）：値動きの幅 |  | 既定：[1]（棄却の境目を決める有意水準の例として 1%）［順位4］<br>既定：[4.6001]（有意水準 1% のときの境目 β*。標準化した ／L(i)／ がこれを超えると「jump が無い」を棄却する）［順位4］<br>既定：[5]（論文のシミュレーションで使った有意水準 5%）［順位4］ |
+| 帯スイング | 構造・位置（位置） | 状態量＝1 はレンジの帯の中 | 係の調べ（逐語✅）：位置 |  | 無い |
+| 帯pivot | 構造・位置（位置） | 状態量＝1 は前の日の R1 と S1 の間 | 係の調べ（逐語✅）：位置 |  | 文 5 件（例＝the chart below shows the nasdaq 100 etf (qqq) with standard pivot points on a 15-minute chart.） |
+| 帯VA | 構造・位置（位置） | 状態量＝1 は前の日の VAL と VAH の間 | 係の調べ（逐語✅）：位置 |  | 文 1 件（例＝for example, to calculate the volume profile for one daily session, the system loads all 1-minute bars that were traded ） |
+| 帯スイング1時間ATR | 構造・位置（位置） | 状態量＝1 はレンジの帯の中 | 係の調べ（逐語✅）：位置 |  | 無い |
+| 帯pivot1時間ATR | 構造・位置（位置） | 状態量＝1 は前の日の R1 と S1 の間 | 係の調べ（逐語✅）：位置 |  | 文 5 件（例＝the chart below shows the nasdaq 100 etf (qqq) with standard pivot points on a 15-minute chart.） |
+| 帯VA1時間ATR | 構造・位置（位置） | 状態量＝1 は前の日の VAL と VAH の間 | 係の調べ（逐語✅）：位置 |  | 文 1 件（例＝for example, to calculate the volume profile for one daily session, the system loads all 1-minute bars that were traded ） |
+| 帯pivot前週 | 構造・位置（位置） | 状態量＝1 は前の週の R1 と S1 の間 | 係の調べ（逐語✅）：位置 |  | 文 5 件（例＝the chart below shows the nasdaq 100 etf (qqq) with standard pivot points on a 15-minute chart.） |
+| 帯pivot前週1時間ATR | 構造・位置（位置） | 状態量＝1 は前の週の R1 と S1 の間 | 係の調べ（逐語✅）：位置 |  | 文 5 件（例＝the chart below shows the nasdaq 100 etf (qqq) with standard pivot points on a 15-minute chart.） |
+| LeeMykland_E36版 | ボラ（値動きの幅） | 向きつき＝大きいほど統計的にありえない上げ・小さいほど下げ | 係の調べ（逐語✅）：値動きの幅 |  | 既定：[1]（棄却の境目を決める有意水準の例として 1%）［順位4］<br>既定：[4.6001]（有意水準 1% のときの境目 β*。標準化した ／L(i)／ がこれを超えると「jump が無い」を棄却する）［順位4］<br>既定：[5]（論文のシミュレーションで使った有意水準 5%）［順位4］ |

@@ -401,6 +401,22 @@
   1.5
  ],
  "_sr_atr1h_k": "★2026-09-26（M2-E-4c・束2・設計書 m2e-bundle2-20260926）に足した。S-Rタッチ1時間ATR（帯の許容幅＝倍率 × 1時間足の ATR% を 0.15%〜0.6% に収める部品）の倍率。★新しい数字は作っていない。0.5・1.0・1.5＝recipes/search_limits.json の ref_mult_range（0.5〜1.5・まこさん承認 24a453d6…）と同じ数字。この用途での承認＝まこさん決定 2026-09-26（逐語「CCの案の通りで進める」）＝監査 cp21 の m2 が『この用途では未承認』とした分。下端 0.5 は、上の sr_tol の説明に写した出どころの逐語 V25_K = 0.5 と同じ。★2026-09-06 に外した sr_atr_k（同じ3つの数字）とは別の名前＝外した記録と混ざらない。",
+ "band_touch": [
+  2,
+  3,
+  4
+ ],
+ "_band_touch": "★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝帯スイング と 帯スイング1時間ATR のタッチの回数（帯pivot・帯VA は触れた回数を数えない＝まこさん「Aでいい」ok_pivot_a_20261020）（上の線と下の線のそれぞれに、確定したスイングが何回以上あるか）。出どころ＝まこさん「1,2OK」（タッチは3・4回・worklog 20261003 §35 の3）。★2026-10-21（監査 CP83 の後の調べ・まこさん「OK」）＝2 を足した。教科書の値＝StockCharts の Rectangle の逐語「At least two equivalent reaction highs are required to form the upper resistance line and two equivalent reaction lows to form the lower support line.」（出どころの順位2）。3 と 4 だけでは engine_tuner が教科書の値 2 を試せない（直すべき指標の条件の1番）。2〜4 の出どころ＝§2.2 の段1 の表「タッチ2〜4」（engine_tuner_milestones2.md:457）。探す範囲は、engine_tuner がこの一覧の最小から最大まで（2〜4）で作る（engine_tuner_gen.material_ranges）",
+ "band_fee_mult": 2,
+ "_band_fee_mult": "★2026-10-20（B-1）＝帯の部品の「取れる距離」の床の倍数（床＝e37_scalp.SCALP_FLOOR 0.08% × この倍数）。名前に出さない値（まこさん「OK」ok_three_points_20261020 の1＝最初の値 2）。範囲の出どころ＝§2.2 の段1 の表「幅の床0.08%×2〜6倍」（engine_tuner_milestones2.md:457）。この値を変えると、コードを直さずに帯の部品の床が変わる（まこさん「値を変更して試せるようにする」）",
+ "lee_mykland_k": [
+  16,
+  78,
+  110,
+  156,
+  270
+ ],
+ "_lee_mykland_k": "★2026-10-20（工事 m2c15-band-s1-20261020・S-1）＝スパイクの法則 S1 の部品（LeeMykland・LeeMykland_E36版）の K（ふだんの揺れを測る本数）。★2026-10-21（監査 CP83 の修正7・まこさん「案B」「甲」）＝Lee-Mykland（2008）の足の長さごとの推奨値の全部（逐語「Our specific recommendation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.」2542ページ・週足の 7 は使う時間足に週足が無いので入れない）。K は名前に出す＝最後の段階で 16〜270 を範囲で探せる。論文に無い足（1m・3m・10m・2h・4h・6h）の値を CC は作らない（どの足でも5つ全部を計算する）",
  "mmi_periods": [
   200,
   300,

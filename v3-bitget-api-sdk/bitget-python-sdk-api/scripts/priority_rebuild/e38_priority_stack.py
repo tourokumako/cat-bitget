@@ -165,7 +165,8 @@ def main() -> None:
     gen_trades: list = []
     if gen_logics:                               # 段2 以降: 汎用部品ロジックを先に回して統合（段1 恒等時は空＝従来経路のみ）
         adaptive_k = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
-        dfp = e38_logic_parts.prepare_df(df.copy(), adaptive_k=adaptive_k)
+        # ★2026-10-21（工事 m2c15-band-s1-20261020・F-4・監査 CP83 の修正5）＝帯の1時間足の区切り（設定 global.regime.h1_edge）を渡す
+        dfp = e38_logic_parts.prepare_df(df.copy(), adaptive_k=adaptive_k, h1_edge=cfg["global"]["regime"]["h1_edge"])
         for lg in sorted(gen_logics, key=lambda z: (int(z["priority"]), str(z["id"]))):
             if _entry_point(lg) == "grid_loop":            # グリッド（S5/L5・要件 R2・2026-08-04）
                 tr = e38_logic_parts.grid_loop(

@@ -10,6 +10,8 @@
     "regime": {
       "v20_rg5": true,
       "v25_adaptive_band": true,
+      "h1_edge": "right",
+      "note_h1_edge": "★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69・まこさん「すべて案どおりでよい」ok_d1_20261004 の③）＝帯の1時間足の区切り。right＝今（label=right・closed=right＝10:05〜11:05）／hour＝正時（10:00〜11:00）。既定は今のまま（売買の結果は変わらない）。どちらが良いかは M2-F-10f で一致率で比べる",
       "name": "range",
       "entry_col": "range_ok_rg5",
       "block_col": "rg5_uptrend",

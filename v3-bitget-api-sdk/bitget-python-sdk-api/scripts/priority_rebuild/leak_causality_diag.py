@@ -200,7 +200,8 @@ def run_e38_trades(cut=None) -> pd.DataFrame:
     gen_logics = [lg for lg in cfg["logics"] if lg["enabled"] and e38._is_generic(lg)]
     if gen_logics:
         adaptive_k = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
-        dfp = e38_logic_parts.prepare_df(df.copy(), adaptive_k=adaptive_k)
+        # ★2026-10-21（工事 m2c15-band-s1-20261020・F-4・監査 CP83 の修正5）＝帯の1時間足の区切り（設定 global.regime.h1_edge）を渡す
+        dfp = e38_logic_parts.prepare_df(df.copy(), adaptive_k=adaptive_k, h1_edge=cfg["global"]["regime"]["h1_edge"])
         for lg in sorted(gen_logics, key=lambda z: (int(z["priority"]), str(z["id"]))):
             args = (dfp, lg["entry"]["type"], lg["entry"]["params"], lg["exit"]["params"])
             mx = int(lg.get("params", {}).get("max_lots", 2))

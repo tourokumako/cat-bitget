@@ -1,0 +1,15 @@
+見つけていただいた3件を、ページを開いて確かめました。**TradingView の1件が使えます。これで、LeeMykland の K は「違うサイト2つ」の決まりを満たします。**
+
+| 見つけていただいた物 | ページと文（逐語） | 結果 |
+|---|---|---|
+| 1. TradingView | [Barndorff-Nielsen and Shephard Jump Statistic [Loxx]](https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/)：「It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.」 | **使えます。**本数で書いてあり、論文と同じ値です。調べる係の結果に足し、照らしの道具で「一致」になりました（パラメータの照らし 一致15・不一致1／役割の照らし 一致27） |
+| 2. Duke 大学 | [Van Tassel の論文](https://sites.duke.edu/djepapers/files/2016/11/Van-Tassel.pdf)：「Lee and Mykland recommend window sizes of 7 weeks, 16 days, 12 days, 8.5 days, 6 days, and 3.5 days for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.」 | **同じ値としては使えません。**本数ではなく、日数で書いてあるからです。本数に直すと、私が数字を作ることになるので、足していません |
+| 3. R の yuima | 今日の調べで見つかったページと同じです。K の既定は式です | 数としては使えません |
+
+**気をつけていただきたい点が2つあります。**
+- 1の TradingView のページは、Lee-Mykland の検定ではなく、近い別の統計（Barndorff-Nielsen and Shephard）のスクリプトです。ただし、同じページに Lee-Mykland の説明もあります。窓の本数の文は、論文の推奨と同じです。これを2つ目のサイトとして数えてよいかは、まこさんのご判断です。
+- 2の日数の書き方から、論文の推奨値は、米国株の取引時間（1日6.5時間）で数えた本数だと読めます。BTC は24時間動くので、5分足270本は約22.5時間です。教科書の値はそのまま使います。ただし、この違いは、M2-F-10f で一致率を比べるときの材料として、記録に残しておきます。
+
+**この先の見込み**：表のプログラムの決まりでは、スキャルの代表の値は 270 になる見込みです。デイトレは、156・110・78 の3つが候補になるので、決まった規則で1つになります。規則の最後は「小さい値」なので、78 になる見込みです。実際の値は、写しでプログラムを走らせて確かめます。
+
+1の TradingView を2つ目のサイトとして使ってよいですか。

@@ -1,0 +1,39 @@
+{
+ "_これは何か": "gen_verbatim.py が、やり取りの記録から抜き出した逐語のファイルの出どころ（手で書き換えない・--verify で照らす）",
+ "session": "/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/0634e517-88ea-4247-aa85-ff4c788b3157.jsonl",
+ "uuids": [
+  "56aa76a4-4833-43a1-9ad1-0b2816cbc0c8",
+  "4333479c-8249-4c83-aeb6-c46cdee3efae",
+  "7ca5f05d-dbc4-48f2-ae6e-743fb7ca82b0",
+  "766c2296-226c-4d84-ad99-8b084678eb4c",
+  "407bfd24-f7cb-4726-bf5d-efa9c10cde1c",
+  "9c9ca9b3-9525-4dd2-9367-6727ab8bf809",
+  "fda14a68-68fc-4b5a-bcee-23333ca70be5",
+  "2324e1bb-e72b-4b51-8ed3-30d59f195ce6",
+  "aac122f0-3cad-4d15-98bb-b9b6bbf45614"
+ ],
+ "who": [
+  "CC",
+  "CC",
+  "CC",
+  "CC",
+  "CC",
+  "CC",
+  "CC",
+  "CC",
+  "CC"
+ ],
+ "time": [
+  "2026-10-21T06:58:35.959Z",
+  "2026-10-21T06:59:29.968Z",
+  "2026-10-21T07:00:26.675Z",
+  "2026-10-21T07:01:54.076Z",
+  "2026-10-21T07:02:52.943Z",
+  "2026-10-21T07:03:47.828Z",
+  "2026-10-21T07:04:38.508Z",
+  "2026-10-21T07:05:57.178Z",
+  "2026-10-21T07:06:47.406Z"
+ ],
+ "sha256": "22c3b29f0c483ce93a46af9777b9855ddf2ade45359d3bbbae3207f14fea6545",
+ "drop": []
+}

@@ -1,0 +1,79 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-band-s1-20261020",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b189_band_swing_unconfirmed.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b189_band_swing_unconfirmed.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b190_band_swing_no_fee_floor.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b190_band_swing_no_fee_floor.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b191_band_lines_no_top.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b191_band_lines_no_top.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "4",
+   "script": "b193_hour_edge_label_late.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b193_hour_edge_label_late.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "5",
+   "script": "b192_lee_mykland_abs.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b192_lee_mykland_abs.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "6",
+   "script": "b195_lee_mykland_paper_window.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b195_lee_mykland_paper_window.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "7",
+   "script": "b196_band_pivot_week_as_day.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b196_band_pivot_week_as_day.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "8",
+   "script": "b194_e36_own_spike_stat.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b194_e36_own_spike_stat.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  }
+ ]
+}

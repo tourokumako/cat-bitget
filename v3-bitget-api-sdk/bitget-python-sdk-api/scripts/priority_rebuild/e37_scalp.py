@@ -514,7 +514,7 @@ def _import_rg5():
     return rgmod
 
 
-def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False):
+def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False, h1_edge: str = "right"):
     """v20: RG-v5 の 1h 帯と 5分判定（range/uptrend）を計算して返す（_apply_rg5_to_5m と selftest の共通実体）。
     未来値ゼロ（H2）＝1h/15分は確定バーのみ ffill・状態機械 rg5_uptrend_state は過去 close の逐次更新
     （RG 仕様欄「因果性」と同一・ロジックは build_regime_gate_rg.py を import 再利用＝コピー禁止）。
@@ -524,7 +524,8 @@ def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False):
     既定 False＝返り値は従来どおり7個（ほかの呼び出し元を壊さない）。"""
     rgmod = _import_rg5()
     d5 = df.set_index(pd.DatetimeIndex(df["ts"]))[["open", "high", "low", "close", "volume"]]
-    _d1h = rgmod.v17._resample(d5, "1h")
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝1時間足の区切り（right＝今・hour＝正時）。既定は今のまま
+    _d1h = rgmod.v17._resample(d5, "1h", h1_edge)
     _tol = rgmod._adaptive_tol_1h(_d1h, adaptive_k) if adaptive_k is not None else None   # v25: RG-v6 適応束ね幅
     z1h = rgmod._zones_1h_rg(_d1h, tol_arr=_tol)
     idx5 = pd.DatetimeIndex(df["ts"])
@@ -545,11 +546,11 @@ def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False):
     return z1h, up, rng, res_lo, res_hi, sup_lo, sup_hi
 
 
-def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
+def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None, h1_edge: str = "right") -> pd.DataFrame:
     """v20: RG-v5（帯対拡張＋上げトレンド状態機械・視認校正3巡）で range_ok_rg5（GATE_IDENT）と
     rg5_uptrend を計算し、v11 エンジンの帯列へ供給する（acceptance 2026-07-12・実体は _rg5_frames）。
     adaptive_k 指定時＝RG-v6 束ね幅ボラ連動（v25・acceptance 2026-07-16）＝既定 None は RG-v5 恒等。"""
-    _, up, rng, res_lo, res_hi, sup_lo, sup_hi, okz, brk = _rg5_frames(df, adaptive_k, with_parts=True)
+    _, up, rng, res_lo, res_hi, sup_lo, sup_hi, okz, brk = _rg5_frames(df, adaptive_k, with_parts=True, h1_edge=h1_edge)
     df["rg5_uptrend"] = up
     df["range_ok_rg5"] = rng
     # ★M2-1-5 と同じ書き足し（2026-08-20 まこさん OK）＝中間の列2本を出す（M2-1-4 の決めごと4）。

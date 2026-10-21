@@ -299,10 +299,13 @@ def load_windows(windows, warm: pd.Timedelta) -> list[pd.DataFrame]:
     raw = e37._load(0, start_override=str(lo.date()))
     cfg = config()
     adaptive_k = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝帯の1時間足の区切りを設定（global.regime.h1_edge）から読む。
+    #   無ければ止める（黙って今の区切りに戻さない）。測る道具（regime_r9_diag・engine_tuner）が受け取る帯はここを通る。
+    h1_edge = cfg["global"]["regime"]["h1_edge"]
     out = []
     for (s, e) in windows:
         d = raw[(raw["ts"] >= s - warm) & (raw["ts"] < e)].reset_index(drop=True).copy()
-        out.append(parts.prepare_df(d, adaptive_k=adaptive_k))
+        out.append(parts.prepare_df(d, adaptive_k=adaptive_k, h1_edge=h1_edge))
     return out
 
 

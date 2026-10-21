@@ -1,0 +1,69 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_band_cluster",
+  "_band_fee_floor",
+  "_band_lines",
+  "_band_material",
+  "_band_swing",
+  "_band_tol_1h",
+  "_insp_hidden_params",
+  "_insp_range_geo",
+  "build_catalog",
+  "build_range_geometry",
+  "lee_mykland_stat",
+  "selftest",
+  "selftest_band",
+  "spike_stat",
+  "spike_threshold"
+ ],
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>",
+  "_band_case",
+  "_band_known",
+  "_line_case",
+  "_line_case_w",
+  "_line_known",
+  "_line_known_w",
+  "_lm_case",
+  "_lm_jump_case",
+  "_lm_known_e36",
+  "_lm_known_paper",
+  "_tb_band_cluster",
+  "_tb_band_floor",
+  "_tb_band_swing",
+  "_tb_lee_mykland",
+  "_tb_lee_mykland_e36",
+  "_tb_tol_1h"
+ ],
+ "scripts/priority_rebuild/e37_scalp.py": [
+  "_apply_rg5_to_5m",
+  "_rg5_frames"
+ ],
+ "scripts/priority_rebuild/e38_logic_parts.py": [
+  "prepare_df"
+ ],
+ "scripts/priority_rebuild/tuner_adapters/e38.py": [
+  "load_windows"
+ ],
+ "scripts/priority_rebuild/e38_priority_stack.py": [
+  "main"
+ ],
+ "scripts/priority_rebuild/leak_causality_diag.py": [
+  "run_e38_trades"
+ ],
+ "scripts/priority_rebuild/tuner_adapters/e37.py": [
+  "_prepared"
+ ],
+ "scripts/priority_rebuild/e36_short_oscillation.py": [
+  "<モジュール直下>",
+  "spike_stat",
+  "spike_threshold"
+ ],
+ "scripts/dashboard/build_range_gate_dashboard.py": [
+  "_resample"
+ ]
+}

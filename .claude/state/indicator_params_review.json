@@ -12102,6 +12102,118 @@
   "メモ": "今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。"
  },
  {
+  "種類": "LeeMykland",
+  "元の指標": "Lee-Mykland の jump の検定統計 L(i)（Suzanne S. Lee と Per A. Mykland・\"Jumps in Financial Markets: A New Nonparametric Test and Jump Dynamics\"・Review of Financial Studies 2008 v21 n6）",
+  "パラメータの名前": [
+   "K（窓の本数）"
+  ],
+  "今のパラメータの組": [
+   [
+    16
+   ],
+   [
+    78
+   ],
+   [
+    110
+   ],
+   [
+    156
+   ],
+   [
+    270
+   ]
+  ],
+  "系統": "ボラ",
+  "既定": [
+   {
+    "値": "K=pmin(floor(sqrt(252*n)), n)",
+    "URL": "https://search.r-project.org/CRAN/refmans/yuima/html/lm.jumptest.html",
+    "逐語": "The default value is K=pmin(floor(sqrt(252*n)), n) with n=length(yuima)-1, following Lee and Mykland (2008) as well as Dumitru and Urga (2012).",
+    "出どころの質": "ライブラリの説明（R の yuima パッケージの lm.jumptest の説明。数ではなく、データの本数 n から K を決める式）",
+    "照らした印": "✗"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     270
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・5分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     270
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（TradingView のコミュニティのスクリプト・Loxx の Barndorff-Nielsen and Shephard Jump Statistic・5分足）・まこさんが 2026-10-21 に見つけた",
+    "照らした印": "✅"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     156
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・15分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     110
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・30分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     78
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・1時間足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     156
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・15分足）・まこさんが見つけた",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     110
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・30分足）・まこさんが見つけた",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     78
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・1時間足）・まこさんが見つけた",
+    "照らした印": "✅"
+   }
+  ],
+  "範囲": "無い",
+  "メモ": "今の組の 78・110・156・270 は、論文の1時間足・30分足・15分足・5分足の推奨値と同じで、今の組の 16 は論文の1日足（日足）の推奨値です。論文の週足の推奨値は 7 で、今の組には入っていません。論文は K の候補を1日の本数 nobs から「√(252×nobs) と 252×nobs の間の整数」と書き、数で範囲を書いているのは日足（15.87 から 252 の間の整数）だけなので、範囲は「無い」にしました。論文の図1と本文の例は K＝10（5分足の例）を使っていますが、推奨値ではないので入れていません。逐語は PDF から取り出した文字のままで、行の終わりの改行だけを空白1つに替えました（そのため「recommen- dation」と「satisﬁes」「speciﬁc」の合字 ﬁ が残っています）。"
+ },
+ {
   "種類": "close vs VWAP典型",
   "元の指標": "VWAP（出来高加重平均価格）。原典の形はセッションの始まりから積み上げてリセット。窓をずらす形は rolling VWAP",
   "パラメータの名前": [
@@ -13081,6 +13193,780 @@
   "範囲": "無い",
   "メモ": "調べた結果は「前期間pivotS1」の行を使う（K-7 の決定（ok_k7_pivot_thermo_20261007）＝前の週の版・まこさん決定「B」2026-10-07＝ok_k3a_rows_20261007）。元の行のメモ＝今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。",
   "元にした種類": "前期間pivotS1"
+ },
+ {
+  "種類": "帯スイング",
+  "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    144,
+    0.0015,
+    2
+   ],
+   [
+    144,
+    0.003,
+    2
+   ],
+   [
+    144,
+    0.006,
+    2
+   ],
+   [
+    144,
+    0.0015,
+    3
+   ],
+   [
+    144,
+    0.003,
+    3
+   ],
+   [
+    144,
+    0.006,
+    3
+   ],
+   [
+    144,
+    0.0015,
+    4
+   ],
+   [
+    144,
+    0.003,
+    4
+   ],
+   [
+    144,
+    0.006,
+    4
+   ],
+   [
+    288,
+    0.0015,
+    2
+   ],
+   [
+    288,
+    0.003,
+    2
+   ],
+   [
+    288,
+    0.006,
+    2
+   ],
+   [
+    288,
+    0.0015,
+    3
+   ],
+   [
+    288,
+    0.003,
+    3
+   ],
+   [
+    288,
+    0.006,
+    3
+   ],
+   [
+    288,
+    0.0015,
+    4
+   ],
+   [
+    288,
+    0.003,
+    4
+   ],
+   [
+    288,
+    0.006,
+    4
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「S-Rタッチ数」の行を使う（法則 R1・R7 の帯の部品＝確定した山・谷（Williams Fractal）を許容幅で束ねた支持線・抵抗線の帯（監査 CP60 の修正69・工事 m2c15-band-s1-20261020 の F-1）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝StockCharts の Support & Resistance の解説（https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance）は支持帯・抵抗帯の考え方を書くが、何本を見るか・帯の幅を何%にするかの数字は書いておらず、今の n（144・288）と許容幅（0.15%・0.3%・0.6%）に当たる出どころは見つからなかった。★パラメータの値は写さない（名前のパラメータ（窓・許容幅・タッチの回数）は S-Rタッチ数 のパラメータと軸が違う。タッチの回数の教科書の逐語（StockCharts の Rectangle「At least two equivalent reaction highs are required …」ほか）は research/touch_b1s1.json に残し、設定 band_touch（2・3・4）の出どころにする（まこさん「OK」ok_touch_234_20261021））。",
+  "元にした種類": "S-Rタッチ数"
+ },
+ {
+  "種類": "帯スイング1時間ATR",
+  "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    144,
+    0.5,
+    7,
+    2
+   ],
+   [
+    144,
+    0.5,
+    14,
+    2
+   ],
+   [
+    144,
+    0.5,
+    21,
+    2
+   ],
+   [
+    144,
+    1.0,
+    7,
+    2
+   ],
+   [
+    144,
+    1.0,
+    14,
+    2
+   ],
+   [
+    144,
+    1.0,
+    21,
+    2
+   ],
+   [
+    144,
+    1.5,
+    7,
+    2
+   ],
+   [
+    144,
+    1.5,
+    14,
+    2
+   ],
+   [
+    144,
+    1.5,
+    21,
+    2
+   ],
+   [
+    144,
+    0.5,
+    7,
+    3
+   ],
+   [
+    144,
+    0.5,
+    14,
+    3
+   ],
+   [
+    144,
+    0.5,
+    21,
+    3
+   ],
+   [
+    144,
+    1.0,
+    7,
+    3
+   ],
+   [
+    144,
+    1.0,
+    14,
+    3
+   ],
+   [
+    144,
+    1.0,
+    21,
+    3
+   ],
+   [
+    144,
+    1.5,
+    7,
+    3
+   ],
+   [
+    144,
+    1.5,
+    14,
+    3
+   ],
+   [
+    144,
+    1.5,
+    21,
+    3
+   ],
+   [
+    144,
+    0.5,
+    7,
+    4
+   ],
+   [
+    144,
+    0.5,
+    14,
+    4
+   ],
+   [
+    144,
+    0.5,
+    21,
+    4
+   ],
+   [
+    144,
+    1.0,
+    7,
+    4
+   ],
+   [
+    144,
+    1.0,
+    14,
+    4
+   ],
+   [
+    144,
+    1.0,
+    21,
+    4
+   ],
+   [
+    144,
+    1.5,
+    7,
+    4
+   ],
+   [
+    144,
+    1.5,
+    14,
+    4
+   ],
+   [
+    144,
+    1.5,
+    21,
+    4
+   ],
+   [
+    288,
+    0.5,
+    7,
+    2
+   ],
+   [
+    288,
+    0.5,
+    14,
+    2
+   ],
+   [
+    288,
+    0.5,
+    21,
+    2
+   ],
+   [
+    288,
+    1.0,
+    7,
+    2
+   ],
+   [
+    288,
+    1.0,
+    14,
+    2
+   ],
+   [
+    288,
+    1.0,
+    21,
+    2
+   ],
+   [
+    288,
+    1.5,
+    7,
+    2
+   ],
+   [
+    288,
+    1.5,
+    14,
+    2
+   ],
+   [
+    288,
+    1.5,
+    21,
+    2
+   ],
+   [
+    288,
+    0.5,
+    7,
+    3
+   ],
+   [
+    288,
+    0.5,
+    14,
+    3
+   ],
+   [
+    288,
+    0.5,
+    21,
+    3
+   ],
+   [
+    288,
+    1.0,
+    7,
+    3
+   ],
+   [
+    288,
+    1.0,
+    14,
+    3
+   ],
+   [
+    288,
+    1.0,
+    21,
+    3
+   ],
+   [
+    288,
+    1.5,
+    7,
+    3
+   ],
+   [
+    288,
+    1.5,
+    14,
+    3
+   ],
+   [
+    288,
+    1.5,
+    21,
+    3
+   ],
+   [
+    288,
+    0.5,
+    7,
+    4
+   ],
+   [
+    288,
+    0.5,
+    14,
+    4
+   ],
+   [
+    288,
+    0.5,
+    21,
+    4
+   ],
+   [
+    288,
+    1.0,
+    7,
+    4
+   ],
+   [
+    288,
+    1.0,
+    14,
+    4
+   ],
+   [
+    288,
+    1.0,
+    21,
+    4
+   ],
+   [
+    288,
+    1.5,
+    7,
+    4
+   ],
+   [
+    288,
+    1.5,
+    14,
+    4
+   ],
+   [
+    288,
+    1.5,
+    21,
+    4
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「S-Rタッチ数」の行を使う（帯スイング の許容幅を1時間足の ATR% に連動させた版（工事 m2c15-band-s1-20261020 の F-1）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝StockCharts の Support & Resistance の解説（https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance）は支持帯・抵抗帯の考え方を書くが、何本を見るか・帯の幅を何%にするかの数字は書いておらず、今の n（144・288）と許容幅（0.15%・0.3%・0.6%）に当たる出どころは見つからなかった。★パラメータの値は写さない（名前のパラメータ（窓・倍率・ATR の期間・タッチの回数）は S-Rタッチ数 のパラメータと軸が違う）。",
+  "元にした種類": "S-Rタッチ数"
+ },
+ {
+  "種類": "帯pivot",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.0015
+   ],
+   [
+    0.003
+   ],
+   [
+    0.006
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「前期間pivotR1」の行を使う（前の日の pivot R1・S1 を上下の線にした帯（工事 m2c15-band-s1-20261020 の F-2）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。★パラメータの値は写さない（名前のパラメータ（許容幅）は pivot のパラメータではない）。",
+  "元にした種類": "前期間pivotR1"
+ },
+ {
+  "種類": "帯pivot1時間ATR",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.5,
+    7
+   ],
+   [
+    0.5,
+    14
+   ],
+   [
+    0.5,
+    21
+   ],
+   [
+    1.0,
+    7
+   ],
+   [
+    1.0,
+    14
+   ],
+   [
+    1.0,
+    21
+   ],
+   [
+    1.5,
+    7
+   ],
+   [
+    1.5,
+    14
+   ],
+   [
+    1.5,
+    21
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「前期間pivotR1」の行を使う（帯pivot の許容幅を1時間足の ATR% に連動させた版（工事 m2c15-band-s1-20261020 の F-2）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。★パラメータの値は写さない（名前のパラメータ（倍率・ATR の期間）は pivot のパラメータではない）。",
+  "元にした種類": "前期間pivotR1"
+ },
+ {
+  "種類": "帯pivot前週",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.0015
+   ],
+   [
+    0.003
+   ],
+   [
+    0.006
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「前期間pivotR1」の行を使う（前の週の pivot R1・S1 を上下の線にした帯（監査 CP83 の修正12・まこさん「ウ」）・まこさん「修正12（Minor）→ウ」2026-10-21＝ok_cp83_choices_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。★パラメータの値は写さない（名前のパラメータ（許容幅）は pivot のパラメータではない）。",
+  "元にした種類": "前期間pivotR1"
+ },
+ {
+  "種類": "帯pivot前週1時間ATR",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.5,
+    7
+   ],
+   [
+    0.5,
+    14
+   ],
+   [
+    0.5,
+    21
+   ],
+   [
+    1.0,
+    7
+   ],
+   [
+    1.0,
+    14
+   ],
+   [
+    1.0,
+    21
+   ],
+   [
+    1.5,
+    7
+   ],
+   [
+    1.5,
+    14
+   ],
+   [
+    1.5,
+    21
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「前期間pivotR1」の行を使う（帯pivot前週 の許容幅を1時間足の ATR% に連動させた版（監査 CP83 の修正12・まこさん「ウ」）・まこさん「修正12（Minor）→ウ」2026-10-21＝ok_cp83_choices_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。★パラメータの値は写さない（名前のパラメータ（倍率・ATR の期間）は pivot のパラメータではない）。",
+  "元にした種類": "前期間pivotR1"
+ },
+ {
+  "種類": "帯VA",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.0015
+   ],
+   [
+    0.003
+   ],
+   [
+    0.006
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「VAH」の行を使う（前の日の VAH・VAL を上下の線にした帯（工事 m2c15-band-s1-20261020 の F-3）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今は 288本の窓・上位70%帯で、70% は出どころの既定と同じ、期間の区切り方（ずらす窓 と Session）は違う。★パラメータの値は写さない（名前のパラメータ（許容幅）は Volume Profile のパラメータではない）。",
+  "元にした種類": "VAH"
+ },
+ {
+  "種類": "帯VA1時間ATR",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータの名前": [],
+  "今のパラメータの組": [
+   [
+    0.5,
+    7
+   ],
+   [
+    0.5,
+    14
+   ],
+   [
+    0.5,
+    21
+   ],
+   [
+    1.0,
+    7
+   ],
+   [
+    1.0,
+    14
+   ],
+   [
+    1.0,
+    21
+   ],
+   [
+    1.5,
+    7
+   ],
+   [
+    1.5,
+    14
+   ],
+   [
+    1.5,
+    21
+   ]
+  ],
+  "系統": "構造・位置",
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "調べた結果は「VAH」の行を使う（帯VA の許容幅を1時間足の ATR% に連動させた版（工事 m2c15-band-s1-20261020 の F-3）・まこさん「ok」2026-10-21＝ok_research_alias_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今は 288本の窓・上位70%帯で、70% は出どころの既定と同じ、期間の区切り方（ずらす窓 と Session）は違う。★パラメータの値は写さない（名前のパラメータ（倍率・ATR の期間）は Volume Profile のパラメータではない）。",
+  "元にした種類": "VAH"
+ },
+ {
+  "種類": "LeeMykland_E36版",
+  "元の指標": "Lee-Mykland の jump の検定統計 L(i)（Suzanne S. Lee と Per A. Mykland・\"Jumps in Financial Markets: A New Nonparametric Test and Jump Dynamics\"・Review of Financial Studies 2008 v21 n6）",
+  "パラメータの名前": [
+   "K（窓の本数）"
+  ],
+  "今のパラメータの組": [
+   [
+    16
+   ],
+   [
+    78
+   ],
+   [
+    110
+   ],
+   [
+    156
+   ],
+   [
+    270
+   ]
+  ],
+  "系統": "ボラ",
+  "既定": [
+   {
+    "値": "K=pmin(floor(sqrt(252*n)), n)",
+    "URL": "https://search.r-project.org/CRAN/refmans/yuima/html/lm.jumptest.html",
+    "逐語": "The default value is K=pmin(floor(sqrt(252*n)), n) with n=length(yuima)-1, following Lee and Mykland (2008) as well as Dumitru and Urga (2012).",
+    "出どころの質": "ライブラリの説明（R の yuima パッケージの lm.jumptest の説明。数ではなく、データの本数 n から K を決める式）",
+    "照らした印": "✗"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     270
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・5分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     270
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（TradingView のコミュニティのスクリプト・Loxx の Barndorff-Nielsen and Shephard Jump Statistic・5分足）・まこさんが 2026-10-21 に見つけた",
+    "照らした印": "✅"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     156
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・15分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     110
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・30分足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     78
+    ],
+    "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+    "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+    "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・1時間足）",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     156
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・15分足）・まこさんが見つけた",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     110
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・30分足）・まこさんが見つけた",
+    "照らした印": "✅"
+   },
+   {
+    "値": [
+     78
+    ],
+    "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+    "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+    "出どころの質": "その他（同じページ・1時間足）・まこさんが見つけた",
+    "照らした印": "✅"
+   }
+  ],
+  "範囲": "無い",
+  "メモ": "調べた結果は「LeeMykland」の行を使う（E36 の式（ふだんの揺れに今の1本を入れる版）。論文の版と K は同じ物（監査 CP83 の修正1・まこさん「案A」）・まこさん「修正１は案A」2026-10-21＝ok_cp83_choices_20261021・まこさん「OK」2026-10-21＝ok_alias_b1s1_20261021）。元の行のメモ＝今の組の 78・110・156・270 は、論文の1時間足・30分足・15分足・5分足の推奨値と同じで、今の組の 16 は論文の1日足（日足）の推奨値です。論文の週足の推奨値は 7 で、今の組には入っていません。論文は K の候補を1日の本数 nobs から「√(252×nobs) と 252×nobs の間の整数」と書き、数で範囲を書いているのは日足（15.87 から 252 の間の整数）だけなので、範囲は「無い」にしました。論文の図1と本文の例は K＝10（5分足の例）を使っていますが、推奨値ではないので入れていません。逐語は PDF から取り出した文字のままで、行の終わりの改行だけを空白1つに替えました（そのため「recommen- dation」と「satisﬁes」「speciﬁc」の合字 ﬁ が残っています）。",
+  "元にした種類": "LeeMykland"
  },
  {
   "種類": "W字確定谷",

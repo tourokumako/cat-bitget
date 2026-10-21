@@ -5675,6 +5675,342 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
    "at": "2026-10-20T15:15:25",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_design_cp83_audit_report.md",
+   "num": "2",
+   "file": ".claude/state/verbatim/m2c15-band-s1-20261020/やることの表.md",
+   "at": "2026-10-21T11:00:22",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_design_cp83_audit_report.md",
+   "num": "3",
+   "file": ".claude/state/verbatim/m2c15-band-s1-20261020/やることの表.md",
+   "at": "2026-10-21T11:00:22",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_design_cp83_audit_report.md",
+   "num": "6",
+   "file": ".claude/state/verbatim/m2c15-band-s1-20261020/やることの表.md",
+   "at": "2026-10-21T11:00:22",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_design_cp83_audit_report.md",
+   "num": "12",
+   "file": ".claude/state/verbatim/m2c15-band-s1-20261020/やることの表.md",
+   "at": "2026-10-21T11:00:22",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_design_cp83_audit_report.md",
+   "num": "16",
+   "file": ".claude/state/verbatim/m2c15-band-s1-20261020/やることの表.md",
+   "at": "2026-10-21T11:00:22",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "7",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "8",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "9",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "10",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "11",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "12",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "13",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "14",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "15",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "16",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "17",
+   "file": "scripts/priority_rebuild/e37_scalp.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "18",
+   "file": "scripts/priority_rebuild/e37_scalp.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "19",
+   "file": "scripts/priority_rebuild/e37_scalp.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "20",
+   "file": "scripts/priority_rebuild/e37_scalp.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "21",
+   "file": "scripts/priority_rebuild/e38_logic_parts.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "22",
+   "file": "scripts/priority_rebuild/e38_logic_parts.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "23",
+   "file": "scripts/priority_rebuild/tuner_adapters/e38.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "24",
+   "file": "scripts/priority_rebuild/e38_priority_stack.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "25",
+   "file": "scripts/priority_rebuild/leak_causality_diag.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "26",
+   "file": "scripts/priority_rebuild/tuner_adapters/e37.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "27",
+   "file": "scripts/priority_rebuild/e38_logics.json",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "28",
+   "file": "scripts/priority_rebuild/e36_short_oscillation.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "29",
+   "file": "scripts/dashboard/build_range_gate_dashboard.py",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "30",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "31",
+   "file": ".claude/memory/regime_detection_kb.md",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "32",
+   "file": ".claude/ratchet/engine_tuner_milestones.md",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "33",
+   "file": ".claude/ratchet/engine_tuner_milestones.md",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "34",
+   "file": ".claude/ratchet/engine_tuner_milestones2.md",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "35",
+   "file": ".claude/ratchet/engine_tuner_milestones2.md",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "36",
+   "file": ".claude/breaks/b189_band_swing_unconfirmed.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "37",
+   "file": ".claude/breaks/b190_band_swing_no_fee_floor.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "38",
+   "file": ".claude/breaks/b191_band_lines_no_top.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "39",
+   "file": ".claude/breaks/b192_lee_mykland_abs.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "40",
+   "file": ".claude/breaks/b195_lee_mykland_paper_window.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "41",
+   "file": ".claude/breaks/b196_band_pivot_week_as_day.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "42",
+   "file": ".claude/breaks/b193_hour_edge_label_late.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-band-s1-20261020",
+   "num": "43",
+   "file": ".claude/breaks/b194_e36_own_spike_stat.sh",
+   "at": "2026-10-21T16:48:04",
+   "how": "当てた"
   }
  ]
 }

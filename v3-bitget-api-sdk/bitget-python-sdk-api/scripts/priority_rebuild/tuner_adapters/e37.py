@@ -246,7 +246,8 @@ def _prepared(df: pd.DataFrame) -> pd.DataFrame:
     from tuner_adapters import e38 as _e38
     cfg = _e38.config()
     ak = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
-    out = parts.prepare_df(df.copy(), adaptive_k=ak)
+    # ★2026-10-21（工事 m2c15-band-s1-20261020・F-4・監査 CP83 の修正5）＝帯の1時間足の区切り（設定 global.regime.h1_edge）を渡す
+    out = parts.prepare_df(df.copy(), adaptive_k=ak, h1_edge=cfg["global"]["regime"]["h1_edge"])
     if len(_PREPARED) >= 2:                                # 値決め窓と確認窓の2つだけ持てば足りる
         _PREPARED.clear()
     _PREPARED[key] = out

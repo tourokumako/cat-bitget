@@ -62,13 +62,31 @@ PLOT_START = "2024-06-01"
 PLOT_END = "2026-06-01"   # 5分ビュー表示窓の上限（採点窓延長で2026-05まで表示・2026-07-15）
 
 
-def _resample(df5: pd.DataFrame, rule: str) -> pd.DataFrame:
-    o = df5["open"].resample(rule, label="right", closed="right").first()
-    h = df5["high"].resample(rule, label="right", closed="right").max()
-    l = df5["low"].resample(rule, label="right", closed="right").min()
-    c = df5["close"].resample(rule, label="right", closed="right").last()
-    v = df5["volume"].resample(rule, label="right", closed="right").sum()
-    return pd.DataFrame({"open": o, "high": h, "low": l, "close": c, "volume": v}).dropna(subset=["close"])
+def _resample(df5: pd.DataFrame, rule: str, edge: str = "right") -> pd.DataFrame:
+    """5分足を rule の足に束ねる。
+    ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69・まこさん「すべて案どおりでよい」ok_d1_20261004 の③）
+      edge="right"（既定・今のまま）＝label=right・closed=right。5分足の時刻はバーの始まりなので、1時間足は 10:05〜11:05 の足を束ねる。
+      edge="hour"＝正時で区切る（10:00〜11:00＝始まりが 10:00〜10:55 の足）。束ねた値の時刻は、区切りの最後の5分足の始まり（10:55）に
+      置く＝その足が閉じた 11:00 に1時間足が閉じる（未来を見ない・right と同じ「その行が閉じた時に確定済み」）。
+      既定は今のままなので、RG-v5・labels_v17 の結果は変わらない。"""
+    if edge == "right":
+        o = df5["open"].resample(rule, label="right", closed="right").first()
+        h = df5["high"].resample(rule, label="right", closed="right").max()
+        l = df5["low"].resample(rule, label="right", closed="right").min()
+        c = df5["close"].resample(rule, label="right", closed="right").last()
+        v = df5["volume"].resample(rule, label="right", closed="right").sum()
+        return pd.DataFrame({"open": o, "high": h, "low": l, "close": c, "volume": v}).dropna(subset=["close"])
+    if edge != "hour":
+        raise ValueError(f"_resample の edge は right か hour（{edge}）")
+    step = pd.Series(df5.index).diff().median()
+    o = df5["open"].resample(rule, label="left", closed="left").first()
+    h = df5["high"].resample(rule, label="left", closed="left").max()
+    l = df5["low"].resample(rule, label="left", closed="left").min()
+    c = df5["close"].resample(rule, label="left", closed="left").last()
+    v = df5["volume"].resample(rule, label="left", closed="left").sum()
+    out = pd.DataFrame({"open": o, "high": h, "low": l, "close": c, "volume": v}).dropna(subset=["close"])
+    out.index = out.index + pd.Timedelta(rule) - step
+    return out
 
 
 def _zones_1h(df: pd.DataFrame) -> pd.DataFrame:

@@ -52,11 +52,12 @@ def _adx_di_htf(h, l, c, n):
     return dx.ewm(alpha=1 / n, adjust=False).mean(), pdi, mdi
 
 
-def prepare_df(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
+def prepare_df(df: pd.DataFrame, adaptive_k=None, h1_edge: str = "right") -> pd.DataFrame:
     """部品が使う列を付ける（rsi9・RG-v5/v6 帯列・stoch_d・出来高移動平均・S2 確認2軸の上位足部品）。
     全て確定バーのみ（H2）＝上位足は『足が閉じた時刻』から ffill（observe_diag build_features と同じ方式）。"""
     df = e37._rsi9_v10(df)
-    df = e37._apply_rg5_to_5m(df, adaptive_k=adaptive_k)
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝帯の1時間足の区切り（right＝今・hour＝正時）。既定は今のまま
+    df = e37._apply_rg5_to_5m(df, adaptive_k=adaptive_k, h1_edge=h1_edge)
     df["e38_stoch_d"] = df["stoch_k"].rolling(3).mean()
     df["e38_vol_ma20"] = df["volume"].rolling(20).mean()
     # ★S2 確認2軸の上位足部品（2026-07-25 まこさん GO・観察の9組の部品そのまま・受け身の列＝既存挙動に不関与）

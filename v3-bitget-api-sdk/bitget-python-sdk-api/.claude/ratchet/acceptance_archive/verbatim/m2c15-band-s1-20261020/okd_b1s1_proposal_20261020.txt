@@ -1,0 +1,835 @@
+案です（工事 m2c15-band-s1-20261020＝B-1＋S-1＝法則どおりの帯の部品と S1 の部品を材料に足す・帯の1時間足の区切りを切り替えられる形にする。まこさん「OK　１〜4もOK」「OK」「Aでいい」）。本物のコードには、まだ1文字も書いていません。
+
+- 実装の指示 38 件＝コードと設定 32 件・新しい壊すプログラム 6 本。写しの道具（.claude/state/indicator_review/b1s1_draft_build.py）が、一時のフォルダの写しに全部 当てて確かめた（結果は 4-12 と 6-1）。
+
+【4-0 この仕組みは何か】
+材料（指標一覧＝observe_diag.py の材料の表とカタログ）に、法則 R1（価格が何回も跳ね返された線が上下に在るか）・R7（取れる距離が往復の手数料を超えるか）の部品と、法則 S1（今の1本の値動きが統計的にありえないほど大きいか）の部品を足します。帯の部品は3種類です。①帯スイング＝確定したスイングを許容幅で束ねた上と下の帯（上の帯の山と下の帯の谷がそれぞれ 3・4 回以上・取れる距離が手数料の床以上・終値がその間なら 1）②帯pivot＝前の日で固定の R1・S1 の間に終値が在り、取れる距離が床以上なら 1 ③帯VA＝前の UTC の日で固定の VAH・VAL で②と同じ。②③は線に触れた回数を数えません（pivot の役割＝前の期間から前もって推定する支持線・抵抗線・StockCharts の逐語「Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.」・まこさん「Aでいい」）。どの種類にも、固定の許容幅の版と、1時間足の ATR% × 倍率を 0.15%〜0.6% に収める版を付けます（まこさん「１は案ア」・3つの決定の2）。S1 の部品は E36 の Lee-Mykland の jump の統計（式は1文字も変えずに材料の表へ移し、E36 はそこから呼ぶ）です。あわせて、帯の1時間足の区切り（今は 10:05〜11:05）を、正時（10:00〜11:00）に切り替えられる設定を足し（既定は今のまま）、E38 の接続が作る帯の列と観察の道具の帯の列の両方に届く形にします（監査 CP60 の修正69）。完成すると、カタログの新しい列は 73 本（帯スイング 12・帯pivot 3・帯VA 3・帯スイング1時間ATR 36・帯pivot1時間ATR 9・帯VA1時間ATR 9・LeeMykland 1）になり、engine_tuner と M2 の段は、法則 R1・R7・S1 を材料の列として選べるようになります（選んで組むのは工事2）。なぜこの形か＝帯pivot・帯VA に触れた回数を求めた最初の形は、実物の5分足6000本で 帯pivot 0.0%・帯VA 1.2% しか 1 にならなかった（前の日の線に過去のスイングがそろわない）。触れた回数を外した形では 帯pivot 72.1%・帯VA 45.3%・帯スイング 11.2%（同じ6000本）。
+
+【4-1 システムの境界】
+呼ぶ相手＝①材料のカタログを作る所（observe_diag.build_catalog）を呼ぶ観察の道具・成績表・engine_tuner（engine_tuner_gen.material_ranges・engine_tuner_exec の材料の列）②E38 の接続（tuner_adapters/e38.load_windows）を呼ぶ測る道具（regime_r9_diag・engine_tuner）③E36（e36_short_oscillation.py）の急騰Exit。結果を使う相手＝M2 の段（工事2 の段1 の土台・法則の判定）と M2-F-10f（今の版と区切り2つを一致率で比べる）。
+
+【4-2 入力と出力】
+入力＝5分足の高値・安値・終値・出来高（材料の関数が受け取る d）・設定ファイル observe_config.json（sr_windows・sr_tol・sr_atr1h_k・atr_periods・新しい band_touch・band_fee_mult・lee_mykland_k）・e38_logics.json の global.regime.h1_edge。出力＝材料の列（帯の部品は 1・0・欠損／LeeMykland は向きつきの数）・帯の列（res_lo ほか・区切りで変わる）。関数の取り決め＝_band_swing(d, n, tol, m, k=2)・_band_lines(d, upper, lower, tol)・_band_tol_1h(d, 倍率, ATR の期間)・spike_stat(c, K)・spike_threshold(K, α)・_rg5_frames(df, adaptive_k, with_parts, h1_edge)・_resample(df5, rule, edge)。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| observe_diag._band_cluster・_band_swing | 確定したスイングを束ねた帯（法則 R1・R7） | 新設 |
+| observe_diag._band_lines | 前もって引かれた線（pivot・VA）の間に終値が在るか（R7） | 新設 |
+| observe_diag._band_tol_1h・_band_fee_floor | 1時間足の ATR% の許容幅・取れる距離の床（e37_scalp.SCALP_FLOOR × band_fee_mult） | 新設 |
+| observe_diag.spike_threshold・spike_stat | S1 の式（E36 から移した・1文字も変えない） | 新設（移した） |
+| observe_diag の <モジュール直下>（_reg・import math）・build_catalog | 新しい7種の登録とカタログ | 直す |
+| observe_diag.selftest_band・selftest | 軽い口（T-B1〜T-B4）＝壊すプログラムが測る。全体の自己テスト selftest からも呼ぶ | 新設・直す |
+| observe_diag._insp_hidden_params・_insp_range_geo | 名前に出さない引数の番人に帯の既知答えの足を渡す・検査8 を区切り2つで走らせる | 直す |
+| indicator_reference_diag の <モジュール直下>（_r・MAKO_B1S1・FAMILY_LINEAGE・INDUSTRY_MAP・RANGE_GEO_TF・import math） | 定義・系統・業界の対応・mako の欄・帯の1時間足の区切りの説明 | 直す |
+| indicator_reference_diag._tb_band_floor・_tb_band_cluster・_tb_tol_1h・_tb_band_swing・_tb_lee_mykland | 独立の実装（素直な繰り返しで書いた別の書き方） | 新設 |
+| indicator_reference_diag._band_case・_band_known・_line_case・_line_known・_lm_case | 手計算の既知答えの合成の足と期待値 | 新設 |
+| e37_scalp._rg5_frames・_apply_rg5_to_5m・e38_logic_parts.prepare_df・tuner_adapters/e38.load_windows・scripts/dashboard/build_range_gate_dashboard._resample・observe_diag.build_range_geometry | 帯の1時間足の区切りの切り替えを、設定から帯の列まで届ける | 直す |
+| e36_short_oscillation.py | S1 の式を材料の表から呼ぶ | 直す |
+| 文書3本の差し込みの囲み（regime_detection_kb.md の件数の囲み・engine_tuner_milestones.md と engine_tuner_milestones2.md の「作ってはいけないものとの照合」の表） | 当てると変わる数（指標の種類 291→298・材料の一覧の行 297→304・決まった数字だけの一覧 38→40）を、写しで gen_materials.py --write が書いた文にする | 直す |
+- 指標を使う部品について：新しい7種は、材料の表（observe_diag.py の MATERIAL_FAMILIES）に登録し、カタログ（build_catalog）から呼ぶ。E36 の急騰Exit は、材料の表の spike_stat を呼ぶ（e36_short_oscillation.py の「from observe_diag import spike_threshold, spike_stat」の行）＝自前の式は残さない（確かめ＝軽い口の T-B4）。オン・オフは、参照表の mako の欄（MAKO_B1S1）から gen_indicator_switch.py が「使う」にする（写しで 使う に増えた7種・減った0種）。
+
+【4-4 処理の流れ】
+1. 材料の関数が5分足（または各時間足）を受け取る → 帯スイングは確定したスイング（_fractal_marks）を窓 n の中で束ね、上と下の帯を選ぶ → 回数・距離・終値の位置で 1・0 を出す。
+2. 帯pivot・帯VA は、前の日の線（_pivot_prev_period・_vp_by_day の前日）と許容幅から、終値の位置と距離で 1・0 を出す。
+3. 1時間足 ATR の版は、_atr_pct_1h_on（閉じた1時間足の ATR%）から許容幅の並びを作って渡す。
+4. LeeMykland は、終値の対数の値動きと直近 K 本の bipower から L を出す。
+5. 区切り＝e38_logics.json の global.regime.h1_edge → tuner_adapters/e38.load_windows → e38_logic_parts.prepare_df → e37_scalp._apply_rg5_to_5m → _rg5_frames → build_range_gate_dashboard._resample(edge)。
+- 条件のつなぎ方に触るとき：非該当＝この工事は材料を足すだけで、条件のつなぎ方（型の表・場面の決まり）を直さない（直すのは工事2）。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 設定ファイルに band_fee_mult・band_touch・lee_mykland_k が無い | カタログを作る所・床を読む所が KeyError で止まる（黙って既定に戻さない） |
+| e38_logics.json に global.regime.h1_edge が無い | E38 の接続が KeyError で止まる |
+| _resample の edge が right・hour 以外 | ValueError で止まる |
+| ATR がまだ出ていない区間・前の日が無い足 | その足は欠損（空）のまま |
+| 途中で止まった | 本物のファイルは当てる道具が1件ずつ当てる。やり直しは当てる道具の「もう当て終わっていた」の記録で続きから |
+
+【4-6 制約】
+| 種類 | 決まり | 原文 | この設計でどう守るか |
+|---|---|---|---|
+| 法則 | R1 | ［自動］ | 帯スイングだけに当てる（確定したスイングが上と下の帯にそれぞれ m 回以上）。帯pivot・帯VA には当てない（まこさん「Aでいい」） |
+| 法則 | R7 | ［自動］ | 3種類の全部で、取れる距離 ÷ 終値 ≥ e37_scalp.SCALP_FLOOR × band_fee_mult |
+| 法則 | S1 | ［自動］ | E36 の式をそのまま材料にする（閾値 L* は材料に入れない） |
+| 型の表 | — | ［自動］ | 新しい7種は型の表に載る（G-1 で作り直し・まこさんに再承認していただく） |
+| 場面の決まり | — | ［自動］ | 触らない（法則の判定の直しは工事2） |
+| そのほか | ハード制約 H2（未来を見ない） | cat_requirements.md の §4.6.H2 | スイングは確定してから使う・線は前の日が閉じてから使う・正時の区切りの1時間足は区切りの最後の5分足の行から使う。写しの検査4（77列）・検査8・T-B3 で確かめた |
+| そのほか | ハード制約 H6（値段の高さで変わらない） | cat_requirements.md の §4.6.H6 | 出力は 1・0 か比（L）。写しの検査13 で 7種とも変わらない |
+| そのほか | 違反の記録 #23（既存の判定を写さない） | permanent_rules.md の §2 | RG-v5 の帯の数字（タッチ2回・幅0.4%）を使わない |
+- 新しく足す決まり：足しません（材料を足すだけ）。
+
+【4-7 探索の範囲】
+| 何 | この工事が関わるか | どう扱うか | 探し方のどの段階か | 役割・範囲・代表の値（スキャル／デイトレ）・出どころ・カタログに在るか・オンか |
+|---|---|---|---|---|
+| 指標 | 帯スイング・帯スイング1時間ATR・帯pivot・帯pivot1時間ATR・帯VA・帯VA1時間ATR・LeeMykland | 足す | 最初の段階（カタログの値）／最後の段階（範囲から探す） | ［自動］ |
+| 閾値 | 新しい帯の部品は 1・0 なので閾値を持たない。LeeMykland の閾値（L*）は材料に入れない（探す側の分位で扱う） | 足さない | — | ［自動］ |
+| パラメータ | 窓 n・許容幅 t・倍率・ATR の期間・タッチの回数 m（名前に出す）／手数料の倍数・確定の本数 k（名前に出さない）／K | 足す | 最初の段階＝カタログの値・最後の段階＝カタログの値の最小から最大までの範囲（engine_tuner_gen.material_ranges が作る・engine_tuner_gen.py:286-293） | ［自動］ |
+| 時間足 | 新しい列は、今の材料と同じく設定の timeframes の全部で作る | 読むだけ | — | ［自動］ |
+- 役割に沿って使うこと（要件定義の3番の5）：帯の6種は系統「構造・位置」（帯＝位置）・LeeMykland は系統「ボラ」（法則 S1 の「見ているもの」＝1本の動き ÷ ふだんの動き）。
+
+【4-8 データ構造】
+新しい列は、今の材料と同じ形（列名 → 1本の並び）。帯の部品は 1・0・欠損、LeeMykland は向きつきの数。帯の列（res_lo・res_hi・sup_lo・sup_hi）は、区切りの設定で値が変わるが、列の名前と形は変えない。
+- 値の持ち方：代表の値を指標の名前に入れない＝名前に出すのはパラメータの軸（窓・許容幅・倍率・ATR の期間・タッチの回数）で、値は設定ファイルの一覧（observe_config.json）に持つ。
+
+【4-9 設定】
+| 項目 | 置き場 | 既定値 | 指定しなかったとき |
+|---|---|---|---|
+| band_touch | observe_config.json | [3, 4]（まこさん「1,2OK」） | 止まる |
+| band_fee_mult | observe_config.json | 2（まこさん「OK」3つの決定の1） | 止まる |
+| lee_mykland_k | observe_config.json | [270]（E36 の a-priori の値） | 止まる |
+| h1_edge | e38_logics.json の global.regime | "right"（今の区切り） | 止まる |
+| 探す範囲 | 書かない（engine_tuner がカタログの値の最小と最大から作る＝engine_tuner_gen.py:286-293） | 帯の6種（窓 144〜288・許容幅 0.0015〜0.006・倍率 0.5〜1.5・ATR の期間 7〜21・タッチ 3〜4） | 範囲の外は選ばない |
+- 値の持ち方：範囲は指標ごとに1つ（engine_tuner_gen.material_ranges の種類の鍵が1つずつ）。
+- 範囲の表（recipes/search_limits.json の material_param_ranges）に書かない理由：書いた種類がオフのままだと、engine_tuner_gen.py:297-299 が「カタログに無い指標の種類」で止まる。承認の前の仮当て（A12）は、オン・オフの表を作り直さずに自己テストを走らせるので、書くと承認の前に止まる。書かなくても、engine_tuner がカタログの値から作る範囲は、書くつもりだった範囲と同じ（写しで照らした・違い 0 件）。前の工事も同じ順番（K-3b は種類を足すだけ・範囲の表は次の工事 m2c15-shape-settings-20261009）。範囲を今の設定の値より広げるときは、オンにした後の工事で範囲の表に書く。
+
+【4-10 保存先】
+本物のファイルへの上書き（実装の指示）。作り直せる表（型の表・出口の型の表・組み立ての表・材料の文書・オン・オフの表）は G-1 で道具が作り直す。文書3本の差し込みの囲み（regime_detection_kb.md・engine_tuner_milestones.md・engine_tuner_milestones2.md）は、写しで gen_materials.py --write が書いた文を実装の指示にした（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見るため）。G-1 でオン・オフの表を作り直した後、gen_materials.py --write がもう一度 書く（「選べる指標の種類」の数が 173 から増える）。
+- 置き場が1か所であること：S1 の式は observe_diag.py の1か所（E36 は呼ぶだけ・T-B4 で確かめる）。帯の数字（タッチの回数・倍数・K）は observe_config.json の1か所。区切りは e38_logics.json の1か所。
+- 直すと届く先：observe_config.json を読む observe_diag.load_config を呼ぶ全部（engine_tuner_gen・engine_tuner_exec・成績表）・e38_logics.json を読む tuner_adapters/e38.config。
+- 出どころをどこまで確かめたか：値がページに在るかまで（調べる係の記録の逐語・StockCharts・TradingView・LuxAlgo）。
+
+【4-11 時刻の扱い】
+データの時刻は UTC・5分足の時刻はバーの始まり。前の日＝前の UTC の日。1時間足の区切り＝right は label=right・closed=right（10:05〜11:05 を 11:00 に置き、5分足の行 11:00 から使う）／hour は label=left・closed=left で束ね、区切りの最後の5分足の時刻（10:55）に置く。1時間足の ATR% は、その1時間足が閉じた時刻から使う。
+
+【4-12 出る結果の姿】
+当てた後に走らせるもの＝①python3 scripts/priority_rebuild/observe_diag.py --selftest-band（T-B1〜T-B4）②python3 scripts/priority_rebuild/gen_indicator_switch.py --write（使う に7種が増える）③型の表・出口の型の表・組み立ての表・材料の文書の作り直し（G-1・型の表は再承認）④python3 scripts/priority_rebuild/observe_diag.py --selftest ⑤G2（gen_signal_families.py --verify）→ H2（leak_causality_diag.py）。写しの結果＝写しのカタログ 607 列・新しい列 73 本・参照表で引けない名前 0・既知答え 16 件の食い違い 0・E36 の Lee-Mykland の値が同じ＝True・区切り right が今と同じ＝True・hour が違う＝True・hour を切り詰めて値が変わった点＝0・写しの自己テスト（--selftest-band・--selftest-catalog・--selftest-match・--selftest-atr1h・--selftest）が全部 rc 0・検査4（7種 × 11本の時間足＝77列・作りの変わった4種の44列）と検査8・検査13 が ✅（b1s1_check_slow.json）・承認の前の仮当て（A12）と同じ自己テスト 4 本（オン・オフの表を作り直す前の写し）＝engine_tuner_exec.py --selftest rc 0・observe_diag.py --selftest rc 0・gen_materials.py --selftest rc 1（許す落ち＝T6＝材料の文書の作り直し待ち）・engine_tuner_gen.py --selftest-extra-gate rc 0・カタログの値から engine_tuner が作る範囲と、範囲の表に書くつもりだった範囲の違い 0 件
+
+【4-13 影響範囲】
+1. 新しい名前を足すだけで、今の名前は消えも変わりもしない（写しのカタログ 607 列のうち新しい列 73 本・前から在る列の名前は同じ＝道具が数えた）。
+2. 直す関数の引数は、どれも後ろに既定つきで足す（_rg5_frames・_apply_rg5_to_5m・prepare_df・build_range_geometry・_resample）＝今の呼び出しは1行も変えずに今と同じ動き（写しで right の帯の列が今と同じ）。
+3. 直すファイルの名前を本文に持つ前からの壊すプログラム＝b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b122_obs_formula_copied.sh・b126_rank_resume_save_off.sh・b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b138_keep_name_dropped.sh・b139_range_excludes_keep.sh・b140_group_range_ignored.sh・b141_catalog_out_of_range.sh・b142_rci_list_stale.sh・b143_rci_range_short.sh・b145_vwap_day_no_reset.sh・b146_pivot_week_as_day.sh・b147_vp_today_from_start.sh・b149_pending_not_copied.sh・b151_w_fractal_not_first.sh・b152_sr_fractal_counts_bars.sh・b153_smc_fractal_no_close_back.sh・b154_lower_half_upper_span.sh・b156_sr_fractal_unconfirmed.sh・b160_dpo_tb_lib_shift.sh・b161_thermo_orig_abs.sh・b162_stochrsi_raw_smoothed.sh・b163_trix_ema_signal_sma.sh・b164_rvol_rv_mean_subtracted.sh・b165_ssf_avg_single_input.sh・b166_sqz_carter_scalar_fixed.sh・b167_formula_params_missing.sh・b168_formula_hidden_missing.sh・b170_alias_axis_list_dropped.sh・b172_alma_weights_reversed.sh・b173_stc_zero_range_divides.sh・b174_hilo_short_column.sh・b175_dpo_centered_future.sh・b176_sarext_sign_not_abs.sh・b177_psar_af_column.sh・b178_cksp_long_short_swapped.sh・b179_pmax_ma_of_high.sh・b180_vwap_volume_weight_dropped.sh・b181_thermo_ma_column.sh・b182_copy_mark_without_known.sh・b183_copy_verified_by_tb_alone.sh・b188_stc_library_min_gate.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b60_only5_with_others.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh（探す文字の数が当てる前と後で同じことを道具が数えた）。
+- 名前が消える・変わるとき：消える名前・変わる名前は無い（新しい名前だけ）。
+- 指標の値を変えるとき：
+| 使う所 | 壊れる道筋 | 測ったコマンドと結果 |
+|---|---|---|
+| Entry | 今の材料の値は変えない（新しい列を足すだけ）。E38 の帯の列は既定 right で今と同じ | 写しの確かめ＝right の帯の列が今と同じ（f4_right_same＝True） |
+| Exit | E36 の急騰Exit の値は変わらない（式を移しただけ） | 写しの確かめ＝E36 の spike_stat の値が np.array_equal で同じ |
+| レンジの判定 | 法則の判定は直さない（工事2） | regime_laws.json は直すファイルの一覧に無い |
+| 上げの判定 | 同上 | 同上 |
+| 下げの判定 | 同上 | 同上 |
+| スパイクの判定 | 法則 S1 の判定（family が空）は直さない（工事2） | 同上 |
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 新しい列1本の計算（5分足6000本） | 帯スイング 0.67秒・帯スイング1時間ATR 0.61秒・帯pivot 0.01秒・帯VA 0.02秒・LeeMykland 0.00秒 | 写しの確かめ（b1s1_check.json） |
+| 検査4（1つの名前・11本の時間足） | 帯スイング1時間ATR で 268.6秒 | 写しの --slow-only（2026-10-20 17:48〜17:53） |
+| 軽い口 --selftest-band | 約3秒 | 写しの確かめ |
+| 全体の自己テスト --selftest | 約180秒 | 写しの確かめ |
+| E36 が観察の道具を読み込む重さ | 約1.5秒 | 写しの確かめ（import_observe_diag_s） |
+
+【4-15 競合】
+2つの走行が同じファイルを触る場面は無い（当てる道具は1本・本物の結果の置き場に書く観察の道具の検査は、同じ日の同じ名前の結果ファイルに書く＝同じ日に --inspect を2本 走らせると後の方が上書きする＝前からの作り・2026-10-20 に検査12 の結果ファイルが上書きされた）。
+
+【4-16 セキュリティ】
+取引所の鍵（config/bitget_keys.json）・本番で発注するかの切り替え（ALLOW_LIVE_ORDERS）には触らない（直すファイルの一覧に無い）。検査済みの記録（h2_pass.json・g2_pass.json）は、当てた後に G2・H2 を走らせて取り直す。
+
+【4-17 ログと進捗表示】
+軽い口は「帯の部品・S1 の部品・帯の1時間足の区切りの番人（T-B1〜T-B4）」と種類の数・❌ の行を出す。検査8 は「区切り2つ（今・正時）」の不一致の数を出す。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| observe_diag._sr_touch_fractal・_sr_touch_fractal_atr（K-3b） | 確定したスイングを窓で数える作り・1時間足 ATR の許容幅の作り |
+| observe_diag.selftest_atr1h（M2-E-4c） | 軽い口の形（全体の自己テストからも呼ぶ） |
+| indicator_reference_diag の前期間pivot・前日VAH の登録 | 線は観察の道具の計算を使い、手計算の既知答えで確かめる形 |
+| k3b_draft_build.py・k3b_proposal_build.py | 写しで確かめて、実装の指示と壊すプログラムを書き出す形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "686行（_smc_sweep_fractal・B-1＝帯の部品の計算（_band_cluster・_band_swing・_band_lines・_band_tol_1h・_band_fee_floor）と、S-1＝E36 の Lee-Mykland の式（spike_threshold・spike_stat・1文字も変えない）を材料の表に置く）",
+  "直す前の文字": "def _smc_sweep_fractal(d, k=2):\n",
+  "種類": "直した後の文字",
+  "中身": "# ★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝法則 R1（価格が何回も跳ね返された線が上下に在るか）と\n#   R7（帯の幅が往復の手数料を超えるか・幅は「取れる距離」で測る＝まこさん「OK」worklog 20261003 §36）の部品＝帯の部品。\n#   取れる距離（上の帯の下端 − 下の帯の上端）÷ 終値 が「手数料の床 × 倍数」以上で、今の終値がその間に在れば 1・それ以外 0。\n#   線の種類は3つ（まこさん「すべて案どおりでよい」ok_d1_20261004 の③・worklog 20261003 §37・§38）\n#     ①確定したスイングを許容幅で束ねた帯＝上の線と下の線のそれぞれに、確定したスイング（_fractal_marks＝前後 k 本で確定してから\n#       使う＝H2）が m 回以上（法則 R1）。重なった帯は1つにまとめ、タッチの回数を足す（LuxAlgo の逐語\n#       \"Overlapping zones merge into one consolidated zone and their test counts are added together\"）\n#     ②前の日で固定の pivot R1（上の線）・S1（下の線）＝_pivot_prev_period\n#     ③前の UTC の日で固定の VAH（上の線）・VAL（下の線）＝_vp_by_day の「前日」\n#     ★②③は触れた回数を数えない（まこさん「Aでいい」ok_pivot_a_20261020）＝前もって推定する支持線・抵抗線（StockCharts の逐語\n#       「Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.」）\n#   帯の幅は、どの種類も許容幅 t（線の ± 値段×t/2）。許容幅は固定の版と、1時間足の ATR% × 倍率を 0.15%〜0.6% に収める版の2つ\n#   （まこさん「１は案ア」＝両方・ok_three_points_20261020 の2＝3種類の全部に両方）。\n#   ★RG-v5 の帯の数字（タッチ2回・幅0.4%）は使わない（違反の記録 #23）。\n#   ★手数料の床＝e37_scalp.SCALP_FLOOR（0.08%）を読む（数字を2か所に書かない）。倍数は設定ファイルの band_fee_mult\n#     （名前に出さない値・まこさん「OK」ok_three_points_20261020 の1＝最初の値 2・範囲は §2.2 の段1 の 2〜6倍）。\n_BAND_CFG: dict = {\"floor\": None}\n\n\ndef _band_fee_floor() -> float:\n    \"\"\"取れる距離の床＝手数料の床（e37_scalp.SCALP_FLOOR）× 設定ファイルの倍数 band_fee_mult。最初の1回だけ読む。\"\"\"\n    if _BAND_CFG[\"floor\"] is None:\n        import e37_scalp as _e37b                   # lazy（build_range_geometry と同じ読み込み方）\n        _BAND_CFG[\"floor\"] = float(_e37b.SCALP_FLOOR) * float(load_config()[\"band_fee_mult\"])\n    return _BAND_CFG[\"floor\"]\n\n\ndef _band_cluster(px, price, t, m, above):\n    \"\"\"price より上（above＝True）か下の、確定したスイングの値段 px を、隣との差が「値段 × t」以下なら同じ帯に束ね、\n    price に近い帯（帯の平均と price の差が小さい順・同じなら値段の低い側）から見て、スイングが m 回以上の最初の帯の\n    （下端, 上端）を返す。帯の端＝束ねたスイングの最小 ×(1−t/2)・最大 ×(1+t/2)。無ければ None。\"\"\"\n    s = np.sort(px[px > price] if above else px[px < price])\n    if len(s) < m:\n        return None\n    best = None\n    for cl in np.split(s, np.flatnonzero(np.diff(s) > s[:-1] * t) + 1):\n        if len(cl) >= m:\n            dist = abs(float(cl.mean()) - price)\n            if best is None or dist < best[0]:\n                best = (dist, float(cl.min()) * (1 - t / 2), float(cl.max()) * (1 + t / 2))\n    return None if best is None else (best[1], best[2])\n\n\ndef _band_swing(d, n, tol, m, k=2):\n    \"\"\"帯スイング＝確定したスイングを束ねた上の帯と下の帯（①）。今の足の前の n 本（確定した足が [i−n, i)）で数える。\n    ★今の足は窓に入れない（_sr_touch_fractal と同じ）。tol は数でも並び（足ごとの割合）でもよい。k は名前に出さない引数（最初の値 2）。\"\"\"\n    hv = _fractal_marks(d.high, k, True)[0].to_numpy(float)     # 帯の上の線＝確定した山（前後 k 本で確定してから使う）\n    lv = _fractal_marks(d.low, k, False)[0].to_numpy(float)     # 帯の下の線＝確定した谷\n    ca = d.close.to_numpy(float)\n    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else None\n    n, m = int(n), int(m)\n    floor = _band_fee_floor()\n    out = np.full(len(ca), np.nan)\n    for i in range(n, len(ca)):\n        t = tol if ta is None else ta[i]\n        if t != t:                                   # NaN（ATR がまだ出ていない区間）は空のまま\n            continue\n        hw, lw = hv[i - n:i], lv[i - n:i]\n        up = _band_cluster(hw[hw == hw], ca[i], t, m, True)\n        dn = _band_cluster(lw[lw == lw], ca[i], t, m, False)\n        ok = (up is not None and dn is not None and dn[1] < ca[i] < up[0]\n              and (up[0] - dn[1]) / ca[i] >= floor)\n        out[i] = 1.0 if ok else 0.0\n    return pd.Series(out, index=d.index)\n\n\ndef _band_lines(d, upper, lower, tol):\n    \"\"\"線が前もって決まっている帯（②前の日の pivot R1・S1／③前の UTC の日の VAH・VAL）。\n    ★2026-10-20（まこさん「Aでいい」ok_pivot_a_20261020）＝線に過去のスイングが触れた回数は求めない。pivot の役割は、前の期間から\n      前もって推定する支持線・抵抗線（StockCharts の逐語「Pivot Points use the prior period's high, low, and close to estimate future\n      support and resistance levels.」）＝その日に初めて引かれる線なので、過去の山・谷が触れていることは役割に入らない。\n    帯＝線の ± 値段×t/2。上の帯の下端（上の線 ×(1−t/2)）と下の帯の上端（下の線 ×(1+t/2)）の間に終値が在り、取れる距離（その2つの差）÷ 終値\n    が床（法則 R7）以上なら 1・それ以外 0。線が無い足（前の日が無い）は空。\"\"\"\n    U, L = np.asarray(upper, dtype=float), np.asarray(lower, dtype=float)\n    ca = d.close.to_numpy(float)\n    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else np.full(len(ca), float(tol))\n    floor = _band_fee_floor()\n    top, bot = U * (1 - ta / 2), L * (1 + ta / 2)\n    with np.errstate(invalid=\"ignore\"):\n        ok = (bot < ca) & (ca < top) & ((top - bot) / ca >= floor)\n    return pd.Series(np.where(np.isfinite(top) & np.isfinite(bot), ok.astype(float), np.nan), index=d.index)\n\n\ndef _band_tol_1h(d, km, a):\n    \"\"\"帯の許容幅を「1時間足の ATR% × 倍率」で決め、0.15%〜0.6% に収めた並び（_sr_touch_atr と同じ作り）。\"\"\"\n    atr_pct = pd.Series(_atr_pct_1h_on(d, a), index=d.index)\n    return (km * atr_pct).clip(lower=_SR_ATR_TOL_LO, upper=_SR_ATR_TOL_HI).to_numpy(float)\n\n\n# ★2026-10-20（工事 m2c15-band-s1-20261020・S-1・まこさん「OK」ok_direction_20261020 の3・ok_three_points_20261020 の3）\n#   ＝スパイクの法則 S1 の部品の式の置き場を、E36（e36_short_oscillation.py）から材料の表（ここ）へ移した。式は1文字も変えていない。\n#   E36 は `from observe_diag import spike_threshold, spike_stat` で同じ関数を呼ぶ（値は1ビットも変わらない＝写しで突き合わせる）。\nimport math  # noqa: E402\n\n\n# ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──\ndef spike_threshold(K: int, alpha: float) -> float:\n    \"\"\"Gaussian EVT 閾値 L* = C_n + β*·a_n（K・α から a-priori・データで決めない・L-267）。\"\"\"\n    lnK = math.log(K)\n    s = math.sqrt(2.0 * lnK)\n    Cn = s - (math.log(math.pi) + math.log(lnK)) / (2.0 * s)\n    an = 1.0 / s\n    beta = -math.log(-math.log(1.0 - alpha))\n    return Cn + beta * an\n\n\ndef spike_stat(c: np.ndarray, K: int) -> np.ndarray:\n    \"\"\"各バーの jump 統計 L_i = r_i/√V̂_i（V̂=局所 bipower・直近 K 本・全て過去〜現在＝H2 leak-safe）。\n    r_i=log(c_i/c_{i−1})・|r_j||r_{j−1}| を窓 K−1 で和（warmup は NaN→発火しない）。\"\"\"\n    n = len(c)\n    r = np.full(n, np.nan)\n    r[1:] = np.log(c[1:] / c[:-1])              # log リターン（過去 close のみ）\n    absr = np.abs(r)\n    bpv = np.full(n, np.nan)\n    bpv[1:] = absr[1:] * absr[:-1]              # bpv[i] = |r_i||r_{i−1}|（jump 頑健の bipower 項）\n    bp_sum = pd.Series(bpv).rolling(K - 1).sum().to_numpy()   # Σ_{j=i−K+2}^{i}（K−1 項・当該バーまで）\n    V = (math.pi / (2.0 * (K - 1))) * bp_sum\n    with np.errstate(invalid=\"ignore\", divide=\"ignore\"):\n        return r / np.sqrt(V)\n\n\ndef _smc_sweep_fractal(d, k=2):\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:686「def _smc_sweep_fractal(d, k=2):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1124行（<モジュール直下>・帯の部品6種と S1 の部品を、材料の種類として登録する（名前に出すのは窓・許容幅・タッチの回数＝まこさん「OK」））",
+  "直す前の文字": "_reg(\"SMC_SWEEP確定\", \"SMC_SWEEP確定\", False, lambda d, k=2: _smc_sweep_fractal(d, k))\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"SMC_SWEEP確定\", \"SMC_SWEEP確定\", False, lambda d, k=2: _smc_sweep_fractal(d, k))\n# ── 2026-10-20（工事 m2c15-band-s1-20261020・B-1＋S-1）＝帯の部品3種 × 許容幅の作り2つと、S1 の部品 ──\n#   ★名前に出すのは 窓・許容幅（または倍率と ATR の期間）・タッチの回数。手数料の倍数は設定ファイル band_fee_mult（名前に出さない）・\n#     確定の本数 k も名前に出さない引数（最初の値 2＝資料の fractal の既定・K-3b と同じ）。向きを持たない（False）＝状態量（1/0）。\n_reg(\"帯スイング\", \"帯スイング({},{},{})\", False, lambda d, n, t, m, k=2: _band_swing(d, n, t, m, k))\n_reg(\"帯スイング1時間ATR\", \"帯スイング1時間ATR({},{},{},{})\", False,\n     lambda d, n, km, a, m, k=2: _band_swing(d, n, _band_tol_1h(d, km, a), m, k))\n#   ★帯pivot・帯VA は、触れた回数を数えない（まこさん「Aでいい」ok_pivot_a_20261020）＝名前に出すのは許容幅（または倍率と ATR の期間）だけ。\n_reg(\"帯pivot\", \"帯pivot({})\", False, lambda d, t: _band_lines(d, *_pivot_prev_period(d)[1:], t))\n_reg(\"帯pivot1時間ATR\", \"帯pivot1時間ATR({},{})\", False,\n     lambda d, km, a: _band_lines(d, *_pivot_prev_period(d)[1:], _band_tol_1h(d, km, a)))\n_reg(\"帯VA\", \"帯VA({})\", False, lambda d, t: _band_lines(d, *_vp_by_day(d.close, d.volume, \"前日\")[1:], t))\n_reg(\"帯VA1時間ATR\", \"帯VA1時間ATR({},{})\", False,\n     lambda d, km, a: _band_lines(d, *_vp_by_day(d.close, d.volume, \"前日\")[1:], _band_tol_1h(d, km, a)))\n#   ★S1＝Lee-Mykland の jump の統計 L_i（今の1本の対数の値動き ÷ 直近 K 本の bipower のばらつきの平方根）。向きを持つ（上げの jump が正）。\n#     閾値 L*（spike_threshold）は材料に入れない（閾値は探す側で扱う・まこさん「OK」ok_direction_20261020 の4）。\n_reg(\"LeeMykland\", \"LeeMykland{}\", True, lambda d, K: pd.Series(spike_stat(d.close.to_numpy(float), int(K)), index=d.index))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1124「_reg(\"SMC_SWEEP確定\", \"SMC_SWEEP確定\", False, lambda d, k=2: _smc_sweep_fractal(d, k))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1767行（build_catalog・帯の部品6種（窓 × タッチの回数 × 許容幅）と S1 の部品（K）をカタログに入れる（値は設定ファイルの一覧））",
+  "直す前の文字": "                addf(\"S-Rタッチ確定1時間ATR\", n, k, a)   # 監査 CP60 の修正44（K-3b・2026-10-09）\n",
+  "種類": "直した後の文字",
+  "中身": "                addf(\"S-Rタッチ確定1時間ATR\", n, k, a)   # 監査 CP60 の修正44（K-3b・2026-10-09）\n    # ★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝帯の部品3種 × 許容幅の作り2つ（まこさん「OK」ok_three_points_20261020 の1・2）。\n    #   窓＝sr_windows・固定の許容幅＝sr_tol・倍率＝sr_atr1h_k・ATR の期間＝atr_periods（ok_direction_20261020 の2＝今の設定の値）・\n    #   タッチの回数＝band_touch（まこさん「1,2OK」＝3・4回・worklog 20261003 §35）。\n    #   ★帯pivot・帯VA は窓とタッチの回数を持たない（触れた回数を数えない＝まこさん「Aでいい」ok_pivot_a_20261020）。\n    for n in cfg[\"sr_windows\"]:\n        for m in cfg[\"band_touch\"]:\n            for t in cfg[\"sr_tol\"]:\n                addf(\"帯スイング\", n, t, m)\n            for k in cfg[\"sr_atr1h_k\"]:\n                for a in cfg[\"atr_periods\"]:\n                    addf(\"帯スイング1時間ATR\", n, k, a, m)\n    for t in cfg[\"sr_tol\"]:\n        addf(\"帯pivot\", t)\n        addf(\"帯VA\", t)\n    for k in cfg[\"sr_atr1h_k\"]:\n        for a in cfg[\"atr_periods\"]:\n            addf(\"帯pivot1時間ATR\", k, a)\n            addf(\"帯VA1時間ATR\", k, a)\n    # ★2026-10-20（S-1）＝スパイクの法則 S1 の部品（Lee-Mykland・K＝lee_mykland_k＝E36 の a-priori の 270）\n    for K in cfg[\"lee_mykland_k\"]:\n        addf(\"LeeMykland\", K)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1767「addf(\"S-Rタッチ確定1時間ATR\", n, k, a)   # 監査 CP60 の修正44（K-3b・2026-10-09）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "2241行（build_range_geometry・F-4＝レンジ幾何の列を作る関数に、帯の1時間足の区切りを選ぶ引数を足す（既定は今の区切り））",
+  "直す前の文字": "def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:\n",
+  "種類": "直した後の文字",
+  "中身": "def build_range_geometry(bars: pd.DataFrame, adaptive_k=None, h1_edge: str = \"right\") -> pd.DataFrame:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:2241「def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "2250行（build_range_geometry・F-4＝区切りを帯を作る所（e37._rg5_frames）へ渡す）",
+  "直す前の文字": "    _z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k)\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝h1_edge＝帯の1時間足の区切り（right＝今・hour＝正時）\n    _z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k, h1_edge=h1_edge)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:2250「_z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "2282〜2293行（_insp_range_geo・F-4＝検査8 の切り詰めて計算し直す確かめを、区切り2つ（今・正時）の両方で走らせる（未来を見ていないか））",
+  "直す前の文字": "    for _ak in (None, _e37g.V25_K):\n        geo_full = build_range_geometry(span, _ak)\n        for t in picks:\n            geo_tr = build_range_geometry(span.loc[:t], _ak)\n            a, b = geo_full.loc[t], geo_tr.loc[t]\n            for col in geo_full.columns:\n                x, y = a.get(col), b.get(col)\n                if pd.isna(x) and pd.isna(y):\n                    continue\n                if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):\n                    suspects.setdefault(f\"{col}(adaptive_k={_ak})\", []).append(str(t))\n    print(f\"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 × 帯2種（RG-v5・RG-v6） → 不一致 {len(suspects)} 列\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝帯の1時間足の区切り2つ（right＝今・hour＝正時）の両方を切り詰めで確かめる\n    for _ak in (None, _e37g.V25_K):\n        for _edge in (\"right\", \"hour\"):\n            geo_full = build_range_geometry(span, _ak, _edge)\n            for t in picks:\n                geo_tr = build_range_geometry(span.loc[:t], _ak, _edge)\n                a, b = geo_full.loc[t], geo_tr.loc[t]\n                for col in geo_full.columns:\n                    x, y = a.get(col), b.get(col)\n                    if pd.isna(x) and pd.isna(y):\n                        continue\n                    if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):\n                        suspects.setdefault(f\"{col}(adaptive_k={_ak}・h1_edge={_edge})\", []).append(str(t))\n    print(f\"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 × 帯2種（RG-v5・RG-v6）× 区切り2つ（今・正時） → 不一致 {len(suspects)} 列\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:2282「for _ak in (None, _e37g.V25_K):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7297行（_insp_hidden_params・名前に出さない引数の番人＝帯の部品は、帯が出る既知答えの合成の足で確かめる（決まった式の値動きでは帯が出ない））",
+  "直す前の文字": "    _cases = {\"W字確定谷\": lambda: iref._w_case(24, 100.2)}\n",
+  "種類": "直した後の文字",
+  "中身": "    _cases = {\"W字確定谷\": lambda: iref._w_case(24, 100.2)}\n    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品も、上の決まった式の値動きでは帯が1回も出ず、確定の本数 k を変えても\n    #   列が変わらない（全部 0）。帯が出る既知答えの合成の足（参照表の _band_case）で確かめる。\n    #   （帯pivot・帯VA は名前に出さない引数を持たない＝触れた回数を数えない）\n    for _bf in (\"帯スイング\", \"帯スイング1時間ATR\"):\n        _cases[_bf] = lambda: iref._band_case(\"swing\", 4)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7297「_cases = {\"W字確定谷\": lambda: iref._w_case(24, 100.2)}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7147行（selftest_atr1h・軽い口 selftest_band（T-B1〜T-B4）を足す＝壊すプログラムを数秒で測る（承認の前の仮当ての 900 秒に収める））",
+  "直す前の文字": "def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:\n",
+  "種類": "直した後の文字",
+  "中身": "def selftest_band(exit_: bool = True) -> list:\n    \"\"\"T-B1〜T-B4＝帯の部品・S1 の部品・帯の1時間足の区切りを確かめる（工事 m2c15-band-s1-20261020・2026-10-20）。\n    口＝`--selftest-band`（壊すプログラム b189〜b194 が使う・数秒で終わる＝承認の前の仮当ての 900 秒に収めるため）。\n    ★全部の番人（selftest）からも、この関数を呼ぶ＝同じ判定を2か所に書き写さない。\n    ★既知答えと独立の実装は、参照表（indicator_reference_diag の登録）を呼ぶ＝検査3 と同じものを使う（ここに答えを書き写さない）。\n      T-B1＝新しい7種（帯スイング・帯スイング1時間ATR・帯pivot・帯pivot1時間ATR・帯VA・帯VA1時間ATR・LeeMykland）の最初の名前で、\n            参照表の手計算の既知答えが全部 一致する\n      T-B2＝独立の実装を持つ種類は、既知答えの合成の足で、独立の実装と1本も違わない\n      T-B3＝帯の1時間足の区切り＝正時（hour）の1時間足は、正時から次の正時の5分前までの5分足を束ね、その最後の足の時刻に置く（未来を見ない）。\n            今の区切り（right）は、引数を渡さないときと同じ\n      T-B4＝E36 の Lee-Mykland の式（spike_stat・spike_threshold）が、材料の表（observe_diag）の関数（式の置き場が1つ）\"\"\"\n    ng: list = []\n    fams = (\"帯スイング\", \"帯スイング1時間ATR\", \"帯pivot\", \"帯pivot1時間ATR\", \"帯VA\", \"帯VA1時間ATR\", \"LeeMykland\")\n    first: dict = {}\n    for name, fn, _d in build_catalog(load_config()):\n        fam = find_material(name)[0]\n        if fam in fams and fam not in first:\n            first[fam] = (name, fn)\n    for fam in fams:\n        if fam not in first:\n            ng.append(f\"T-B1: 材料カタログに {fam} が1件も無い\")\n            continue\n        name, fn = first[fam]\n        ref, prm = iref.find(name)\n        if ref is None or ref[\"known\"] is None:\n            ng.append(f\"T-B1: {name} の既知答えが参照表に無い\")\n            continue\n        for case, exp in ref[\"known\"](prm):\n            s = np.asarray(fn(case), dtype=float)\n            for i, v, tol in exp:\n                if not (abs(s[i] - v) <= tol):\n                    ng.append(f\"T-B1: {name}: 手計算の既知答えと不一致（位置 {i}・期待 {v}・実測 {s[i]}）\")\n            if ref[\"tb\"] is not None:\n                tb = np.asarray(ref[\"tb\"](case, prm), dtype=float)\n                both = np.isfinite(s) & np.isfinite(tb)\n                if (np.isfinite(s) != np.isfinite(tb)).any() or not np.allclose(s[both], tb[both], atol=1e-9):\n                    ng.append(f\"T-B2: {name}: 独立の実装と不一致\")\n    import e37_scalp as _e37t                         # lazy（build_range_geometry と同じ読み込み方）\n    v17 = _e37t._import_rg5().v17\n    nb = 288 * 2\n    xs = np.arange(nb, dtype=float) + 100.0\n    d5 = pd.DataFrame({\"open\": xs, \"high\": xs, \"low\": xs, \"close\": xs, \"volume\": np.ones(nb)},\n                      index=pd.date_range(\"2026-01-01\", periods=nb, freq=\"5min\"))\n    hr = v17._resample(d5, \"1h\", \"hour\")\n    t_first = d5.index[0] + pd.Timedelta(hours=10)               # 作り物の足の最初の時刻（0時）から 10時間後＝10:00\n    t_last = t_first + pd.Timedelta(minutes=55)                   # 同じ1時間の最後の5分足＝10:55\n    want = float(d5.loc[t_first:t_last, \"high\"].max())\n    got = float(hr[\"high\"].get(t_last, np.nan))\n    if got != want:\n        ng.append(f\"T-B3: 正時の区切りの1時間足が、10:00〜10:55 の足を束ねて 10:55 に置く形でない（期待 {want}・実測 {got}）\")\n    if not v17._resample(d5, \"1h\").equals(v17._resample(d5, \"1h\", \"right\")):\n        ng.append(\"T-B3: 今の区切り（right）が、引数を渡さないときと違う\")\n    import e36_short_oscillation as _e36t\n    if getattr(_e36t.spike_stat, \"__module__\", \"\") != \"observe_diag\" or getattr(_e36t.spike_threshold, \"__module__\", \"\") != \"observe_diag\":\n        ng.append(\"T-B4: E36 の Lee-Mykland の式が、材料の表（observe_diag）の関数でない（式の置き場が2つ）\")\n    print(\"=\" * 80)\n    print(\"帯の部品・S1 の部品・帯の1時間足の区切りの番人（T-B1〜T-B4・工事 m2c15-band-s1-20261020）\")\n    print(f\"  種類 {len(first)} 件 ／ 正時の区切りの確かめ {nb} 本\")\n    if exit_:\n        if ng:\n            for x_ in ng:\n                print(f\"  ❌ {x_}\")\n            raise SystemExit(1)\n        print(\"  全部 pass（❌ 0件）\")\n        raise SystemExit(0)\n    return ng\n\n\ndef selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7147「def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "8517行（selftest・全体の自己テストからも selftest_band を呼ぶ（同じ判定を2か所に書き写さない））",
+  "直す前の文字": "    ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）\n",
+  "種類": "直した後の文字",
+  "中身": "    ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）\n    ng += selftest_band(exit_=False)                 # T-B1〜T-B4（帯の部品・S1 の部品・帯の1時間足の区切り・工事 m2c15-band-s1-20261020）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:8517「ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "8583〜8584行（<モジュール直下>・入口に --selftest-band の口を足す）",
+  "直す前の文字": "    if \"--selftest-atr1h\" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）\n        selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "種類": "直した後の文字",
+  "中身": "    if \"--selftest-atr1h\" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）\n        selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n    if \"--selftest-band\" in sys.argv:                 # ★T-B1〜T-B4 だけを（工事 m2c15-band-s1-20261020・壊すプログラム b189〜b194 が使う）\n        selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:8583「if \"--selftest-atr1h\" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "24行（<モジュール直下>・S1 の部品の独立の実装と既知答えが math を使う）",
+  "直す前の文字": "import numpy as np\n",
+  "種類": "直した後の文字",
+  "中身": "import math\nimport numpy as np\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:24「import numpy as np」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "948行（<モジュール直下>・帯の部品と S1 の部品の「使う」の決定（まこさんの逐語のファイル）を、mako の欄から1か所で引けるようにする）",
+  "直す前の文字": "MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'\n",
+  "種類": "直した後の文字",
+  "中身": "MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'\n# ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品と S1 の部品の「使う」の決定の逐語（mako の欄に書く）。\nMAKO_B1S1 = '2026-10-20 まこさん「OK\\u3000１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③'\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:948「MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファ」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1684〜1689行（<モジュール直下>・帯の部品6種と S1 の部品を参照表に登録し、独立の実装と手計算の既知答えを付ける）",
+  "直す前の文字": "_r(r\"S-Rタッチ確定1時間ATR\\((\\d+),([\\d.]+),(\\d+)\\)\", \"S-Rタッチ確定1時間ATR\",\n   \"S-Rタッチ確定数 の許容幅を「倍率 × 1時間足の ATR%（ATR ÷ その1時間足の終値）」で決め、0.15%〜0.6% に収めたもの\",\n   \"監査 CP60 の修正44 の数え方（確定した山・谷）＋ S-Rタッチ1時間ATR と同じ許容幅（出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』）。\"\n   \"1時間足の値は、その1時間足が閉じた時刻から使う\",\n   \"状態量＝多いほど節が固い\", \"none\", tb=_tb_sr_fr_atr1h,\n   known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"S-Rタッチ確定1時間ATR\\((\\d+),([\\d.]+),(\\d+)\\)\", \"S-Rタッチ確定1時間ATR\",\n   \"S-Rタッチ確定数 の許容幅を「倍率 × 1時間足の ATR%（ATR ÷ その1時間足の終値）」で決め、0.15%〜0.6% に収めたもの\",\n   \"監査 CP60 の修正44 の数え方（確定した山・谷）＋ S-Rタッチ1時間ATR と同じ許容幅（出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』）。\"\n   \"1時間足の値は、その1時間足が閉じた時刻から使う\",\n   \"状態量＝多いほど節が固い\", \"none\", tb=_tb_sr_fr_atr1h,\n   known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)\n\n\n# ★2026-10-20（工事 m2c15-band-s1-20261020・B-1＋S-1）＝帯の部品3種 × 許容幅の作り2つと、S1 の部品（Lee-Mykland）。\n#   帯スイング と S1 は独立の実装（素直な繰り返しで書いた別の書き方）と手計算の既知答え、帯pivot・帯VA は手計算の既知答え\n#   （前期間pivot・前日VAH と同じ形＝線は観察の道具の計算を使う）で確かめる。\ndef _tb_band_floor():\n    \"\"\"取れる距離の床（独立の実装の側）＝e37_scalp.SCALP_FLOOR × 設定ファイル observe_config.json の band_fee_mult。\"\"\"\n    import json as _json\n    import pathlib as _pl\n    import e37_scalp as _e37r\n    cfg = _json.loads((_pl.Path(__file__).resolve().parent / \"observe_config.json\").read_text(encoding=\"utf-8\"))\n    return float(_e37r.SCALP_FLOOR) * float(cfg[\"band_fee_mult\"])\n\n\ndef _tb_band_cluster(px, price, t, m, above):\n    \"\"\"確定したスイングの値段を、値段の低い順に、前の値段との差が「前の値段 × t」以下なら同じ帯へ入れていく。\n    スイングが m 回以上の帯のうち、帯の平均が price に近いもの（同じなら値段の低い側）の（下端, 上端）。\"\"\"\n    vals = sorted(x for x in px if (x > price if above else x < price))\n    groups = []\n    for x in vals:\n        if groups and x - groups[-1][-1] <= groups[-1][-1] * t:\n            groups[-1].append(x)\n        else:\n            groups.append([x])\n    best = None\n    for g in groups:\n        if len(g) >= m:\n            dist = abs(sum(g) / len(g) - price)\n            if best is None or dist < best[0]:\n                best = (dist, min(g) * (1 - t / 2), max(g) * (1 + t / 2))\n    return None if best is None else (best[1], best[2])\n\n\ndef _tb_tol_1h(d, km, an):\n    \"\"\"帯の許容幅（1時間足の ATR% × 倍率・0.15%〜0.6%）の独立の実装＝_tb_sr_fr_atr1h の①〜⑤と同じ書き方。\"\"\"\n    o, h, l, c, v = _arr(d)\n    starts, groups = [], []\n    for i, t in enumerate(d.index.floor(\"h\")):\n        if not starts or starts[-1] != t:\n            starts.append(t)\n            groups.append([i])\n        else:\n            groups[-1].append(i)\n    hh = np.array([h[g].max() for g in groups])\n    hl = np.array([l[g].min() for g in groups])\n    hc = np.array([c[g[-1]] for g in groups])\n    atr = np.full(len(groups), np.nan)\n    for j in range(len(groups)):\n        if j == 0:\n            atr[j] = hh[j] - hl[j]\n        else:\n            tr = max(hh[j] - hl[j], abs(hh[j] - hc[j - 1]), abs(hl[j] - hc[j - 1]))\n            atr[j] = (atr[j - 1] * (an - 1) + tr) / an\n    pct = atr / hc\n    closes = (pd.DatetimeIndex(starts) + pd.Timedelta(\"1h\")).values\n    pos = np.searchsorted(closes, (d.index + pd.Timedelta(\"5min\")).values, side=\"right\") - 1\n    out = np.full(len(c), np.nan)\n    for i in range(len(c)):\n        if pos[i] >= 0:\n            out[i] = min(max(km * pct[pos[i]], 0.0015), 0.006)\n    return out\n\n\ndef _tb_band_swing(d, p, k=2):\n    \"\"\"帯スイング・帯スイング1時間ATR の独立の実装。p＝(n, t, m) か (n, 倍率, ATR の期間, m)。\"\"\"\n    n, m = int(p[0]), int(p[-1])\n    o, h, l, c, v = _arr(d)\n    tols = np.full(len(c), float(p[1])) if len(p) == 3 else _tb_tol_1h(d, float(p[1]), int(p[2]))\n    hv, lv = _tb_fractal_marks(d, k, True), _tb_fractal_marks(d, k, False)\n    floor = _tb_band_floor()\n    out = np.full(len(c), np.nan)\n    for i in range(n, len(c)):\n        t = tols[i]\n        if t != t:\n            continue\n        up = _tb_band_cluster([x for x in hv[i - n:i] if x == x], c[i], t, m, True)\n        dn = _tb_band_cluster([x for x in lv[i - n:i] if x == x], c[i], t, m, False)\n        ok = up is not None and dn is not None and dn[1] < c[i] < up[0] and (up[0] - dn[1]) / c[i] >= floor\n        out[i] = 1.0 if ok else 0.0\n    return _S(out, d)\n\n\ndef _band_case(kind, touches):\n    \"\"\"帯の部品の既知答え用（2026-10-20）。どの種類も、最後の足の前 30 本の中に、上の線の山（高値だけ高い足）と下の線の谷\n    （安値だけ低い足）を touches 回ずつ置く（山は最後の足の 30・24・18・12 本前、谷は 27・21・15・9 本前＝6 本おき＝前後2本で確定し、\n    最後の足より前に確定する）。それ以外の足は始値＝高値＝安値＝終値。最後の足の終値は2本の線の間。\n    kind=\"swing\"＝328本・終値 100・山 110・谷 90（束ねた帯＝110 と 90）。\n    答え＝touches が 3 以上なら 1（タッチ 3・4 回のどちらも満たす）、2 なら 0（上と下の線に m 回のスイングが無い）。\n    ★touches が 2 のときは、最後の足の1本前にも山（110）と谷（90）を置く＝その足はまだ確定していない（確定は最後の足の1本後）。\n      確定していない山・谷を数える作り（未来を見る作りに近い）なら 3 回になって 1 を出す＝見分けられる。\n    kind=\"narrow\"＝山 100.15・谷 99.85 を 4 回ずつ＝取れる距離が許容幅 0.0015 のとき (100.15×0.99925 − 99.85×1.00075) ÷ 100 ＝ 0.0015 で、\n      手数料の床（0.08% × 倍数 2 ＝ 0.0016）より狭い＝0。床の条件を外すと 1 を出す＝見分けられる。\n    ★帯pivot・帯VA は触れた回数を数えない（まこさん「Aでいい」）ので、既知答えは _line_case を使う。\"\"\"\n    def _spikes(c, h, l, top, bot):\n        i = len(c) - 1\n        for j, back in enumerate((30, 24, 18, 12)):\n            if j < touches:\n                h[i - back] = top\n        for j, back in enumerate((27, 21, 15, 9)):\n            if j < touches:\n                l[i - back] = bot\n    if kind not in (\"swing\", \"narrow\"):\n        raise ValueError(f\"_band_case の kind は swing か narrow（{kind}）\")\n    c = np.full(328, 100.0)\n    h, l = c.copy(), c.copy()\n    if kind == \"narrow\":\n        _spikes(c, h, l, 100.15, 99.85)\n    else:\n        _spikes(c, h, l, 110.0, 90.0)\n        if touches == 2:\n            h[-2], l[-2] = 110.0, 90.0\n    return _mk(c=c, o=c.copy(), h=h, l=l)\n\n\ndef _band_known(kind):\n    return lambda p: [(_band_case(kind, 4), [(-1, 1.0, 1e-9)]), (_band_case(kind, 2), [(-1, 0.0, 1e-9)]),\n                      (_band_case(\"narrow\", 4), [(-1, 0.0, 1e-9)])]\n\n\ndef _line_case(kind, last_close):\n    \"\"\"帯pivot・帯VA の既知答え用（2026-10-20・まこさん「Aでいい」＝触れた回数を数えない）。_band_case の1日目（線を作る日）と同じ並びに、\n    2日目 200本（始値＝高値＝安値＝終値＝105）を続け、最後の足の終値だけ last_close にする。\n    pivot＝R1 110・S1 100／va＝VAH 109.791…・VAL 100.208…。終値 105＝線の間＝1・終値 112＝上の線より上＝0。\"\"\"\n    if kind == \"pivot\":\n        c = np.full(488, 105.0)\n        h, l = c.copy(), c.copy()\n        h[100], l[200] = 110.0, 100.0\n    else:\n        c = np.r_[np.full(144, 100.0), np.full(144, 110.0), np.full(200, 105.0)]\n        h, l = c.copy(), c.copy()\n    c[-1] = h[-1] = l[-1] = float(last_close)\n    return _mk(c=c, o=c.copy(), h=h, l=l)\n\n\ndef _line_known(kind):\n    return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]\n\n\ndef _tb_lee_mykland(d, p):\n    \"\"\"S1 の部品（Lee-Mykland の jump の統計）の独立の実装＝論文の式を素直な繰り返しで書いた物。\n    r_i＝log(c_i / c_{i−1})・V_i＝π/(2(K−1)) × Σ_{j=i−K+2}^{i} |r_j||r_{j−1}|・L_i＝r_i / √V_i（K 本そろう前は空）。\"\"\"\n    K = int(p[0])\n    c = d.close.to_numpy(float)\n    r = np.full(len(c), np.nan)\n    for i in range(1, len(c)):\n        r[i] = math.log(c[i] / c[i - 1])\n    out = np.full(len(c), np.nan)\n    for i in range(K, len(c)):\n        s = 0.0\n        for j in range(i - K + 2, i + 1):\n            s += abs(r[j]) * abs(r[j - 1])\n        with np.errstate(invalid=\"ignore\", divide=\"ignore\"):\n            out[i] = np.float64(r[i]) / np.sqrt(np.float64(math.pi / (2.0 * (K - 1)) * s))\n    return _S(out, d)\n\n\ndef _lm_case(x=0.01, n=300):\n    \"\"\"S1 の部品の既知答え用（2026-10-20）。終値を 100 と 100×e^x の交互にする（対数の値動きが +x と −x の交互）。\n    bipower の和＝(K−1) 項すべて x²＝V＝π x²/2 ＝ L＝±x ÷ (x √(π/2)) ＝ ±√(2/π) ＝ ±0.79788456…。最後の足（奇数番目＝上げ）は正。\"\"\"\n    c = np.where(np.arange(n) % 2 == 0, 100.0, 100.0 * math.exp(x))\n    return _mk(c=c, o=c.copy(), h=c.copy(), l=c.copy())\n\n\n_r(r\"帯スイング\\((\\d+),([\\d.]+),(\\d+)\\)\", \"帯スイング\",\n   \"確定したスイング（前後 k 本で確定した山と谷）を許容幅 t で束ねた、終値の上の帯と下の帯。今の足の前の n 本で、上の帯の山と下の帯の谷が\"\n   \"それぞれ m 回以上・取れる距離（上の帯の下端 − 下の帯の上端）÷ 終値 が手数料の床 × 倍数以上・終値がその間なら 1、それ以外 0\",\n   \"法則 R1・R7（regime_detection_kb.md の 11-2）・LuxAlgo の逐語 \\\"Overlapping zones merge into one consolidated zone and their test counts are added together\\\"。\"\n   \"手数料の床＝e37_scalp.SCALP_FLOOR・倍数＝設定 band_fee_mult（名前に出さない）・k は名前に出さない引数（最初の値 2）。RG-v5 の数字は使わない\",\n   \"状態量＝1 はレンジの帯の中\", \"none\", tb=_tb_band_swing, known=_band_known(\"swing\"), mako=MAKO_B1S1)\n_r(r\"帯スイング1時間ATR\\((\\d+),([\\d.]+),(\\d+),(\\d+)\\)\", \"帯スイング1時間ATR\",\n   \"帯スイング の許容幅を「倍率 × 1時間足の ATR%（ATR ÷ その1時間足の終値）」で決め、0.15%〜0.6% に収めたもの\",\n   \"帯スイング と同じ法則 ＋ S-Rタッチ1時間ATR と同じ許容幅（出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』）。1時間足の値は閉じた時刻から使う\",\n   \"状態量＝1 はレンジの帯の中\", \"none\", tb=_tb_band_swing, known=_band_known(\"swing\"), mako=MAKO_B1S1)\n_r(r\"帯pivot\\(([\\d.]+)\\)\", \"帯pivot\",\n   \"上の線＝前の日で固定の pivot R1・下の線＝S1。上の帯の下端（R1×(1−t/2)）と下の帯の上端（S1×(1+t/2)）の間に終値が在り、\"\n   \"取れる距離（その差）÷ 終値 が手数料の床 × 倍数以上なら 1、それ以外 0。線に触れた回数は数えない\",\n   \"教科書の pivot の役割＝StockCharts の逐語「Pivot Points use the prior period's high, low, and close to estimate future support and \"\n   \"resistance levels.」（前もって推定する支持線・抵抗線）・法則 R7（取れる距離）。まこさん「絶対につくってほしい」（worklog 20261003 §37）・\"\n   \"「Aでいい」（触れた回数を数えない・ok_pivot_a_20261020）\",\n   \"状態量＝1 は前の日の R1 と S1 の間\", \"none\", known=_line_known(\"pivot\"), mako=MAKO_B1S1)\n_r(r\"帯pivot1時間ATR\\(([\\d.]+),(\\d+)\\)\", \"帯pivot1時間ATR\",\n   \"帯pivot の許容幅を「倍率 × 1時間足の ATR%」で決め、0.15%〜0.6% に収めたもの\",\n   \"帯pivot と同じ ＋ S-Rタッチ1時間ATR と同じ許容幅\",\n   \"状態量＝1 は前の日の R1 と S1 の間\", \"none\", known=_line_known(\"pivot\"), mako=MAKO_B1S1)\n_r(r\"帯VA\\(([\\d.]+)\\)\", \"帯VA\",\n   \"上の線＝前の UTC の日で固定の VAH・下の線＝VAL（前日VAH・前日VAL と同じ作り）。帯pivot と同じ決まりで 1 か 0（触れた回数は数えない）\",\n   \"教科書の Value Area＝LuxAlgo の逐語「the completed value area is carried forward as a reference for later sessions」（前のセッションの値を\"\n   \"後のセッションの参照にする）・法則 R7。worklog 20261003 §38・まこさん「Aでいい」（ok_pivot_a_20261020）\",\n   \"状態量＝1 は前の日の VAL と VAH の間\", \"none\", known=_line_known(\"va\"), mako=MAKO_B1S1)\n_r(r\"帯VA1時間ATR\\(([\\d.]+),(\\d+)\\)\", \"帯VA1時間ATR\",\n   \"帯VA の許容幅を「倍率 × 1時間足の ATR%」で決め、0.15%〜0.6% に収めたもの\",\n   \"帯VA と同じ ＋ S-Rタッチ1時間ATR と同じ許容幅\",\n   \"状態量＝1 は前の日の VAL と VAH の間\", \"none\", known=_line_known(\"va\"), mako=MAKO_B1S1)\n_r(r\"LeeMykland(\\d+)\", \"LeeMykland\",\n   \"Lee-Mykland（2008）の jump の統計 L＝今の1本の対数の値動き ÷ 直近 K 本の bipower のばらつきの平方根（上げの jump が正）\",\n   \"法則 S1（regime_detection_kb.md の 11-5）・e36_short_oscillation.py の式を材料の表へ移したもの（式は変えていない）。\"\n   \"閾値 L*（K と α から数式で決める）は材料に入れない\",\n   \"向きつき＝大きいほど統計的にありえない上げ・小さいほど下げ\", \"none\", tb=_tb_lee_mykland,\n   known=lambda p: [(_lm_case(), [(-1, math.sqrt(2.0 / math.pi), 1e-9), (-2, -math.sqrt(2.0 / math.pi), 1e-9)])],\n   mako=MAKO_B1S1)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1684「_r(r\"S-Rタッチ確定1時間ATR\\((\\d+),([\\d.]+),(\\d+)\\)\", \"S-Rタッチ確定1時間ATR\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5219行（<モジュール直下>・7種の系統を書く（帯＝構造・位置／S1＝ボラ））",
+  "直す前の文字": "    \"S-Rタッチ確定数\": dict(k=\"構造・位置\"), \"S-Rタッチ確定1時間ATR\": dict(k=\"構造・位置\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"S-Rタッチ確定数\": dict(k=\"構造・位置\"), \"S-Rタッチ確定1時間ATR\": dict(k=\"構造・位置\"),\n    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品（法則 R1・R7）と S1 の部品（1本の動き ÷ ふだんの動き＝ばらつき）\n    \"帯スイング\": dict(k=\"構造・位置\"), \"帯スイング1時間ATR\": dict(k=\"構造・位置\"),\n    \"帯pivot\": dict(k=\"構造・位置\"), \"帯pivot1時間ATR\": dict(k=\"構造・位置\"),\n    \"帯VA\": dict(k=\"構造・位置\"), \"帯VA1時間ATR\": dict(k=\"構造・位置\"),\n    \"LeeMykland\": dict(k=\"ボラ\", note=\"法則 S1 の「見ているもの」＝1本の動き ÷ ふだんの動き（regime_detection_kb.md の 11-5）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5219「\"S-Rタッチ確定数\": dict(k=\"構造・位置\"), \"S-Rタッチ確定1時間ATR\": dict(k=\"構造・位置\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5553行（<モジュール直下>・7種の業界のライブラリとの対応を書く（観察の道具の検査10 が全部の種類に求める））",
+  "直す前の文字": "    \"S-Rタッチ確定1時間ATR\": ((), \"S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"S-Rタッチ確定1時間ATR\": ((), \"S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),\n    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品と S1 の部品\n    \"帯スイング\": ((), \"確定したスイングを束ねた上下の帯（法則 R1・R7）。ライブラリに相当する関数が無い\"),\n    \"帯スイング1時間ATR\": ((), \"帯スイング の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),\n    \"帯pivot\": ((), \"前の日の pivot R1・S1 の間に終値が在り、取れる距離が手数料の床以上か（法則 R7）。ライブラリに相当する関数が無い\"),\n    \"帯pivot1時間ATR\": ((), \"帯pivot の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),\n    \"帯VA\": ((), \"前の日の VAL・VAH の間に終値が在り、取れる距離が手数料の床以上か（法則 R7）。ライブラリに相当する関数が無い\"),\n    \"帯VA1時間ATR\": ((), \"帯VA の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),\n    \"LeeMykland\": ((), \"Lee-Mykland（2008）の jump の統計。ライブラリに相当する関数が無い（式は論文の式・E36 から移した）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5553「\"S-Rタッチ確定1時間ATR\": ((), \"S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4905行（<モジュール直下>・監査 CP60 の修正69＝帯の1時間足の区切りの説明を直し、正時の区切りの切り替えを書く）",
+  "直す前の文字": "RANGE_GEO_TF = \"5m（1h ゾーンを足が閉じた時刻から ffill・状態機械は過去 close の逐次更新）\"\n",
+  "種類": "直した後の文字",
+  "中身": "# ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝監査 CP60 の修正69 の直した後の文字に、正時の区切りの切り替え（h1_edge）を足した。\nRANGE_GEO_TF = (\"5m（1h ゾーンは label=right・closed=right で5分足の始まりの時刻を束ねる＝1時間足の区切りは正時から5分ずれる\"\n                \"（例 10:05〜11:05）。5分足の行 T（11:00）へ ffill＝その行が閉じた時に確定済み。h1_edge=hour で正時の区切り（10:00〜11:00）に\"\n                \"切り替えられる＝その区切りの最後の5分足（10:55）の行から使う。既定は今の区切り・状態機械は過去 close の逐次更新）\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4905「RANGE_GEO_TF = \"5m（1h ゾーンを足が閉じた時刻から ffill・状態機械は過去 close の逐次更新）\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "scripts/priority_rebuild/e37_scalp.py",
+  "直す箇所": "517行（_rg5_frames・F-4＝RG-v5/v6 の帯を作る所に、1時間足の区切りを選ぶ引数を足す（既定は今のまま））",
+  "直す前の文字": "def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False):\n",
+  "種類": "直した後の文字",
+  "中身": "def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False, h1_edge: str = \"right\"):\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e37_scalp.py:517「def _rg5_frames(df: pd.DataFrame, adaptive_k=None, with_parts: bool = False):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/priority_rebuild/e37_scalp.py",
+  "直す箇所": "527行（_rg5_frames・F-4＝区切りを1時間足に束ねる所（build_range_gate_dashboard._resample）へ渡す）",
+  "直す前の文字": "    _d1h = rgmod.v17._resample(d5, \"1h\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝1時間足の区切り（right＝今・hour＝正時）。既定は今のまま\n    _d1h = rgmod.v17._resample(d5, \"1h\", h1_edge)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e37_scalp.py:527「_d1h = rgmod.v17._resample(d5, \"1h\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/priority_rebuild/e37_scalp.py",
+  "直す箇所": "548行（_apply_rg5_to_5m・F-4＝E38 の帯の列を作る所に、区切りの引数を足す）",
+  "直す前の文字": "def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:\n",
+  "種類": "直した後の文字",
+  "中身": "def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None, h1_edge: str = \"right\") -> pd.DataFrame:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e37_scalp.py:548「def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/priority_rebuild/e37_scalp.py",
+  "直す箇所": "552行（_apply_rg5_to_5m・F-4＝区切りを _rg5_frames へ渡す）",
+  "直す前の文字": "    _, up, rng, res_lo, res_hi, sup_lo, sup_hi, okz, brk = _rg5_frames(df, adaptive_k, with_parts=True)\n",
+  "種類": "直した後の文字",
+  "中身": "    _, up, rng, res_lo, res_hi, sup_lo, sup_hi, okz, brk = _rg5_frames(df, adaptive_k, with_parts=True, h1_edge=h1_edge)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e37_scalp.py:552「_, up, rng, res_lo, res_hi, sup_lo, sup_hi, okz, brk = _rg5_frames(df, adaptive_k, with_parts=True)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "scripts/priority_rebuild/e38_logic_parts.py",
+  "直す箇所": "55行（prepare_df・F-4＝E38 の部品が使う列を付ける所に、区切りの引数を足す）",
+  "直す前の文字": "def prepare_df(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:\n",
+  "種類": "直した後の文字",
+  "中身": "def prepare_df(df: pd.DataFrame, adaptive_k=None, h1_edge: str = \"right\") -> pd.DataFrame:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e38_logic_parts.py:55「def prepare_df(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "scripts/priority_rebuild/e38_logic_parts.py",
+  "直す箇所": "59行（prepare_df・F-4＝区切りを e37._apply_rg5_to_5m へ渡す）",
+  "直す前の文字": "    df = e37._apply_rg5_to_5m(df, adaptive_k=adaptive_k)\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝帯の1時間足の区切り（right＝今・hour＝正時）。既定は今のまま\n    df = e37._apply_rg5_to_5m(df, adaptive_k=adaptive_k, h1_edge=h1_edge)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e38_logic_parts.py:59「df = e37._apply_rg5_to_5m(df, adaptive_k=adaptive_k)」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 23,
+  "対象のファイル": "scripts/priority_rebuild/tuner_adapters/e38.py",
+  "直す箇所": "301〜305行（load_windows・F-4＝E38 の接続が、設定 global.regime.h1_edge を読んで帯の列を作る（測る道具が受け取る帯に届く））",
+  "直す前の文字": "    adaptive_k = e37.V25_K if cfg[\"global\"].get(\"regime\", {}).get(\"v25_adaptive_band\") else None\n    out = []\n    for (s, e) in windows:\n        d = raw[(raw[\"ts\"] >= s - warm) & (raw[\"ts\"] < e)].reset_index(drop=True).copy()\n        out.append(parts.prepare_df(d, adaptive_k=adaptive_k))\n",
+  "種類": "直した後の文字",
+  "中身": "    adaptive_k = e37.V25_K if cfg[\"global\"].get(\"regime\", {}).get(\"v25_adaptive_band\") else None\n    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝帯の1時間足の区切りを設定（global.regime.h1_edge）から読む。\n    #   無ければ止める（黙って今の区切りに戻さない）。測る道具（regime_r9_diag・engine_tuner）が受け取る帯はここを通る。\n    h1_edge = cfg[\"global\"][\"regime\"][\"h1_edge\"]\n    out = []\n    for (s, e) in windows:\n        d = raw[(raw[\"ts\"] >= s - warm) & (raw[\"ts\"] < e)].reset_index(drop=True).copy()\n        out.append(parts.prepare_df(d, adaptive_k=adaptive_k, h1_edge=h1_edge))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/tuner_adapters/e38.py:301「adaptive_k = e37.V25_K if cfg[\"global\"].get(\"regime\", {}).get(\"v25_adaptive_band\") else None」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": "scripts/priority_rebuild/e38_logics.json",
+  "直す箇所": "12行（設定・F-4＝帯の1時間足の区切りの設定（既定 right＝今のまま））",
+  "直す前の文字": "      \"v25_adaptive_band\": true,\n",
+  "種類": "直した後の文字",
+  "中身": "      \"v25_adaptive_band\": true,\n      \"h1_edge\": \"right\",\n      \"note_h1_edge\": \"★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69・まこさん「すべて案どおりでよい」ok_d1_20261004 の③）＝帯の1時間足の区切り。right＝今（label=right・closed=right＝10:05〜11:05）／hour＝正時（10:00〜11:00）。既定は今のまま（売買の結果は変わらない）。どちらが良いかは M2-F-10f で一致率で比べる\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e38_logics.json:12「\"v25_adaptive_band\": true,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 25,
+  "対象のファイル": "scripts/priority_rebuild/e36_short_oscillation.py",
+  "直す箇所": "371〜394行（<モジュール直下>・S-1＝Lee-Mykland の式を材料の表から呼ぶ（式は移しただけ・E36 の値は1ビットも変わらない））",
+  "直す前の文字": "# ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──\ndef spike_threshold(K: int, alpha: float) -> float:\n    \"\"\"Gaussian EVT 閾値 L* = C_n + β*·a_n（K・α から a-priori・データで決めない・L-267）。\"\"\"\n    lnK = math.log(K)\n    s = math.sqrt(2.0 * lnK)\n    Cn = s - (math.log(math.pi) + math.log(lnK)) / (2.0 * s)\n    an = 1.0 / s\n    beta = -math.log(-math.log(1.0 - alpha))\n    return Cn + beta * an\n\n\ndef spike_stat(c: np.ndarray, K: int) -> np.ndarray:\n    \"\"\"各バーの jump 統計 L_i = r_i/√V̂_i（V̂=局所 bipower・直近 K 本・全て過去〜現在＝H2 leak-safe）。\n    r_i=log(c_i/c_{i−1})・|r_j||r_{j−1}| を窓 K−1 で和（warmup は NaN→発火しない）。\"\"\"\n    n = len(c)\n    r = np.full(n, np.nan)\n    r[1:] = np.log(c[1:] / c[:-1])              # log リターン（過去 close のみ）\n    absr = np.abs(r)\n    bpv = np.full(n, np.nan)\n    bpv[1:] = absr[1:] * absr[:-1]              # bpv[i] = |r_i||r_{i−1}|（jump 頑健の bipower 項）\n    bp_sum = pd.Series(bpv).rolling(K - 1).sum().to_numpy()   # Σ_{j=i−K+2}^{i}（K−1 項・当該バーまで）\n    V = (math.pi / (2.0 * (K - 1))) * bp_sum\n    with np.errstate(invalid=\"ignore\", divide=\"ignore\"):\n        return r / np.sqrt(V)\n",
+  "種類": "直した後の文字",
+  "中身": "# ── 急騰検知 Lee-Mykland jump ──\n# ★2026-10-20（工事 m2c15-band-s1-20261020・S-1・まこさん「OK」ok_direction_20261020 の3・ok_three_points_20261020 の3）\n#   ＝式の置き場を材料の表（observe_diag.py の spike_threshold・spike_stat）へ移した（要件定義の6番＝指標は指標一覧からだけ呼び出す）。\n#   式は1文字も変えていない。E36 の値は1ビットも変わらない（写しで突き合わせた）。\nfrom observe_diag import spike_threshold, spike_stat   # noqa: E402\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/e36_short_oscillation.py:371「# ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──」",
+  "状態": "確定"
+ },
+ {
+  "番号": 26,
+  "対象のファイル": "scripts/dashboard/build_range_gate_dashboard.py",
+  "直す箇所": "65〜71行（_resample・F-4＝1時間足に束ねる所に、正時で区切る形を足す（既定は今のまま））",
+  "直す前の文字": "def _resample(df5: pd.DataFrame, rule: str) -> pd.DataFrame:\n    o = df5[\"open\"].resample(rule, label=\"right\", closed=\"right\").first()\n    h = df5[\"high\"].resample(rule, label=\"right\", closed=\"right\").max()\n    l = df5[\"low\"].resample(rule, label=\"right\", closed=\"right\").min()\n    c = df5[\"close\"].resample(rule, label=\"right\", closed=\"right\").last()\n    v = df5[\"volume\"].resample(rule, label=\"right\", closed=\"right\").sum()\n    return pd.DataFrame({\"open\": o, \"high\": h, \"low\": l, \"close\": c, \"volume\": v}).dropna(subset=[\"close\"])\n",
+  "種類": "直した後の文字",
+  "中身": "def _resample(df5: pd.DataFrame, rule: str, edge: str = \"right\") -> pd.DataFrame:\n    \"\"\"5分足を rule の足に束ねる。\n    ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69・まこさん「すべて案どおりでよい」ok_d1_20261004 の③）\n      edge=\"right\"（既定・今のまま）＝label=right・closed=right。5分足の時刻はバーの始まりなので、1時間足は 10:05〜11:05 の足を束ねる。\n      edge=\"hour\"＝正時で区切る（10:00〜11:00＝始まりが 10:00〜10:55 の足）。束ねた値の時刻は、区切りの最後の5分足の始まり（10:55）に\n      置く＝その足が閉じた 11:00 に1時間足が閉じる（未来を見ない・right と同じ「その行が閉じた時に確定済み」）。\n      既定は今のままなので、RG-v5・labels_v17 の結果は変わらない。\"\"\"\n    if edge == \"right\":\n        o = df5[\"open\"].resample(rule, label=\"right\", closed=\"right\").first()\n        h = df5[\"high\"].resample(rule, label=\"right\", closed=\"right\").max()\n        l = df5[\"low\"].resample(rule, label=\"right\", closed=\"right\").min()\n        c = df5[\"close\"].resample(rule, label=\"right\", closed=\"right\").last()\n        v = df5[\"volume\"].resample(rule, label=\"right\", closed=\"right\").sum()\n        return pd.DataFrame({\"open\": o, \"high\": h, \"low\": l, \"close\": c, \"volume\": v}).dropna(subset=[\"close\"])\n    if edge != \"hour\":\n        raise ValueError(f\"_resample の edge は right か hour（{edge}）\")\n    step = pd.Series(df5.index).diff().median()\n    o = df5[\"open\"].resample(rule, label=\"left\", closed=\"left\").first()\n    h = df5[\"high\"].resample(rule, label=\"left\", closed=\"left\").max()\n    l = df5[\"low\"].resample(rule, label=\"left\", closed=\"left\").min()\n    c = df5[\"close\"].resample(rule, label=\"left\", closed=\"left\").last()\n    v = df5[\"volume\"].resample(rule, label=\"left\", closed=\"left\").sum()\n    out = pd.DataFrame({\"open\": o, \"high\": h, \"low\": l, \"close\": c, \"volume\": v}).dropna(subset=[\"close\"])\n    out.index = out.index + pd.Timedelta(rule) - step\n    return out\n",
+  "根拠の抜き書き": "scripts/dashboard/build_range_gate_dashboard.py:65「def _resample(df5: pd.DataFrame, rule: str) -> pd.DataFrame:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 27,
+  "対象のファイル": "scripts/priority_rebuild/observe_config.json",
+  "直す箇所": "403〜404行（設定・帯の部品のタッチの回数・手数料の倍数と、S1 の部品の K を設定ファイルに書く）",
+  "直す前の文字": " \"_sr_atr1h_k\": \"★2026-09-26（M2-E-4c・束2・設計書 m2e-bundle2-20260926）に足した。S-Rタッチ1時間ATR（帯の許容幅＝倍率 × 1時間足の ATR% を 0.15%〜0.6% に収める部品）の倍率。★新しい数字は作っていない。0.5・1.0・1.5＝recipes/search_limits.json の ref_mult_range（0.5〜1.5・まこさん承認 24a453d6…）と同じ数字。この用途での承認＝まこさん決定 2026-09-26（逐語「CCの案の通りで進める」）＝監査 cp21 の m2 が『この用途では未承認』とした分。下端 0.5 は、上の sr_tol の説明に写した出どころの逐語 V25_K = 0.5 と同じ。★2026-09-06 に外した sr_atr_k（同じ3つの数字）とは別の名前＝外した記録と混ざらない。\",\n \"mmi_periods\": [\n",
+  "種類": "直した後の文字",
+  "中身": " \"_sr_atr1h_k\": \"★2026-09-26（M2-E-4c・束2・設計書 m2e-bundle2-20260926）に足した。S-Rタッチ1時間ATR（帯の許容幅＝倍率 × 1時間足の ATR% を 0.15%〜0.6% に収める部品）の倍率。★新しい数字は作っていない。0.5・1.0・1.5＝recipes/search_limits.json の ref_mult_range（0.5〜1.5・まこさん承認 24a453d6…）と同じ数字。この用途での承認＝まこさん決定 2026-09-26（逐語「CCの案の通りで進める」）＝監査 cp21 の m2 が『この用途では未承認』とした分。下端 0.5 は、上の sr_tol の説明に写した出どころの逐語 V25_K = 0.5 と同じ。★2026-09-06 に外した sr_atr_k（同じ3つの数字）とは別の名前＝外した記録と混ざらない。\",\n \"band_touch\": [\n  3,\n  4\n ],\n \"_band_touch\": \"★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝帯スイング と 帯スイング1時間ATR のタッチの回数（帯pivot・帯VA は触れた回数を数えない＝まこさん「Aでいい」ok_pivot_a_20261020）（上の線と下の線のそれぞれに、確定したスイングが何回以上あるか）。出どころ＝まこさん「1,2OK」（タッチは3・4回・worklog 20261003 §35 の3）。探す範囲は、engine_tuner がこの一覧の最小から最大まで（3〜4）で作る（engine_tuner_gen.material_ranges）\",\n \"band_fee_mult\": 2,\n \"_band_fee_mult\": \"★2026-10-20（B-1）＝帯の部品の「取れる距離」の床の倍数（床＝e37_scalp.SCALP_FLOOR 0.08% × この倍数）。名前に出さない値（まこさん「OK」ok_three_points_20261020 の1＝最初の値 2）。範囲の出どころ＝§2.2 の段1 の表「幅の床0.08%×2〜6倍」（engine_tuner_milestones2.md:457）。この値を変えると、コードを直さずに帯の部品の床が変わる（まこさん「値を変更して試せるようにする」）\",\n \"lee_mykland_k\": [\n  270\n ],\n \"_lee_mykland_k\": \"★2026-10-20（工事 m2c15-band-s1-20261020・S-1）＝スパイクの法則 S1 の部品（LeeMykland）の K（ばらつきを測る直近の本数）。出どころ＝e36_short_oscillation.py の a-priori の値 K=270（5分足で約1日）・まこさん「OK」ok_direction_20261020 の4（範囲は1点のまま＝P-6）\",\n \"mmi_periods\": [\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_config.json:403「\"_sr_atr1h_k\": \"★2026-09-26（M2-E-4c・束2・設計書 m2e-bundle2-20260926）に足した。S-Rタッチ1時間ATR（帯の許容幅＝倍率 × 1時間足の ATR% を 0.15%〜0.6% に収め」",
+  "状態": "確定"
+ },
+ {
+  "番号": 28,
+  "対象のファイル": ".claude/memory/regime_detection_kb.md",
+  "直す箇所": "1291〜1292行（設定・当てると中身が変わる差し込みの囲み（gen_materials.py --write が書く所）を、写しで書いた文に置き換える（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見る））",
+  "直す前の文字": "| 5 | 指標の種類 | **291種類**（engine_tuner が選べる **173**／選べない **118**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **297件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n",
+  "種類": "直した後の文字",
+  "中身": "| 5 | 指標の種類 | **298種類**（engine_tuner が選べる **173**／選べない **125**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **304件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n",
+  "根拠の抜き書き": ".claude/memory/regime_detection_kb.md:1291「| 5 | 指標の種類 | **291種類**（engine_tuner が選べる **173**／選べない **118**） | materials.md の「engine_tuner が選べる指標の種類」の行 |」",
+  "状態": "確定"
+ },
+ {
+  "番号": 29,
+  "対象のファイル": ".claude/ratchet/engine_tuner_milestones.md",
+  "直す箇所": "282行（設定・当てると中身が変わる差し込みの囲み（gen_materials.py --write が書く所）を、写しで書いた文に置き換える（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見る））",
+  "直す前の文字": "<!-- FORBIDDEN_CHECK_START hash=dfbfaf49c963f2c8 ここは gen_materials.py が自動生成＝手で書き換えない -->\n",
+  "種類": "直した後の文字",
+  "中身": "<!-- FORBIDDEN_CHECK_START hash=54cab7c17834dcf3 ここは gen_materials.py が自動生成＝手で書き換えない -->\n",
+  "根拠の抜き書き": ".claude/ratchet/engine_tuner_milestones.md:282「<!-- FORBIDDEN_CHECK_START hash=dfbfaf49c963f2c8 ここは gen_materials.py が自動生成＝手で書き換えない -->」",
+  "状態": "確定"
+ },
+ {
+  "番号": 30,
+  "対象のファイル": ".claude/ratchet/engine_tuner_milestones.md",
+  "直す箇所": "286行（設定・当てると中身が変わる差し込みの囲み（gen_materials.py --write が書く所）を、写しで書いた文に置き換える（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見る））",
+  "直す前の文字": "| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **38件**（場所1 37／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています** |\n",
+  "種類": "直した後の文字",
+  "中身": "| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **40件**（場所1 39／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています** |\n",
+  "根拠の抜き書き": ".claude/ratchet/engine_tuner_milestones.md:286「| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **38件**（場所1 37／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています*」",
+  "状態": "確定"
+ },
+ {
+  "番号": 31,
+  "対象のファイル": ".claude/ratchet/engine_tuner_milestones2.md",
+  "直す箇所": "3055行（設定・当てると中身が変わる差し込みの囲み（gen_materials.py --write が書く所）を、写しで書いた文に置き換える（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見る））",
+  "直す前の文字": "<!-- FORBIDDEN_CHECK_START hash=dfbfaf49c963f2c8 ここは gen_materials.py が自動生成＝手で書き換えない -->\n",
+  "種類": "直した後の文字",
+  "中身": "<!-- FORBIDDEN_CHECK_START hash=54cab7c17834dcf3 ここは gen_materials.py が自動生成＝手で書き換えない -->\n",
+  "根拠の抜き書き": ".claude/ratchet/engine_tuner_milestones2.md:3055「<!-- FORBIDDEN_CHECK_START hash=dfbfaf49c963f2c8 ここは gen_materials.py が自動生成＝手で書き換えない -->」",
+  "状態": "確定"
+ },
+ {
+  "番号": 32,
+  "対象のファイル": ".claude/ratchet/engine_tuner_milestones2.md",
+  "直す箇所": "3059行（設定・当てると中身が変わる差し込みの囲み（gen_materials.py --write が書く所）を、写しで書いた文に置き換える（承認の前の仮当て A12 が gen_materials.py --selftest の F6・B3・B4 で見る））",
+  "直す前の文字": "| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **38件**（場所1 37／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています** |\n",
+  "種類": "直した後の文字",
+  "中身": "| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **40件**（場所1 39／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています** |\n",
+  "根拠の抜き書き": ".claude/ratchet/engine_tuner_milestones2.md:3059「| 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **38件**（場所1 37／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています*」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 33,
+  "対象のファイル": ".claude/breaks/b189_band_swing_unconfirmed.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 帯スイングで、確定した山・谷の代わりに全部の足の高値・安値を数える（まだ確定していない山・谷も数える）と、軽い口の既知答えが落ちる\n# EXPECT_MSG: T-B1: 帯スイング(144,0.0015,3): 手計算の既知答えと不一致\n# b189_band_swing_unconfirmed — 帯スイングで、確定した山・谷の代わりに全部の足の高値・安値を数える（まだ確定していない山・谷も数える）と、軽い口の既知答えが落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B1: 帯スイング(144,0.0015,3): 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    hv = _fractal_marks(d.high, k, True)[0].to_numpy(float)     # 帯の上の線＝確定した山（前後 k 本で確定してから使う）\\n    lv = _fractal_marks(d.low, k, False)[0].to_numpy(float)     # 帯の下の線＝確定した谷\\n'\nnew = '    hv = d.high.to_numpy(float)\\n    lv = d.low.to_numpy(float)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b189_band_swing_unconfirmed] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 34,
+  "対象のファイル": ".claude/breaks/b190_band_swing_no_fee_floor.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 帯スイングで、取れる距離が手数料の床以上という条件（法則 R7）を外すと、軽い口の既知答え（幅の狭い帯）が落ちる\n# EXPECT_MSG: T-B1: 帯スイング(144,0.0015,3): 手計算の既知答えと不一致\n# b190_band_swing_no_fee_floor — 帯スイングで、取れる距離が手数料の床以上という条件（法則 R7）を外すと、軽い口の既知答え（幅の狭い帯）が落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B1: 帯スイング(144,0.0015,3): 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        ok = (up is not None and dn is not None and dn[1] < ca[i] < up[0]\\n              and (up[0] - dn[1]) / ca[i] >= floor)\\n'\nnew = '        ok = (up is not None and dn is not None and dn[1] < ca[i] < up[0])\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b190_band_swing_no_fee_floor] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 35,
+  "対象のファイル": ".claude/breaks/b191_band_lines_no_top.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 帯pivot・帯VA で、終値が上の線より下という条件を外すと、軽い口の既知答え（終値が R1 より上）が落ちる\n# EXPECT_MSG: T-B1: 帯pivot(0.0015): 手計算の既知答えと不一致\n# b191_band_lines_no_top — 帯pivot・帯VA で、終値が上の線より下という条件を外すと、軽い口の既知答え（終値が R1 より上）が落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B1: 帯pivot(0.0015): 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        ok = (bot < ca) & (ca < top) & ((top - bot) / ca >= floor)\\n'\nnew = '        ok = (bot < ca) & ((top - bot) / ca >= floor)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b191_band_lines_no_top] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 36,
+  "対象のファイル": ".claude/breaks/b192_lee_mykland_abs.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: S1 の部品で、値動きの向き（符号）を落とすと、軽い口の既知答え（下げの足は −√(2/π)）が落ちる\n# EXPECT_MSG: T-B1: LeeMykland270: 手計算の既知答えと不一致\n# b192_lee_mykland_abs — S1 の部品で、値動きの向き（符号）を落とすと、軽い口の既知答え（下げの足は −√(2/π)）が落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B1: LeeMykland270: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        return r / np.sqrt(V)\\n'\nnew = '        return np.abs(r) / np.sqrt(V)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b192_lee_mykland_abs] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 37,
+  "対象のファイル": ".claude/breaks/b193_hour_edge_label_late.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 正時の区切りの1時間足を、区切りの最後の5分足の時刻でなく次の正時に置くと、軽い口の T-B3 が落ちる\n# EXPECT_MSG: T-B3: 正時の区切りの1時間足が\n# b193_hour_edge_label_late — 正時の区切りの1時間足を、区切りの最後の5分足の時刻でなく次の正時に置くと、軽い口の T-B3 が落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/dashboard/build_range_gate_dashboard.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B3: 正時の区切りの1時間足が」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/dashboard/build_range_gate_dashboard.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    out.index = out.index + pd.Timedelta(rule) - step\\n'\nnew = '    out.index = out.index + pd.Timedelta(rule)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b193_hour_edge_label_late] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 38,
+  "対象のファイル": ".claude/breaks/b194_e36_own_spike_stat.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: E36 が Lee-Mykland の式を自前で持つ（材料の表の関数を呼ばない）と、軽い口の T-B4 が落ちる\n# EXPECT_MSG: T-B4: E36 の Lee-Mykland の式が\n# b194_e36_own_spike_stat — E36 が Lee-Mykland の式を自前で持つ（材料の表の関数を呼ばない）と、軽い口の T-B4 が落ちる（工事 m2c15-band-s1-20261020・2026-10-20）\n#   守っているもの＝完成の条件の軽い口（T-B1〜T-B4）（observe_diag.py --selftest-band）\n#   壊し方＝scripts/priority_rebuild/e36_short_oscillation.py の中の、下の old を new に置き換える（b1s1_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-band が「T-B4: E36 の Lee-Mykland の式が」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/e36_short_oscillation.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = 'from observe_diag import spike_threshold, spike_stat   # noqa: E402\\n'\nnew = 'from observe_diag import spike_threshold   # noqa: E402\\nspike_stat = lambda c, K: np.zeros(len(c))   # noqa: E731\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b194_e36_own_spike_stat] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-band\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b152_sr_fractal_counts_bars.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【新しく入る数字と式の一覧】
+| 番号 | 数字か式 | 出どころ |
+|---|---|---|
+| 1 | 1 | 帯の部品の出力の 1（レンジの帯の中）・配列の位置 −1・番人の番号（T-B1）・倍率の 1.0 の範囲の端 |
+| 2 | 0 | 帯の部品の出力の 0・配列の位置・範囲の端 0 |
+| 3 | 1.0 | 帯の部品の出力の 1（既知答えの期待値） |
+| 4 | 0.0 | 帯の部品の出力の 0（既知答えの期待値） |
+| 5 | 2026 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 6 | 10 | 時刻 10:00・10:05・10:55 の説明（帯の1時間足の区切り）と、作り物の足の 10時間後（T-B3）・説明の文の日付 |
+| 7 | 20 | 説明の文の日付（2026-10-20） |
+| 8 | 0.15 | 許容幅の下限 0.15%（S-Rタッチ1時間ATR と同じ・出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』e37_scalp.py:213） |
+| 9 | 0.6 | 許容幅の上限 0.6%（同上） |
+| 10 | 267 | 教訓 L-267 の番号（E36 から移した spike_threshold の説明の文・式は変えていない） |
+| 11 | 2.0 | Lee-Mykland の式の 2（V＝π/(2(K−1))・E36 から移した式）・既知答えの √(2/π) |
+| 12 | 4 | タッチの回数 4（まこさん「1,2OK」worklog 20261003 §35 の3）・既知答えの4回の山と谷・番人の番号（T-B4） |
+| 13 | 20261020 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 14 | 900 | 承認の前の仮当ての壊すプログラムの上限 900 秒（前の工事 K-4 の記録・説明の文） |
+| 15 | 9 | 説明の文の中の番号（記録の節・ファイルの行・教訓・監査の修正・番人の番号）＝数の値ではない |
+| 16 | 288 | 窓の範囲の上端（§2.2 の段1 の表・今の設定 sr_windows）・1日の5分足の本数（既知答えの1日目） |
+| 17 | 2 | 確定の本数 k の最初の値 2（資料の fractal の既定・K-3b と同じ）・手数料の倍数の最初の値 2（まこさん「OK」3つの決定の1） |
+| 18 | 100.0 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 19 | 01 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 20 | 55 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 21 | 00 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 22 | 80 | 手数料の床 0.08% の説明の文の数字（e37_scalp.SCALP_FLOOR＝0.0008） |
+| 23 | 20261003 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 24 | 37 | 説明の文の中の番号（記録の節・ファイルの行・教訓・監査の修正・番人の番号）＝数の値ではない |
+| 25 | 35 | 説明の文の中の番号（記録の節・ファイルの行・教訓・監査の修正・番人の番号）＝数の値ではない |
+| 26 | 8 | 説明の文の中の番号（記録の節・ファイルの行・教訓・監査の修正・番人の番号）＝数の値ではない |
+| 27 | 0.0015 | 許容幅の範囲の下端（§2.2 の段1 の表 engine_tuner_milestones2.md:457・今の設定 sr_tol・_SR_ATR_TOL_LO） |
+| 28 | 0.006 | 許容幅の範囲の上端（同上・_SR_ATR_TOL_HI） |
+| 29 | 3 | タッチの回数 3（まこさん「1,2OK」worklog 20261003 §35 の3） |
+| 30 | 30 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝山の位置（最後の足の30本前） |
+| 31 | 24 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝山の位置 |
+| 32 | 18 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝山の位置 |
+| 33 | 12 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝山の位置 |
+| 34 | 27 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝谷の位置 |
+| 35 | 21 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝谷の位置 |
+| 36 | 15 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝谷の位置 |
+| 37 | 6 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた）＝山と谷の間の本数 |
+| 38 | 100 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 39 | 110 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 40 | 90 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 41 | 100.15 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 42 | 99.85 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 43 | 0.99925 | 既知答え narrow の導き（1 − 0.0015/2） |
+| 44 | 1.00075 | 既知答え narrow の導き（1 + 0.0015/2） |
+| 45 | 0.08 | 手数料の床 0.08%（e37_scalp.SCALP_FLOOR＝0.0008・説明の文） |
+| 46 | 0.0016 | 手数料の床 × 倍数＝0.0008 × 2（説明の文・既知答えの導き） |
+| 47 | 328 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 48 | 110.0 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 49 | 90.0 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 50 | 105 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 51 | 109.791 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 52 | 100.208 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 53 | 112 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 54 | 488 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 55 | 105.0 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 56 | 200 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 57 | 144 | 窓の範囲の下端（§2.2 の段1 の表・今の設定 sr_windows・まこさん「OK」向きの2） |
+| 58 | 112.0 | 既知答えの合成の足の値（手で決めた形の数。答えは定義から導く＝参照表の _band_case・_line_case・_lm_case の説明に導きを書いた） |
+| 59 | 0.01 | 既知答え _lm_case の値動き x＝0.01（手で決めた形の数・答えは √(2/π) で x によらない） |
+| 60 | 300 | 既知答え _lm_case の本数（K＝270 より長くする） |
+| 61 | 0.79788456 | 既知答え _lm_case の答え √(2/π) の説明の文（式で math.sqrt(2.0 / math.pi) を使う） |
+| 62 | 11 | 時刻 11:00・11:05 の説明（帯の1時間足の区切り・監査 CP60 の修正69 の文）と、検査4 の 11本の時間足の説明 |
+| 63 | 38 | 説明の文の中の番号（記録の節・ファイルの行・教訓・監査の修正・番人の番号）＝数の値ではない |
+| 64 | 2008 | Lee-Mykland（2008）の論文の年（説明の文） |
+| 65 | 5 | 5分足の説明の文・time 5min |
+| 66 | 05 | 説明の文の日付・時刻（直した日 2026-10-20・逐語のファイルの名前の日付・作り物の足の時刻）＝数の値ではない |
+| 67 | 2.2 | §2.2 の段1 の表（説明の文） |
+| 68 | 457 | engine_tuner_milestones2.md:457 の行番号（説明の文） |
+| 69 | 270 | S1 の部品の K（E36 の a-priori の値・e36_short_oscillation.py:19・まこさん「OK」向きの4） |
+| 70 | 125 | 知識の文書の件数の囲みの「選べない」指標の種類の数（写しで gen_materials.py --write が数えた文・118＋足す7種） |
+| 71 | 39 | マイルストーンの照合の表の場所1 の決まった数字だけの一覧の数（写しで gen_materials.py --write が数えた文・37＋band_touch・lee_mykland_k） |
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 帯pivot・帯VA は線に触れた回数を数えない | pivot の役割は前の期間から前もって推定する支持線・抵抗線（StockCharts の逐語）。まこさん「Aでいい」 | 法則 R1 と同じく触れた回数を求める（実物で 帯pivot 0.0%）／帯pivot・帯VA を外す |
+| 名前に出すのは窓・許容幅（倍率と ATR の期間）・タッチの回数。手数料の倍数は設定ファイル | 列の数を抑える（約240本 → 73本）。まこさん「OK」（3つの決定の1） | 4つとも名前に出す |
+| 出どころの無い数字（窓・許容幅・倍率）は今の設定の値 | CC は数字を作らない。まこさん「OK」（向きの2） | 新しい数字を決める |
+| S1 の式は材料の表に置き、E36 はそこから呼ぶ | 要件定義の6番（指標は指標一覧からだけ）。まこさん「OK」（向きの3） | 材料の表が E36 の関数を呼ぶ |
+| 区切りの設定は e38_logics.json の global.regime.h1_edge の1か所・既定は今の区切り | 測る道具が受け取る帯は E38 の接続を通る（okd_k8band_20261004）。既定のままなら RG-v5・labels_v17 の結果は変わらない | 観察の道具の設定に置く |
+| 壊すプログラムは軽い口 --selftest-band で測る | 全体の自己テストは約180秒で、6本だと承認の前の仮当ての 900秒に入らない（前の工事 K-4 の記録） | 全体の自己テストで測る |
+| 帯スイングの帯は、終値に近い順に見てスイングが m 回以上の最初の帯 | 終値を挟む上と下の帯を選ぶため（帯の平均と終値の差が小さい順・同じなら値段の低い側） | 一番スイングの多い帯 |
+| 探す範囲を範囲の表（search_limits.json）に書かない | オフのままの種類の範囲が在ると engine_tuner_gen.py:297-299 が止まり、承認の前の仮当て（A12）はオン・オフの表を作り直さない。書かなくても、カタログの値から作る範囲は同じ（写しで違い 0 件） | 範囲の表に書く（仮当てで止まる）／範囲だけ次の工事にする |
+| 文書3本の差し込みの囲みを、実装の指示に入れる | 当てると数が変わり、承認の前の仮当て（A12）が gen_materials.py --selftest の F6・B3・B4 で止まる（許すのは T6 だけ）。数字は CC が書かず、写しで gen_materials.py --write が書いた文を使う。手本＝K-3a・K-3c（worklog 20261008 §13） | 仮当てが許す落ちを広げる（検査を緩める直し） |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 帯の部品の列が 73本増え、成績表の作り直し（M2-D-8）と検査4 が長くなる | 1列の秒を 4-14 に書いた。成績表の作り直しの見込みは M2-D-8 の始めに測る |
+| 帯pivot は 72% の足で 1 になり、レンジの見分けに効かない恐れ | M2-F-10f で一致率で比べる（目標の④） |
+| E36 が観察の道具を読み込む（約1.5秒）＝E36 を走らせる時間がその分のびる | 4-14 に書いた。E36 の値は変わらない（T-B4・写しの突き合わせ） |
+| 正時の区切り（hour）は、今の区切りと値が違う＝切り替えると E38 の売買の結果が変わる | 既定は今の区切りのまま。切り替えて比べるのは M2-F-10f |
+| 承認の前に、別の工事で gen_materials.py --write が走ると、文書3本の囲みの「直す前の文字」が変わり、指示が当たらなくなる | 当てる道具が「直す前の文字が無い」で止める（黙って当てない）。そのときは案を作り直す |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 実装の指示を当てる | 数分 | 当てる道具が 38 件を1件ずつ当てる |
+| 当てた後の自己テスト・G-1・G2・H2 | 約15分 | --selftest 約180秒・G2 約50秒・H2 約5分（worklog 20261020 §16）・表の作り直し |
+| 壊すプログラム6本 | 約1〜2分 | 1本あたり写しの作り＋軽い口（b189_band_swing_unconfirmed 3.7秒・b190_band_swing_no_fee_floor 3.7秒・b191_band_lines_no_top 3.8秒・b192_lee_mykland_abs 3.7秒・b193_hour_edge_label_late 3.7秒・b194_e36_own_spike_stat 3.7秒） |
+
+【確かめていないこと】
+| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |
+|---|---|---|
+| 検査4（未来を見ていないか）を、新しい列の全部（73の名前 × 11本の時間足）で走らせていない | 1つの名前で約4分半かかり、全部だと数時間かかる。種類ごとに1つの名前（7種・77列）と、作りの変わった4種（44列）で走らせた | python3 scripts/priority_rebuild/observe_diag.py --inspect data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv --only 4 --cols '^帯'（LeeMykland は --cols '^LeeMykland' で別に） |
+| 帯の部品が、正解ラベルとの一致率を上げるか | 一致率を測るのは M2-F-10f（工事2 の後） | M2-F-10f |
+| PVO の軸3（5・7・9）と TSI の軸3（7・10・12）が、実物の5分足でも列を変えない件 | この工事の範囲の外（照らしの道具 r3_draft_build.py --probe で見つけた） | python3 .claude/state/indicator_review/r3_draft_build.py --probe |
+| E38 の接続が設定 h1_edge を読む所は、壊すプログラムで守っていない | 軽い口は E38 の接続を走らせない（接続の読み込みは重い） | python3 scripts/priority_rebuild/e38_logic_parts.py の呼び出し元で h1_edge を hour にして帯の列が変わるかを見る |
+| 5分足より長い足で、帯スイング1時間ATR の倍率と期間が列を変えるか | 検査12 は5分足だけ | 照らしの道具 r3_draft_build.py の PROBE を長い足で走らせる |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 法則 R1・R7・S1 を測る部品が材料に無かった（法則どおりの帯は RG-v5 の中だけ・S1 の式は E36 の中だけ）。帯の1時間足の区切りは1通りに決め打ちで、比べられなかった |
+| 期待値分解 | 売買に直接は触らない（新しい列を足すだけ・E38 の帯は既定で今と同じ・E36 の値は同じ）。勝率・平均利益・敗率・平均損失は、この工事では動かない。動くのは工事2 で新しい列を判定に使った後（目標の③） |
+| root か symptom か | root＝材料の側に部品が無いこと。判定の側の直し（工事2）はその上に立つ |
+| ベースアップ | regime_detection_kb.md の 11-2（R1・R7）と 11-5（S1）・engine_tuner_milestones2.md:457（§2.2 の段1 の表）・indicator_params_review.md の S-Rタッチの行・research/out_w3.json:527〜548（pivot の逐語）・e36_short_oscillation.py:372〜394 |
+
+【7-2 固定値ゼロ宣言】
+疑似シミュから取った値はありません。数字の出どころは【新しく入る数字と式の一覧】に1件ずつ書いた（まこさんの決定・設定の今の値・§2.2 の段1 の表・e37_scalp.SCALP_FLOOR・E36 の a-priori の値・既知答えの合成の足の手で決めた形）。
+
+【7-3 変更の単位】
+変更は1つ＝材料に法則 R1・R7・S1 の部品を足す（帯の3種 × 許容幅2つ・S1）と、その帯の1時間足の区切りを切り替えられる形にする（全体の表の B-1＋S-1 の1つの工事）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 根拠 | 確かめ直すコマンド |
+|---|---|---|
+| 1 | 乱数を使わない。新しい関数に rng・random は無い（実装の指示の中身に無い） | grep -c -e 'rng\.' -e 'random' .claude/state/indicator_review/b1s1_instr.json |
+| 2 | 探す値を決まった数字の一覧で先に限定しない＝最後の段階は、engine_tuner がカタログの値の最小から最大までの範囲（lo〜hi）で探す。カタログの値は最初の段階の値 | sed -n 286,303p v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 帯の部品が、本当のレンジを言い当てるか | 材料を足すだけでは分からない（M2-F-10f の一致率で測る） |
+| 教科書の役割の読み取りが正しいか | 調べる係の記録の逐語までは照らしたが、役割の解釈は監査が見る |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝observe_diag.py・indicator_reference_diag.py・e37_scalp.py・e38_logic_parts.py・tuner_adapters/e38.py・e38_logics.json・e36_short_oscillation.py・scripts/dashboard/build_range_gate_dashboard.py・observe_config.json・文書3本（regime_detection_kb.md・engine_tuner_milestones.md・engine_tuner_milestones2.md の差し込みの囲み）と、新しい壊すプログラムを【7-8】に書いた。主なファイルは observe_diag.py（材料の計算）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは壊すプログラム（NEW_FILE）。手本は b152（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に直接は触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝検査4 の時間を小さく測らずに走らせ、30分で打ち切られた（2026-10-20）。1つの名前で測ってから種類ごとに走らせた。
+- 新しい部品は、未来を見ない形にした（山・谷は確定してから使う・線は前の日が閉じてから使う・正時の1時間足は区切りの最後の5分足の行から）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（observe_diag.py・indicator_reference_diag.py ほかに行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の3）。走らせるコマンドの旗は、--selftest-band を足すだけ。
+- 壊すプログラムが測るのは、観察の道具の軽い口（--selftest-band）で、本物の結果の置き場には書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝observe_diag.py：<モジュール直下>・_band_cluster・_band_fee_floor・_band_lines・_band_swing・_band_tol_1h・_insp_hidden_params・_insp_range_geo・build_catalog・build_range_geometry・selftest・selftest_band・spike_stat・spike_threshold／indicator_reference_diag.py：<モジュール直下>・_band_case・_band_known・_line_case・_line_known・_lm_case・_tb_band_cluster・_tb_band_floor・_tb_band_swing・_tb_lee_mykland・_tb_tol_1h／e37_scalp.py：_apply_rg5_to_5m・_rg5_frames／e38_logic_parts.py：prepare_df／e38.py：load_windows／e36_short_oscillation.py：<モジュール直下>・spike_stat・spike_threshold／build_range_gate_dashboard.py：_resample。self_check_calls と must_use の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗＝observe_diag.py の --selftest-band。照らしの道具の直し（r3_draft_build.py の --probe・F-5）は .claude/state の道具の側で、設計書の前に済ませた。
+- 当てた後に実装の中で変わった手順が出たら、設計書に書き直してから進める。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-band-s1-20261020）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝観察の道具の既知答え・独立の実装・軽い口 T-B1〜T-B4・検査4・8・13 と、壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-1＝帯スイングが、確定したスイングだけを数える（まだ確定していない山・谷を数えない・既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | 確定した山・谷の代わりに全部の足の高値・安値を数える | b189_band_swing_unconfirmed.sh | — | 未着手 |
+| F-1＝帯スイングが、取れる距離が手数料の床より狭い帯を 0 にする（法則 R7・既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | 床の条件を外す | b190_band_swing_no_fee_floor.sh | — | 未着手 |
+| F-2・F-3＝帯pivot・帯VA が、終値が上の線より上の足を 0 にする（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | 終値が上の線より下という条件を外す | b191_band_lines_no_top.sh | — | 未着手 |
+| F-4＝正時の区切りの1時間足が、区切りの最後の5分足の時刻に置かれる（未来を見ない・T-B3 が通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | 次の正時に置く | b193_hour_edge_label_late.sh | — | 未着手 |
+| F-6＝S1 の部品が、値動きの向きを保つ（下げの足は負・既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | 値動きの向きを落とす | b192_lee_mykland_abs.sh | — | 未着手 |
+| F-6＝E36 が、材料の表の S1 の式を呼ぶ（式の置き場が1つ・T-B4 が通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-band | 実経路 | E36 に自前の式を置く | b194_e36_own_spike_stat.sh | — | 未着手 |
+- 行が無いやることの番号と、その理由：F-5＝この工事の実装の指示に入れない（材料は直さず、照らしの道具 r3_draft_build.py を .claude/state の側で直した＝確かめは python3 .claude/state/indicator_review/r3_draft_build.py --probe で S-Rタッチの4行が「作り物の値動きでだけ列が同じ」に出る）。G-1・G-2＝当てた後の手順（表の作り直し・自己テスト・G2・H2）で確かめる（4-12 の②〜⑤）。
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/memory/regime_detection_kb.md",
+  ".claude/ratchet/engine_tuner_milestones.md",
+  ".claude/ratchet/engine_tuner_milestones2.md",
+  "scripts/dashboard/build_range_gate_dashboard.py",
+  "scripts/priority_rebuild/e36_short_oscillation.py",
+  "scripts/priority_rebuild/e37_scalp.py",
+  "scripts/priority_rebuild/e38_logic_parts.py",
+  "scripts/priority_rebuild/e38_logics.json",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_config.json",
+  "scripts/priority_rebuild/observe_diag.py",
+  "scripts/priority_rebuild/tuner_adapters/e38.py",
+  ".claude/breaks/b189_band_swing_unconfirmed.sh",
+  ".claude/breaks/b190_band_swing_no_fee_floor.sh",
+  ".claude/breaks/b191_band_lines_no_top.sh",
+  ".claude/breaks/b192_lee_mykland_abs.sh",
+  ".claude/breaks/b193_hour_edge_label_late.sh",
+  ".claude/breaks/b194_e36_own_spike_stat.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b189_band_swing_unconfirmed.sh",
+  ".claude/breaks/b190_band_swing_no_fee_floor.sh",
+  ".claude/breaks/b191_band_lines_no_top.sh",
+  ".claude/breaks/b192_lee_mykland_abs.sh",
+  ".claude/breaks/b193_hour_edge_label_late.sh",
+  ".claude/breaks/b194_e36_own_spike_stat.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b152_sr_fractal_counts_bars.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。帯の部品の計算・S1 の式・軽い口・カタログ・帯の列が在る、観察の道具を照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_band_cluster",
+    "_band_fee_floor",
+    "_band_lines",
+    "_band_swing",
+    "_band_tol_1h",
+    "_insp_hidden_params",
+    "_insp_range_geo",
+    "build_catalog",
+    "build_range_geometry",
+    "selftest",
+    "selftest_band",
+    "spike_stat",
+    "spike_threshold"
+   ],
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>",
+    "_band_case",
+    "_band_known",
+    "_line_case",
+    "_line_known",
+    "_lm_case",
+    "_tb_band_cluster",
+    "_tb_band_floor",
+    "_tb_band_swing",
+    "_tb_lee_mykland",
+    "_tb_tol_1h"
+   ],
+   "scripts/priority_rebuild/e37_scalp.py": [
+    "_apply_rg5_to_5m",
+    "_rg5_frames"
+   ],
+   "scripts/priority_rebuild/e38_logic_parts.py": [
+    "prepare_df"
+   ],
+   "scripts/priority_rebuild/tuner_adapters/e38.py": [
+    "load_windows"
+   ],
+   "scripts/priority_rebuild/e36_short_oscillation.py": [
+    "<モジュール直下>",
+    "spike_stat",
+    "spike_threshold"
+   ],
+   "scripts/dashboard/build_range_gate_dashboard.py": [
+    "_resample"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、b1s1_proposal_build.py が数えた）。",
+  "self_check_calls": [
+   "_band_cluster",
+   "_band_swing",
+   "_band_lines",
+   "_band_tol_1h",
+   "_band_fee_floor",
+   "spike_threshold",
+   "spike_stat",
+   "selftest_band",
+   "build_catalog",
+   "build_range_geometry"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が足す・直す関数の名前。",
+  "must_use": {
+   "_band_swing": [
+    "_fractal_marks",
+    "_band_cluster",
+    "_band_fee_floor"
+   ],
+   "_band_lines": [
+    "_band_fee_floor"
+   ],
+   "_band_tol_1h": [
+    "_atr_pct_1h_on"
+   ]
+  },
+  "_must_use の意味": "帯スイングは確定したスイング（_fractal_marks）と帯の束ね（_band_cluster）と床（_band_fee_floor）を使い、帯pivot・帯VA も同じ床を使い、1時間足の許容幅は閉じた1時間足の ATR%（_atr_pct_1h_on）を使う（道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、材料の列と設定の項目を足すだけ。外から読む一覧の形（カタログの1件の形・参照表の欄・設定の欄）は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（b1s1_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 | 検索の言葉 |
+|---|---|---|
+| pivot の役割 | 新しく Web は開いていない。調べる係の記録の逐語（StockCharts・TradingView）を使った | StockCharts Pivot Points estimate future support and resistance levels |
+| Lee-Mykland の jump 検定 | 新しく Web は開いていない。E36 の式（論文の式）を移した | Lee Mykland 2008 jumps in financial markets bipower variation test statistic |
+| 重なった帯をまとめる | 新しく Web は開いていない。worklog 20261003 §35 の LuxAlgo の逐語 | LuxAlgo support resistance zones overlapping zones merge test counts added together |

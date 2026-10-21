@@ -368,30 +368,11 @@ def _scene_unit(scn, A, i):
     return max(UNIT * scn["mult"].get(key, 1.0), ee.MIN_ORDER_BTC)
 
 
-# ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
-def spike_threshold(K: int, alpha: float) -> float:
-    """Gaussian EVT 閾値 L* = C_n + β*·a_n（K・α から a-priori・データで決めない・L-267）。"""
-    lnK = math.log(K)
-    s = math.sqrt(2.0 * lnK)
-    Cn = s - (math.log(math.pi) + math.log(lnK)) / (2.0 * s)
-    an = 1.0 / s
-    beta = -math.log(-math.log(1.0 - alpha))
-    return Cn + beta * an
-
-
-def spike_stat(c: np.ndarray, K: int) -> np.ndarray:
-    """各バーの jump 統計 L_i = r_i/√V̂_i（V̂=局所 bipower・直近 K 本・全て過去〜現在＝H2 leak-safe）。
-    r_i=log(c_i/c_{i−1})・|r_j||r_{j−1}| を窓 K−1 で和（warmup は NaN→発火しない）。"""
-    n = len(c)
-    r = np.full(n, np.nan)
-    r[1:] = np.log(c[1:] / c[:-1])              # log リターン（過去 close のみ）
-    absr = np.abs(r)
-    bpv = np.full(n, np.nan)
-    bpv[1:] = absr[1:] * absr[:-1]              # bpv[i] = |r_i||r_{i−1}|（jump 頑健の bipower 項）
-    bp_sum = pd.Series(bpv).rolling(K - 1).sum().to_numpy()   # Σ_{j=i−K+2}^{i}（K−1 項・当該バーまで）
-    V = (math.pi / (2.0 * (K - 1))) * bp_sum
-    with np.errstate(invalid="ignore", divide="ignore"):
-        return r / np.sqrt(V)
+# ── 急騰検知 Lee-Mykland jump ──
+# ★2026-10-20（工事 m2c15-band-s1-20261020・S-1・まこさん「OK」ok_direction_20261020 の3・ok_three_points_20261020 の3）
+#   ＝式の置き場を材料の表（observe_diag.py の spike_threshold・spike_stat）へ移した（要件定義の6番＝指標は指標一覧からだけ呼び出す）。
+#   式は1文字も変えていない。E36 の値は1ビットも変わらない（写しで突き合わせた）。
+from observe_diag import spike_threshold, spike_stat   # noqa: E402
 
 
 # ── 件数レバー（E36 freq-iter1）: 強レンジ限定で SHORT 反転ゾーンを広げて新規発火を増やす ──

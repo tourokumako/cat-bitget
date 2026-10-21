@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import re
 
+import math
 import numpy as np
 import pandas as pd
 
@@ -946,6 +947,8 @@ MAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け�
 MAKO_K7 = '2026-10-07 まこさん決定「OK」（K-7 の1番＝前期間pivot の3種に前の週の版を別の材料として足す）＝逐語のファイル ok_k7_pivot_thermo_20261007（m2c15-memo-sort-20261007）'
 # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝K-3b の4種と下半分位置の「使う」の決定の逐語（mako の欄に書く）。
 MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'
+# ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品と S1 の部品の「使う」の決定の逐語（mako の欄に書く）。
+MAKO_B1S1 = '2026-10-20 まこさん「OK\u3000１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）'
 # ★2026-10-11（工事 m2c15-formula-textbook-20261011）＝K-3c の15種の「使う」の決定の逐語（mako の欄に書く）。
 MAKO_K3C = '2026-10-11 まこさん「把握してるならよい／指標の修正のゴールに対し、このフェーズでの修正案は正しく、齟齬が無いのであれば進めて良い」（K-3c の作りの5点＝新しい名前は作りの違いだけ・新しいパラメータは名前に出さない引数・式は監査の本文と原典の逐語から・Aberration 原作は別の材料・対応表と既知答えは K-3b と同じ形）＝逐語のファイル ok_k3c_design_20261011（m2c15-formula-textbook-20261011）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007。THERMO の EMA の版＝ok_k7_pivot_thermo_20261007'
 
@@ -1687,6 +1690,284 @@ _r(r"S-Rタッチ確定1時間ATR\((\d+),([\d.]+),(\d+)\)", "S-Rタッチ確定1
    "1時間足の値は、その1時間足が閉じた時刻から使う",
    "状態量＝多いほど節が固い", "none", tb=_tb_sr_fr_atr1h,
    known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)
+
+
+# ★2026-10-20（工事 m2c15-band-s1-20261020・B-1＋S-1）＝帯の部品4種 × 許容幅の作り2つと、S1 の部品2つ（Lee-Mykland の論文の版と E36 の版）。
+#   帯スイング と S1 は独立の実装（素直な繰り返しで書いた別の書き方）と手計算の既知答え、帯pivot・帯VA は手計算の既知答え
+#   （前期間pivot・前日VAH と同じ形＝線は観察の道具の計算を使う）で確かめる。
+def _tb_band_floor():
+    """取れる距離の床（独立の実装の側）＝e37_scalp.SCALP_FLOOR × 設定ファイル observe_config.json の band_fee_mult。"""
+    import json as _json
+    import pathlib as _pl
+    import e37_scalp as _e37r
+    cfg = _json.loads((_pl.Path(__file__).resolve().parent / "observe_config.json").read_text(encoding="utf-8"))
+    return float(_e37r.SCALP_FLOOR) * float(cfg["band_fee_mult"])
+
+
+def _tb_band_cluster(px, price, t, m, above):
+    """確定したスイングの値段を、値段の低い順に、前の値段との差が「前の値段 × t」以下なら同じ帯へ入れていく。
+    スイングが m 回以上の帯のうち、帯の平均が price に近いもの（同じなら値段の低い側）の（下端, 上端）。"""
+    vals = sorted(x for x in px if (x > price if above else x < price))
+    groups = []
+    for x in vals:
+        if groups and x - groups[-1][-1] <= groups[-1][-1] * t:
+            groups[-1].append(x)
+        else:
+            groups.append([x])
+    best = None
+    for g in groups:
+        if len(g) >= m:
+            dist = abs(sum(g) / len(g) - price)
+            if best is None or dist < best[0]:
+                best = (dist, min(g) * (1 - t / 2), max(g) * (1 + t / 2))
+    return None if best is None else (best[1], best[2])
+
+
+def _tb_tol_1h(d, km, an):
+    """帯の許容幅（1時間足の ATR% × 倍率・0.15%〜0.6%）の独立の実装＝_tb_sr_fr_atr1h の①〜⑤と同じ書き方。"""
+    o, h, l, c, v = _arr(d)
+    starts, groups = [], []
+    for i, t in enumerate(d.index.floor("h")):
+        if not starts or starts[-1] != t:
+            starts.append(t)
+            groups.append([i])
+        else:
+            groups[-1].append(i)
+    hh = np.array([h[g].max() for g in groups])
+    hl = np.array([l[g].min() for g in groups])
+    hc = np.array([c[g[-1]] for g in groups])
+    atr = np.full(len(groups), np.nan)
+    for j in range(len(groups)):
+        if j == 0:
+            atr[j] = hh[j] - hl[j]
+        else:
+            tr = max(hh[j] - hl[j], abs(hh[j] - hc[j - 1]), abs(hl[j] - hc[j - 1]))
+            atr[j] = (atr[j - 1] * (an - 1) + tr) / an
+    pct = atr / hc
+    closes = (pd.DatetimeIndex(starts) + pd.Timedelta("1h")).values
+    pos = np.searchsorted(closes, (d.index + pd.Timedelta("5min")).values, side="right") - 1
+    out = np.full(len(c), np.nan)
+    for i in range(len(c)):
+        if pos[i] >= 0:
+            out[i] = min(max(km * pct[pos[i]], 0.0015), 0.006)
+    return out
+
+
+def _tb_band_swing(d, p, k=2):
+    """帯スイング・帯スイング1時間ATR の独立の実装。p＝(n, t, m) か (n, 倍率, ATR の期間, m)。"""
+    n, m = int(p[0]), int(p[-1])
+    o, h, l, c, v = _arr(d)
+    tols = np.full(len(c), float(p[1])) if len(p) == 3 else _tb_tol_1h(d, float(p[1]), int(p[2]))
+    hv, lv = _tb_fractal_marks(d, k, True), _tb_fractal_marks(d, k, False)
+    floor = _tb_band_floor()
+    out = np.full(len(c), np.nan)
+    for i in range(n, len(c)):
+        t = tols[i]
+        if t != t:
+            continue
+        up = _tb_band_cluster([x for x in hv[i - n:i] if x == x], c[i], t, m, True)
+        dn = _tb_band_cluster([x for x in lv[i - n:i] if x == x], c[i], t, m, False)
+        ok = up is not None and dn is not None and dn[1] < c[i] < up[0] and (up[0] - dn[1]) / c[i] >= floor
+        out[i] = 1.0 if ok else 0.0
+    return _S(out, d)
+
+
+def _band_case(kind, touches, unconfirmed=False):
+    """帯の部品の既知答え用（2026-10-20）。どの種類も、最後の足の前 30 本の中に、上の線の山（高値だけ高い足）と下の線の谷
+    （安値だけ低い足）を touches 回ずつ置く（山は最後の足の 30・24・18・12 本前、谷は 27・21・15・9 本前＝6 本おき＝前後2本で確定し、
+    最後の足より前に確定する）。それ以外の足は始値＝高値＝安値＝終値。最後の足の終値は2本の線の間。
+    kind="swing"＝328本・終値 100・山 110・谷 90（束ねた帯＝110 と 90）。
+    答え＝touches がタッチの回数 m 以上なら 1、m より少なければ 0（上と下の線に m 回のスイングが無い）。
+    ★unconfirmed＝True のときは、最後の足の1本前にも山（110）と谷（90）を置く＝その足はまだ確定していない（確定は最後の足の1本後）。
+      確定していない山・谷を数える作り（未来を見る作りに近い）なら touches＋1 回になって 1 を出す＝見分けられる。
+    ★2026-10-21（タッチの回数に 2 を足した・まこさん「OK」）＝答えをタッチの回数 m から作る（_band_known）。直す前は m＝3 の決め打ちだった。
+    kind="narrow"＝山 100.15・谷 99.85 を 4 回ずつ＝取れる距離が許容幅 0.0015 のとき (100.15×0.99925 − 99.85×1.00075) ÷ 100 ＝ 0.0015 で、
+      手数料の床（0.08% × 倍数 2 ＝ 0.0016）より狭い＝0。床の条件を外すと 1 を出す＝見分けられる。
+    ★帯pivot・帯VA は触れた回数を数えない（まこさん「Aでいい」）ので、既知答えは _line_case を使う。"""
+    def _spikes(c, h, l, top, bot):
+        i = len(c) - 1
+        for j, back in enumerate((30, 24, 18, 12)):
+            if j < touches:
+                h[i - back] = top
+        for j, back in enumerate((27, 21, 15, 9)):
+            if j < touches:
+                l[i - back] = bot
+    if kind not in ("swing", "narrow"):
+        raise ValueError(f"_band_case の kind は swing か narrow（{kind}）")
+    c = np.full(328, 100.0)
+    h, l = c.copy(), c.copy()
+    if kind == "narrow":
+        _spikes(c, h, l, 100.15, 99.85)
+    else:
+        _spikes(c, h, l, 110.0, 90.0)
+        if unconfirmed:
+            h[-2], l[-2] = 110.0, 90.0
+    return _mk(c=c, o=c.copy(), h=h, l=l)
+
+
+def _band_known(kind):
+    """答え＝タッチの回数 m（名前の最後のパラメータ）回ずつ置けば 1・m−1 回（と確定していない1本）なら 0・幅の狭い帯は 0。"""
+    return lambda p: [(_band_case(kind, int(p[-1])), [(-1, 1.0, 1e-9)]),
+                      (_band_case(kind, int(p[-1]) - 1, unconfirmed=True), [(-1, 0.0, 1e-9)]),
+                      (_band_case("narrow", 4), [(-1, 0.0, 1e-9)])]
+
+
+def _line_case(kind, last_close):
+    """帯pivot・帯VA の既知答え用（2026-10-20・まこさん「Aでいい」＝触れた回数を数えない）。_band_case の1日目（線を作る日）と同じ並びに、
+    2日目 200本（始値＝高値＝安値＝終値＝105）を続け、最後の足の終値だけ last_close にする。
+    pivot＝R1 110・S1 100／va＝VAH 109.791…・VAL 100.208…。終値 105＝線の間＝1・終値 112＝上の線より上＝0。"""
+    if kind == "pivot":
+        c = np.full(488, 105.0)
+        h, l = c.copy(), c.copy()
+        h[100], l[200] = 110.0, 100.0
+    else:
+        c = np.r_[np.full(144, 100.0), np.full(144, 110.0), np.full(200, 105.0)]
+        h, l = c.copy(), c.copy()
+    c[-1] = h[-1] = l[-1] = float(last_close)
+    return _mk(c=c, o=c.copy(), h=h, l=l)
+
+
+def _line_known(kind):
+    return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]
+
+
+def _line_case_w(last_close):
+    """前の週の版の帯pivot の既知答え用（2026-10-21・監査 CP83 の修正12・まこさん「ウ」）。足は _IDX0（2026-03-01 の日曜日）から始まる。
+    日曜日 288本（105）→ 月曜日から日曜日の1週間 2016本（105・その中の1本だけ高値 110、別の1本だけ安値 100・週の最後の終値 105）→
+    次の週の月曜日 288本（105）→ 火曜日 10本（105・最後の足だけ last_close）。前の週の pivot＝PP 105・R1 110・S1 100＝終値 105 は線の間＝1・
+    112 は上の線より上＝0。★前の日の版（_pivot_prev_period(d)）なら、前の日（月曜日・全部 105）の R1＝S1＝105 で線の間が無く 0＝見分けられる。"""
+    c = np.full(288 + 2016 + 288 + 10, 105.0)
+    h, l = c.copy(), c.copy()
+    h[288 + 500], l[288 + 1000] = 110.0, 100.0
+    c[-1] = h[-1] = l[-1] = float(last_close)
+    return _mk(c=c, o=c.copy(), h=h, l=l)
+
+
+def _line_known_w():
+    return lambda p: [(_line_case_w(105.0), [(-1, 1.0, 1e-9)]), (_line_case_w(112.0), [(-1, 0.0, 1e-9)])]
+
+
+def _tb_lee_mykland(d, p):
+    """S1 の部品（論文の版＝Lee-Mykland 2008 の式(7)・式(8)）の独立の実装＝論文の式を素直な繰り返しで書いた物（2026-10-21・監査 CP83 の修正1）。
+    r_i＝log(c_i / c_{i−1})・V_i＝π/(2(K−2)) × Σ_{j=i−K+2}^{i−1} |r_j||r_{j−1}|（今の1本の項を入れない）・L_i＝r_i / √V_i（K 本そろう前は空）。"""
+    K = int(p[0])
+    c = d.close.to_numpy(float)
+    r = np.full(len(c), np.nan)
+    for i in range(1, len(c)):
+        r[i] = math.log(c[i] / c[i - 1])
+    out = np.full(len(c), np.nan)
+    for i in range(K, len(c)):
+        s = 0.0
+        for j in range(i - K + 2, i):
+            s += abs(r[j]) * abs(r[j - 1])
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out[i] = np.float64(r[i]) / np.sqrt(np.float64(math.pi / (2.0 * (K - 2)) * s))
+    return _S(out, d)
+
+
+def _tb_lee_mykland_e36(d, p):
+    """S1 の部品（E36 の版＝e36_short_oscillation.py の spike_stat）の独立の実装＝素直な繰り返しで書いた物。
+    V_i＝π/(2(K−1)) × Σ_{j=i−K+2}^{i} |r_j||r_{j−1}|（今の1本の項を入れる）・L_i＝r_i / √V_i（K 本そろう前は空）。"""
+    K = int(p[0])
+    c = d.close.to_numpy(float)
+    r = np.full(len(c), np.nan)
+    for i in range(1, len(c)):
+        r[i] = math.log(c[i] / c[i - 1])
+    out = np.full(len(c), np.nan)
+    for i in range(K, len(c)):
+        s = 0.0
+        for j in range(i - K + 2, i + 1):
+            s += abs(r[j]) * abs(r[j - 1])
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out[i] = np.float64(r[i]) / np.sqrt(np.float64(math.pi / (2.0 * (K - 1)) * s))
+    return _S(out, d)
+
+
+def _lm_case(x=0.01, n=300):
+    """S1 の部品の既知答え用（2026-10-20）。終値を 100 と 100×e^x の交互にする（対数の値動きが +x と −x の交互）。
+    bipower の項はすべて x²＝V＝π x²/2 ＝ L＝±x ÷ (x √(π/2)) ＝ ±√(2/π) ＝ ±0.79788456…。最後の足（奇数番目＝上げ）は正。
+    ★この足では、ふだんの揺れに今の1本を入れても入れなくても答えが同じ＝窓の誤りを見分けるのは _lm_jump_case（監査 CP83 の修正1）。"""
+    c = np.where(np.arange(n) % 2 == 0, 100.0, 100.0 * math.exp(x))
+    return _mk(c=c, o=c.copy(), h=c.copy(), l=c.copy())
+
+
+_LM_X, _LM_Y = 0.01, 0.1
+
+
+def _lm_jump_case(x=_LM_X, y=_LM_Y, n=300):
+    """S1 の部品の既知答え用（2026-10-21・監査 CP83 の修正1）。_lm_case の足の最後の1本だけ、対数の値動きを y（＝x の10倍）にする。
+    論文の版＝ふだんの揺れは直前の値動き（すべて x²）だけ＝L＝y ÷ (x √(π/2)) ＝ 10 × √(2/π)。
+    E36 の版＝今の1本の項 |y||x| が入る＝L＝y ÷ √(π/(2(K−1)) × ((K−2) x² + x y))。＝今の1本を入れるかで答えが変わる。"""
+    c = np.where(np.arange(n) % 2 == 0, 100.0, 100.0 * math.exp(x))
+    c[-1] = c[-2] * math.exp(y)
+    return _mk(c=c, o=c.copy(), h=c.copy(), l=c.copy())
+
+
+def _lm_known_paper(p):
+    return [(_lm_case(), [(-1, math.sqrt(2.0 / math.pi), 1e-9), (-2, -math.sqrt(2.0 / math.pi), 1e-9)]),
+            (_lm_jump_case(), [(-1, _LM_Y / _LM_X * math.sqrt(2.0 / math.pi), 1e-9)])]
+
+
+def _lm_known_e36(p):
+    K = int(p[0])
+    return [(_lm_case(), [(-1, math.sqrt(2.0 / math.pi), 1e-9), (-2, -math.sqrt(2.0 / math.pi), 1e-9)]),
+            (_lm_jump_case(), [(-1, _LM_Y / math.sqrt(math.pi / (2.0 * (K - 1)) * ((K - 2) * _LM_X ** 2 + _LM_X * _LM_Y)), 1e-9)])]
+
+
+_r(r"帯スイング\((\d+),([\d.]+),(\d+)\)", "帯スイング",
+   "確定したスイング（前後 k 本で確定した山と谷）を許容幅 t で束ねた、終値の上の帯と下の帯。今の足の前の n 本で、上の帯の山と下の帯の谷が"
+   "それぞれ m 回以上・取れる距離（上の帯の下端 − 下の帯の上端）÷ 終値 が手数料の床 × 倍数以上・終値がその間なら 1、それ以外 0",
+   "法則 R1・R7（regime_detection_kb.md の 11-2）・LuxAlgo の逐語 \"Overlapping zones merge into one consolidated zone and their test counts are added together\"。"
+   "手数料の床＝e37_scalp.SCALP_FLOOR・倍数＝設定 band_fee_mult（名前に出さない）・k は名前に出さない引数（最初の値 2）。RG-v5 の数字は使わない",
+   "状態量＝1 はレンジの帯の中", "none", tb=_tb_band_swing, known=_band_known("swing"), mako=MAKO_B1S1)
+_r(r"帯スイング1時間ATR\((\d+),([\d.]+),(\d+),(\d+)\)", "帯スイング1時間ATR",
+   "帯スイング の許容幅を「倍率 × 1時間足の ATR%（ATR ÷ その1時間足の終値）」で決め、0.15%〜0.6% に収めたもの",
+   "帯スイング と同じ法則 ＋ S-Rタッチ1時間ATR と同じ許容幅。0.15%〜0.6% の出どころ＝§2.2 の段1 の表「許容幅0.0015〜0.006」"
+   "（engine_tuner_milestones2.md:457・監査 CP83 の修正9＝RG-v6 を写す目的ではない）。1時間足の値は閉じた時刻から使う",
+   "状態量＝1 はレンジの帯の中", "none", tb=_tb_band_swing, known=_band_known("swing"), mako=MAKO_B1S1)
+_r(r"帯pivot\(([\d.]+)\)", "帯pivot",
+   "上の線＝前の日で固定の pivot R1・下の線＝S1。上の帯の下端（R1×(1−t/2)）と下の帯の上端（S1×(1+t/2)）の間に終値が在り、"
+   "取れる距離（その差）÷ 終値 が手数料の床 × 倍数以上なら 1、それ以外 0。線に触れた回数は数えない",
+   "教科書の pivot の役割＝StockCharts の逐語「Pivot Points use the prior period's high, low, and close to estimate future support and "
+   "resistance levels.」（前もって推定する支持線・抵抗線）・法則 R7（取れる距離）。まこさん「絶対につくってほしい」（worklog 20261003 §37）・"
+   "「Aでいい」（触れた回数を数えない・ok_pivot_a_20261020）",
+   "状態量＝1 は前の日の R1 と S1 の間", "none", known=_line_known("pivot"), mako=MAKO_B1S1)
+_r(r"帯pivot1時間ATR\(([\d.]+),(\d+)\)", "帯pivot1時間ATR",
+   "帯pivot の許容幅を「倍率 × 1時間足の ATR%」で決め、0.15%〜0.6% に収めたもの",
+   "帯pivot と同じ ＋ S-Rタッチ1時間ATR と同じ許容幅",
+   "状態量＝1 は前の日の R1 と S1 の間", "none", known=_line_known("pivot"), mako=MAKO_B1S1)
+_r(r"帯pivot前週\(([\d.]+)\)", "帯pivot前週",
+   "帯pivot の線を、前の週（月曜0時 UTC に始まる7日）の高値・安値・終値から作った pivot R1・S1 にしたもの。決まりは帯pivot と同じ",
+   "StockCharts の逐語「Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.」・先例＝K-7 の前週pivot"
+   "（_pivot_prev_period(d, \"W\")）・監査 CP83 の修正12・まこさん「ウ」（前の日の版と両方を材料に置き、M2-F-10f で比べる）",
+   "状態量＝1 は前の週の R1 と S1 の間", "none", known=_line_known_w(), mako=MAKO_B1S1)
+_r(r"帯pivot前週1時間ATR\(([\d.]+),(\d+)\)", "帯pivot前週1時間ATR",
+   "帯pivot前週 の許容幅を「倍率 × 1時間足の ATR%」で決め、0.15%〜0.6% に収めたもの",
+   "帯pivot前週 と同じ ＋ S-Rタッチ1時間ATR と同じ許容幅",
+   "状態量＝1 は前の週の R1 と S1 の間", "none", known=_line_known_w(), mako=MAKO_B1S1)
+_r(r"帯VA\(([\d.]+)\)", "帯VA",
+   "上の線＝前の UTC の日で固定の VAH・下の線＝VAL（前日VAH・前日VAL と同じ作り）。帯pivot と同じ決まりで 1 か 0（触れた回数は数えない）",
+   "教科書の Value Area＝LuxAlgo の逐語「the completed value area is carried forward as a reference for later sessions」（前のセッションの値を"
+   "後のセッションの参照にする）・法則 R7。worklog 20261003 §38・まこさん「Aでいい」（ok_pivot_a_20261020）",
+   "状態量＝1 は前の日の VAL と VAH の間", "none", known=_line_known("va"), mako=MAKO_B1S1)
+_r(r"帯VA1時間ATR\(([\d.]+),(\d+)\)", "帯VA1時間ATR",
+   "帯VA の許容幅を「倍率 × 1時間足の ATR%」で決め、0.15%〜0.6% に収めたもの",
+   "帯VA と同じ ＋ S-Rタッチ1時間ATR と同じ許容幅",
+   "状態量＝1 は前の日の VAL と VAH の間", "none", known=_line_known("va"), mako=MAKO_B1S1)
+_r(r"LeeMykland(\d+)", "LeeMykland",
+   "Lee-Mykland（2008）の jump の検定統計 L＝今の1本の対数の値動き ÷ ふだんの揺れ（直前の K−1 本の bipower）の平方根（上げの jump が正）。"
+   "論文の式(8)どおり、ふだんの揺れに今の1本を入れない",
+   "法則 S1（regime_detection_kb.md の 11-5）・Lee-Mykland（2008）の式(7)・式(8)と逐語「With realized returns in the window consisting of the "
+   "previous K − 1 observations just before a testing time ti, the instantaneous volatility is estimated」（2540ページ・監査 CP83 の修正1）。"
+   "K の値＝論文の推奨値（5分足 270・15分足 156・30分足 110・1時間足 78・日足 16・2542ページ）。閾値 L*（K と α から数式で決める）は材料に入れない",
+   "向きつき＝大きいほど統計的にありえない上げ・小さいほど下げ", "none", tb=_tb_lee_mykland, known=_lm_known_paper,
+   mako=MAKO_B1S1)
+_r(r"LeeMykland_E36版(\d+)", "LeeMykland_E36版",
+   "E36（e36_short_oscillation.py の spike_stat）の jump の統計。ふだんの揺れに今の1本の項 |r_i||r_{i−1}| を入れる（K−1 項）＝論文の式(8)と違う",
+   "e36_short_oscillation.py の式を材料の表へ移したもの（式は変えていない＝E36 の値は変わらない）。論文の版（LeeMykland）とどちらが良いかは "
+   "M2-F-10f で比べる（監査 CP83 の修正1・まこさん「案A」）",
+   "向きつき＝大きいほど統計的にありえない上げ・小さいほど下げ", "none", tb=_tb_lee_mykland_e36, known=_lm_known_e36,
+   mako=MAKO_B1S1)
 _r(r"SMC_SWEEP確定", "SMC_SWEEP確定",
    "流動性の刈り取りの教科書の版。1本前までに確定した直近の谷を安値で割り、終値でその上に戻した足を +1・"
    "山を高値で抜き、終値でその下に戻した足を −1",
@@ -4902,7 +5183,10 @@ AXIS_EC: list[dict] = [
 # ここは定義・流儀・因果性・既知答えの登録（実装列は observe_diag build_range_geometry が作る）。
 # ★条件の材料に使えるのは比率列（kind="ratio"）だけ（H6 価格非依存）。価格水準5列（kind="price"）は
 #   出口 placement の幾何参照（例 mid + f×(res_hi−mid)）専用＝閾値の材料には使えない（検証器 G6 が拒否）。
-RANGE_GEO_TF = "5m（1h ゾーンを足が閉じた時刻から ffill・状態機械は過去 close の逐次更新）"
+# ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝監査 CP60 の修正69 の直した後の文字に、正時の区切りの切り替え（h1_edge）を足した。
+RANGE_GEO_TF = ("5m（1h ゾーンは label=right・closed=right で5分足の始まりの時刻を束ねる＝1時間足の区切りは正時から5分ずれる"
+                "（例 10:05〜11:05）。5分足の行 T（11:00）へ ffill＝その行が閉じた時に確定済み。h1_edge=hour で正時の区切り（10:00〜11:00）に"
+                "切り替えられる＝その区切りの最後の5分足（10:55）の行から使う。既定は今の区切り・状態機械は過去 close の逐次更新）")
 RANGE_GEO_REF: dict[str, dict] = {
     "res_hi": dict(kind="price", teigi="レジスタンス帯の上端（1h 確定 fractal スイング高値を tol で束ねた帯・padding 込み）",
                    ryugi="RG ゾーンビルダー（build_regime_gate_rg._zones_1h_rg・fractal j+2 確定＝L-179 型の確定遅延）",
@@ -5217,6 +5501,13 @@ FAMILY_LINEAGE: dict[str, dict] = {
     # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝確定した山・谷で作る教科書の版（監査 CP60 の修正43・44・46）
     "W字確定谷": dict(k="構造・位置", note="W字と同じ（ダブルボトム＝構造パターン）"),
     "S-Rタッチ確定数": dict(k="構造・位置"), "S-Rタッチ確定1時間ATR": dict(k="構造・位置"),
+    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品（法則 R1・R7）と S1 の部品（1本の動き ÷ ふだんの動き＝ばらつき）
+    "帯スイング": dict(k="構造・位置"), "帯スイング1時間ATR": dict(k="構造・位置"),
+    "帯pivot": dict(k="構造・位置"), "帯pivot1時間ATR": dict(k="構造・位置"),
+    "帯pivot前週": dict(k="構造・位置"), "帯pivot前週1時間ATR": dict(k="構造・位置"),
+    "帯VA": dict(k="構造・位置"), "帯VA1時間ATR": dict(k="構造・位置"),
+    "LeeMykland": dict(k="ボラ", note="法則 S1 の「見ているもの」＝1本の動き ÷ ふだんの動き（regime_detection_kb.md の 11-5）"),
+    "LeeMykland_E36版": dict(k="ボラ", note="LeeMykland と同じ（E36 の式＝ふだんの揺れに今の1本を入れる版）"),
     "SMC_SWEEP確定": dict(k="構造・位置", note="SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）"),
     # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（系統は元の種類と同じ）
     "realized_vol_rv": dict(k="ボラ"), "SQZ_ON_Carter": dict(k="ボラ"), "THERMO原作%": dict(k="ボラ"), "THERMO_EMA%": dict(k="ボラ"),
@@ -5551,6 +5842,17 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "W字確定谷": ((), "ダブルボトムの教科書の版（確定した谷・ネック・最初の上抜け）。ライブラリに相当する関数が無い"),
     "S-Rタッチ確定数": ((), "確定した山・谷のうち今の値段の帯に入る数。ライブラリに相当する関数が無い"),
     "S-Rタッチ確定1時間ATR": ((), "S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品と S1 の部品
+    "帯スイング": ((), "確定したスイングを束ねた上下の帯（法則 R1・R7）。ライブラリに相当する関数が無い"),
+    "帯スイング1時間ATR": ((), "帯スイング の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    "帯pivot": ((), "前の日の pivot R1・S1 の間に終値が在り、取れる距離が手数料の床以上か（法則 R7）。ライブラリに相当する関数が無い"),
+    "帯pivot1時間ATR": ((), "帯pivot の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    "帯pivot前週": ((), "前の週の pivot R1・S1 の間に終値が在り、取れる距離が手数料の床以上か（法則 R7）。ライブラリに相当する関数が無い"),
+    "帯pivot前週1時間ATR": ((), "帯pivot前週 の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    "帯VA": ((), "前の日の VAL・VAH の間に終値が在り、取れる距離が手数料の床以上か（法則 R7）。ライブラリに相当する関数が無い"),
+    "帯VA1時間ATR": ((), "帯VA の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    "LeeMykland": ((), "Lee-Mykland（2008）の jump の検定統計（論文の式(8)どおり）。ライブラリに相当する関数が無い"),
+    "LeeMykland_E36版": ((), "E36 の jump の統計（ふだんの揺れに今の1本を入れる版・E36 から移した）。ライブラリに相当する関数が無い"),
     "SMC_SWEEP確定": ((), "pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は"
                           "ライブラリに無い（定義表の既知答えで確かめる）"),
     # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（ライブラリの相当する関数と、作りの違い）

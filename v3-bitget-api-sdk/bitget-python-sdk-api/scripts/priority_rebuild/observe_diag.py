@@ -683,6 +683,173 @@ def _sr_touch_fractal_atr(d, n, m, a, k=2):
     return _sr_touch_fractal(d, n, tol.to_numpy(float), k)
 
 
+# ★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝法則 R1（価格が何回も跳ね返された線が上下に在るか）と
+#   R7（帯の幅が往復の手数料を超えるか・幅は「取れる距離」で測る＝まこさん「OK」worklog 20261003 §36）の部品＝帯の部品。
+#   取れる距離（上の帯の下端 − 下の帯の上端）÷ 終値 が「手数料の床 × 倍数」以上で、今の終値がその間に在れば 1・それ以外 0。
+#   線の種類は3つ（まこさん「すべて案どおりでよい」ok_d1_20261004 の③・worklog 20261003 §37・§38）。★2026-10-21＝②に前の週の版（帯pivot前週）を足した＝帯の部品は4種（監査 CP83 の修正12）
+#     ①確定したスイングを許容幅で束ねた帯＝上の線と下の線のそれぞれに、確定したスイング（_fractal_marks＝前後 k 本で確定してから
+#       使う＝H2）が m 回以上（法則 R1）。重なった帯は1つにまとめ、タッチの回数を足す（LuxAlgo の逐語
+#       "Overlapping zones merge into one consolidated zone and their test counts are added together"）
+#     ②前の日で固定の pivot R1（上の線）・S1（下の線）＝_pivot_prev_period
+#     ③前の UTC の日で固定の VAH（上の線）・VAL（下の線）＝_vp_by_day の「前日」
+#     ★②③は触れた回数を数えない（まこさん「Aでいい」ok_pivot_a_20261020）＝前もって推定する支持線・抵抗線（StockCharts の逐語
+#       「Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.」）
+#   帯の幅は、どの種類も許容幅 t（線の ± 値段×t/2）。許容幅は固定の版と、1時間足の ATR% × 倍率を 0.15%〜0.6% に収める版の2つ
+#   （まこさん「１は案ア」＝両方・ok_three_points_20261020 の2＝3種類の全部に両方）。
+#   ★RG-v5 の帯の数字（タッチ2回・幅0.4%）は使わない（違反の記録 #23）。
+#   ★手数料の床＝e37_scalp.SCALP_FLOOR（0.08%）を読む（数字を2か所に書かない）。倍数は設定の band_fee_mult
+#     （名前に出さない値・まこさん「OK」ok_three_points_20261020 の1＝最初の値 2・範囲は §2.2 の段1 の 2〜6倍）。
+#   ★2026-10-21（監査 CP83 の修正14・まこさん「案B」）＝床は、build_catalog に渡した設定の band_fee_mult から作り、部品の関数へ
+#     引数で渡す（既定の設定ファイルを1回だけ読んで覚える作りにしない）。make_material を直に呼ぶ入口（設定を持たない）は、
+#     設定ファイルをその都度 読む。★床は登録の計算式の引数にしない（名前に出さない引数の番人＝_insp_hidden_params は、
+#     既定つきの引数を全部ずらして列が変わるかを見る。床は帯の幅より小さい値では列を変えないので、番人が止める）＝
+#     カタログを作る所（_band_material）で結び付ける。
+
+
+def _band_fee_floor(cfg: dict | None = None) -> float:
+    """取れる距離の床＝手数料の床（e37_scalp.SCALP_FLOOR）× 設定の倍数 band_fee_mult。cfg を渡さなければ設定ファイルを読む（覚えない）。"""
+    import e37_scalp as _e37b                       # lazy（build_range_geometry と同じ読み込み方）
+    return float(_e37b.SCALP_FLOOR) * float((load_config() if cfg is None else cfg)["band_fee_mult"])
+
+
+def _band_cluster(px, price, t, m, above):
+    """price より上（above＝True）か下の、確定したスイングの値段 px を、隣との差が「値段 × t」以下なら同じ帯に束ね、
+    price に近い帯（帯の平均と price の差が小さい順・同じなら値段の低い側）から見て、スイングが m 回以上の最初の帯の
+    （下端, 上端）を返す。帯の端＝束ねたスイングの最小 ×(1−t/2)・最大 ×(1+t/2)。無ければ None。"""
+    s = np.sort(px[px > price] if above else px[px < price])
+    if len(s) < m:
+        return None
+    best = None
+    for cl in np.split(s, np.flatnonzero(np.diff(s) > s[:-1] * t) + 1):
+        if len(cl) >= m:
+            dist = abs(float(cl.mean()) - price)
+            if best is None or dist < best[0]:
+                best = (dist, float(cl.min()) * (1 - t / 2), float(cl.max()) * (1 + t / 2))
+    return None if best is None else (best[1], best[2])
+
+
+def _band_swing(d, n, tol, m, k=2, floor=None):
+    """帯スイング＝確定したスイングを束ねた上の帯と下の帯（①）。今の足の前の n 本（確定した足が [i−n, i)）で数える。
+    ★今の足は窓に入れない（_sr_touch_fractal と同じ）。tol は数でも並び（足ごとの割合）でもよい。k は名前に出さない引数（最初の値 2）。
+    floor＝取れる距離の床（None なら設定ファイルから作る）。"""
+    hv = _fractal_marks(d.high, k, True)[0].to_numpy(float)     # 帯の上の線＝確定した山（前後 k 本で確定してから使う）
+    lv = _fractal_marks(d.low, k, False)[0].to_numpy(float)     # 帯の下の線＝確定した谷
+    ca = d.close.to_numpy(float)
+    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else None
+    n, m = int(n), int(m)
+    floor = _band_fee_floor() if floor is None else float(floor)
+    out = np.full(len(ca), np.nan)
+    for i in range(n, len(ca)):
+        t = tol if ta is None else ta[i]
+        if t != t:                                   # NaN（ATR がまだ出ていない区間）は空のまま
+            continue
+        hw, lw = hv[i - n:i], lv[i - n:i]
+        up = _band_cluster(hw[hw == hw], ca[i], t, m, True)
+        dn = _band_cluster(lw[lw == lw], ca[i], t, m, False)
+        ok = (up is not None and dn is not None and dn[1] < ca[i] < up[0]
+              and (up[0] - dn[1]) / ca[i] >= floor)
+        out[i] = 1.0 if ok else 0.0
+    return pd.Series(out, index=d.index)
+
+
+def _band_lines(d, upper, lower, tol, floor=None):
+    """線が前もって決まっている帯（②前の日の pivot R1・S1／③前の UTC の日の VAH・VAL）。
+    ★2026-10-20（まこさん「Aでいい」ok_pivot_a_20261020）＝線に過去のスイングが触れた回数は求めない。pivot の役割は、前の期間から
+      前もって推定する支持線・抵抗線（StockCharts の逐語「Pivot Points use the prior period's high, low, and close to estimate future
+      support and resistance levels.」）＝その日に初めて引かれる線なので、過去の山・谷が触れていることは役割に入らない。
+    帯＝線の ± 値段×t/2。上の帯の下端（上の線 ×(1−t/2)）と下の帯の上端（下の線 ×(1+t/2)）の間に終値が在り、取れる距離（その2つの差）÷ 終値
+    が床（法則 R7）以上なら 1・それ以外 0。線が無い足（前の日が無い）は空。floor＝取れる距離の床（None なら設定ファイルから作る）。"""
+    U, L = np.asarray(upper, dtype=float), np.asarray(lower, dtype=float)
+    ca = d.close.to_numpy(float)
+    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else np.full(len(ca), float(tol))
+    floor = _band_fee_floor() if floor is None else float(floor)
+    top, bot = U * (1 - ta / 2), L * (1 + ta / 2)
+    with np.errstate(invalid="ignore"):
+        ok = (bot < ca) & (ca < top) & ((top - bot) / ca >= floor)
+    return pd.Series(np.where(np.isfinite(top) & np.isfinite(bot), ok.astype(float), np.nan), index=d.index)
+
+
+def _band_tol_1h(d, km, a):
+    """帯の許容幅を「1時間足の ATR% × 倍率」で決め、0.15%〜0.6% に収めた並び（_sr_touch_atr と同じ作り）。"""
+    atr_pct = pd.Series(_atr_pct_1h_on(d, a), index=d.index)
+    return (km * atr_pct).clip(lower=_SR_ATR_TOL_LO, upper=_SR_ATR_TOL_HI).to_numpy(float)
+
+
+# ★2026-10-21（監査 CP83 の修正14・まこさん「案B」）＝カタログの帯の部品は、渡した設定から作った床を結び付けて作る。
+#   計算式は登録の計算式と同じ関数（_band_swing・_band_lines）＝床だけを引数で渡す（登録の計算式は床を設定ファイルから読む）。
+#   ★前の週の版（帯pivot前週）＝監査 CP83 の修正12・まこさん「ウ」＝先例 K-7 の前週pivot（_pivot_prev_period(d, "W")）と同じ線。
+_BAND_IMPL = {
+    "帯スイング": lambda d, fl, n, t, m: _band_swing(d, n, t, m, 2, fl),
+    "帯スイング1時間ATR": lambda d, fl, n, km, a, m: _band_swing(d, n, _band_tol_1h(d, km, a), m, 2, fl),
+    "帯pivot": lambda d, fl, t: _band_lines(d, *_pivot_prev_period(d)[1:], t, fl),
+    "帯pivot1時間ATR": lambda d, fl, km, a: _band_lines(d, *_pivot_prev_period(d)[1:], _band_tol_1h(d, km, a), fl),
+    "帯pivot前週": lambda d, fl, t: _band_lines(d, *_pivot_prev_period(d, "W")[1:], t, fl),
+    "帯pivot前週1時間ATR": lambda d, fl, km, a: _band_lines(d, *_pivot_prev_period(d, "W")[1:], _band_tol_1h(d, km, a), fl),
+    "帯VA": lambda d, fl, t: _band_lines(d, *_vp_by_day(d.close, d.volume, "前日")[1:], t, fl),
+    "帯VA1時間ATR": lambda d, fl, km, a: _band_lines(d, *_vp_by_day(d.close, d.volume, "前日")[1:], _band_tol_1h(d, km, a), fl),
+}
+
+
+def _band_material(family: str, floor: float, *params) -> tuple:
+    """帯の部品を1組 作る（名前と向きは make_material と同じ・計算式は床を結び付けた _BAND_IMPL）。"""
+    name, _fn, directional = make_material(family, *params)
+    impl = _BAND_IMPL[family]
+    return (name, (lambda d, _i=impl, _fl=float(floor), _p=params: _i(d, _fl, *_p)), directional)
+
+
+# ★2026-10-20（工事 m2c15-band-s1-20261020・S-1・まこさん「OK」ok_direction_20261020 の3・ok_three_points_20261020 の3）
+#   ＝スパイクの法則 S1 の部品の式の置き場を、E36（e36_short_oscillation.py）から材料の表（ここ）へ移した。式は1文字も変えていない。
+#   E36 は `from observe_diag import spike_threshold, spike_stat` で同じ関数を呼ぶ（値は1ビットも変わらない＝写しで突き合わせる）。
+#   ★2026-10-21（監査 CP83 の修正1・まこさん「案A」）＝E36 の式（spike_stat）は、ふだんの揺れに今の1本を入れる。Lee-Mykland（2008）の
+#     式(8)は入れない＝論文の版（lee_mykland_stat）を下に足し、材料は2つ（LeeMykland＝論文の版／LeeMykland_E36版＝E36 の式）。
+import math  # noqa: E402
+
+
+# ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
+def spike_threshold(K: int, alpha: float) -> float:
+    """Gaussian EVT 閾値 L* = C_n + β*·a_n（K・α から a-priori・データで決めない・L-267）。"""
+    lnK = math.log(K)
+    s = math.sqrt(2.0 * lnK)
+    Cn = s - (math.log(math.pi) + math.log(lnK)) / (2.0 * s)
+    an = 1.0 / s
+    beta = -math.log(-math.log(1.0 - alpha))
+    return Cn + beta * an
+
+
+def spike_stat(c: np.ndarray, K: int) -> np.ndarray:
+    """各バーの jump 統計 L_i = r_i/√V̂_i（V̂=局所 bipower・直近 K 本・全て過去〜現在＝H2 leak-safe）。
+    r_i=log(c_i/c_{i−1})・|r_j||r_{j−1}| を窓 K−1 で和（warmup は NaN→発火しない）。"""
+    n = len(c)
+    r = np.full(n, np.nan)
+    r[1:] = np.log(c[1:] / c[:-1])              # log リターン（過去 close のみ）
+    absr = np.abs(r)
+    bpv = np.full(n, np.nan)
+    bpv[1:] = absr[1:] * absr[:-1]              # bpv[i] = |r_i||r_{i−1}|（jump 頑健の bipower 項）
+    bp_sum = pd.Series(bpv).rolling(K - 1).sum().to_numpy()   # Σ_{j=i−K+2}^{i}（K−1 項・当該バーまで）
+    V = (math.pi / (2.0 * (K - 1))) * bp_sum
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return r / np.sqrt(V)
+
+
+def lee_mykland_stat(c: np.ndarray, K: int) -> np.ndarray:
+    """Lee-Mykland（2008, Review of Financial Studies v21 n6）の jump の検定統計 L(i)＝r_i ÷ √V_i（論文の式(7)・式(8)）。
+    r_i＝log(c_i / c_{i−1})・V_i＝π/(2(K−2)) × Σ_{j=i−K+2}^{i−1} |r_j||r_{j−1}|（直前の K−1 本の値動き＝今の1本の項を入れない）。
+    論文の逐語「With realized returns in the window consisting of the previous K − 1 observations just before a testing time ti,
+    the instantaneous volatility is estimated」（2540ページ・監査 CP83 の外部検索2）。係数 π/2 は、論文の閾値の定数 c＝√(2/π) を
+    分母の側に移した物（E36 の spike_stat と同じ置き方＝spike_threshold の閾値をそのまま当てられる）。K 本そろう前は空。
+    ★E36 の spike_stat との違いは、和の窓の終わり（今の1本を入れない）と項の数（K−2 項）だけ。"""
+    n = len(c)
+    r = np.full(n, np.nan)
+    r[1:] = np.log(c[1:] / c[:-1])              # log リターン（過去 close のみ）
+    absr = np.abs(r)
+    bpv = np.full(n, np.nan)
+    bpv[1:] = absr[1:] * absr[:-1]              # bpv[j] = |r_j||r_{j−1}|
+    bp_prev = pd.Series(bpv).rolling(K - 2).sum().shift(1).to_numpy()   # Σ_{j=i−K+2}^{i−1}（K−2 項・今の1本の項を入れない）
+    V_lm = (math.pi / (2.0 * (K - 2))) * bp_prev
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return r / np.sqrt(V_lm)
+
+
 def _smc_sweep_fractal(d, k=2):
     """SMC_SWEEP確定＝流動性の刈り取りの教科書の版（監査 CP60 の修正46・2026-10-09・工事 m2c15-shape-structure-20261009）。
     1本前までに確定した直近の谷（前後 k 本）を安値で割り、終値でその上に戻した足＝+1。
@@ -1122,6 +1289,29 @@ _reg("S-Rタッチ確定数", "S-Rタッチ確定数({},{})", False, lambda d, n
 _reg("S-Rタッチ確定1時間ATR", "S-Rタッチ確定1時間ATR({},{},{})", False,
      lambda d, n, m, a, k=2: _sr_touch_fractal_atr(d, n, m, a, k))
 _reg("SMC_SWEEP確定", "SMC_SWEEP確定", False, lambda d, k=2: _smc_sweep_fractal(d, k))
+# ── 2026-10-20（工事 m2c15-band-s1-20261020・B-1＋S-1）＝帯の部品4種 × 許容幅の作り2つと、S1 の部品2つ ──
+#   ★名前に出すのは 窓・許容幅（または倍率と ATR の期間）・タッチの回数。手数料の倍数は設定ファイル band_fee_mult（名前に出さない）・
+#     確定の本数 k も名前に出さない引数（最初の値 2＝資料の fractal の既定・K-3b と同じ）。向きを持たない（False）＝状態量（1/0）。
+_reg("帯スイング", "帯スイング({},{},{})", False, lambda d, n, t, m, k=2: _band_swing(d, n, t, m, k))
+_reg("帯スイング1時間ATR", "帯スイング1時間ATR({},{},{},{})", False,
+     lambda d, n, km, a, m, k=2: _band_swing(d, n, _band_tol_1h(d, km, a), m, k))
+#   ★帯pivot・帯VA は、触れた回数を数えない（まこさん「Aでいい」ok_pivot_a_20261020）＝名前に出すのは許容幅（または倍率と ATR の期間）だけ。
+_reg("帯pivot", "帯pivot({})", False, lambda d, t: _band_lines(d, *_pivot_prev_period(d)[1:], t))
+_reg("帯pivot1時間ATR", "帯pivot1時間ATR({},{})", False,
+     lambda d, km, a: _band_lines(d, *_pivot_prev_period(d)[1:], _band_tol_1h(d, km, a)))
+_reg("帯VA", "帯VA({})", False, lambda d, t: _band_lines(d, *_vp_by_day(d.close, d.volume, "前日")[1:], t))
+_reg("帯VA1時間ATR", "帯VA1時間ATR({},{})", False,
+     lambda d, km, a: _band_lines(d, *_vp_by_day(d.close, d.volume, "前日")[1:], _band_tol_1h(d, km, a)))
+#   ★2026-10-21（監査 CP83 の修正12・まこさん「ウ」）＝前の週の版（StockCharts の逐語「Pivot Points for 30-, 60-, and 120-minute charts
+#     use the prior week's high, low, and close.」）。先例 K-7 の前週pivot と同じく、足の長さによらず全部の足で計算する。
+_reg("帯pivot前週", "帯pivot前週({})", False, lambda d, t: _band_lines(d, *_pivot_prev_period(d, "W")[1:], t))
+_reg("帯pivot前週1時間ATR", "帯pivot前週1時間ATR({},{})", False,
+     lambda d, km, a: _band_lines(d, *_pivot_prev_period(d, "W")[1:], _band_tol_1h(d, km, a)))
+#   ★S1＝Lee-Mykland の jump の統計 L_i（今の1本の対数の値動き ÷ ふだんの揺れの平方根）。向きを持つ（上げの jump が正）。
+#     閾値 L*（spike_threshold）は材料に入れない（閾値は探す側で扱う・まこさん「OK」ok_direction_20261020 の4）。
+#   ★2026-10-21（監査 CP83 の修正1・まこさん「案A」）＝論文の版（LeeMykland）と E36 の版（LeeMykland_E36版）の2つ。どちらが良いかは M2-F-10f で比べる。
+_reg("LeeMykland", "LeeMykland{}", True, lambda d, K: pd.Series(lee_mykland_stat(d.close.to_numpy(float), int(K)), index=d.index))
+_reg("LeeMykland_E36版", "LeeMykland_E36版{}", True, lambda d, K: pd.Series(spike_stat(d.close.to_numpy(float), int(K)), index=d.index))
 # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
 # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
 #   （rsi_periods / stoch_periods / macd_params）。本数を3つ以上 使う指標（KST）は
@@ -1765,6 +1955,34 @@ def build_catalog(cfg: dict) -> list[tuple]:
             for a in cfg["atr_periods"]:
                 addf("S-Rタッチ1時間ATR", n, k, a)
                 addf("S-Rタッチ確定1時間ATR", n, k, a)   # 監査 CP60 の修正44（K-3b・2026-10-09）
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・B-1）＝帯の部品4種 × 許容幅の作り2つ（まこさん「OK」ok_three_points_20261020 の1・2）。
+    #   窓＝sr_windows・固定の許容幅＝sr_tol・倍率＝sr_atr1h_k・ATR の期間＝atr_periods（ok_direction_20261020 の2＝今の設定の値）・
+    #   タッチの回数＝band_touch（まこさん「1,2OK」＝3・4回・worklog 20261003 §35）。
+    #   ★帯pivot・帯VA は窓とタッチの回数を持たない（触れた回数を数えない＝まこさん「Aでいい」ok_pivot_a_20261020）。
+    #   ★2026-10-21（監査 CP83 の修正14・まこさん「案B」）＝床は、この関数に渡した設定の band_fee_mult から作り、部品へ結び付ける。
+    #   ★2026-10-21（監査 CP83 の修正12・まこさん「ウ」）＝前の週の版の帯pivot（帯pivot前週）も作る。
+    _bfl = _band_fee_floor(cfg)
+    for n in cfg["sr_windows"]:
+        for m in cfg["band_touch"]:
+            for t in cfg["sr_tol"]:
+                C.append(_band_material("帯スイング", _bfl, n, t, m))
+            for k in cfg["sr_atr1h_k"]:
+                for a in cfg["atr_periods"]:
+                    C.append(_band_material("帯スイング1時間ATR", _bfl, n, k, a, m))
+    for t in cfg["sr_tol"]:
+        C.append(_band_material("帯pivot", _bfl, t))
+        C.append(_band_material("帯pivot前週", _bfl, t))
+        C.append(_band_material("帯VA", _bfl, t))
+    for k in cfg["sr_atr1h_k"]:
+        for a in cfg["atr_periods"]:
+            C.append(_band_material("帯pivot1時間ATR", _bfl, k, a))
+            C.append(_band_material("帯pivot前週1時間ATR", _bfl, k, a))
+            C.append(_band_material("帯VA1時間ATR", _bfl, k, a))
+    # ★2026-10-20（S-1）＝スパイクの法則 S1 の部品（Lee-Mykland・K＝lee_mykland_k）。
+    #   ★2026-10-21（監査 CP83 の修正1・修正7・まこさん「案A」「案B」「甲」）＝論文の版と E36 の版の2つを、論文の K の推奨値の全部で作る。
+    for K in cfg["lee_mykland_k"]:
+        addf("LeeMykland", K)
+        addf("LeeMykland_E36版", K)
 
     # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
     # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
@@ -2238,7 +2456,7 @@ def _rg_zone_consts() -> tuple[float, int, int]:
     return float(rgmod.v17.ZONE_TOL), int(rgmod.v17.ZONE_TOUCH), int(rgmod.v17.ZONE_LOOKBACK)
 
 
-def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
+def build_range_geometry(bars: pd.DataFrame, adaptive_k=None, h1_edge: str = "right") -> pd.DataFrame:
     """レンジ幾何列を作る（正本ロジック＝build_regime_gate_rg を e37._rg5_frames 経由で import 再利用・
     コピー禁止）。列＝indicator_reference_diag.RANGE_GEO_REF が正本（登録なしの列は足せない＝selftest）。
     adaptive_k=None（既定）＝RG-v5 固定束ね幅。エンジン E38 は RG-v6（e37.V25_K）を渡す＝流儀の違いは
@@ -2247,7 +2465,8 @@ def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
     d = bars[["open", "high", "low", "close", "volume"]].copy()
     d.insert(0, "ts", bars.index)
     d = d.reset_index(drop=True)
-    _z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k)
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4・監査 CP60 の修正69）＝h1_edge＝帯の1時間足の区切り（right＝今・hour＝正時）
+    _z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k, h1_edge=h1_edge)
     c = bars["close"].to_numpy(float)
     mid = (res_lo + sup_hi) / 2.0               # エンジン v11_mid と同式
     span = res_hi - mid
@@ -2279,18 +2498,20 @@ def _insp_range_geo(bars: pd.DataFrame, cfg: dict) -> list[str]:
     import e37_scalp as _e37g                   # engine_tuner は RG-v6（adaptive_k=V25_K）の帯を使う＝そちらも切り詰めで確かめる（監査 CP60）
     picks = [span.index[-1], span.index[-100], span.index[-400]]
     suspects: dict = {}
+    # ★2026-10-20（工事 m2c15-band-s1-20261020・F-4）＝帯の1時間足の区切り2つ（right＝今・hour＝正時）の両方を切り詰めで確かめる
     for _ak in (None, _e37g.V25_K):
-        geo_full = build_range_geometry(span, _ak)
-        for t in picks:
-            geo_tr = build_range_geometry(span.loc[:t], _ak)
-            a, b = geo_full.loc[t], geo_tr.loc[t]
-            for col in geo_full.columns:
-                x, y = a.get(col), b.get(col)
-                if pd.isna(x) and pd.isna(y):
-                    continue
-                if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
-                    suspects.setdefault(f"{col}(adaptive_k={_ak})", []).append(str(t))
-    print(f"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 × 帯2種（RG-v5・RG-v6） → 不一致 {len(suspects)} 列")
+        for _edge in ("right", "hour"):
+            geo_full = build_range_geometry(span, _ak, _edge)
+            for t in picks:
+                geo_tr = build_range_geometry(span.loc[:t], _ak, _edge)
+                a, b = geo_full.loc[t], geo_tr.loc[t]
+                for col in geo_full.columns:
+                    x, y = a.get(col), b.get(col)
+                    if pd.isna(x) and pd.isna(y):
+                        continue
+                    if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
+                        suspects.setdefault(f"{col}(adaptive_k={_ak}・h1_edge={_edge})", []).append(str(t))
+    print(f"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 × 帯2種（RG-v5・RG-v6）× 区切り2つ（今・正時） → 不一致 {len(suspects)} 列")
     for col, ts in suspects.items():
         ng.append(f"切り詰めで値が変わるレンジ幾何列（未来参照の疑い）: {col}（時点 {ts}）")
     # 被覆（値決め窓・採点窓＝G2 の基礎データ・判定はしない）
@@ -7144,6 +7365,75 @@ def _J(a: str, b: str) -> str:
     return a + b
 
 
+def selftest_band(exit_: bool = True) -> list:
+    """T-B1〜T-B4＝帯の部品・S1 の部品・帯の1時間足の区切りを確かめる（工事 m2c15-band-s1-20261020・2026-10-20）。
+    口＝`--selftest-band`（壊すプログラム b189〜b196 が使う・数秒で終わる＝承認の前の仮当ての 900 秒に収めるため）。
+    ★全部の番人（selftest）からも、この関数を呼ぶ＝同じ判定を2か所に書き写さない。
+    ★既知答えと独立の実装は、参照表（indicator_reference_diag の登録）を呼ぶ＝検査3 と同じものを使う（ここに答えを書き写さない）。
+      T-B1＝新しい10種（帯スイング・帯スイング1時間ATR・帯pivot・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯VA・
+            帯VA1時間ATR・LeeMykland・LeeMykland_E36版）の最初の名前で、参照表の手計算の既知答えが全部 一致する
+      T-B2＝独立の実装を持つ種類は、既知答えの合成の足で、独立の実装と1本も違わない
+      T-B3＝帯の1時間足の区切り＝正時（hour）の1時間足は、正時から次の正時の5分前までの5分足を束ね、その最後の足の時刻に置く（未来を見ない）。
+            今の区切り（right）は、引数を渡さないときと同じ
+      T-B4＝E36 の Lee-Mykland の式（spike_stat・spike_threshold）が、材料の表（observe_diag）の関数（式の置き場が1つ）"""
+    ng: list = []
+    fams = ("帯スイング", "帯スイング1時間ATR", "帯pivot", "帯pivot1時間ATR", "帯pivot前週", "帯pivot前週1時間ATR",
+            "帯VA", "帯VA1時間ATR", "LeeMykland", "LeeMykland_E36版")
+    first: dict = {}
+    for name, fn, _d in build_catalog(load_config()):
+        fam = find_material(name)[0]
+        if fam in fams and fam not in first:
+            first[fam] = (name, fn)
+    for fam in fams:
+        if fam not in first:
+            ng.append(f"T-B1: 材料カタログに {fam} が1件も無い")
+            continue
+        name, fn = first[fam]
+        ref, prm = iref.find(name)
+        if ref is None or ref["known"] is None:
+            ng.append(f"T-B1: {name} の既知答えが参照表に無い")
+            continue
+        for case, exp in ref["known"](prm):
+            s = np.asarray(fn(case), dtype=float)
+            for i, v, tol in exp:
+                if not (abs(s[i] - v) <= tol):
+                    ng.append(f"T-B1: {name}: 手計算の既知答えと不一致（位置 {i}・期待 {v}・実測 {s[i]}）")
+            if ref["tb"] is not None:
+                tb = np.asarray(ref["tb"](case, prm), dtype=float)
+                both = np.isfinite(s) & np.isfinite(tb)
+                if (np.isfinite(s) != np.isfinite(tb)).any() or not np.allclose(s[both], tb[both], atol=1e-9):
+                    ng.append(f"T-B2: {name}: 独立の実装と不一致")
+    import e37_scalp as _e37t                         # lazy（build_range_geometry と同じ読み込み方）
+    v17 = _e37t._import_rg5().v17
+    nb = 288 * 2
+    xs = np.arange(nb, dtype=float) + 100.0
+    d5 = pd.DataFrame({"open": xs, "high": xs, "low": xs, "close": xs, "volume": np.ones(nb)},
+                      index=pd.date_range("2026-01-01", periods=nb, freq="5min"))
+    hr = v17._resample(d5, "1h", "hour")
+    t_first = d5.index[0] + pd.Timedelta(hours=10)               # 作り物の足の最初の時刻（0時）から 10時間後＝10:00
+    t_last = t_first + pd.Timedelta(minutes=55)                   # 同じ1時間の最後の5分足＝10:55
+    want = float(d5.loc[t_first:t_last, "high"].max())
+    got = float(hr["high"].get(t_last, np.nan))
+    if got != want:
+        ng.append(f"T-B3: 正時の区切りの1時間足が、10:00〜10:55 の足を束ねて 10:55 に置く形でない（期待 {want}・実測 {got}）")
+    if not v17._resample(d5, "1h").equals(v17._resample(d5, "1h", "right")):
+        ng.append("T-B3: 今の区切り（right）が、引数を渡さないときと違う")
+    import e36_short_oscillation as _e36t
+    if getattr(_e36t.spike_stat, "__module__", "") != "observe_diag" or getattr(_e36t.spike_threshold, "__module__", "") != "observe_diag":
+        ng.append("T-B4: E36 の Lee-Mykland の式が、材料の表（observe_diag）の関数でない（式の置き場が2つ）")
+    print("=" * 80)
+    print("帯の部品・S1 の部品・帯の1時間足の区切りの番人（T-B1〜T-B4・工事 m2c15-band-s1-20261020）")
+    print(f"  種類 {len(first)} 件 ／ 正時の区切りの確かめ {nb} 本")
+    if exit_:
+        if ng:
+            for x_ in ng:
+                print(f"  ❌ {x_}")
+            raise SystemExit(1)
+        print("  全部 pass（❌ 0件）")
+        raise SystemExit(0)
+    return ng
+
+
 def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
     """T-A1〜T-A5＝S-Rタッチ1時間ATR（許容幅を1時間足の値動きの幅で決める部品）と検査16 の数え方を確かめる。
 
@@ -7295,6 +7585,11 @@ def _insp_hidden_params() -> list:
     # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝形の材料（W字確定谷）は、上の決まった式の値動きでは形が1回も出ず、
     #   確定の本数 k を変えても列が変わらない（写しで実測）。その種類だけ、形が出る既知答えの合成の足（参照表の _w_case）で確かめる。
     _cases = {"W字確定谷": lambda: iref._w_case(24, 100.2)}
+    # ★2026-10-20（工事 m2c15-band-s1-20261020）＝帯の部品も、上の決まった式の値動きでは帯が1回も出ず、確定の本数 k を変えても
+    #   列が変わらない（全部 0）。帯が出る既知答えの合成の足（参照表の _band_case）で確かめる。
+    #   （帯pivot・帯VA は名前に出さない引数を持たない＝触れた回数を数えない）
+    for _bf in ("帯スイング", "帯スイング1時間ATR"):
+        _cases[_bf] = lambda: iref._band_case("swing", 4)
     ng, seen = [], 0
     for fam, (tpl, _dr, fn) in MATERIAL_FAMILIES.items():
         P = pos.get(fam)
@@ -8515,6 +8810,7 @@ def selftest() -> None:
     ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）
     ng += selftest_rank_resume(exit_=False)          # T-r（途中で落ちても続きから計算する・工事 E）
     ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）
+    ng += selftest_band(exit_=False)                 # T-B1〜T-B4（帯の部品・S1 の部品・帯の1時間足の区切り・工事 m2c15-band-s1-20261020）
     ng += selftest_insp5(exit_=False)                # T-g・T-h・T-i・T-j（検査5 の枠と使い回しの鍵・設計書 insp5-frame-and-table-tidy-20260908）
     if ng:
         for x in ng:
@@ -8582,6 +8878,8 @@ if __name__ == "__main__":
         selftest_match()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-atr1h" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）
         selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-band" in sys.argv:                 # ★T-B1〜T-B4 だけを（工事 m2c15-band-s1-20261020・壊すプログラム b189〜b196 が使う）
+        selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:
         selftest()
     else:
