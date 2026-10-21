@@ -6011,6 +6011,70 @@
    "file": ".claude/breaks/b194_e36_own_spike_stat.sh",
    "at": "2026-10-21T16:48:04",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "9",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/e36_short_oscillation.py",
+   "at": "2026-10-21T19:38:19",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-band-s1-cp84-decisions-20261021/ok_cp84_choices_20261021"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/leak_causality_diag.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/e38_priority_stack.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/verify_design_contract.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/e36_short_oscillation.py",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md",
+   "num": "8",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_todo.json",
+   "at": "2026-10-21T19:38:24",
+   "how": "当てた"
   }
  ]
 }

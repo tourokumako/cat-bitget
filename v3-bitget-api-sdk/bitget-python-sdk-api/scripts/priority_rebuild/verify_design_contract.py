@@ -1047,6 +1047,14 @@ def check_impl_functions(contract: dict, md_path: str, frozen: dict | None = Non
                 allf = set(functions_ast(open(impl, encoding="utf-8").read()))
             except Exception:                              # noqa: BLE001
                 allf = set()
+            # ★監査 CP84 の修正4＝別の置き場へ移して読み込む関数（from <置き場> import <名前>）は、在ると数える
+            #   （工事 m2c15-band-s1-20261020 で E36 の spike_stat・spike_threshold を observe_diag へ移した後、照らしB が必ず落ちた）
+            try:
+                import ast as _ast84
+                allf |= {a.asname or a.name for _n84 in _ast84.walk(_ast84.parse(open(impl, encoding="utf-8").read()))
+                         if isinstance(_n84, _ast84.ImportFrom) for a in _n84.names}
+            except Exception:                              # noqa: BLE001
+                pass
             for miss in sorted(set(want) - allf):
                 ng.append(f"B {rel}: 設計書に書いたのに実装に無い → {miss}")
             print(f"  [INFO] {rel}: 差分がゼロ（commit 済み）＝照合B だけを"

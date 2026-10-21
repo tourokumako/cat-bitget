@@ -193,6 +193,11 @@ def run_e38_trades(cut=None) -> pd.DataFrame:
         kw = {k: v for k, v in kw.items() if k in valid}
         print(f"  ⚠️ E38 本体は実行できない状態です（2026-08-03 commit b0fc646 以降）。"
               f"実エンジンが受け取れない設定の鍵 {dropped} を、この診断の中だけで外して走らせました。")
+    # ★監査 CP84 の修正1＝run_e37 の経路（S1・L1）は、帯の1時間足の区切り（global.regime.h1_edge）を受け取らない
+    #   （e37_scalp.py の run_e37 の中の _apply_rg5_to_5m は既定の right）。right でないときに走らせると、
+    #   H2 の検査が、設定と違う区切りの帯を測る＝止める。
+    if cfg["global"]["regime"]["h1_edge"] != "right":
+        raise SystemExit(f"[H2 の検査] global.regime.h1_edge={cfg['global']['regime']['h1_edge']} は run_e37 の経路（S1・L1）に届かない（帯の区切りが混ざる）")
 
     df = load_features(cut=cut)
 

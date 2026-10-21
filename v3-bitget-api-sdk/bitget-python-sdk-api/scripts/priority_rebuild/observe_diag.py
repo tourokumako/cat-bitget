@@ -847,7 +847,7 @@ def lee_mykland_stat(c: np.ndarray, K: int) -> np.ndarray:
     bp_prev = pd.Series(bpv).rolling(K - 2).sum().shift(1).to_numpy()   # Σ_{j=i−K+2}^{i−1}（K−2 項・今の1本の項を入れない）
     V_lm = (math.pi / (2.0 * (K - 2))) * bp_prev
     with np.errstate(invalid="ignore", divide="ignore"):
-        return r / np.sqrt(V_lm)
+        return np.where(V_lm > 0, r / np.sqrt(V_lm), np.nan)   # ★監査 CP84 の修正6＝ふだんの揺れが 0 の足は ±inf にせず空
 
 
 def _smc_sweep_fractal(d, k=2):
@@ -3431,7 +3431,10 @@ def _scene_data(cfg):
     p0, p1 = _resolve_period(cfg)
     warm = (p0 - pd.Timedelta(days=int(cfg["warmup_days"]))).strftime("%Y-%m-%d")
     df = e37._load(0, start_override=warm)
-    _z, _up, rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(df, adaptive_k=e37.V25_K)
+    # ★監査 CP84 の修正5＝帯の1時間足の区切りを、E38 の設定（global.regime.h1_edge）から読む（測る道具と同じ区切りの帯にする）
+    import json as _json_h1
+    _h1e = _json_h1.loads((pathlib.Path(__file__).resolve().parent / "e38_logics.json").read_text(encoding="utf-8"))["global"]["regime"]["h1_edge"]
+    _z, _up, rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(df, adaptive_k=e37.V25_K, h1_edge=_h1e)
     ts = pd.DatetimeIndex(df["ts"])
     bars = df.set_index(ts)[["open", "high", "low", "close", "volume"]]
     g = {"rng": rng, "res_lo": res_lo, "res_hi": res_hi, "sup_lo": sup_lo, "sup_hi": sup_hi,
@@ -7395,6 +7398,11 @@ def selftest_band(exit_: bool = True) -> list:
             continue
         for case, exp in ref["known"](prm):
             s = np.asarray(fn(case), dtype=float)
+            # ★監査 CP84 の修正3＝engine_tuner が使う入口（make_material＝登録の計算式）も、カタログ（build_catalog＝_BAND_IMPL）と1本も違わないか
+            s_mm = np.asarray(make_material(fam, *find_material(name)[1])[1](case), dtype=float)
+            fin = np.isfinite(s)
+            if (fin != np.isfinite(s_mm)).any() or not np.allclose(s[fin], s_mm[fin], atol=1e-9):
+                ng.append(f"T-B5: {name}: engine_tuner の入口（make_material）とカタログ（build_catalog）で値が違う")
             for i, v, tol in exp:
                 if not (abs(s[i] - v) <= tol):
                     ng.append(f"T-B1: {name}: 手計算の既知答えと不一致（位置 {i}・期待 {v}・実測 {s[i]}）")

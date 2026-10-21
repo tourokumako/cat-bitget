@@ -154,3 +154,22 @@
 ## §14 200回目＝締め（ToDo の74番）
 
 - worklog（この §12〜§14）・next_step（次の一手＝実装の監査の依頼書 CP84）・教訓・コミット（まこさんの OK の後）。
+
+## §15 201回目＝始め・ToDo の70番（実装の監査の依頼書 CP84・手書きの文書）
+
+- 必読9本と §12〜§14 を読んだ。ToDo を書いた（sessions/d12d5844…/session_todo.md・締めは75番）。70番の宣言 → まこさん「よい」。
+- gen_audit_docs.py request-design impl は、工事のフォルダの「監査依頼の手書き（実装の監査）.md」を読む（read_hand・:1126〜1219＝無ければ止まる・工事ごとの問いは Q8 から・要望のまとめの1件目は「目的：」）。この工事には無かったので、CC が書いた（手本＝K-4 の同じ名前の文書）。道具が作る問いは R0・Q1〜Q6。
+- 承認の記録 m2c15-band-s1-20261020.breaks.json は在り、8行とも code null・match false（「済」の行が0）。自己申告③は、この事実で書いた。
+- 代表の値の表の前の版は、git にも控えにも無い（find で確かめた）。
+- 保存の検査（check_source_on_save）が、必読に m2_todo.json が無いと止めた＝参照表の差分の決定の文（MAKO_B1S1）に名前が出るだけ → 必読に入れないものに理由を書いて保存した。plain_ja_check.py の候補45件のうち、100字を超える3文と「・」の並びを直した。
+- 次＝まこさんに手書きの文書の OK をいただく → request-design impl --work m2c15-band-s1-20261020 --design（承認の控え）で依頼書を作る → 全部読んで見直し表 → リンクでお見せする。
+- まこさん「OK」（手書きの文書）→ request-design impl --design（控え）＝依頼書 CP84（652行・問い13件・必読37件・1分38秒）→ check-request＝食い違い0件 → 全部読んだ → 見直し表（reviews/2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_request.review.md・41項目）。
+- 見直しで見つけた抜け1件＝Q4 の括弧の文「acceptance.md は、この工事の後に別の工事の設計書で上書きされたので比べない」が事実と違う（いまの acceptance.md は控えと cmp で同じ）。文は gen_audit_docs.py:2129〜2131 が --design のとき決まって書く。直すかを まこさんに伺う。
+- まこさん「OK」（道具の文を直す）→ 直す前に、check-request が同じ関数で元データを作り直して比べる（gen_audit_docs.py:2333〜2337）と分かった＝acceptance.md の状態で文を変える案だと、上書きの後に照らしが落ちる → 代わりの案（いつも正しい文）を伺い、まこさん「よい」→ gen_audit_docs.py:2129〜2134 の文を直した（コメント3行を足した・検査は変えていない・ほかの道具と hook にこの文を見る所は無い＝grep 0件）→ 依頼書を作り直した（652行・:211 だけ新しい文）→ check-request 食い違い0件 → 見直し表を作り直し、16番を「直した」・Q11 の根拠のパスを正した → gen_review.py --check＝止める理由0件・根拠63件。
+- まこさんが別のセッションで監査 CP84 を起動 → 結果＝GO（Critical 0・Major 4・Minor 5・Process 2）・結果ファイル audits/2026-10-21_m2c15_band_s1_20261020_impl_cp84_audit_report.md（498行）を全部読んだ。
+- 修正を1件ずつ実物で確かめた＝①修正1・2：run_e37（e37_scalp.py:2374）は h1_edge を受けず、:2402 の _apply_rg5_to_5m は既定 right・有効なロジックは S1・L1 だけ（e38_logics.json）＝指摘のとおり（E38 本体は 08-03 から name ほかの鍵で落ちる＝前から・leak_causality_diag.py:185〜190）②修正3：軽い口は build_catalog の計算だけを試し（observe_diag.py:7382〜7400）、engine_tuner は make_material（engine_tuner_exec.py:2062）＝指摘のとおり ③修正4：try_hooks で --selftest-band を試すと require_design_contract_before_run.sh が照らしB（E36 の spike_stat・spike_threshold）で止めた＝指摘のとおり（A の FAIL は未コミットの gen_audit_docs.py の分）④修正6：observe_diag.py:848〜850 で V_lm=0 なら ±inf ⑤修正7：E36 に math. の行は0件 ⑥修正9：indicator_switch.json の on に LeeMykland_E36版 が在る（76番目）⑦監査人が本物のフォルダで自己テストを走らせた件＝git status の追跡ファイルの変更は監査の前と同じ3本だけ。
+- 修正9（E36 にオン・オフを効かせる）＝まこさん「E３８以前に作成したpyは指標を直書きだと思うので、オンオフが効くわけがないよね？」「あてないで良いが…監査にそのような問いを投げたの？」→ 依頼書に E36 のオン・オフを問う問いは無い。元は決まった問い R0-2（依頼書:179）と、要件の要約の「オン・オフは全部のロジックに効く」（依頼書:92・core_requirements_full.md:86）。CC が「対象の外」と切り分けずに選ばせた＝CC の誤り。
+- まこさん「他は当てる」→ 逐語 ok_cp84_choices_20261021（新しい工事名 m2c15-band-s1-cp84-decisions-20261021・承認の後の工事のフォルダには書けないため）→ apply_audit_fix.py --decline 9（記録 1件）→ --severity Major,Minor --choose 1〜8=確定 --dry（8件当たる）→ 当てた（6本・+28行／−4行）。当てた後の照合 FAIL は、前からの「あとで直すこと⑦」と同じ型（今回の差分だけを相手に、設計書の関数の全部を照らす）。
+- 修正10（gen_audit_docs.py:188 の後に1文）と修正11（require_design_contract_before_run.sh の確認の旗に --selftest-band）を CC が Edit で書いた。bash -n・py_compile 通る。
+- 確かめ＝--selftest-band 全部 pass（3.8秒・T-B5 を含む・hook に止められない）／G2 通る（53秒・g2_pass.json 指紋 5d3db741…）／H2 通る（5分5秒・未来参照0・食い違い0・h2_pass.json 指紋 7e12c9df…）／observe_diag.py --selftest 全部 pass（3分39秒）。修正4（照らしB）が効くかは、コミットの後（差分が0の形）でないと試せない。
+- 確かめた事実＝実装の前 c2d6f7ff（14:54）は当てた時刻 16:48 より前・2ae3711f から後に直す相手23本の変更は無い・rep_values_by_role.json は185件・LeeMykland の2種はスキャル 270／デイトレ 78・帯pivot は代表の値が無い（G-1 のとおり）。

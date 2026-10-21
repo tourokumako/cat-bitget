@@ -110,7 +110,11 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   （engine_tuner_gen.py の selftest_stop_note＝T50）だけを試す口。作り物の文と関数だけを使い、案も成績表も
              #   売買記録も書かない・累積の試行数に足さない。足した理由は上と同じ＝旗は「独立した語として完全一致」で
              #   見るので、'--selftest' に一致しない。壊すプログラム b159 が使う。
-             '--selftest-stop-note'])
+             '--selftest-stop-note',
+             # ★監査 CP84 の修正11（工事 m2c15-band-s1-20261020）＝帯の部品・S1 の部品・帯の1時間足の区切りの番人だけを数秒で試す口。
+             #   作り物の足だけを使い、成績表も売買記録も書かない・累積の試行数に足さない。完成の条件8行のコマンドで、壊すプログラム b189〜b196 が使う。
+             #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、'--selftest' に一致しない。
+             '--selftest-band'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

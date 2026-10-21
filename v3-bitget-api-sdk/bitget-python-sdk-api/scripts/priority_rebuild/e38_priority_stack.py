@@ -204,6 +204,10 @@ def main() -> None:
             sections={**sections, **e38_extra}, tag=tag)
 
     strat_base._output_and_report = _e38_out
+    # ★監査 CP84 の修正2＝run_e37 の経路（S1・L1）は、帯の1時間足の区切り（global.regime.h1_edge）を受け取らない＝right のまま。
+    #   right でないときに走らせると、汎用部品の経路（prepare_df）と区切りの違う帯が1回の走行に混ざる＝止める。
+    if by_side and cfg["global"]["regime"]["h1_edge"] != "right":
+        raise SystemExit(f"[e38] global.regime.h1_edge={cfg['global']['regime']['h1_edge']} は run_e37 の経路（S1・L1）に届かない（帯の区切りが混ざる）")
     try:
         e37.run_e37(df, cfg["global"]["box_tf"], tag=a.tag,
                     used_flags_section=used_values_section(cfg, kw, const), **kw)

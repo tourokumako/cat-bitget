@@ -30,7 +30,6 @@ H 制約（acceptance §5）:
 """
 from __future__ import annotations
 import argparse
-import math
 import pathlib
 import sys
 
