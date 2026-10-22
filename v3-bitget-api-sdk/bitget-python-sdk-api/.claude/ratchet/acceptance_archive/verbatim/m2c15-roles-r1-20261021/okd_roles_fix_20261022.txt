@@ -1,0 +1,787 @@
+案です（工事 m2c15-roles-r1-20261021＝R-1＝指標の系統の札を、出どころの役割に合わせる。まこさんの決定＝D1「CCの勧めのとおりでよい」・D2〜D4「CCの勧めでよい」・D5「よい」・向きを見る所と 3-2 の2件「OK」・D6「OK」・監査 CP85 への決定＝D7 と決定ア「全部直す。CCの勧めの通りでよい」）。本物のコードには、まだ1文字も書いていません。
+
+- 実装の指示 49 件＝コードと設定 42 件・新しい壊すプログラム 7 本。写しの道具（.claude/state/indicator_review/roles_draft_build.py）が、一時のフォルダの写しに全部 当てて確かめた（結果は 4-12）。
+
+【4-0 この仕組みは何か】
+指標には、1つずつ系統の札が付いています（indicator_reference_diag.py の FAMILY_LINEAGE）。engine_tuner は、この札を読んで、どの役割（合図・環境・十分さ・場所・出口の枝）にどの指標を使えるかを決めます（型の表の役割ごとの系統・出口の枝の使える系統）。札は、同じ系統を同じ役割に2本置かない決まり（G3）と、法則 R1・R2・R3 の数え方にも使われます。
+この工事は、札を教科書の役割に合わせます。①系統の区分に「強さ」と「勢い」を足します（8区分から10区分）。②90種の札を、出どころの役割とまこさんの決定のとおりに直します（変える72種＝オシレーター45・勢い17・強さ9・トレンド1／変えない18種）。札の正本は、プログラム（r1_role_map_build.py）が出どころと決定から作った r1_role_map.json です。③型の表の環境の役割に強さ・勢い、十分さの役割に強さを足し、出口の2つの枝の使える系統に強さ・勢いを足します（3-2 の1件目「今その指標が使えている役割を失わないように足す」）。④役割の一覧を作る道具が、直した札と調べ直した役割で照らす形にします。⑤札が構造・位置から外れると、オン・オフの印の法則の源（gen_indicator_switch.py:205〜207）から外れる種類が出ます。そのうち、ほかの源を持たない34種を、源4（定義表の mako の欄）で「使う」に残します（監査 CP85 の決定ア）。
+完成すると、教科書が「強さ」と書く ADX・CHOP・ER・VHF・MMI・経過バー2種・Aroon の2種（AROONU・AROOND）と、「勢い」と書く MACD・PPO・KST・TRIX・TSI・AO ほかが、それぞれの札を持ちます。終値と線の離れ（close vs 〜%）の41種と、Keltner上・下・ABER位置・ABER原作位置は、行き過ぎの札（オシレーター）になります。止める線との離れの7種（close vs CKSPl%・CKSPs%・PMAX%・PSAR%・SAREXT%・CE_L%・CE_S%）は、役割を調べ直すまで今の構造・位置のままです（D7ウ）。オン・オフの印の「使う」は185種のままです。
+なぜこの形か＝札を直すだけで区分を足さないと、強さ・勢いの指標を近い札（トレンド・ボラ）に寄せることになり、法則 C3 の原文「同じ系統でも見ているものが違うことがあり（ADX は強さ・DI差は向き）」が今のまま残ります。型の表と出口の枝に新しい2つの系統を足さないと、写しで数えた結果、強さ・勢いへ移る 24 種が、前から使えた役割を失います（例＝ADX は 出口の枝 BREAKOUT・出口の枝 REVERSE_IND・型の表の env・MACD線% は 出口の枝 BREAKOUT・出口の枝 REVERSE_IND・型の表の env）。足すと、強さ・勢いへ移った指標が使えなくなる役割は 0 です（R-1 の確かめ R3）。
+
+【4-1 システムの境界】
+札を読む相手（直すと届く先）＝①案を作るプログラム engine_tuner_gen.py（_lineage_of:1260・役割ごとの候補 _lineage_candidates:1464・合図のオシレーターの閾値の向き DC2:1687・:1826・出口の材料 _pick_exit_material:1903）②売買を回すプログラム engine_tuner_exec.py（G3:1779〜1810・法則の系統の数え方:1395・系統を重ねない R2:1506）③表を作る道具 gen_signal_families.py（部品の系統 lineage_of:141）・gen_composition_rules.py（型の表とカタログの系統のずれで止める:101）・gen_materials.py（答える問い:1255・:2364）・観察の道具 observe_diag.py（材料の検査2 のオシレーターの値域:6265・番人:8376）④文書を作る道具 .claude/tools/gen_regime_kb.py:1081・gen_stage0_match.py:95（系統で指標の名前を展開）⑤役割の一覧を作る道具 build_role_threshold_table.py ⑥オン・オフの印を作る道具 gen_indicator_switch.py（法則 R1・R3 の系統「構造・位置」の札で、法則の源の種類を展開する:205〜207・監査 CP85 の修正2）。結果を次に使う相手＝U-1（使い方の照らし）・M2 の段（§2.2 の段の候補・法則の判定）。
+
+【4-2 入力と出力】
+入力＝封つきの r1_role_map.json（90種の札・出どころの区分・決まり）・gemini_r1/ の調べた結果（cc_ans04・cc_ans05・ans03_b・chrome_ans02_a1 と照らしの結果）・今のオン・オフの印（indicator_switch.json の sources＝決定アの34種を数える元）。出力＝直した札（FAMILY_LINEAGE）・系統の区分（LINEAGE_KINDS）・答える問い（LINEAGE_QUESTION）・型の表の役割ごとの系統（role_lineage）・出口の枝の使える系統（lineage_any）。関数とコマンドの取り決め＝observe_diag.py --selftest-lineage（T-L1・T-L2）・build_role_threshold_table.py --check（表を書かずに、印の付いた種類を出して終わる・1つでも在れば rc 1）・roles_r1_check.py（R1〜R5・書かない）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| indicator_reference_diag の <モジュール直下>（FAMILY_LINEAGE・LINEAGE_KINDS・LINEAGE_QUESTION・MAKO_R1・R1_KEEP_ON） | 札・系統の区分・区分ごとの答える問い・決定アの34種に源4（mako の欄）を入れる | 直す |
+| observe_diag.selftest_lineage・selftest・<モジュール直下>（入口の旗）・_insp_lineage_range | 系統の区分の番人（T-L1・T-L2）を軽い口にし、全体の自己テストからも呼ぶ・数を書いた文を区分から作る | 新設・直す |
+| engine_tuner_gen._lineage_of の注記 | 系統の数を書いた注記 | 直す（注記だけ） |
+| gen_signal_families.build_table の role_lineage | 型の表の役割ごとの系統（環境に強さ・勢い、十分さに強さ） | 直す |
+| exit_families_rules.json の REVERSE_IND・BREAKOUT | 出口の枝の使える系統（強さ・勢い） | 直す |
+| .claude/state/indicator_review/build_role_threshold_table.py | 役割の一覧（区分の写し・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check） | 直す |
+| .claude/state/indicator_review/roles_r1_check.py の <モジュール直下>・usable | R-1 の確かめ（R1〜R5）・usable＝その系統で使える役割（型の表の役割と出口の枝）の集まり | 新設 |
+- 指標を使う部品について：この工事は指標の計算と値に触りません（直すファイルの一覧に材料の計算の関数が無い・observe_diag.py の直しは番人と文だけ）。札は、材料の一覧（FAMILY_LINEAGE）の1か所で持ち、型の表・出口の表・G3・法則は全部そこから読みます。
+- オン・オフは、何もしなければ変わります（監査 CP85 の修正1）。gen_indicator_switch.py の源2（法則）は、法則 R1・R3 が数える系統「構造・位置」の札で、種類を展開します（gen_indicator_switch.py:205〜207・:307）。札が構造・位置から外れる種類のうち、源が法則だけの34種は、G-1 の gen_indicator_switch.py --write で「使わない」になります。まこさんの決定ア（「使う」に残す）のとおり、この34種に源4（定義表の mako の欄・MMI と同じ道）を入れ、「使う」に残します。写しで印を作り直した結果＝本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34。
+
+【4-4 処理の流れ】
+1. 封＝r1_role_map.json と調べた結果（gemini_r1/ の6本）に封をした（2026-10-22・案を出す前・まこさん「ア」＝承認の前の仮当てが完成の条件まで走らせるため）。監査 CP85 の後、D2 の証拠の2本（chrome_ans02_a1・照らし）に まこさんが封を掛け（修正18）、D7 で作り直した r1_role_map.json（90種）に封を掛け直した（前の版は r1_role_map_88_20261022.json の名前で封を残した・まこさん「OK」）。
+2. 実装の指示を当てる＝札・区分・答える問い・型の表の役割ごとの系統・出口の枝の使える系統・役割の一覧の道具・確かめの道具。
+3. 確かめ＝observe_diag.py --selftest-lineage（T-L1・T-L2）・roles_r1_check.py（R1〜R5・R5 は印を作り直す前に、今「使う」の種類が減らないかを見る）。
+4. G-1＝型の表・出口の型の表を作り直し、まこさんに再承認していただく → 組み立ての表・材料の文書・オン・オフの表を作り直す（gen_indicator_switch.py --write の直後に、jq '.counts["使う"]' で「使う」が185のままかを見る＝違えば先へ進まない・監査 CP85 の修正3）→ 役割の一覧を作り直す（build_role_threshold_table.py）。
+5. G-2＝観察の道具の自己テスト・材料の検査2（オシレーターの値域）→ G2 → H2 → 監査に出す前のチェック。
+- 条件のつなぎ方に触るとき：型の表の「役割ごとの系統」（つなぎ方の材料の絞り）に触ります。沿う決まり＝型の表の役割ごとの系統の出典（technical KB §2.4 の V9 P3 の実物「ADX ∈ [30,50) ← トレンド系・強さ確認」・法則 R2「補助（トレンドの強さ・値動きの幅・出来高）は、違う系統から選ぶ」）。足すだけで、今の系統は1つも外しません。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| r1_role_map.json に封が無い | build_role_threshold_table.py が「封が無い」で止まり、表を作らない |
+| 札が区分の外 | observe_diag.py --selftest-lineage（T-L1）と全体の自己テストが落ちる |
+| 答える問いの鍵が区分と違う | T-L2 と gen_materials.py の自己テスト（:2396）が落ちる |
+| 型の表・出口の型の表を作り直した後、再承認の前 | engine_tuner は「未承認」で止まる（前からの作り） |
+| 途中で止まった | 当てる道具の「もう当て終わっていた」の記録で続きから |
+| 札を直した後、今「使う」の種類が印で「使わない」になる | roles_r1_check.py の R5 が落ちる。G-1 の jq の照らしで、185 と違えば先へ進まない |
+| R1_KEEP_ON の種類が定義表に無い | indicator_reference_diag.py を読み込んだ時点で止まる（SystemExit） |
+
+【4-6 制約】
+| 種類 | 決まり | 原文 | この設計でどう守るか |
+|---|---|---|---|
+| 法則 | C3 | ［自動］ | ADX は強さ・DI差 はトレンド（向き）と別の札にする＝C3 の原文どおり、見ているものが違う指標を違う系統として数える |
+| 法則 | R2 | ［自動］ | 「補助（トレンドの強さ・値動きの幅・出来高）は、違う系統から選ぶ」の「トレンドの強さ」が、ボラ・トレンドとは別の系統（強さ）になる。法則の機械が読む判定（regime_laws.json の R2）は書き替えない（Y-2・工事2） |
+| 法則 | R1・R3 | ［自動］ | 構造・位置の部品を1本 数える。close vs 〜% の41種と Keltner上・下・ABER位置・ABER原作位置・経過バー2種が構造・位置から外れる＝R1・R3 を満たせる部品が減る（帯の部品・pivot・VAH/VAL・POC・n本高安・VWAP・fractal・S-Rタッチ・加速バンドとの離れ・止める線との離れは残る）。法則の判定は書き替えない（Y-2）。外れた種類のうち源が法則だけの34種は、オン・オフの印では源4 で「使う」に残す（決定ア） |
+| 型の表 | E-a1・E-a4・E-a5・E-a8（レンジ系の型） | ［自動］ | 役割ごとの系統に強さ・勢いを足すだけで、今の系統は外さない |
+| 場面の決まり | — | ［自動］ | 触らない（法則の判定の直しは工事2） |
+| そのほか | 機能要件の5番（4つが、それぞれの役割に沿って使われている） | core_requirements.md の3 | 札を教科書の役割に合わせる（この工事の目的） |
+| そのほか | 法則に合わせて指標本来の役割を改ざんしない（まこさん 2026-10-21） | memory feedback_no_role_change_to_fit_laws.md | 札は出どころの役割と決定から決め、法則の判定に合わせて札を選んでいない（法則の判定は直さない） |
+- 新しく足す決まり：足しません（区分と、型の表の役割ごとの系統に、名前を足すだけ）。
+- ★監査 CP85 の修正15：十分さに強さを足すと、前は十分さに入れなかった ADX が、十分さで使えるようになります（4-13 の「トレンド→強さ＝sufficiency」）。役割を失わない範囲を超えます。十分さの出典の文（gen_signal_families.py:255〜258＝ATR・出来高・需給）に、強さの文はありません。G3 が止めなくなる組（MACD線% と EMA傾き ほか）の重なりは、法則 C3 のとおり値決め窓で測ります（まだ測っていない＝【確かめていないこと】）。
+
+【4-7 探索の範囲】
+| 何 | この工事が関わるか | どう扱うか | 探し方のどの段階か | 役割・範囲・代表の値（スキャル／デイトレ）・出どころ・カタログに在るか・オンか |
+|---|---|---|---|---|
+| 指標 | 札が変わる72種（r1_role_map.json の「変える」＝ADX・MACD線%・MACDヒスト%・MACDシグナル線%・AO%・KST・KSTシグナル・PPO・PPOシグナル・PPOヒスト・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・ER・CHOP・VHF・高値からの経過バー・安値からの経過バー・Keltner上・Keltner下・close vs HILO%・close vs KAMA%・close vs LINREG%・close vs LRb%・close vs MAMA%・close vs FAMA%・close vs MMAR%・close vs RAINBOW%・close vs RMA%・close vs TEMA%・close vs TRIMA%・close vs TSF%・close vs VIDYA%・close vs VWMA%・close vs ZLMA%・PSAR反転・close vs ABER_ZG%・ABER位置・ABER原作位置・TRIX_EMAシグナル・TRIX_EMAヒスト・close vs TRIMA_TA%・close vs VIDYA_CMO%・close vs MAMA_HL%・close vs FAMA_HL%・close vs EMA・close vs SMA・close vs HMA%・close vs ALMA%・close vs DEMA%・close vs FWMA%・close vs HT_TRENDLINE%・close vs HT_TRENDLINE_HL%・close vs HWMA%・close vs JMA%・close vs MCGD%・close vs MEDIAN%・close vs MIDPOINT%・close vs MIDPRICE%・close vs PWMA%・close vs SINWMA%・close vs SSF%・close vs SSF平均%・close vs SWMA%・close vs T3%・close vs WMA%・MMI・AROONU・AROOND） | 札を直す（計算・値・名前は変えない） | 最初の段階・最後の段階とも、使える役割が札で変わる | ［自動］ |
+| 閾値 | 関わらない（直すファイルに閾値の格子・範囲が無い）。ただし、合図の役割のオシレーターは閾値の向き DC2（売りは高い分位・買いは低い分位）で引く＝オシレーターになった close vs 〜% の41種と Keltner上・下・ABER位置・ABER原作位置は、合図に使われるときに DC2 で引かれる（engine_tuner_gen.py:1687） | 読むだけ | — | ［自動］ |
+| パラメータ | 関わらない（直すファイルに範囲・代表の値が無い） | 読むだけ | — | ［自動］ |
+| 時間足 | 関わらない（型の表の役割ごとの時間足は変えない） | 読むだけ | — | ［自動］ |
+- 役割に沿って使うこと（要件定義の3番の5）：札が強さの指標は環境・十分さ・出口の枝、勢いは環境・出口の枝、オシレーターは合図・十分さ・出口の枝で使える。出どころ＝r1_role_map.json の「出どころの区分」（係の調べ・Gemini と CC の調べ〔照らし一致〕・決定 D1〜D7）。
+- ★監査 CP85 の修正6：ABER の3種（close vs ABER_ZG%・ABER位置・ABER原作位置）を「ボラ」にする札は、逐語が帯そのものの説明（out_w2.json「A volatility indicator similar to Keltner Channels.」）で、帯からの離れと帯の中の位置を支えません。ABER原作位置の式は、80本・標準偏差2倍の BB%b と同じ作りです（observe_diag.py:1727〜1729）。→ まこさんの決定 D7イ＝3種ともオシレーター（BB%b と、移動平均との離れ〔D2・D6〕とそろえる）。
+- ★監査 CP85 の修正7：止める線との離れ7種（close vs CKSPl%・CKSPs%・PMAX%・PSAR%・SAREXT%・CE_L%・CE_S%）をオシレーターにする D2 の出どころの文は、移動平均についての文（"Our formula above is not specific about the type of moving average."）です。止める線との離れを支えません。→ まこさんの決定 D7ウ＝D2 から外し、今の構造・位置のまま。役割は調べ直してから決める（D2 を決めたときの説明＝okd_roles_choice_20261021.txt:26〜27 は「移動平均の線からの離れ」で、この7種に当たらなかった）。
+- ★監査 CP85 の修正8：高値・安値からの経過バーは、AROONU・AROOND と同じ量です（StockCharts「A 25-day Aroon-Up measures the number of days since a 25-day high.」）。経過バーを「強さ」にし、AROONU・AROOND を「トレンド」のままにすると、G3 は同じ量を環境に2本置くことを止めません（法則 C2 に当たる）。→ まこさんの決定 D7エ＝AROONU・AROOND も強さにそろえる（D3 の原文は Aroon のページの文。対象が88種から90種に増える）。
+- ★監査 CP85 の修正9：TSI・TSIシグナルは「トレンド」のまま、TSIヒストだけが「勢い」になり、仲間の札が割れていました。out_w1.json の逐語は「a momentum oscillator」で、okd_d234 も「TSI のシグナル線は「勢い」になります」と書きます。STCstoch（勢い）の逐語2件は計算の説明だけで、元の STC は「トレンド」のままです。→ まこさんの決定 D7オ＝TSI は勢い（TSIシグナルは D3 で同じ札）・STCstoch は元の STC と同じトレンド（変えない）。
+
+【4-10 保存先】
+本物のファイルへの上書き（実装の指示）。作り直せる表（型の表・出口の型の表・組み立ての表・材料の文書・オン・オフの印・役割の一覧）は G-1 で道具が作り直す。封＝r1_role_map.json と gemini_r1/ の調べた結果8本に封をした（2026-10-22・seal_outputs.py・読み取り専用・上書きしない・まこさん「ア」・D2 の証拠の chrome_ans02_a1 と照らしの2本は監査 CP85 の修正18 で まこさんが打った）。監査 CP85 の D7 で札を作り直すとき、前の版（88種）は r1_role_map_88_20261022.json に移し、封の記録の名前だけを替えて封を残した（まこさん「OK」＝ok_seal_r1map_20261022）。新しい r1_role_map.json（90種）に封をした。役割の一覧を作り直すと印が 0 になり、対象を選べなくなる＝札の正本は封つきの r1_role_map.json の1つ。
+- 置き場が1か所であること：札は FAMILY_LINEAGE の1か所（読む所は全部そこから読む＝4-1）。決定アの34種は、定義表の mako の欄（源4）の1か所で持つ（オン・オフの印の道具 gen_indicator_switch.py:269 がそこから読む）。区分は LINEAGE_KINDS の1か所。役割の一覧の今の系統は、直す前は threshold_role.json の写しから読んでいた（2か所）＝コードから読む形にして1か所にする。
+- 直すと届く先：4-1 の①〜⑥（grep -n "FAMILY_LINEAGE\|LINEAGE_KINDS\|LINEAGE_QUESTION" で探した・⑥は監査 CP85 が見つけた）。
+- 出どころをどこまで確かめたか：逐語がページに在るかまで（照らしの道具 verify_quotes_w.py で一致）。役割の読み取りの正しさは、まこさんの決定 D1〜D7 と監査が見る。
+
+【4-12 出る結果の姿】
+当てた後に走らせるもの＝①python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage ②python3 .claude/state/indicator_review/roles_r1_check.py ③G-1＝gen_signal_families.py --write・gen_exit_families.py --write（まこさんの --approve）・gen_composition_rules.py --write・gen_materials.py --write・gen_indicator_switch.py --write・build_role_threshold_table.py（役割の一覧＝食い違い 0・疑い 0）④python3 scripts/priority_rebuild/observe_diag.py --selftest ⑤材料の検査2（観察の道具の検査の2）⑥G2 → H2 → 監査に出す前のチェック。写しの結果＝写しのカタログの札＝強さ 9・勢い 17（2-1 の2行目の行の数）・R-1 の確かめ（R1〜R5）rc 0・軽い口 --selftest-lineage rc 0・役割の一覧の作り直し＝{"役割が出どころで確かめられた": 149, "役割が食い違う": 0, "役割が食い違う疑い（語の数だけ）": 0, "閾値が数字で確かめられた": 14, "閾値は文だけ": 119, "閾値が無い": 52}・承認の前の仮当て（A12）と同じ自己テスト＝engine_tuner_exec.py --selftest rc 0・observe_diag.py --selftest rc 0・gen_materials.py --selftest rc 1（許す落ち＝T6）・engine_tuner_gen.py --selftest-extra-gate rc 0・G-1 の試し（承認は打たない）＝gen_signal_families.py --write rc 0・gen_exit_families.py --write rc 0・gen_indicator_switch.py --write rc 0・gen_composition_rules.py --write rc 0・gen_materials.py --write rc 0・engine_tuner_gen.py --selftest-extra-gate rc 1（再承認の前で止まった＝想定どおり）・engine_tuner_exec.py --selftest rc 1（再承認の前で止まった＝想定どおり）・本物のファイルが変わった 0 本
+
+【4-13 影響範囲】
+1. 札が変わる72種の指標は、使える役割が変わります。写しで、部品の名前ごとに数えた増減＝増えた＝トレンド→強さ＝sufficiency 7・構造・位置→強さ＝sufficiency 2・env 2・構造・位置→オシレーター＝trigger 67・sufficiency 67・構造・位置→トレンド＝env 1／減った＝構造・位置→強さ＝location 2・構造・位置→オシレーター＝location 67・構造・位置→トレンド＝location 1。
+2. §2.2 の段の候補（m2_stage_candidates.json）＝段1（場所 location・帯タイプ）に挙がっている close vs EMA%・close vs SMA%・Keltner は、札がオシレーターになり、場所の役割から外れます。段2c 3枠目の「経過バー」は、札が強さになり、十分さの系統に入ります。ただし、段2c は法則が名指しした種類だけを通すので（engine_tuner_gen.py:2550・:2901〜2903）、経過バーは候補に出ません（段2c の注記「成績表では location に在り sufficiency に0列」は解けません・監査 CP85 の修正11）。段の候補をどう直すかは、U-1（使い方の照らし）で決めます（Y-1）。
+3. 法則 R1・R3（構造・位置の部品を1本）・R2（系統を重ねない）が数える部品が変わります（4-6）。法則の判定は書き替えません（Y-2）。
+4. 合図の役割のオシレーターは DC2（行き過ぎを逆に取る）で閾値を引きます。オシレーターになった close vs 〜% と Keltner上・下・ABER位置・ABER原作位置は、合図に使われるとき DC2 で引かれます。
+5. 直すファイルの名前を本文に持つ前からの壊すプログラム＝b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b109_moving_line_not_built.sh・b110_ts_pos_in_random_draw.sh・b111_ts_pos_excludes_current.sh・b112_stage_warm_not_extended.sh・b122_obs_formula_copied.sh・b126_rank_resume_save_off.sh・b127_stage_q_rank_off.sh・b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b138_keep_name_dropped.sh・b139_range_excludes_keep.sh・b140_group_range_ignored.sh・b141_catalog_out_of_range.sh・b143_rci_range_short.sh・b144_g2_sentinel_first_clean.sh・b145_vwap_day_no_reset.sh・b146_pivot_week_as_day.sh・b147_vp_today_from_start.sh・b151_w_fractal_not_first.sh・b152_sr_fractal_counts_bars.sh・b153_smc_fractal_no_close_back.sh・b154_lower_half_upper_span.sh・b156_sr_fractal_unconfirmed.sh・b159_selftest_run_passthrough.sh・b160_dpo_tb_lib_shift.sh・b161_thermo_orig_abs.sh・b162_stochrsi_raw_smoothed.sh・b163_trix_ema_signal_sma.sh・b164_rvol_rv_mean_subtracted.sh・b165_ssf_avg_single_input.sh・b166_sqz_carter_scalar_fixed.sh・b172_alma_weights_reversed.sh・b173_stc_zero_range_divides.sh・b174_hilo_short_column.sh・b175_dpo_centered_future.sh・b176_sarext_sign_not_abs.sh・b177_psar_af_column.sh・b178_cksp_long_short_swapped.sh・b179_pmax_ma_of_high.sh・b180_vwap_volume_weight_dropped.sh・b181_thermo_ma_column.sh・b182_copy_mark_without_known.sh・b183_copy_verified_by_tb_alone.sh・b188_stc_library_min_gate.sh・b189_band_swing_unconfirmed.sh・b190_band_swing_no_fee_floor.sh・b191_band_lines_no_top.sh・b192_lee_mykland_abs.sh・b193_hour_edge_label_late.sh・b194_e36_own_spike_stat.sh・b195_lee_mykland_paper_window.sh・b196_band_pivot_week_as_day.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b60_only5_with_others.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh・b77_no_streak.sh・b78_law_literal.sh・b79_param_drawn.sh・b80_quantile_one_by_one.sh・b82_abs_missing.sh・b83_bool_col_extra_key.sh・b84_qtable_per_bundle.sh・b85_band_ignores_laws.sh・b87_stages_record.sh・b91_keep_range_ignored.sh・b92_stage2_no_drop_tfs.sh・b94_stage_limits_ignored.sh・b96_tf_hardcoded.sh・b98_qkey_abs_missing.sh・b99_streak_inner_band_only.sh（探す文字の数が当てる前と後で同じことを道具が数えた）。
+- 名前が消える・変わるとき：消える名前＝observe_diag.py の検査8 の番人の文「系統マップに8系統の外の割当がある」（selftest_lineage の T-L1 の文に置き替わる）。この文を本文に持つ壊すプログラム・hook・検査を探した結果＝0件（直す当の observe_diag.py の行は除く）。
+- 指標の値を変えるとき：非該当＝値は変えない（札だけ）。使う所ごとの影響は上の1〜4。
+
+6. オン・オフの印（indicator_switch.json）は、gen_indicator_switch.py:207 が、系統「構造・位置」の札で法則の源を展開して作ります。札が変わると、源が法則だけの34種が「使わない」になります。決定アのとおり、この34種に源4（mako の欄）を入れて「使う」に残します。gen_indicator_switch.py は、4-1 の「札を読む相手」に入れました（監査 CP85 の修正2）。
+7. 成績表（material_ranking.json）は、役割ごとの系統（signal_families.json）で列を分けて作ります（observe_diag.py:6596）。今の成績表は、close vs 〜% を location に8172列、経過バーを location に396列持ち、sufficiency と trigger には0列です（監査 CP85 が jq で数えた・2026-10-22 に CC も同じ数を数えた）。成績表を作り直すまで、札を変えた種類は、新しい役割の順位に出ません。まこさんの決定カ＝作り直す・時期は U-1 の前（監査 CP85 の修正5）。
+8. F-2 の「注記が新しい札と食い違う行は、注記も直す」の漏れを直しました。close vs ACCBL%・close vs ACCBU% の注記「帯との距離＝位置の計測（Keltner 上下と同じ作り）」（indicator_reference_diag.py:5413〜5414）は、Keltner がオシレーターになると食い違うので、4-20 の実装の指示で直します（監査 CP85 の修正13）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 軽い口 --selftest-lineage | 2.3秒 | 写しの確かめ |
+| roles_r1_check.py | 5.7秒 | 写しの確かめ |
+| 全体の自己テスト --selftest | 212秒 | 写しの確かめ |
+
+【4-17 ログと進捗表示】
+軽い口は「系統の区分の番人（T-L1・T-L2）」と区分の数・❌ の行を出す。roles_r1_check.py は「R-1 の確かめ（R1〜R5）」と照らした種類の数・印の「使う」の数（今と、作り直した場合）・❌ の行を出す。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5058行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])\n\n\n",
+  "種類": "直した後の文字",
+  "中身": "                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])\n\n\n# ══ R-1 の決定ア（2026-10-22・工事 m2c15-roles-r1-20261021・監査 CP85 の修正1〜4）═════════════════════\n# ★札が構造・位置から外れると、オン・オフの印の源2（法則 R1・R3 の系統「構造・位置」の名指し＝gen_indicator_switch.py:205〜207）\n#   から外れる種類がある。そのうち、ほかの源（ta・恒等レシピ・まこさん）を持たない34種を、源4（まこさんが個別に決めた\n#   もの＝mako の欄）で「使う」に残す。一覧は手で選んでいない＝roles_draft_build.py が、札の一覧（r1_role_map.json）と\n#   印（indicator_switch.json の sources）から数えて書いた。\nMAKO_R1 = (\"2026-10-22 まこさん決定「全部直す。CCの勧めの通りでよい」（監査 CP85 の決定ア＝札が構造・位置から外れて\"\n           \"法則の源から落ちる種類を「使う」に残す・逐語 ok_cp85_choices_20261022）\")\nR1_KEEP_ON = (\n    \"高値からの経過バー\", \"安値からの経過バー\", \"close vs HILO%\", \"close vs LINREG%\", \"close vs LRb%\", \"close vs MAMA%\",\n    \"close vs FAMA%\", \"close vs MMAR%\", \"close vs RAINBOW%\", \"close vs RMA%\", \"close vs TEMA%\", \"close vs TRIMA%\",\n    \"close vs TSF%\", \"close vs VIDYA%\", \"close vs VWMA%\", \"close vs ZLMA%\", \"close vs ABER_ZG%\", \"ABER位置\",\n    \"close vs HMA%\", \"close vs ALMA%\", \"close vs DEMA%\", \"close vs FWMA%\", \"close vs HT_TRENDLINE%\",\n    \"close vs HWMA%\", \"close vs JMA%\", \"close vs MCGD%\", \"close vs MEDIAN%\", \"close vs MIDPOINT%\",\n    \"close vs MIDPRICE%\", \"close vs PWMA%\", \"close vs SINWMA%\", \"close vs SSF%\", \"close vs SWMA%\", \"close vs T3%\",\n)\n_r1_miss = sorted(set(R1_KEEP_ON) - {_e[\"family\"] for _e in REFS})\nif _r1_miss:\n    raise SystemExit(f\"❌ R1_KEEP_ON の種類が定義表に無い: {_r1_miss}\")\nfor _e in REFS:\n    if _e[\"family\"] in R1_KEEP_ON and not _e.get(\"mako\"):\n        _e[\"mako\"] = MAKO_R1\n\n\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5058「(_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5309行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "# 8系統＝トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。\n",
+  "種類": "直した後の文字",
+  "中身": "# 10系統＝トレンド／強さ／勢い／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。\n# ★2026-10-22（工事 m2c15-roles-r1-20261021）＝強さ・勢いを足し、90種の札を教科書の役割の調べ直しに合わせた\n#   （正本＝.claude/state/indicator_review/r1_role_map.json・封つき＝変える72・変えない18）。\n#   下の「# トレンド」などの見出しは、足したときの並びで、札（k）ではない。\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5309「# 8系統＝トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5313〜5315行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"ADX\": dict(k=\"トレンド\", note=\"向きを持たないがトレンドの強さの計測が主用途（Wilder）\"),\n    \"DI差\": dict(k=\"トレンド\"), \"MACD線%\": dict(k=\"トレンド\"), \"MACDヒスト%\": dict(k=\"トレンド\"),\n    \"MACDシグナル線%\": dict(k=\"トレンド\"), \"EMA傾き\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"ADX\": dict(k=\"強さ\", note=\"向きを持たないがトレンドの強さの計測が主用途（Wilder）\"),\n    \"DI差\": dict(k=\"トレンド\"), \"MACD線%\": dict(k=\"勢い\"), \"MACDヒスト%\": dict(k=\"勢い\"),\n    \"MACDシグナル線%\": dict(k=\"勢い\"), \"EMA傾き\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5313「\"ADX\": dict(k=\"トレンド\", note=\"向きを持たないがトレンドの強さの計測が主用途（Wilder）\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5328行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"AO%\": dict(k=\"トレンド\", note=\"2つの期間の平均の差＝MACD と同じ作り\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"AO%\": dict(k=\"勢い\", note=\"2つの期間の平均の差＝MACD と同じ作り\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5328「\"AO%\": dict(k=\"トレンド\", note=\"2つの期間の平均の差＝MACD と同じ作り\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5341行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"ER\": dict(k=\"ボラ\", note=\"正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"ER\": dict(k=\"強さ\", note=\"正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5341「\"ER\": dict(k=\"ボラ\", note=\"正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5347行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"KST\": dict(k=\"トレンド\"), \"KSTシグナル\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"KST\": dict(k=\"勢い\"), \"KSTシグナル\": dict(k=\"勢い\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5347「\"KST\": dict(k=\"トレンド\"), \"KSTシグナル\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5355行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"PPO\": dict(k=\"トレンド\"), \"PPOシグナル\": dict(k=\"トレンド\"), \"PPOヒスト\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"PPO\": dict(k=\"勢い\"), \"PPOシグナル\": dict(k=\"勢い\"), \"PPOヒスト\": dict(k=\"勢い\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5355「\"PPO\": dict(k=\"トレンド\"), \"PPOシグナル\": dict(k=\"トレンド\"), \"PPOヒスト\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5369〜5370行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"TRIX\": dict(k=\"トレンド\"), \"TRIXシグナル\": dict(k=\"トレンド\"), \"TRIXヒスト\": dict(k=\"トレンド\"),\n    \"TSI\": dict(k=\"トレンド\"), \"TSIシグナル\": dict(k=\"トレンド\"), \"TSIヒスト\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"TRIX\": dict(k=\"勢い\"), \"TRIXシグナル\": dict(k=\"勢い\"), \"TRIXヒスト\": dict(k=\"勢い\"),\n    \"TSI\": dict(k=\"勢い\"), \"TSIシグナル\": dict(k=\"勢い\"), \"TSIヒスト\": dict(k=\"勢い\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5369「\"TRIX\": dict(k=\"トレンド\"), \"TRIXシグナル\": dict(k=\"トレンド\"), \"TRIXヒスト\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5372〜5382行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"close vs SINWMA%\": dict(k=\"構造・位置\"), \"SINWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs SSF%\": dict(k=\"構造・位置\"), \"SSF傾き%\": dict(k=\"トレンド\"),\n    \"close vs SWMA%\": dict(k=\"構造・位置\"), \"SWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs T3%\": dict(k=\"構造・位置\"), \"T3傾き%\": dict(k=\"トレンド\"),\n    \"close vs TEMA%\": dict(k=\"構造・位置\"), \"TEMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs TRIMA%\": dict(k=\"構造・位置\"), \"TRIMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs TSF%\": dict(k=\"構造・位置\"), \"TSF傾き%\": dict(k=\"トレンド\"),\n    \"close vs VIDYA%\": dict(k=\"構造・位置\"), \"VIDYA傾き%\": dict(k=\"トレンド\"),\n    \"close vs VWMA%\": dict(k=\"構造・位置\"), \"VWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs WMA%\": dict(k=\"構造・位置\"), \"WMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs ZLMA%\": dict(k=\"構造・位置\"), \"ZLMA傾き%\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"close vs SINWMA%\": dict(k=\"オシレーター\"), \"SINWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs SSF%\": dict(k=\"オシレーター\"), \"SSF傾き%\": dict(k=\"トレンド\"),\n    \"close vs SWMA%\": dict(k=\"オシレーター\"), \"SWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs T3%\": dict(k=\"オシレーター\"), \"T3傾き%\": dict(k=\"トレンド\"),\n    \"close vs TEMA%\": dict(k=\"オシレーター\"), \"TEMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs TRIMA%\": dict(k=\"オシレーター\"), \"TRIMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs TSF%\": dict(k=\"オシレーター\"), \"TSF傾き%\": dict(k=\"トレンド\"),\n    \"close vs VIDYA%\": dict(k=\"オシレーター\"), \"VIDYA傾き%\": dict(k=\"トレンド\"),\n    \"close vs VWMA%\": dict(k=\"オシレーター\"), \"VWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs WMA%\": dict(k=\"オシレーター\"), \"WMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs ZLMA%\": dict(k=\"オシレーター\"), \"ZLMA傾き%\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5372「\"close vs SINWMA%\": dict(k=\"構造・位置\"), \"SINWMA傾き%\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5385〜5386行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"AROONU\": dict(k=\"トレンド\"), \"AROOND\": dict(k=\"トレンド\"), \"AROONOSC\": dict(k=\"トレンド\"),\n    \"CHOP\": dict(k=\"ボラ\", note=\"もみ合いの度合い＝値動きの大きさの計測\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"AROONU\": dict(k=\"強さ\"), \"AROOND\": dict(k=\"強さ\"), \"AROONOSC\": dict(k=\"トレンド\"),\n    \"CHOP\": dict(k=\"強さ\", note=\"もみ合いの度合い＝トレンドが出ているかの計測（向きを持たない・係の調べの役割は強さ＝R-1）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5385「\"AROONU\": dict(k=\"トレンド\"), \"AROOND\": dict(k=\"トレンド\"), \"AROONOSC\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5388行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"MMI\": dict(k=\"ボラ\", note=\"値動きがランダムに近いかの割合（向きを持たない）＝CHOP・ER と同じ物差し\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"MMI\": dict(k=\"強さ\", note=\"値動きがランダムに近いかの割合（向きを持たない）＝CHOP・ER と同じ物差し\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5388「\"MMI\": dict(k=\"ボラ\", note=\"値動きがランダムに近いかの割合（向きを持たない）＝CHOP・ER と同じ物差し\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5392行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"PSAR加速\": dict(k=\"トレンド\"), \"PSAR反転\": dict(k=\"構造・位置\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"PSAR加速\": dict(k=\"トレンド\"), \"PSAR反転\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5392「\"PSAR加速\": dict(k=\"トレンド\"), \"PSAR反転\": dict(k=\"構造・位置\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5395行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"TTM_TREND\": dict(k=\"トレンド\"), \"VHF\": dict(k=\"ボラ\"), \"VTXP\": dict(k=\"トレンド\"), \"VTXM\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"TTM_TREND\": dict(k=\"トレンド\"), \"VHF\": dict(k=\"強さ\"), \"VTXP\": dict(k=\"トレンド\"), \"VTXM\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5395「\"TTM_TREND\": dict(k=\"トレンド\"), \"VHF\": dict(k=\"ボラ\"), \"VTXP\": dict(k=\"トレンド\"), \"VTXM\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5409〜5413行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"close vs ABER_ZG%\": dict(k=\"構造・位置\", note=\"中心線との距離＝位置の計測（close vs SMA% と同じ作り）\"),\n    \"ABER位置\": dict(k=\"構造・位置\", note=\"帯の中の位置＝BB%b と同じ作り。★ただし BB%b は行き過ぎの計測が\"\n                                          \"主用途でオシレーターに置いてある。こちらは中心線が値段の平均でなく\"\n                                          \"HLC3 の平均で、帯の幅が ATR＝位置の計測が主用途\"),\n    \"close vs ACCBL%\": dict(k=\"構造・位置\", note=\"帯との距離＝位置の計測（Keltner 上下と同じ作り）\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"close vs ABER_ZG%\": dict(k=\"オシレーター\", note=\"中心線との離れ（移動平均との離れと同じ作り＝R-1 の D7イでオシレーター）\"),\n    \"ABER位置\": dict(k=\"オシレーター\", note=\"帯（中心線 ± ATR）の中の位置＝BB%b と同じ作り（R-1 の D7イでオシレーター）\"),\n    \"close vs ACCBL%\": dict(k=\"構造・位置\", note=\"帯との距離＝位置の計測（帯の外への抜けを見る・R-1 の D6 で構造・位置のまま。Keltner はオシレーター）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5409「\"close vs ABER_ZG%\": dict(k=\"構造・位置\", note=\"中心線との距離＝位置の計測（close vs SMA% と同じ作り）\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5449行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"close vs MEDIAN%\": dict(k=\"構造・位置\"), \"MEDIAN傾き%\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"close vs MEDIAN%\": dict(k=\"オシレーター\"), \"MEDIAN傾き%\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5449「\"close vs MEDIAN%\": dict(k=\"構造・位置\"), \"MEDIAN傾き%\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5451〜5469行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"close vs LRb%\": dict(k=\"構造・位置\"), \"LRb傾き%\": dict(k=\"トレンド\"), \"LRslope%\": dict(k=\"トレンド\"),\n    \"close vs MAMA%\": dict(k=\"構造・位置\"), \"close vs FAMA%\": dict(k=\"構造・位置\"),\n    \"close vs MCGD%\": dict(k=\"構造・位置\"), \"MCGD傾き%\": dict(k=\"トレンド\"),\n    \"close vs MIDPOINT%\": dict(k=\"構造・位置\"), \"MIDPOINT傾き%\": dict(k=\"トレンド\"),\n    \"close vs MIDPRICE%\": dict(k=\"構造・位置\"), \"MIDPRICE傾き%\": dict(k=\"トレンド\"),\n    \"close vs MMAR%\": dict(k=\"構造・位置\"), \"MMAR傾き%\": dict(k=\"トレンド\"),\n    \"close vs PWMA%\": dict(k=\"構造・位置\"), \"PWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs RAINBOW%\": dict(k=\"構造・位置\"), \"RAINBOW傾き%\": dict(k=\"トレンド\"),\n    \"close vs RMA%\": dict(k=\"構造・位置\"), \"RMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs ALMA%\": dict(k=\"構造・位置\"), \"ALMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs DEMA%\": dict(k=\"構造・位置\"), \"DEMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs FWMA%\": dict(k=\"構造・位置\"), \"FWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs HILO%\": dict(k=\"構造・位置\"),\n    \"close vs HMA%\": dict(k=\"構造・位置\"), \"HMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs HT_TRENDLINE%\": dict(k=\"構造・位置\"),\n    \"close vs HWMA%\": dict(k=\"構造・位置\"),\n    \"close vs JMA%\": dict(k=\"構造・位置\"),\n    \"close vs KAMA%\": dict(k=\"構造・位置\"), \"KAMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs LINREG%\": dict(k=\"構造・位置\"), \"LINREG傾き%\": dict(k=\"トレンド\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"close vs LRb%\": dict(k=\"オシレーター\"), \"LRb傾き%\": dict(k=\"トレンド\"), \"LRslope%\": dict(k=\"トレンド\"),\n    \"close vs MAMA%\": dict(k=\"オシレーター\"), \"close vs FAMA%\": dict(k=\"オシレーター\"),\n    \"close vs MCGD%\": dict(k=\"オシレーター\"), \"MCGD傾き%\": dict(k=\"トレンド\"),\n    \"close vs MIDPOINT%\": dict(k=\"オシレーター\"), \"MIDPOINT傾き%\": dict(k=\"トレンド\"),\n    \"close vs MIDPRICE%\": dict(k=\"オシレーター\"), \"MIDPRICE傾き%\": dict(k=\"トレンド\"),\n    \"close vs MMAR%\": dict(k=\"オシレーター\"), \"MMAR傾き%\": dict(k=\"トレンド\"),\n    \"close vs PWMA%\": dict(k=\"オシレーター\"), \"PWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs RAINBOW%\": dict(k=\"オシレーター\"), \"RAINBOW傾き%\": dict(k=\"トレンド\"),\n    \"close vs RMA%\": dict(k=\"オシレーター\"), \"RMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs ALMA%\": dict(k=\"オシレーター\"), \"ALMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs DEMA%\": dict(k=\"オシレーター\"), \"DEMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs FWMA%\": dict(k=\"オシレーター\"), \"FWMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs HILO%\": dict(k=\"オシレーター\"),\n    \"close vs HMA%\": dict(k=\"オシレーター\"), \"HMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs HT_TRENDLINE%\": dict(k=\"オシレーター\"),\n    \"close vs HWMA%\": dict(k=\"オシレーター\"),\n    \"close vs JMA%\": dict(k=\"オシレーター\"),\n    \"close vs KAMA%\": dict(k=\"オシレーター\"), \"KAMA傾き%\": dict(k=\"トレンド\"),\n    \"close vs LINREG%\": dict(k=\"オシレーター\"), \"LINREG傾き%\": dict(k=\"トレンド\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5451「\"close vs LRb%\": dict(k=\"構造・位置\"), \"LRb傾き%\": dict(k=\"トレンド\"), \"LRslope%\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5484行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"高値からの経過バー\": dict(k=\"構造・位置\"), \"安値からの経過バー\": dict(k=\"構造・位置\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"高値からの経過バー\": dict(k=\"強さ\"), \"安値からの経過バー\": dict(k=\"強さ\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5484「\"高値からの経過バー\": dict(k=\"構造・位置\"), \"安値からの経過バー\": dict(k=\"構造・位置\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5487〜5488行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"close vs EMA\": dict(k=\"構造・位置\"), \"close vs SMA\": dict(k=\"構造・位置\"),\n    \"close vs VWAP\": dict(k=\"構造・位置\"), \"Keltner上\": dict(k=\"構造・位置\"), \"Keltner下\": dict(k=\"構造・位置\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"close vs EMA\": dict(k=\"オシレーター\"), \"close vs SMA\": dict(k=\"オシレーター\"),\n    \"close vs VWAP\": dict(k=\"構造・位置\"), \"Keltner上\": dict(k=\"オシレーター\"), \"Keltner下\": dict(k=\"オシレーター\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5487「\"close vs EMA\": dict(k=\"構造・位置\"), \"close vs SMA\": dict(k=\"構造・位置\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5515〜5518行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "    \"TRIX_EMAシグナル\": dict(k=\"トレンド\"), \"TRIX_EMAヒスト\": dict(k=\"トレンド\"),\n    \"close vs SSF平均%\": dict(k=\"構造・位置\"), \"close vs TRIMA_TA%\": dict(k=\"構造・位置\"), \"close vs VIDYA_CMO%\": dict(k=\"構造・位置\"),\n    \"close vs HT_TRENDLINE_HL%\": dict(k=\"構造・位置\"), \"close vs MAMA_HL%\": dict(k=\"構造・位置\"), \"close vs FAMA_HL%\": dict(k=\"構造・位置\"),\n    \"ABER原作位置\": dict(k=\"構造・位置\", note=\"ABER位置 と同じ（帯の中の位置）\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"TRIX_EMAシグナル\": dict(k=\"勢い\"), \"TRIX_EMAヒスト\": dict(k=\"勢い\"),\n    \"close vs SSF平均%\": dict(k=\"オシレーター\"), \"close vs TRIMA_TA%\": dict(k=\"オシレーター\"), \"close vs VIDYA_CMO%\": dict(k=\"オシレーター\"),\n    \"close vs HT_TRENDLINE_HL%\": dict(k=\"オシレーター\"), \"close vs MAMA_HL%\": dict(k=\"オシレーター\"), \"close vs FAMA_HL%\": dict(k=\"オシレーター\"),\n    \"ABER原作位置\": dict(k=\"オシレーター\", note=\"ABER位置 と同じ（帯の中の位置）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5515「\"TRIX_EMAシグナル\": dict(k=\"トレンド\"), \"TRIX_EMAヒスト\": dict(k=\"トレンド\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5531行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "LINEAGE_KINDS = (\"トレンド\", \"オシレーター\", \"ボラ\", \"出来高\", \"ローソク\", \"構造・位置\", \"需給\", \"時間帯\")\n",
+  "種類": "直した後の文字",
+  "中身": "# ★2026-10-22（工事 m2c15-roles-r1-20261021・F-1・まこさん D1「ア」＝系統に「強さ」「勢い」を足す）＝教科書の役割の区分\n#   （extract_threshold_role.py の ROLE＝強さ・向き・行き過ぎ・勢い・値動きの幅・出来高・位置）のうち、写し先の系統が無かった2つ。\nLINEAGE_KINDS = (\"トレンド\", \"強さ\", \"勢い\", \"オシレーター\", \"ボラ\", \"出来高\", \"ローソク\", \"構造・位置\", \"需給\", \"時間帯\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5531「LINEAGE_KINDS = (\"トレンド\", \"オシレーター\", \"ボラ\", \"出来高\", \"ローソク\", \"構造・位置\", \"需給\", \"時間帯\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5537行（<モジュール直下>・F-1・F-2＝系統の区分に強さ・勢いを足し、90種の札を r1_role_map.json のとおりに直す（変える72）。決定ア＝法則の源から落ちる34種を源4（mako の欄）で「使う」に残す）",
+  "直す前の文字": "              \"technical KB §3.1 の表「Trend (トレンド系)｜方向確認」\"),\n",
+  "種類": "直した後の文字",
+  "中身": "              \"technical KB §3.1 の表「Trend (トレンド系)｜方向確認」\"),\n    # ★2026-10-22（工事 m2c15-roles-r1-20261021・F-1）＝出どころの原文（R-1 の調べ・照らし一致）から書いた\n    \"強さ\": (\"トレンドが出ているか（向きは問わない）\",\n            \"StockCharts の ADX のページ「it measures the strength of the trend (regardless of direction) over time.」\"\n            \"（.claude/state/indicator_review/gemini_r1/cc_ans04.json の ADX）\"),\n    \"勢い\": (\"値動きの勢い（モメンタム）がどれくらいか\",\n            \"TradingView のヘルプの Awesome Oscillator「The Awesome Oscillator is an indicator used to measure market momentum.」\"\n            \"（.claude/state/indicator_review/gemini_r1/cc_ans04.json の AO%）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5537「\"technical KB §3.1 の表「Trend (トレンド系)｜方向確認」\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "6314行（_insp_lineage_range・F-1 の番人＝系統の区分の判定を軽い口 selftest_lineage（T-L1・T-L2）にし、数を書いた文を区分から作る）",
+  "直す前の文字": "    print(\"  疑問の行には理由を1行で書いてください。系統は トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置 の6つです。\")\n",
+  "種類": "直した後の文字",
+  "中身": "    print(f\"  疑問の行には理由を1行で書いてください。系統は {'／'.join(iref.LINEAGE_KINDS)} の{len(iref.LINEAGE_KINDS)}つです。\")   # ★R-1（2026-10-22）＝数を書かず区分から作る\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:6314「print(\"  疑問の行には理由を1行で書いてください。系統は トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置 の6つです。\")」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 23,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7368行（_J・F-1 の番人＝系統の区分の判定を軽い口 selftest_lineage（T-L1・T-L2）にし、数を書いた文を区分から作る）",
+  "直す前の文字": "    return a + b\n\n\n",
+  "種類": "直した後の文字",
+  "中身": "    return a + b\n\n\ndef selftest_lineage(exit_: bool = True) -> list:\n    \"\"\"T-L1・T-L2＝系統の区分（indicator_reference_diag.LINEAGE_KINDS）を確かめる（工事 m2c15-roles-r1-20261021・2026-10-22）。\n    口＝`--selftest-lineage`（壊すプログラムが使う・数秒で終わる）。全部の番人（selftest）からも、この関数を呼ぶ\n    （直す前は selftest の検査8 の番人に「8系統の外の割当」の判定が在った＝ここへ移した・同じ判定を2か所に書かない）。\n      T-L1＝系統マップ FAMILY_LINEAGE の札が、全部 系統の区分の中に在る\n      T-L2＝答える問い LINEAGE_QUESTION の鍵が系統の区分と同じで、どの区分にも問いと出典が在る（材料の文書が区分ごとに問いを出す）\"\"\"\n    ng: list = []\n    _badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get(\"k\") not in iref.LINEAGE_KINDS]\n    if _badk8:\n        ng.append(f\"T-L1: 系統マップに、系統の区分（{len(iref.LINEAGE_KINDS)}種）の外の札がある: {_badk8}\")\n    _q = iref.LINEAGE_QUESTION\n    if set(_q) != set(iref.LINEAGE_KINDS):\n        ng.append(f\"T-L2: 答える問いの鍵が系統の区分と違う（問いだけに在る {sorted(set(_q) - set(iref.LINEAGE_KINDS))}・\"\n                  f\"区分だけに在る {sorted(set(iref.LINEAGE_KINDS) - set(_q))}）\")\n    _emp = [k for k, v in _q.items() if not (isinstance(v, tuple) and len(v) == 2 and all(str(x).strip() for x in v))]\n    if _emp:\n        ng.append(f\"T-L2: 答える問いか出典が空の区分: {_emp}\")\n    print(\"=\" * 80)\n    print(\"系統の区分の番人（T-L1・T-L2・工事 m2c15-roles-r1-20261021）\")\n    print(f\"  系統の区分 {len(iref.LINEAGE_KINDS)} 種（{'・'.join(iref.LINEAGE_KINDS)}）／系統マップ {len(iref.FAMILY_LINEAGE)} 件\")\n    if exit_:\n        if ng:\n            for x_ in ng:\n                print(f\"  ❌ {x_}\")\n            raise SystemExit(1)\n        print(\"  全部 pass（❌ 0件）\")\n        raise SystemExit(0)\n    return ng\n\n\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7368「return a + b」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "8376〜8378行（selftest・F-1 の番人＝系統の区分の判定を軽い口 selftest_lineage（T-L1・T-L2）にし、数を書いた文を区分から作る）",
+  "直す前の文字": "    _badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get(\"k\") not in iref.LINEAGE_KINDS]\n    if _badk8:\n        ng.append(f\"系統マップに8系統の外の割当がある: {_badk8}\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-22（工事 m2c15-roles-r1-20261021）＝系統の区分の判定は selftest_lineage へ移した（軽い口と同じ判定を1か所に）\n    ng += selftest_lineage(exit_=False)               # T-L1・T-L2（系統の区分と答える問い）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:8376「_badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get(\"k\") not in iref.LINEAGE_KINDS]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 25,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "8890行（<モジュール直下>・F-1 の番人＝系統の区分の判定を軽い口 selftest_lineage（T-L1・T-L2）にし、数を書いた文を区分から作る）",
+  "直す前の文字": "        selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "種類": "直した後の文字",
+  "中身": "        selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n    if \"--selftest-lineage\" in sys.argv:              # ★T-L1・T-L2 だけを（工事 m2c15-roles-r1-20261021・壊すプログラムが使う）\n        selftest_lineage()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:8890「selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 26,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "1266行（_lineage_of・系統の数を書いた注記を直す（8つ→10））",
+  "直す前の文字": "        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は8つの系統の1つ\n",
+  "種類": "直した後の文字",
+  "中身": "        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は系統の1つ（2026-10-22 の R-1 で系統は10になった）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:1266「# ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は8つの系統の1つ」",
+  "状態": "確定"
+ },
+ {
+  "番号": 27,
+  "対象のファイル": "scripts/priority_rebuild/gen_signal_families.py",
+  "直す箇所": "247行（build_table・F-3＝型の表の環境に強さ・勢い、十分さに強さを足す（今使えている役割を失わない））",
+  "直す前の文字": "                    lineages=[\"トレンド\", \"ボラ\", \"時間帯\"], tfs=\"all\",\n",
+  "種類": "直した後の文字",
+  "中身": "                    # ★2026-10-22（工事 m2c15-roles-r1-20261021・F-3・3-2 の1件目「OK」）＝強さ・勢いを後ろに足した\n                    #   （札が トレンド・ボラ から 強さ・勢い に変わった指標が、今使えている環境の役割を失わないため）\n                    lineages=[\"トレンド\", \"ボラ\", \"時間帯\", \"強さ\", \"勢い\"], tfs=\"all\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/gen_signal_families.py:247「lineages=[\"トレンド\", \"ボラ\", \"時間帯\"], tfs=\"all\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 28,
+  "対象のファイル": "scripts/priority_rebuild/gen_signal_families.py",
+  "直す箇所": "251行（build_table・F-3＝型の表の環境に強さ・勢い、十分さに強さを足す（今使えている役割を失わない））",
+  "直す前の文字": "                          \"※時間足は 5m を含む全部＝V9 の実物が 5m の環境認識で稼いでいるため締め出さない（v9-selftest の原則）\",\n",
+  "種類": "直した後の文字",
+  "中身": "                          \"※時間足は 5m を含む全部＝V9 の実物が 5m の環境認識で稼いでいるため締め出さない（v9-selftest の原則）\"\n                          \"／★2026-10-22（R-1）＝強さ（ADX・CHOP・ER・VHF・MMI・Aroon・経過バー）と勢い（MACD・PPO・KST・TRIX・AO ほか）を足した\"\n                          \"＝教科書の役割を調べ直して札が変わった指標が、前から使えた環境の役割を失わないため（まこさん「OK」3-2 の1件目）\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/gen_signal_families.py:251「\"※時間足は 5m を含む全部＝V9 の実物が 5m の環境認識で稼いでいるため締め出さない（v9-selftest の原則）\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 29,
+  "対象のファイル": "scripts/priority_rebuild/gen_signal_families.py",
+  "直す箇所": "254行（build_table・F-3＝型の表の環境に強さ・勢い、十分さに強さを足す（今使えている役割を失わない））",
+  "直す前の文字": "                    lineages=[\"ボラ\", \"出来高\", \"需給\", \"オシレーター\"], tfs=\"all\",\n",
+  "種類": "直した後の文字",
+  "中身": "                    # ★2026-10-22（工事 m2c15-roles-r1-20261021・F-3・3-2 の1件目「OK」）＝強さを後ろに足した（CHOP・ER・VHF・MMI はボラから強さへ）\n                    lineages=[\"ボラ\", \"出来高\", \"需給\", \"オシレーター\", \"強さ\"], tfs=\"all\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/gen_signal_families.py:254「lineages=[\"ボラ\", \"出来高\", \"需給\", \"オシレーター\"], tfs=\"all\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 30,
+  "対象のファイル": "scripts/priority_rebuild/gen_signal_families.py",
+  "直す箇所": "258行（build_table・F-3＝型の表の環境に強さ・勢い、十分さに強さを足す（今使えている役割を失わない））",
+  "直す前の文字": "                          \"※オシレーターは行き過ぎの量（zscore_return 等の状態量）を数える用途\",\n",
+  "種類": "直した後の文字",
+  "中身": "                          \"※オシレーターは行き過ぎの量（zscore_return 等の状態量）を数える用途\"\n                          \"／★2026-10-22（R-1）＝強さを足した＝札がボラから強さに変わった指標（CHOP・ER・VHF・MMI）が、\"\n                          \"前から使えた十分さの役割を失わないため（まこさん「OK」3-2 の1件目）\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/gen_signal_families.py:258「\"※オシレーターは行き過ぎの量（zscore_return 等の状態量）を数える用途\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 31,
+  "対象のファイル": ".claude/ratchet/exit_families_rules.json",
+  "直す箇所": "223行（設定・F-3＝出口の枝 REVERSE_IND・BREAKOUT の使える系統に強さ・勢いを足す）",
+  "直す前の文字": "            \"構造・位置\"\n",
+  "種類": "直した後の文字",
+  "中身": "            \"構造・位置\",\n            \"強さ\",\n            \"勢い\"\n",
+  "根拠の抜き書き": ".claude/ratchet/exit_families_rules.json:223「\"構造・位置\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 32,
+  "対象のファイル": ".claude/ratchet/exit_families_rules.json",
+  "直す箇所": "234行（設定・F-3＝出口の枝 REVERSE_IND・BREAKOUT の使える系統に強さ・勢いを足す）",
+  "直す前の文字": "      \"basis\": \"V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き方（反転を待たず利益側 resting）／cat_requirements §6（maker 優先）／★使える系統4つは 2026-08-25（60回目）に足した（案＝CC・出典つき／まこさん決定＝『A＝いまやる』／承認は exit_families_approved.txt の指紋）＝オシレーター（v9_exits.md:28 ストキャス %D・%K ／ :31 RSI）・トレンド（v9_exits.md:31 の同じ枝が ADX を条件に使う／軸 X-g3・X-g4）・ボラ（軸 X-g2・X-g7）・構造・位置（軸 X-g5）。★外した2つ＝ローソク（軸 X-g11 が blocked＝実行器が出口の発火条件で材料の無い形を扱えない・2026-08-07 実測）／出来高（軸 X-g8 は partial で、どの枝にも紐づいていない）\",\n",
+  "種類": "直した後の文字",
+  "中身": "      \"basis\": \"V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き方（反転を待たず利益側 resting）／cat_requirements §6（maker 優先）／★使える系統4つは 2026-08-25（60回目）に足した（案＝CC・出典つき／まこさん決定＝『A＝いまやる』／承認は exit_families_approved.txt の指紋）＝オシレーター（v9_exits.md:28 ストキャス %D・%K ／ :31 RSI）・トレンド（v9_exits.md:31 の同じ枝が ADX を条件に使う／軸 X-g3・X-g4）・ボラ（軸 X-g2・X-g7）・構造・位置（軸 X-g5）。★外した2つ＝ローソク（軸 X-g11 が blocked＝実行器が出口の発火条件で材料の無い形を扱えない・2026-08-07 実測）／出来高（軸 X-g8 は partial で、どの枝にも紐づいていない）／★2026-10-22（工事 m2c15-roles-r1-20261021・R-1・まこさん「OK」3-2 の1件目）＝使える系統に 強さ・勢い を足した（教科書の役割を調べ直して ADX・CHOP・ER・VHF・MMI・Aroon は強さ、MACD・PPO・KST・TRIX・TSI・AO ほかは勢いに札が変わった。前から使えた出口の枝を失わないため）\",\n",
+  "根拠の抜き書き": ".claude/ratchet/exit_families_rules.json:234「\"basis\": \"V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き」",
+  "状態": "確定"
+ },
+ {
+  "番号": 33,
+  "対象のファイル": ".claude/ratchet/exit_families_rules.json",
+  "直す箇所": "341行（設定・F-3＝出口の枝 REVERSE_IND・BREAKOUT の使える系統に強さ・勢いを足す）",
+  "直す前の文字": "            \"トレンド\"\n",
+  "種類": "直した後の文字",
+  "中身": "            \"トレンド\",\n            \"強さ\",\n            \"勢い\"\n",
+  "根拠の抜き書き": ".claude/ratchet/exit_families_rules.json:341「\"トレンド\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 34,
+  "対象のファイル": ".claude/ratchet/exit_families_rules.json",
+  "直す箇所": "346行（設定・F-3＝出口の枝 REVERSE_IND・BREAKOUT の使える系統に強さ・勢いを足す）",
+  "直す前の文字": "      \"basis\": \"v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）／★トレンドは 2026-08-25（60回目）に足した（案＝CC／まこさん決定＝『A＝いまやる』）＝軸 X-g4（ADX decay）の branches に BREAKOUT が在り、ADX は系統トレンドのため（それまでの3系統では ADX を引けなかった）\",\n",
+  "種類": "直した後の文字",
+  "中身": "      \"basis\": \"v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）／★トレンドは 2026-08-25（60回目）に足した（案＝CC／まこさん決定＝『A＝いまやる』）＝軸 X-g4（ADX decay）の branches に BREAKOUT が在り、ADX は系統トレンドのため（それまでの3系統では ADX を引けなかった）／★2026-10-22（工事 m2c15-roles-r1-20261021・R-1・まこさん「OK」3-2 の1件目）＝使える系統に 強さ・勢い を足した（教科書の役割を調べ直して ADX・CHOP・ER・VHF・MMI・Aroon は強さ、MACD・PPO・KST・TRIX・TSI・AO ほかは勢いに札が変わった。前から使えた出口の枝を失わないため）\",\n",
+  "根拠の抜き書き": ".claude/ratchet/exit_families_rules.json:346「\"basis\": \"v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）／★トレンドは 2026-08-25（60回目）に足した（」",
+  "状態": "確定"
+ },
+ {
+  "番号": 35,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "5〜6行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "★使う値＝逐語がページで一致した（✅）もの。数字の値は、その数字が逐語の中に数字として書いてあるものだけ（読み替えは使わない）。\"\"\"\nimport json\n",
+  "種類": "直した後の文字",
+  "中身": "★使う値＝逐語がページで一致した（✅）もの。数字の値は、その数字が逐語の中に数字として書いてあるものだけ（読み替えは使わない）。\"\"\"\nimport contextlib\nimport io\nimport json\nimport os\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:5「★使う値＝逐語がページで一致した（✅）もの。数字の値は、その数字が逐語の中に数字として書いてあるものだけ（読み替えは使わない）。\"\"\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 36,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "19行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "LIN2CAT = {\"トレンド\": \"向き\", \"オシレーター\": \"行き過ぎ\", \"ボラ\": \"値動きの幅\", \"出来高\": \"出来高\", \"構造・位置\": \"位置\"}\n",
+  "種類": "直した後の文字",
+  "中身": "# ★2026-10-22（工事 m2c15-roles-r1-20261021・F-4①）＝系統に足した「強さ」「勢い」の写し先（区分と同じ名前）\nLIN2CAT = {\"トレンド\": \"向き\", \"オシレーター\": \"行き過ぎ\", \"ボラ\": \"値動きの幅\", \"出来高\": \"出来高\", \"構造・位置\": \"位置\",\n           \"強さ\": \"強さ\", \"勢い\": \"勢い\"}\n# ★2026-10-22（F-4②）＝今の系統は、コードの系統マップ（indicator_reference_diag.FAMILY_LINEAGE）から読む。\n#   直す前は threshold_role.json の写しを読んだ＝札を直しても、一覧は前の札のままだった。IR_SDK で写しに差し替えられる。\nsys.path.insert(0, os.environ.get(\"IR_SDK\", \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api\")\n                + \"/scripts/priority_rebuild\")\nwith contextlib.redirect_stdout(io.StringIO()):\n    import indicator_reference_diag as iref\n# ★2026-10-22（F-4③）＝R-1 で役割を調べ直して決めた種類は、封つきの r1_role_map.json の「出どころの区分」で照らす\n#   （出どころ＝係の調べ・Gemini と CC の調べ〔照らし一致〕・まこさんの決定 D1〜D7）。封が無ければ止まる。\n_SEALED = json.loads((R / \"seal.json\").read_text(encoding=\"utf-8\"))\nif \"r1_role_map.json\" not in _SEALED:\n    sys.exit(\"❌ r1_role_map.json に封が無い（seal_outputs.py --seal r1_role_map.json を先に）＝表を作らない\")\nR1MAP = {o[\"種類\"]: o for o in json.loads((R.parent / \"r1_role_map.json\").read_text(encoding=\"utf-8\"))}\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:19「LIN2CAT = {\"トレンド\": \"向き\", \"オシレーター\": \"行き過ぎ\", \"ボラ\": \"値動きの幅\", \"出来高\": \"出来高\", \"構造・位置\": \"位置\"}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 37,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "58行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "    proj = LIN2CAT.get(o[\"今の系統\"], \"？\")\n",
+  "種類": "直した後の文字",
+  "中身": "    now = (iref.FAMILY_LINEAGE.get(fam) or {}).get(\"k\") or \"？\"    # ★R-1（F-4②）＝今の系統はコードから読む\n    proj = LIN2CAT.get(now, \"？\")\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:58「proj = LIN2CAT.get(o[\"今の系統\"], \"？\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 38,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "66行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "    if cats:\n",
+  "種類": "直した後の文字",
+  "中身": "    _r1 = R1MAP.get(fam)\n    if _r1 is not None:                     # ★R-1（F-4③）＝調べ直して決めた区分で照らす\n        cats = list(_r1[\"出どころの区分\"])\n        role_src = f\"R-1 の調べと決定（封つき r1_role_map.json・{_r1['出どころ']}）：\" + \"・\".join(sorted(set(cats)))\n        cnt[\"役割が出どころで確かめられた\"] += 1\n        if proj not in cats:\n            flag = \"食い違い\"\n            cnt[\"役割が食い違う\"] += 1\n    elif cats:\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:66「if cats:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 39,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "101行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "    rec = {\"種類\": fam, \"今の系統\": o[\"今の系統\"], \"今の答える問いの区分\": proj, \"今の向き\": o[\"今の向き\"],\n",
+  "種類": "直した後の文字",
+  "中身": "    rec = {\"種類\": fam, \"今の系統\": now, \"今の答える問いの区分\": proj, \"今の向き\": o[\"今の向き\"],\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:101「rec = {\"種類\": fam, \"今の系統\": o[\"今の系統\"], \"今の答える問いの区分\": proj, \"今の向き\": o[\"今の向き\"],」",
+  "状態": "確定"
+ },
+ {
+  "番号": 40,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "104行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "    rows.append(f\"| {fam} | {o['今の系統']}（{proj}） | {(o['今の向き'] or '').replace('|', '／')} | {role_src} | {flag} | {th_cell.replace('|', '／')} |\")\n\n",
+  "種類": "直した後の文字",
+  "中身": "    rows.append(f\"| {fam} | {now}（{proj}） | {(o['今の向き'] or '').replace('|', '／')} | {role_src} | {flag} | {th_cell.replace('|', '／')} |\")\n\n# ★2026-10-22（F-4・roles_r1_check.py の R4 が使う）＝--check は、表を書かずに、食い違いと疑いの種類を出して終わる（1つでも在れば rc 1）\nif \"--check\" in sys.argv:\n    bad = [(d[\"種類\"], d[\"役割の印\"], d[\"今の系統\"], d[\"出どころの役割\"]) for d in data if d[\"役割の印\"]]\n    print(json.dumps({\"件数\": cnt, \"印の付いた種類\": bad}, ensure_ascii=False))\n    sys.exit(1 if bad else 0)\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:104「rows.append(f\"| {fam} | {o['今の系統']}（{proj}） | {(o['今の向き'] or '').replace('|', '／')} | {role_src} | {flag} | {th_cell.rep」",
+  "状態": "確定"
+ },
+ {
+  "番号": 41,
+  "対象のファイル": ".claude/state/indicator_review/build_role_threshold_table.py",
+  "直す箇所": "109行（<モジュール直下>・F-4＝役割の一覧を作る道具＝区分の写しに強さ・勢い・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）",
+  "直す前の文字": "      \"- 「今の答える問いの区分」＝系統ごとに1つ付けている答える問い（トレンド＝向き・オシレーター＝行き過ぎ・ボラ＝値動きの幅・出来高＝出来高・構造位置＝位置）。\",\n",
+  "種類": "直した後の文字",
+  "中身": "      \"- 「今の答える問いの区分」＝系統ごとに1つ付けている答える問い（トレンド＝向き・強さ＝強さ・勢い＝勢い・オシレーター＝行き過ぎ・ボラ＝値動きの幅・出来高＝出来高・構造位置＝位置）。\",\n      \"- 今の系統＝コードの系統マップ（indicator_reference_diag.FAMILY_LINEAGE）。R-1 で調べ直した種類の出どころの役割＝封つきの r1_role_map.json（2026-10-22）。\",\n",
+  "根拠の抜き書き": ".claude/state/indicator_review/build_role_threshold_table.py:109「\"- 「今の答える問いの区分」＝系統ごとに1つ付けている答える問い（トレンド＝向き・オシレーター＝行き過ぎ・ボラ＝値動きの幅・出来高＝出来高・構造位置＝位置）。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 42,
+  "対象のファイル": ".claude/state/indicator_review/roles_r1_check.py",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/usr/bin/env python3\n\"\"\"roles_r1_check.py — 工事 m2c15-roles-r1-20261021（R-1）の直しが効いているかを、本物を書かずに確かめる（2026-10-22・203回目）。\n  R1＝系統の札が、封つきの r1_role_map.json の「新しい系統」と全部の種類で同じ（F-2）\n  R2＝系統の区分に「強さ」「勢い」が在り、答える問いが区分と同じ鍵を持つ（F-1）\n  R3＝札がトレンド・ボラから強さ・勢いに変わった指標が、前の札で使えた役割（型の表の役割ごとの系統・出口の枝の使える系統）を\n      1つも失わない（F-3・まこさん「OK」3-2 の1件目「今その指標が使えている役割を失わないように足す」）\n      ★型の表は gen_signal_families.build_table()（書かない）・出口の枝は exit_families_rules.json を読む＝表を作り直す前に確かめられる\n  R4＝役割の一覧を作る道具（build_role_threshold_table.py --check）が、食い違い 0・疑い 0（F-4）\n  R5＝今の印（indicator_switch.json）で「使う」の種類が、札を直した後に印を作り直しても、全部「使う」のまま（減った種類 0）\n      （監査 CP85 の修正1〜4・まこさん決定ア「使うに残す」・要件定義の6番・8番）\n      ★gen_indicator_switch.build()（書かない）を呼んで照らす＝印を作り直す前に確かめられる\n読む物＝IR_SDK（無ければ本物）の scripts/priority_rebuild と .claude/ratchet/exit_families_rules.json・この道具の隣の r1_role_map.json。書く物＝無し。\n使い方: python3 .claude/state/indicator_review/roles_r1_check.py （全部 通れば rc 0・1つでも外れれば rc 1）\n\"\"\"\nimport contextlib\nimport io\nimport json\nimport os\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nHERE = Path(__file__).resolve().parent\nSDK = Path(os.environ.get(\"IR_SDK\", \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api\"))\nsys.path.insert(0, str(SDK / \"scripts/priority_rebuild\"))\nwith contextlib.redirect_stdout(io.StringIO()):\n    import indicator_reference_diag as iref\n    import gen_signal_families as gsf\n    import gen_indicator_switch as gis\n\nng = []\nrmap = json.loads((HERE / \"r1_role_map.json\").read_text(encoding=\"utf-8\"))\n# R1\nfor o in rmap:\n    k = (iref.FAMILY_LINEAGE.get(o[\"種類\"]) or {}).get(\"k\")\n    if k != o[\"新しい系統\"]:\n        ng.append(f\"R1: {o['種類']} の札が {k}（r1_role_map.json は {o['新しい系統']}）\")\n# R2\nfor need in (\"強さ\", \"勢い\"):\n    if need not in iref.LINEAGE_KINDS:\n        ng.append(f\"R2: 系統の区分に {need} が無い\")\nif set(getattr(iref, \"LINEAGE_QUESTION\", {}) or {}) != set(iref.LINEAGE_KINDS):\n    ng.append(\"R2: 答える問いの鍵が系統の区分と違う\")\n# R3\nwith contextlib.redirect_stdout(io.StringIO()):\n    roles = {r: set(v[\"lineages\"]) for r, v in gsf.build_table()[\"role_lineage\"][\"roles\"].items()}\nrules = json.loads((SDK / \".claude/ratchet/exit_families_rules.json\").read_text(encoding=\"utf-8\"))\nexits = {b: set(f.get(\"lineage_any\") or []) for b, v in rules[\"branch_types\"].items() for f in (v.get(\"fire\") or [])\n         if f.get(\"indicator\") and f.get(\"lineage_any\")}\n\n\ndef usable(lin):\n    return {f\"型の表の {r}\" for r, ls in roles.items() if lin in ls} | {f\"出口の枝 {b}\" for b, ls in exits.items() if lin in ls}\n\n\nmoved = [o for o in rmap if o[\"状態\"] == \"変える\" and o[\"今の系統\"] in (\"トレンド\", \"ボラ\") and o[\"新しい系統\"] in (\"強さ\", \"勢い\")]\nfor o in moved:\n    lost = usable(o[\"今の系統\"]) - usable(o[\"新しい系統\"])\n    if lost:\n        ng.append(f\"R3: {o['種類']}（{o['今の系統']}→{o['新しい系統']}）が使えなくなる役割: {sorted(lost)}\")\n# R4\nr = subprocess.run([sys.executable, str(HERE / \"build_role_threshold_table.py\"), \"--check\"], capture_output=True, text=True,\n                   env={**os.environ, \"IR_SDK\": str(SDK)})\nif r.returncode != 0:\n    ng.append(f\"R4: 役割の一覧の照らしが通らない（rc={r.returncode}）: {(r.stdout + r.stderr).strip()[-600:]}\")\n# R5\n_on_now = set(json.loads((SDK / \".claude/ratchet/indicator_switch.json\").read_text(encoding=\"utf-8\"))[\"on\"])\nwith contextlib.redirect_stdout(io.StringIO()):\n    _on_new = set(gis.build()[\"on\"])\n_lost = sorted(_on_now - _on_new)\nif _lost:\n    ng.append(f\"R5: 印を作り直すと「使わない」になる種類が {len(_lost)} 種: {_lost}\")\nprint(\"=\" * 80)\nprint(\"R-1 の確かめ（R1〜R5・工事 m2c15-roles-r1-20261021）\")\nprint(f\"  札を照らした種類 {len(rmap)}・強さ／勢いへ移った種類 {len(moved)}・型の表の役割 {len(roles)}・出口の枝 {len(exits)}\"\n      f\"・印の「使う」＝今 {len(_on_now)}・作り直すと {len(_on_new)}\")\nfor x in ng:\n    print(f\"  ❌ {x}\")\nprint(\"  全部 pass（❌ 0件）\" if not ng else f\"  ❌ {len(ng)} 件\")\nsys.exit(1 if ng else 0)\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」（新しいファイル・手本は roles_draft_build.py の CHK_BODY）",
+  "状態": "確定"
+ },
+ {
+  "番号": 43,
+  "対象のファイル": ".claude/breaks/b197_lineage_kinds_no_strength.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 系統の区分から強さを外すと、札が強さの指標が区分の外になり、軽い口が落ちる\n# EXPECT_MSG: T-L1: 系統マップに、系統の区分\n# b197_lineage_kinds_no_strength — 系統の区分から強さを外すと、札が強さの指標が区分の外になり、軽い口が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件の軽い口（T-L1・T-L2）（python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage）\n#   壊し方＝scripts/priority_rebuild/indicator_reference_diag.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage が「T-L1: 系統マップに、系統の区分」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicator_reference_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = 'LINEAGE_KINDS = (\"トレンド\", \"強さ\", \"勢い\", \"オシレーター\",'\nnew = 'LINEAGE_KINDS = (\"トレンド\", \"勢い\", \"オシレーター\",'\nif s.count(old) != 1:\n    raise SystemExit(\"[b197_lineage_kinds_no_strength] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-lineage\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 44,
+  "対象のファイル": ".claude/breaks/b198_lineage_question_no_momentum.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 答える問いから勢いの鍵を外すと、軽い口が落ちる\n# EXPECT_MSG: T-L2: 答える問いの鍵が系統の区分と違う\n# b198_lineage_question_no_momentum — 答える問いから勢いの鍵を外すと、軽い口が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件の軽い口（T-L1・T-L2）（python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage）\n#   壊し方＝scripts/priority_rebuild/indicator_reference_diag.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage が「T-L2: 答える問いの鍵が系統の区分と違う」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicator_reference_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    \"勢い\": (\"値動きの勢い（モメンタム）がどれくらいか\",'\nnew = '    \"勢い_\": (\"値動きの勢い（モメンタム）がどれくらいか\",'\nif s.count(old) != 1:\n    raise SystemExit(\"[b198_lineage_question_no_momentum] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-lineage\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 45,
+  "対象のファイル": ".claude/breaks/b199_adx_back_to_trend.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: ADX の札をトレンドに戻すと、R-1 の確かめ（R1）が落ちる\n# EXPECT_MSG: R1: ADX の札が トレンド\n# b199_adx_back_to_trend — ADX の札をトレンドに戻すと、R-1 の確かめ（R1）が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件のR-1 の確かめ（R1〜R5）（python3 .claude/state/indicator_review/roles_r1_check.py）\n#   壊し方＝scripts/priority_rebuild/indicator_reference_diag.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 .claude/state/indicator_review/roles_r1_check.py が「R1: ADX の札が トレンド」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicator_reference_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '\"ADX\": dict(k=\"強さ\"'\nnew = '\"ADX\": dict(k=\"トレンド\"'\nif s.count(old) != 1:\n    raise SystemExit(\"[b199_adx_back_to_trend] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/state/indicator_review/roles_r1_check.py\"\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 46,
+  "対象のファイル": ".claude/breaks/b200_env_no_momentum.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 型の表の環境から勢いを外すと、MACD などが環境の役割を失い、R-1 の確かめ（R3）が落ちる\n# EXPECT_MSG: R3: MACD線%（トレンド→勢い）が使えなくなる役割\n# b200_env_no_momentum — 型の表の環境から勢いを外すと、MACD などが環境の役割を失い、R-1 の確かめ（R3）が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件のR-1 の確かめ（R1〜R5）（python3 .claude/state/indicator_review/roles_r1_check.py）\n#   壊し方＝scripts/priority_rebuild/gen_signal_families.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 .claude/state/indicator_review/roles_r1_check.py が「R3: MACD線%（トレンド→勢い）が使えなくなる役割」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/gen_signal_families.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '                    lineages=[\"トレンド\", \"ボラ\", \"時間帯\", \"強さ\", \"勢い\"], tfs=\"all\",\\n'\nnew = '                    lineages=[\"トレンド\", \"ボラ\", \"時間帯\", \"強さ\"], tfs=\"all\",\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b200_env_no_momentum] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/state/indicator_review/roles_r1_check.py\"\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 47,
+  "対象のファイル": ".claude/breaks/b201_exit_no_strength.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 出口の枝 REVERSE_IND の使える系統から強さを外すと、ADX などが出口の枝を失い、R-1 の確かめ（R3）が落ちる\n# EXPECT_MSG: R3: ADX（トレンド→強さ）が使えなくなる役割\n# b201_exit_no_strength — 出口の枝 REVERSE_IND の使える系統から強さを外すと、ADX などが出口の枝を失い、R-1 の確かめ（R3）が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件のR-1 の確かめ（R1〜R5）（python3 .claude/state/indicator_review/roles_r1_check.py）\n#   壊し方＝.claude/ratchet/exit_families_rules.json の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 .claude/state/indicator_review/roles_r1_check.py が「R3: ADX（トレンド→強さ）が使えなくなる役割」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/.claude/ratchet/exit_families_rules.json\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '            \"構造・位置\",\\n            \"強さ\",\\n            \"勢い\"\\n          ],\\n          \"reverse_of_side\": true\\n'\nnew = '            \"構造・位置\",\\n            \"勢い\"\\n          ],\\n          \"reverse_of_side\": true\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b201_exit_no_strength] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/state/indicator_review/roles_r1_check.py\"\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 48,
+  "対象のファイル": ".claude/breaks/b202_role_table_ignores_r1.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 役割の一覧を作る道具が R-1 の区分を読まないと、食い違いが残り、R-1 の確かめ（R4）が落ちる\n# EXPECT_MSG: R4: 役割の一覧の照らしが通らない\n# b202_role_table_ignores_r1 — 役割の一覧を作る道具が R-1 の区分を読まないと、食い違いが残り、R-1 の確かめ（R4）が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件のR-1 の確かめ（R1〜R5）（python3 .claude/state/indicator_review/roles_r1_check.py）\n#   壊し方＝.claude/state/indicator_review/build_role_threshold_table.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 .claude/state/indicator_review/roles_r1_check.py が「R4: 役割の一覧の照らしが通らない」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/.claude/state/indicator_review/build_role_threshold_table.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    _r1 = R1MAP.get(fam)\\n'\nnew = '    _r1 = None\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b202_role_table_ignores_r1] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/state/indicator_review/roles_r1_check.py\"\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 49,
+  "対象のファイル": ".claude/breaks/b203_keep_on_dropped.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 決定アの源4（mako の欄）を入れないと、札が構造・位置から外れた種類が印で「使わない」になり、R-1 の確かめ（R5）が落ちる\n# EXPECT_MSG: R5: 印を作り直すと「使わない」になる種類が\n# b203_keep_on_dropped — 決定アの源4（mako の欄）を入れないと、札が構造・位置から外れた種類が印で「使わない」になり、R-1 の確かめ（R5）が落ちる（工事 m2c15-roles-r1-20261021・2026-10-22）\n#   守っているもの＝完成の条件のR-1 の確かめ（R1〜R5）（python3 .claude/state/indicator_review/roles_r1_check.py）\n#   壊し方＝scripts/priority_rebuild/indicator_reference_diag.py の中の、下の old を new に置き換える（roles_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 .claude/state/indicator_review/roles_r1_check.py が「R5: 印を作り直すと「使わない」になる種類が」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicator_reference_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        _e[\"mako\"] = MAKO_R1\\n'\nnew = '        pass\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b203_keep_on_dropped] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/state/indicator_review/roles_r1_check.py\"\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b196_band_pivot_week_as_day.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【新しく入る数字と式の一覧】
+| 番号 | 数字か式 | 出どころ |
+|---|---|---|
+| 1 | 2026 | 説明の文の日付と工事の名前の日付（2026-10-21・2026-10-22・m2c15-roles-r1-20261021）＝数の値ではない |
+| 2 | 10 | 説明の文の日付と工事の名前の日付（2026-10-21・2026-10-22・m2c15-roles-r1-20261021）＝数の値ではない・系統の区分の数 10（説明の文「10系統」＝LINEAGE_KINDS の数） |
+| 3 | 22 | 説明の文の日付と工事の名前の日付（2026-10-21・2026-10-22・m2c15-roles-r1-20261021）＝数の値ではない |
+| 4 | 1 | 説明の文の番号（T-L1・R1・3-2 の1件目）・終了コード 1・並びの最後 [-1]・「1つも失わない」の1＝数の値ではない |
+| 5 | 20261021 | 説明の文の日付と工事の名前の日付（2026-10-21・2026-10-22・m2c15-roles-r1-20261021）＝数の値ではない |
+| 6 | 2 | 答える問いの形（問い, 出典）の2つ・説明の文の番号（T-L2・R2）・「2つの期間」（AO% の前からの注記）・「写し先の系統が無かった2つ」 |
+| 7 | 80 | 画面の区切りの線の長さ（"=" * 80）＝前からの軽い口と同じ（observe_diag.selftest_band）＝数の値ではない |
+| 8 | 0 | 終了コード 0・「❌ 0件」の 0＝数の値ではない |
+| 9 | 3 | 説明の文の番号（3-2 の1件目・R3） |
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 系統に「強さ」「勢い」を足す | 教科書の役割の区分（extract_threshold_role.py の ROLE）に写し先の系統が無かった。法則 R2・C3 の原文が強さを別の物として書く。まこさん D1「ア」 | 近い札に寄せる（イ） |
+| 札は r1_role_map.json（プログラムが出どころと決定から作った）の1つを正本にし、封をする | CC が札を1つずつ手で書かない。役割の一覧を作り直すと印が 0 になり、対象を選び直せなくなる＝決めた時点の正本を残す | 札を設計書の表に手で写す |
+| 終値と移動平均の線の離れ（close vs 〜%）はオシレーター | StockCharts の Distance From MA「extreme values」「not specific about the type of moving average」。まこさん D2（19種）・D6（21種）・D7イ（close vs ABER_ZG%） | 線そのものの役割（向き・位置）に合わせる |
+| 止める線との離れ7種は D2 から外し、今の構造・位置のまま（D7ウ） | D2 の出どころの文は移動平均についての文で、止める線（Chande Kroll Stop・PMax・パラボリック SAR・シャンデリア・エグジット）との離れを支えない（監査 CP85 の修正7）。役割を書いた原文をまだ持っていない | D2 のままオシレーター |
+| ABER の3種はオシレーター（D7イ） | 係の調べの逐語は帯そのもの（値動きの幅）の説明で、離れと位置の値の調べは無い＝D2 と同じ型。ABER位置・ABER原作位置は %b と同じ作りで、BB%b はオシレーター（監査 CP85 の修正6・16） | ボラのまま（係の調べの帯の説明に合わせる）／符号は向き・大きさは行き過ぎに分ける（okd_d6 の4番の原文「離れの値の符号は向きを表し、大きさは行き過ぎを表す、と読める原文が両方あります」） |
+| AROONU・AROOND は強さ（D7エ） | 経過バーと同じ量（StockCharts「A 25-day Aroon-Up measures the number of days since a 25-day high.」）。D3 で経過バーを強さにした原文は Aroon のページの文。札が割れると G3 が同じ量を2本置くのを止めない（法則 C2・監査 CP85 の修正8） | 経過バーをトレンドに戻す（D3 を変える） |
+| TSI は勢い・STCstoch は STC と同じトレンド（D7オ） | TSI は係の調べ（out_w1.json）が「a momentum oscillator」と書き、TSIヒストと仲間の札をそろえる。STCstoch の逐語は計算の説明だけで役割の語が無い＝D3 にならい元の指標と同じ札（監査 CP85 の修正9） | 今の札のまま（仲間の札が割れる） |
+| 札が構造・位置から外れて法則の源から落ちる34種は、源4（mako の欄）で「使う」に残す（決定ア） | 34種は古い札（構造・位置）のおかげで「使う」になっていた。正しい札では合図と十分さで使える。外すと engine_tuner の候補が黙って減る（要件定義の6番・8番・監査 CP85 の修正1〜4）。源4 は MMI と同じ前からの道で、新しい仕組みを作らない | 「使わない」にする（185種→151種）／gen_indicator_switch.py の源2 を変えて古い札で展開する（札の置き場が2つになる） |
+| 加速バンドとの離れ2種は変えない | 開発者 Headley の説明は帯の外への抜け（向き）と支持・抵抗（位置）。LuxAlgo は行き過ぎと読むボリンジャーと対比して「抜けた向きに乗るため」と書く。まこさん D6 | Keltner とそろえてオシレーター |
+| MMI は強さ | 開発者が「値動きの幅やトレンドから作った物ではない」「MMI が下がるとトレンドが近い」と書く。まこさん D6 | ボラのまま注記だけ直す |
+| 型の表と出口の枝に、新しい系統を後ろに足す | 札が変わった指標が今使えている役割を失わない（3-2 の1件目「OK」）。後ろに足すと、前からの系統の候補の並びが変わらない | 札だけ変える（強さ・勢いへ移る 24 種が役割を失う） |
+| 役割の一覧の今の系統はコードから読み、R-1 の種類は封つきの r1_role_map.json で照らす | 直す前は写し（threshold_role.json）を読み、札を直しても一覧が変わらなかった。調べ直した役割（ページの語の数ではない）で照らす。★やることの表の F-4 の③（調べた結果を research/ に足す）の代わり＝r1_role_map.json は調べた結果と決定を1つにまとめた物なので、2つ目の置き場を作らない | gemini_r1/ の結果を research/ に写して、表の道具の係の結果として読む（同じ種類が係の結果と2つになり、表の道具が止まる＝build_role_threshold_table.py:28〜30） |
+| 系統の区分の番人を軽い口 selftest_lineage にする | 全体の自己テストは約212秒で、壊すプログラムの測りに使えない。前は検査8 の番人の中に在った判定を移した（同じ判定を2か所に書かない） | 全体の自己テストで測る |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| §2.2 の段1（場所）の候補の close vs EMA%・SMA%・Keltner が場所の役割から外れる | U-1 で段の候補を照らす（Y-1）。段1 の帯の部品（帯スイング・帯pivot・帯VA ほか）は残る |
+| 法則 R1・R3 を満たせる部品が減る | 工事2（M2-F-10b）で法則の判定を直すときに、帯の部品で数える |
+| 型の表・出口の型の表の指紋が変わる＝再承認まで engine_tuner が止まる | G-1 で再承認していただく |
+| 経過バー2種は、場所の役割から外れ、強さ（環境・十分さ・出口）になる | 決定 D3（経過バーは強さ）どおり。§2.2 の段2c 3枠目は法則が名指しした種類だけを通すので（engine_tuner_gen.py:2901〜2903）、段2c の候補には出ない＝U-1 で照らす（監査 CP85 の修正12） |
+| 札が構造・位置から外れた34種が、オン・オフの印で「使わない」になる | 決定アのとおり源4 で「使う」に残す。R-1 の確かめ R5 と、G-1 の jq の照らし（「使う」が185のまま）で止める |
+| 成績表が古い役割の分け方のまま（札を変えた種類が新しい役割の順位に出ない） | まこさんの決定カ＝作り直す・時期は U-1 の前 |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 実装の指示を当てる | 数分 | 当てる道具が 49 件を1件ずつ当てる |
+| 当てた後の自己テスト・G-1・G2・H2 | 約15分 | --selftest 約212秒・G2 約50秒・H2 約5分（worklog 20261020 §16）・表の作り直し |
+| 壊すプログラム 7 本 | 約1分 | 1本あたり（b197_lineage_kinds_no_strength 2.5秒・b198_lineage_question_no_momentum 2.3秒・b199_adx_back_to_trend 6.0秒・b200_env_no_momentum 5.8秒・b201_exit_no_strength 6.4秒・b202_role_table_ignores_r1 5.9秒・b203_keep_on_dropped 5.8秒） |
+
+【確かめていないこと】
+| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |
+|---|---|---|
+| 札を直した後に、engine_tuner が組む条件の数と net がどう変わるか | net を測る段は M2-L | M2-L |
+| 終値と線の離れの値の符号（線の上か下か）が向きを表すと読める原文（KAMA・HMA のページ）が在る件の扱い | D2・D6 で行き過ぎに決まった。符号の使い方は U-1 で照らす | U-1 |
+| 出口の型の表の軸の欄の古い注記（exit_families_rules.json の X-g3「型の表のトレンド16種（close vs EMA/傾き）」・X-g4「型の表のトレンド（ADX7/14/21）」ほか・2026-08-07 の数え） | 機械は読まない注記。R-1 の前から古い | grep -n '"basis": "型の表の' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_rules.json |
+| オフの HT_DCPERIOD の注記「8つの系統に『サイクル』が無く…ER と同じ扱い」 | オフの指標は対応しない（Y-5） | grep -n '"HT_DCPERIOD"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py |
+| 段の候補の元データの説明の文「系統が正本の8系統に無ければ止まる」（m2_stage_candidates.json:6） | 説明の文で、止める判定は正本の系統の集合を読む（gen_regime_kb.py:1081） | grep -n "8系統" v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json |
+| 方向の欄が「順張り値」のオシレーター（close vs EMA ほか）は、十分さでは DC1（順張りの向き）、合図では DC2（行き過ぎを逆に取る）で、読み方が逆になる（監査 CP85 の修正14） | 符号の使い方は U-1 で照らす | grep -n '"順張り値' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py |
+| R4（食い違い 0）は、r1_role_map.json の「出どころの区分」で照らす。決定で作った区分（D2・D6・D7 の「行き過ぎ」ほか）と、その区分から作った新しい札を照らすので、作りから 0 になる（監査 CP85 の修正19） | 札の正しさは、設計書の監査（Q8）が見る | grep -c '"出どころ": "D' .claude/state/indicator_review/r1_role_map.json |
+| G3 が止めなくなる組（MACD線% と EMA傾き・AROONU と経過バー ほか）が、値動きでどれだけ重なるか（法則 C3「実際の値動きデータで…重なりを計算し」・監査 CP85 の修正15） | 値決め窓の計算は observe_diag 以外の道具で走らせられない（hook enforce_observe_diag_only）。札の工事では測らない | U-1 か M2 の段で、observe_diag の口として測る |
+| 止める線との離れ7種の役割（D7ウ） | 役割を書いた原文をまだ持っていない | 役割を調べ直す（出どころのページを curl で取り出し、逐語を照らす） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 札の区分が8つで、教科書の役割の強さ・勢いに当たる区分が無かった。札を付けたとき、離れの値（close vs 〜%）を線そのものの役割で調べ、ページの語の数だけで疑いを付けた |
+| 期待値分解 | 売買の値に触らない（指標の値・計算・閾値・パラメータはそのまま）＝勝率・平均利益・敗率・平均損失は、この工事では動かない。動くのは、engine_tuner が直した札で材料を選び、条件を組んだ後（目標の③・net を測るのは M2-L） |
+| root か symptom か | root＝札の区分と札の付け方。使い方（U-1）・法則の判定（工事2）はその上に立つ |
+| ベースアップ | indicator_roles_thresholds.md（役割の一覧）・r1_role_map.md・gemini_r1/cc_ans04.json・cc_ans05.json・regime_detection_kb.md:748（C3）・gen_signal_families.py:229〜265・exit_families_rules.json の REVERSE_IND・BREAKOUT・gen_indicator_switch.py:192〜210・:298〜309（オン・オフの印の源）・監査 CP85 の結果 |
+
+【7-5 §4.6 の照合】
+- TARGET＝indicator_reference_diag.py・observe_diag.py・engine_tuner_gen.py・gen_signal_families.py・exit_families_rules.json・build_role_threshold_table.py・roles_r1_check.py（新しいファイル）と、新しい壊すプログラムを【7-8】に書いた。主なファイルは indicator_reference_diag.py（札の正本）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは roles_r1_check.py と壊すプログラム（NEW_FILE）。手本は b196（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買の値に触らないので、勝率・平均利益・敗率・平均損失は、この工事では動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝202回目に、札の一覧の1回目で決定の外の close vs ABER_ZG% までオシレーターにした＝この工事の札は r1_role_map.json だけから当て、前の64種が変わらないことを jq で照らした。写しの G-1 の試しで、承認の操作（--approve）を CC が打った（本物は変わっていない）＝道具から外して走らせ直した。203回目に、写しの試しでオン・オフの印を作り直さないまま、案に「オン・オフは変えません（増えた・減った種類が 0）」と書いた（監査 CP85 の修正1・17）＝写しの G-1 の試しに gen_indicator_switch.py --write を足し、作り直した後の「使う」の数を道具が測って案に書く形にした（本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34）。
+- 新しい部品は未来を見ない（値の計算に触らない）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（indicator_reference_diag.py・observe_diag.py ほかに行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の5）。
+- 壊すプログラムが測るのは、観察の道具の軽い口（--selftest-lineage）と R-1 の確かめ（roles_r1_check.py）で、どちらも本物の結果の置き場に書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>／observe_diag.py：<モジュール直下>・_insp_lineage_range・selftest・selftest_lineage／gen_signal_families.py：build_table／build_role_threshold_table.py：<モジュール直下>／roles_r1_check.py：<モジュール直下>・usable。self_check_calls の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗＝observe_diag.py の --selftest-lineage・build_role_threshold_table.py の --check。
+- 当てた後に実装の中で変わった手順が出たら、設計書に書き直してから進める。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-roles-r1-20261021）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝軽い口 T-L1・T-L2・R-1 の確かめ R1〜R5・壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-1＝系統の区分に強さが在り、札が強さの指標が区分の中に在る（T-L1 が通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage | 実経路 | 区分から強さを外す | b197_lineage_kinds_no_strength.sh | — | 未着手 |
+| F-1＝答える問いの鍵が系統の区分と同じ（勢いの問いが在る・T-L2 が通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage | 実経路 | 答える問いから勢いの鍵を外す | b198_lineage_question_no_momentum.sh | — | 未着手 |
+| F-2＝R-1 の種類の札が r1_role_map.json の新しい系統と同じ（R1 が通る） | python3 .claude/state/indicator_review/roles_r1_check.py | 実経路 | ADX の札をトレンドに戻す | b199_adx_back_to_trend.sh | — | 未着手 |
+| F-3＝札が勢いに変わった指標が、型の表の環境の役割を失わない（R3 が通る） | python3 .claude/state/indicator_review/roles_r1_check.py | 実経路 | 型の表の環境から勢いを外す | b200_env_no_momentum.sh | — | 未着手 |
+| F-3＝札が強さに変わった指標が、出口の枝 REVERSE_IND を失わない（R3 が通る） | python3 .claude/state/indicator_review/roles_r1_check.py | 実経路 | 出口の枝の使える系統から強さを外す | b201_exit_no_strength.sh | — | 未着手 |
+| F-4＝役割の一覧を作る道具が、R-1 の種類を封つきの r1_role_map.json の区分で照らし、食い違い 0・疑い 0（R4 が通る） | python3 .claude/state/indicator_review/roles_r1_check.py | 実経路 | 役割の一覧の道具が r1_role_map.json を読まない | b202_role_table_ignores_r1.sh | — | 未着手 |
+| 決定ア＝今「使う」の種類が、札を直した後に印を作り直しても全部「使う」のまま（R5 が通る） | python3 .claude/state/indicator_review/roles_r1_check.py | 実経路 | 決定アの源4（mako の欄）を入れない | b203_keep_on_dropped.sh | — | 未着手 |
+- 行が無いやることの番号と、その理由：G-1・G-2＝当てた後の手順（表の作り直し・再承認・自己テスト・G2・H2）で確かめる（4-12 の③〜⑥）。
+
+- G-1 の確かめ（監査 CP85）：gen_indicator_switch.py --write の直後に、jq '.counts["使う"]' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json の数が、まこさんが決めた数（決定ア＝「使う」に残す＝185）と同じかを見ます。違えば、表の作り直しの先へ進みません。
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/ratchet/exit_families_rules.json",
+  ".claude/state/indicator_review/build_role_threshold_table.py",
+  "scripts/priority_rebuild/engine_tuner_gen.py",
+  "scripts/priority_rebuild/gen_signal_families.py",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  ".claude/state/indicator_review/roles_r1_check.py",
+  ".claude/breaks/b197_lineage_kinds_no_strength.sh",
+  ".claude/breaks/b198_lineage_question_no_momentum.sh",
+  ".claude/breaks/b199_adx_back_to_trend.sh",
+  ".claude/breaks/b200_env_no_momentum.sh",
+  ".claude/breaks/b201_exit_no_strength.sh",
+  ".claude/breaks/b202_role_table_ignores_r1.sh",
+  ".claude/breaks/b203_keep_on_dropped.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/state/indicator_review/roles_r1_check.py",
+  ".claude/breaks/b197_lineage_kinds_no_strength.sh",
+  ".claude/breaks/b198_lineage_question_no_momentum.sh",
+  ".claude/breaks/b199_adx_back_to_trend.sh",
+  ".claude/breaks/b200_env_no_momentum.sh",
+  ".claude/breaks/b201_exit_no_strength.sh",
+  ".claude/breaks/b202_role_table_ignores_r1.sh",
+  ".claude/breaks/b203_keep_on_dropped.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b196_band_pivot_week_as_day.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。系統の区分の番人（軽い口）が在る観察の道具を照らす。札の正本は indicator_reference_diag.py の FAMILY_LINEAGE（データ）。",
+  "impl_functions": {
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>"
+   ],
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_insp_lineage_range",
+    "selftest",
+    "selftest_lineage"
+   ],
+   "scripts/priority_rebuild/gen_signal_families.py": [
+    "build_table"
+   ],
+   ".claude/state/indicator_review/build_role_threshold_table.py": [
+    "<モジュール直下>"
+   ],
+   ".claude/state/indicator_review/roles_r1_check.py": [
+    "<モジュール直下>",
+    "usable"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、roles_proposal_build.py が数えた）。",
+  "self_check_calls": [
+   "selftest_lineage",
+   "selftest"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が足す・直す関数の名前。",
+  "must_use": {
+   "selftest_lineage": [
+    "FAMILY_LINEAGE",
+    "LINEAGE_KINDS",
+    "LINEAGE_QUESTION"
+   ]
+  },
+  "_must_use の意味": "系統の区分の番人 selftest_lineage は、札（FAMILY_LINEAGE）・区分（LINEAGE_KINDS）・答える問い（LINEAGE_QUESTION）の3つを読んで照らす（道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、札の値と区分の名前を足すだけ。外から読む一覧の形（FAMILY_LINEAGE の1件の形・型の表の役割の形・出口の枝の形）は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（roles_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```

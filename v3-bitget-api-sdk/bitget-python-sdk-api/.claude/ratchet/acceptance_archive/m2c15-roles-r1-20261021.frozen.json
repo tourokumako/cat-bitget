@@ -1,0 +1,28 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>"
+ ],
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_insp_lineage_range",
+  "selftest",
+  "selftest_lineage"
+ ],
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "_lineage_of"
+ ],
+ "scripts/priority_rebuild/gen_signal_families.py": [
+  "build_table"
+ ],
+ ".claude/state/indicator_review/build_role_threshold_table.py": [
+  "<モジュール直下>",
+  "num_in_quote"
+ ],
+ ".claude/state/indicator_review/roles_r1_check.py": [
+  "<モジュール直下>",
+  "usable"
+ ]
+}

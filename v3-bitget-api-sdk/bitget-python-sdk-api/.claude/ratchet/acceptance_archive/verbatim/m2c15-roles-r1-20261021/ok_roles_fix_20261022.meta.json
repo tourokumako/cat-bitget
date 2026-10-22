@@ -1,0 +1,15 @@
+{
+ "_これは何か": "gen_verbatim.py が、やり取りの記録から抜き出した逐語のファイルの出どころ（手で書き換えない・--verify で照らす）",
+ "session": "/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/46295b1a-fa45-4f8b-b6e6-4ba9a5aebdab.jsonl",
+ "uuids": [
+  "264776a3-e1dc-4fa4-adca-957251c508af"
+ ],
+ "who": [
+  "まこさん"
+ ],
+ "time": [
+  "2026-10-22T05:01:44.000Z"
+ ],
+ "sha256": "565339bc4d33d72817b583024112eb7f5cdf3e5eef0252d6ec1b9c9a94e12bb3",
+ "drop": []
+}

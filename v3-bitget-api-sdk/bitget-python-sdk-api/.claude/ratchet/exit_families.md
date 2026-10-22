@@ -1,4 +1,4 @@
-<!-- EXIT_FAMILIES hash=888a1e785f0901b9 gen_exit_families.py が自動生成＝手で書き換えない -->
+<!-- EXIT_FAMILIES hash=46c577da8094f366 gen_exit_families.py が自動生成＝手で書き換えない -->
 # exit_families.md — 出口の枝の表（許可の一覧・全自動生成・CC の手書きの行ゼロ）
 
 作り＝gen_exit_families.py（全自動生成・CC の手書きの md はゼロ・まこさん指示 2026-08-07『X-a〜X-kから自動生成して』『お前は手書きはするな』）

@@ -10,6 +10,7 @@
 #   ①trial_design.py の記録（.claude/state/sessions/<セッション>/trial_last.json）が在る
 #   ②その記録が ok（試しの設計書が作れ、承認の前の検査の A群0件・古い事実の語0件）
 #   ③返信の案の節の行が全部、その記録の下書きに在る（試したものと違う案を出していない）
+#     ＋案の見出しが在る最初の返信から後ろの、全部の行が下書きに在る（2026-10-22＝案と同じ返信に、試していない文を混ぜない）
 #   の3つがそろわなければ、ターンを終われない。
 # 限界（正直に）＝見出しの形（行の頭の【数字】）でしか案を見分けない。古い事実の語は私が選ぶ。中身の正しさは見ない。
 import json
@@ -48,7 +49,7 @@ def proposal_lines(text: str) -> list:
     return out
 
 
-def check(text: str, sid: str) -> list:
+def check(text: str, sid: str, blocks: list | None = None) -> list:
     lines = proposal_lines(text)
     if not lines:
         return []
@@ -81,7 +82,42 @@ def check(text: str, sid: str) -> list:
                        "案の後ろの文は、設計書を作るプログラムがその節の中身として写す）")
         else:
             bad.append(f"返信の案の行のうち {len(miss)} 行が、試した下書きに無い（最初＝「{first}」）。案を下書きに書いて試し直す: {how}")
+    # ★2026-10-22（204回目・まこさん「進めてよい」）＝案の見出しが在る最初の返信から後ろの、全部の行を照らす。
+    #   直す前＝最初の案の見出しより前の行（いまの工程・報告）を照らさなかった。CC が同じ返信の先頭に【いまの工程】【次】を
+    #   書き、gen_acceptance.py が OK の後に「知らない見出し」で止まった（まこさんの OK が1回むだになった）。
+    #   それより前の返信（道具を呼ぶ合間の文）は、逐語に選ばないので照らさない。
+    if blocks:
+        k0 = next((i for i, b in enumerate(blocks) if proposal_lines(b)), None)
+        inner = set(lines)
+        extra = [] if k0 is None else [ln.strip() for b in blocks[k0:] for ln in b.splitlines()
+                                       if ln.strip() and ln.strip() not in have and ln.strip() not in inner]
+        if extra:
+            bad.append(f"案と同じ返信の中に、試した下書きに無い文が {len(extra)} 行ある（最初＝「{extra[0][:60]}」）。"
+                       f"返信の全文（いまの工程・報告・案）を1つの下書きに書いて試し直し、通った下書きを1文字も変えずに出す: {how}")
     return bad
+
+
+def turn_blocks(data) -> list:
+    """このターンの CC の返信を、返信ごとに分けて返す（範囲の決め方は require_design_check_before_approval._turn_text と同じ）。"""
+    path = data.get("transcript_path") or ""
+    if not path:
+        return []
+    sys.path.insert(0, ROOT + "/.claude/hooks")
+    try:
+        import require_design_check_before_approval as rd
+        from enforce_chat_writing import last_chat_text      # noqa: E402
+        _text, uid = last_chat_text(path)
+        rows = rd._load_rows(path)
+    except Exception:                                        # noqa: BLE001
+        return []
+    start = next((i for i, r in enumerate(rows) if uid and r.get("uuid") == uid), -1)
+    for i, r in enumerate(rows):
+        if i > start and r.get("type") == "user":
+            c = (r.get("message") or {}).get("content")
+            if isinstance(c, str) and re.match(r"^\S+ hook feedback:", c.strip()):
+                start = i
+    return [b.get("text") or "" for r in rows[start + 1:] if r.get("type") == "assistant"
+            for b in (r.get("message") or {}).get("content") or [] if isinstance(b, dict) and b.get("type") == "text"]
 
 
 def main() -> int:
@@ -98,7 +134,7 @@ def main() -> int:
             text = text.split("\n", 1)[1] if "\n" in text else ""
     except Exception:                                        # noqa: BLE001
         pass
-    bad = check(text, data.get("session_id") or "")
+    bad = check(text, data.get("session_id") or "", turn_blocks(data))
     if not bad:
         return 0
     print("🔒 [案を出す前の試し] 設計書の案を、試しの設計書で全部の検査に通してから出してください"
@@ -111,7 +147,8 @@ def main() -> int:
 if __name__ == "__main__":
     if "--try" in sys.argv:
         i = sys.argv.index("--try")
-        for b in check(Path(sys.argv[i + 1]).read_text(encoding="utf-8"), sys.argv[i + 2]) or ["（止める所なし）"]:
+        _t = Path(sys.argv[i + 1]).read_text(encoding="utf-8")
+        for b in check(_t, sys.argv[i + 2], [_t]) or ["（止める所なし）"]:
             print(b)
         sys.exit(0)
     sys.exit(main())

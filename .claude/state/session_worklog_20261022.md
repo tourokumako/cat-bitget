@@ -44,3 +44,70 @@
 - 締めの途中で止められた所＝宣言の前に、作業場の .py を書いて走らせる Bash と heredoc の Bash を打ち、宣言の hook に止められた。さらに教訓の Edit・元データの Edit・tidy の Bash を同じ返信に並べて打ち、同じ種類の失敗の hook と同じ相手の失敗の hook に重ねて止められた。session の lessons.md に2件・diagnosis.md に2つの相手の見立てを書き、1つずつ打ち直して通した。
 - next_step_src.json の「2 次のセッションでやること」を204回目向けに書き替えた（①作る物＝R-1 の設計書の監査の結果から・②最初にやる事＝結果の確認 → 直す範囲 → 設計書の作り直し → 承認 → 実装 → G-1・G-2 → 実装の監査）。tidy --todo-from（8行）→ --write → --verify 通る・--selftest 27/27。
 - 教訓（lessons_active.md）とコミットは、宣言（ToDo の77番）と まこさんの返事の後。
+
+## §2 204回目＝始め・ToDo の70番（監査 CP85 の結果の確認）
+
+- 必読9本を Read で開いた。ToDo を書いた（sessions/46295b1a-…/session_todo.md・70番に ★いまここ）。宣言 → まこさん「OK」。
+- 結果ファイル（audits/2026-10-22_m2c15_roles_r1_20261021_design_cp85_audit_report.md・574行）を全部読んだ。結論＝CONDITIONAL-GO・Critical 4・Major 6・Minor 6・Process 3（修正1〜19）。
+- gen_audit_docs.py check（書かない口＝main の 3157〜3163 行を読んで確かめた）＝食い違い 0 件。
+- 修正を実物で確かめた結果（19件とも、監査の主張は実物と合った）:
+  - 修正1〜4（Critical・オン・オフ）＝gen_indicator_switch.py:205〜207 は系統「構造・位置」の札で法則の源を展開し、:307 で4つの源を足す。jq で indicator_switch.json の sources（law に在り ta・identity・mako に無い）と r1_role_map.json（構造・位置 → ほか）を突き合わせ＝40種（オシレーター36・ボラ2・強さ2）。40種とも regime_laws.json の family に無く、名前でも出てこない（5種を grep で0件）。性質 vol の行（indicator_reference_diag.py の "vol"）にも40種は無い（ABER の2種は "trend"＝:4543・:4549）。＝G-1 の gen_indicator_switch.py --write で「使う」が 185 → 145。
+  - ★案の 37行「オン・オフは変えません（写しでオン・オフの表を作り直して、増えた・減った種類が 0）」は、203回目の私が測らずに書いた文。roles_draft_build.py:574〜576 の G-1 の試しに gen_indicator_switch.py は入っていない（案の 95行の「当てた後に走らせるもの」には入っている）。worklog 20261021:190 に gen_indicator_switch.py:207 を「札を読む所」と自分で書いていたのに、案の 4-1・4-13 に入れなかった。
+  - 修正5＝material_ranking.json の順位を jq で数えた＝location の close vs 〜% 8172行・経過バー 396行、sufficiency・trigger は 0行（env に close vs 〜% 198行）。observe_diag.py:6596 は型の表の role_lineage を読む。
+  - 修正6＝ABER の3種はボラ（係の調べ）。ABER原作位置の式は 80本・2σ の %b（observe_diag.py:1726〜1729 の注記も「%b と同じ作り」）。ABER位置の定義表の注記も「BB%b と同じ流儀」（indicator_reference_diag.py:4548）。BB%b はオシレーター（:5326）。
+  - 修正7＝止める線の7種は D2 の決まり（r1_role_map_build.py の src_cats＝名前の頭 close vs ＋係の役割「向き」）でオシレーター。D2 を決めたときの説明（okd_roles_choice_20261021.txt:26〜27）は「終値が、移動平均の線からどれだけ離れているか」で、止める線（CKSP・PMAX・PSAR・SAREXT・CE）はこの説明に当たらない。
+  - 修正8＝AROONU・AROOND はトレンド（indicator_reference_diag.py:5385・88種に無い）、経過バー2種は強さ（D3）。
+  - 修正9＝TSI・TSIシグナルはトレンドのまま（Gemini ans03_b の区分＝向き・行き過ぎ→今の系統が区分に在るので変えない）。TSIヒストは勢い。係の out_w1.json は「momentum oscillator」。okd_d234:32 は「TSI のシグナル線は「勢い」になります」と書いていた。STCstoch は勢い、STC はトレンド（:5364・88種に無い）。
+  - 修正11・12＝engine_tuner_gen.py:2550（stage2c は pick family）・:2901〜2903（法則が名指しした family だけ）・m2_stage_candidates.json:74（段2c 3枠目）。
+  - 修正13＝indicator_reference_diag.py:5413〜5414 の注記「Keltner 上下と同じ作り」。
+  - 修正14＝:1236（close vs EMA は順張り値）・engine_tuner_gen.py:6112〜6117（env・sufficiency の順張り値に DC1）。
+  - 修正15＝gen_signal_families.py:255〜258 の十分さの出典の文に強さの文は無い。今の十分さの系統はボラ・出来高・需給・オシレーター（ADX＝トレンドは入っていない）。
+  - 修正18＝research/seal.json の鍵27件に gemini_r1/chrome_ans02_a1.json・verify_chrome_ans02_a1.json は無い。chrome_ans02_a1.json は D2 の出どころ（Distance From MA・Disparity Index・worklog 20261021:207）。
+  - 修正10・16・17・19＝直す前の文字・根拠の行は指された所に在った。
+- 報告（19件とも実物と合う・決めていただくこと＝直す範囲とア〜キ）→ ★まこさん決定（逐語）＝「全部直す。CCの勧めの通りでよい」＝直す範囲は修正1〜19 の全部。ア＝40種は「使う」に残す／イ＝ABER の3種はオシレーター／ウ＝止める線との離れ7種はこの工事では今の札（構造・位置）のまま・役割を調べ直してから決める／エ＝AROONU・AROOND も強さにそろえる（88種の外の2種に広がる）／オ＝TSI・TSIシグナルは勢い・STCstoch は元の STC と同じトレンド／カ＝成績表は作り直す・時期は U-1 の前／キ＝D2 の証拠の2本（gemini_r1/chrome_ans02_a1.json・verify_chrome_ans02_a1.json）に封を掛ける。
+- 宣言（70番の続き＝修正を入れ設計書を作り直す）→ まこさん「OK」。
+- 決定の逐語＝verbatim/m2c15-roles-r1-20261021/ok_cp85_choices_20261022（gen_verbatim.py --write・--verify 一致）。CC の勧めの文 okd_cp85_choices_20261022 は【】の見出しを持つ返信なので、okd_seal と同じく 記録だけ/ へ mv -n。
+- apply_audit_fix.py --dry（--choose 未決12件=確定）＝当たる3件（4・10・17）／当てない16件（案の写し okd_roles_proposal を直す15件＝「逐語のファイルなので当てない＝直す【番号】だけの次の案を出し OK をもらう」・修正18＝まこさんが打つコマンド）。実物と合わない件0。
+- 設計書を作る道具は、工事のフォルダの逐語を時刻の順に読み、同じ【番号】は後の案が置き換える（gen_acceptance.py:353〜395）。案は roles_proposal_build.py（案を組む）・_roles_template.txt（手書き）・roles_draft_build.py（実装の指示・写しの試し）で作っていた（worklog §1）。
+- apply_audit_fix.py --only 4,10,17 --choose 4=確定＝3件当てた（やることの表.md の128行・129行・roles_draft_build.py:574）。当てた記録 applied_fixes.json に3件。
+- ★止まった所＝札の一覧 r1_role_map.json は封つき（research/seal.json:22・ファイルは読み取り専用）。seal_outputs.py は既に封の在る名前を上書きしない（:26〜28）。D7 で作り直すには封の記録を触る＝まこさんに行をお見せして伺う。
+- まこさん「コマンド打った」（修正18＝seal_outputs.py --seal gemini_r1/chrome_ans02_a1.json gemini_r1/verify_chrome_ans02_a1.json）→ seal.json:29・:30 に2件・--verify＝29件・違う0件・2本とも読み取り専用。札の一覧の封（伺い1）は、お返事待ち。
+- まこさん「（伺い1）OK」→ 逐語＝ok_seal_r1map_20261022（工事のフォルダ）・okd_seal_r1map_20261022（記録だけ/）。今の r1_role_map.json（sha eca608e5…）を r1_role_map_88_20261022.json へ mv -n（.md は cp -n）・seal.json:22 の名前だけ替えた（ハッシュ値そのまま）→ --verify 29件・違う0件。
+- r1_role_map_build.py に D7 を足した（D7 の辞書＝種類→区分・出どころの説明・決まり／D7_ADD＝AROONU・AROOND を対象に足す／種類が合わなければ止まる）。作り直し＝90種・変える72（オシレーター45・勢い17・強さ9・トレンド1）・変えない18。前の版と違う種類は15種だけ（TSI・TSIシグナル→勢い／STCstoch→トレンドのまま変えない／止める線7種→構造・位置のまま変えない／ABER の3種→オシレーター／AROONU・AROOND→強さ）＝jq で照らした。
+- seal_outputs.py --seal r1_role_map.json（79dce664…）→ --verify 30件・違う0件。
+- 法則の源から落ちる種類を新しい札で数え直した＝34種（前の版の40種から、止める線の6種が外れた・close vs PSAR% はもとから ta か恒等の源を持つ）。mako の欄を読むのは gen_indicator_switch.py:269 と observe_diag.py:7765（RCI）だけ。
+- roles_draft_build.py を直した（控え＝roles_instr/check/breaks_before_cp85_20261022.json）＝N_MAP・N_CHG を札の一覧から数える／KEEP_ON（本物の印の sources と札の一覧から34種）／定義表の需給の前に MAKO_R1・R1_KEEP_ON の区画を差し込む指示（源4）／ABER の注記を D7イ・CE_L の注記の直しをやめた（D7ウ）・加速バンドの注記（修正13）／強さの並びに Aroon・経過バー／roles_r1_check に R5（今「使う」の種類が gis.build() で減らない）／写しの G-1 の試しで印の「使う」を測る／壊し方 b203（源4 を入れない→R5 が落ちる）。
+- 写しの試し roles_draft_build.py --check --instr（13:13:53〜13:20:58・7分5秒）＝❌0・指示42件（iref 21・observe_diag 4・gen 1・gsf 4・exr 4・brt 7・chk 1）・当てた後の札 強さ9・勢い17・R1〜R5 rc 0（90種・印の使う 今185／作り直すと185）・役割の一覧 確かめられた149・食い違い0・疑い0・A12 と同じ自己テスト（exec rc0・observe_diag --selftest rc0 226.2秒・gen_materials rc1 許す落ち T6・extra-gate rc0）・G-1 の試し（gen_indicator_switch --write を含む）・★印の「使う」＝本物185／写しで作り直した後185・減った0・源4 で残した34・本物が変わった0本・壊し方7本とも決めた文で落ちた（b203＝34種が使わないになり R5 が落ちる）。
+- 材料の検査2 の測り roles_check2_probe.py（D7 の後の札・13:20:31〜13:22:11）＝新しくオシレーターになる45種（ABER の3種を含む）で落ちた列0。
+- _roles_template.txt を直した（控え＝_roles_template_before_cp85_20261022.txt）＝修正1〜3・5〜9・11〜16・19 の文と決定 D7・ア・カを入れ、数を D7 の後に（90・72・45・17・9・18・41・34）。roles_proposal_build.py（控え＝_before_cp85_20261022.py）＝R1〜R5・b203 の完成の条件・@@SWITCH@@（写しの印の数を写す・減ったら案を書かない）。
+- やることの表.md を直した（控え＝indicator_review/やることの表_r1_before_cp85_20261022.md）＝88→90・76→72・49→45・47→41・40→34・D1〜D7・F-2 に決定ア・残る違いに止める線の7種・②に 7-6 の7行目。
+- 案を組んだ（roles_proposal_build.py・作業場 scratchpad/roles_proposal_cp85.txt・49件＝コードと設定42・壊す7・842行・設計書の試し2370行）。OK をいただいた前の案（okd_roles_proposal_20261022）と節ごとに比べ、変わった23節だけを次の案（scratchpad/next_proposal.txt・787行）にした。変わらない節＝4-8・4-9・4-11・4-15・4-16・4-18・7-2・7-3・7-3b・7-4・外部検索。
+- 次の案を読み直して見つけた古い文3か所を直した＝4-4 の1（封は gemini_r1/ の6本のまま→ D2 の証拠2本と r1_role_map の封の掛け直しを足した）・4-13 の4（ABER の2種が抜けていた）・実装の指示36 の注記（まこさんの決定 D1〜D6 → D1〜D7・roles_draft_build.py の BRT_LIN_NEW）。写しの試しを走らせ直す。
+- 写しの試しを走らせ直した（13:29:19〜13:35:44）＝❌0・印の使う 185／185・減った0・壊し方7本とも落ちた。案を組み直し、次の案（変わった23節・787行）を作り直した（前との違い＝秒数と D1〜D7 の1か所）。
+- 次の案を4つの発言に分けて出した（uuid＝63183376…・6f05f1a6…・a1c0dca9…・84e6959c…）。一時の置き場（verbatim/_check_tmp_cp85）に gen_verbatim --write で書き出して作ったファイルと diff＝違いは、2つ目と3つ目の境目の空の行1つ（JSON の要素の間）と最後の改行だけ。4-20 の JSON は jq で49件・7-8 は読めた。一時の置き場は消した（rm -r・0件を確かめた）。まこさんの OK 待ち。
+- ★Stop の hook（require_trial_before_proposal）に止められた＝案を出す前に trial_design.py を通していなかった。速い試し1回目＝A2（直す相手を Read で開いていない）・A14（見直し表が無い）・古い語「オン・オフは変えません」（7-5 の過去の失敗の行の引用＝古い事実ではないので照らしから外した）。直す相手（exit_families_rules.json・build_role_threshold_table.py・engine_tuner_gen.py・gen_signal_families.py・observe_diag.py・b196・signal_families.json/.md/_approved.txt）を Read で開いた。
+- 試しの設計書（_trial_acceptance.md・2370行）を1行目から全部 Read で読んだ。直した手書き（やることの表.md）＝①§1 概要の3段落目に監査 CP85 の後の D7・決定アを足し「次の4つ」→「次の5つ」②3-2 の1件目の「close vs 〜% の26種」に D7 の後の数（D2 は19種）を注記。7-6 の G-1 の jq の照らしの行は、gen_acceptance が表の下の1行目しか写さないので設計書の 7-6 には出ない（4-4 の4・3-0 の⑤に在る）。
+- 見直し表（reviews/_trial_acceptance.review.md）を全行 書き直した（前の回の表は実装の番号が1つずれ・D7 の前の中身）＝gen_review.py --check 止める理由0・根拠128。A12 込みの試しを走らせる。
+- 案の試し（trial_design.py・A12 込み・13:53:50〜14:00:54・7分4秒）＝A群0件・古い語0件。次の案（4つの発言）と直した やることの表.md の OK 待ち。
+- まこさん「OK」（次の案の4つの発言と、直した やることの表.md）→ 逐語＝okd_roles_fix_20261022（uuid 4件・760行）・ok_roles_fix_20261022（--verify 2本とも一致・作ったファイルとの違いは JSON の要素の間の空の行と最後の改行だけ）。
+- 設計書を作り直した（今の版を scratchpad/acceptance_before_cp85_fix.md に控え・gen_acceptance.py --write・2370行）＝試しの設計書と1文字も違わない（diff -q・sha 8835dfaa…）。見直し表 reviews/acceptance.review.md は、試しの表の中身に入れ替え（前の表は scratchpad に控え・根拠の置き場を acceptance.md に替えた）＝--check 止める理由0・根拠128。承認の前の検査（--try・A12 込み）を走らせる。設計書の監査をもう一度出すか（伺い）は、お返事待ち。
+- 承認の前の検査（require_design_check_before_approval.py --try・A12 込み・14:04:06〜14:10:41・395.4秒）＝A1〜A8・B1・B2 全部通る（不足0件）。設計書の監査をもう一度出すか、承認に進むかを伺う。
+- まこさん「承認した」（イ＝設計書の監査をもう一度は出さない）→ acceptance.approved＝8835dfaa…（設計書の sha と一致・14:17）・design_approved.json・acceptance_archive に m2c15-roles-r1-20261021.breaks.json・frozen.json・verbatim/ は控えへ移った（.claude/state/verbatim に0件）。次＝実装（宣言の後）。
+- 宣言（70番の続き＝実装）→ まこさん「了解」。SDK の5本は最後のコミット 089ba7ba と同じ（git が控え）・build_role_threshold_table.py は git の外なので indicator_review/build_role_threshold_table_before_r1_20261022.py に cp -n（scratchpad への cp は受け入れ条件のゲートが止めた＝書き込み先を決められない形）。
+- apply_audit_fix.py --design --dry＝当たる49件 → 本番＝49件当たった（SDK 5本 147行足し・72行消し・新しいファイル8本・役割の一覧の道具 44行）。★当てた後の照合が FAIL 2件＝①A build_role_threshold_table.py「設計書に書いていない関数を触った → num_in_quote」（git に前の版が無いファイルは全部の関数を触ったと数える＝verify_design_contract.py:943〜944）②A(双方向) engine_tuner_gen.py「impl_functions に書いていないファイルを触った」（注記だけの直しで構文木は同じ＝案を組む道具は一覧に入れなかったが、照合は git status の .py で止める＝:1096〜1103）。実装は設計書のとおり。try_hooks＝observe_diag.py --selftest-lineage を設計↔実装のゲート（require_design_contract_before_run.sh）が同じ2件で止める。impl_functions は承認のときに凍結（:1028〜1036）＝直すには案の【7-8】の直し・OK・設計書の作り直し・2回目の承認が要る（前例＝worklog 20261004 §43）。まこさんに伺う。
+- まこさん「ア」（案の【7-8】の一覧に2つ足し、設計書を作り直して2回目の承認）。★調べると進めない＝gen_verbatim.py:294〜295 が承認の後の工事のフォルダ（archive）への書き込みを止める（「新しい工事名で書く」）。10-04 の前例（worklog 20261004 §43）は手書きの項目だけを直した。案を勧める前にここを確かめていなかった＝まこさんにお詫びして道を出し直す。
+
+## §3 204回目の続き＝ウ（案の直し → 2回目の承認）・hook の直し2本・G-1・G-2 の途中
+
+- まこさん「ウ」→ 工事のフォルダを作業中の置き場へ戻した（逐語 ok_unarchive_20261022）。案の【4-3】【7-5】【7-8】に、照合が抜けと言った2つ（engine_tuner_gen.py の _lineage_of・build_role_threshold_table.py の num_in_quote）を足した。試し（trial_design.py・全部・7分7秒）＝A群 0件・古い語 0件。
+- 案の出し方の誤り2回＝①案の後ろに2行を足した（require_trial_before_proposal が止めた）②OK をいただいた返信の先頭に【いまの工程】ほかの4行を書いた＝gen_acceptance.py の KEY_RE が知らない見出しで止め、まこさんの OK が1回むだになった（逐語 okd_roles_fix2・ok_roles_fix2 は「記録だけ/」へ）。出し直した返信の全文を試しに通し、【】つきの写しが止まることも確かめてから OK をいただいた（okd_roles_fix3・ok_roles_fix3）。
+- hook の直し1（まこさん「進めてよい」・インフラ）＝require_trial_before_proposal.py に、案の見出しが在る最初の返信から後ろの全部の行が、試した下書きに在るかの照らしを足した（turn_blocks を新設・約30行足し・消す行0）。試し4つ＝先頭に【】の写しは止まる・案の後ろの2行は今までどおりの案内で止まる・全文は止まらない・案の無い返信は止まらない。記録の数え＝この hook が止めた20回のうち、説明の見出しの取り違えは0回。
+- 設計書を作り直した（2374行・試しの設計書と1文字も違わない）。見直し表 止める理由0。設計書を1行目から最後まで Read で読んだ。
+- hook の直し2（まこさん「hookを直す」「OK」・インフラ）＝require_design_check_before_approval.py の --try が A12 の記録を書く条件を「A群・B群とも0件」から「A群が0件」に直した（3行足し・2行書き替え・消す行0・変える行を先に見ていただいた）。直す前は、B群だけが残ると「A12 の記録が無い」（A群）で止まり、B群だけのときに通す道（SAY の文）に届かなかった。B2（条件のコマンドを Bash で走らせた記録）は、承認の前は走らせる前の照合と H2 の検査済みゲートが止めるので満たせない。
+- run_breaks.py --measure-only（33秒）＝7本とも期待どおり。--try（6分41秒）＝A群 0件・A12 の記録あり。
+- まこさん「承認した」（2回目）→ 完成の条件 #1〜#7 が全部「✅済」（承認のプログラムが壊すプログラム7本 rc=1 と条件のコマンド2つ rc=0 を測った）。1回目の承認の版＝acceptance_archive/m2c15-roles-r1-20261021.01.md（差分・sha つき）。
+- G-1（まこさん「OK」）＝型の表・出口の型の表を作り直し（env に強さ・勢い・sufficiency に強さ・出口の2枝に強さ・勢い）→ まこさんの --approve 2つ → 組み立ての表・材料の文書・オン・オフの表（使う185・使わない116＝前の版と種類は同じ・源＝法則129→81・まこさん47→81）。役割の一覧は H2・G2 の検査済みゲートが止めた → まこさん「OK」「よい」で H2（5分19秒・未来参照0）と G2（1分11秒・既知答え13件）を先に通した → 役割の一覧＝確かめられた149・食い違い0・疑い0（--check rc 0）。2-1 の1行目＝64 → 0。
+- G-2 の途中＝材料の検査（observe_diag.py --check-materials）が34分39秒かかった（「15分を超えたら止める」と言ったのに止めなかった＝お詫び）。その前に、材料検査2 のつもりで --inspect … --only 2（時間足の区切りの検査）を走らせた（走らせ方を確かめていなかった）。結果＝材料検査3 異常なし・材料検査2 ❌ 31列（AR・CG・LRSI・KDJ・PSL・RSX・QQE・QQE_RSIMA・StochRSI・UO）・材料検査1 ❌ 88件。新しくオシレーターになった67列は全部 ✅。前回（2026-10-02）は ❌ 0件。落ちた種類の札は R-1 の前後で同じ・材料検査1 は札を読まない＝R-1 のせいではない。
+- ★順番の変更（まこさん「よい。順番の変更を忘れないようにして」）＝R-1 の監査 → M-1（材料の検査の ❌ 119件を1件ずつ調べて直す）→ U-1。全体の表（.claude/state/indicator_review/m2c15_全体の表.md）に M-1 の行・順番の8・進み具合の行を足した。
+- 締め（ToDo の78番・まこさん「よい」）＝教訓 L-715 を足した。next_step を205回目向けに書き替えた（次＝R-1 の実装の監査の依頼書）。
+- ★あとで直すこと（204回目の分）＝①材料の検査の ❌ 119件＝M-1（R-1 の監査の後・U-1 の前）②材料の検査（--check-materials・約35分）が監査に出す前のチェックの一覧に無い＝入れるかを まこさんに伺う ③案を組む道具（roles_proposal_build.py）の触る関数の数え方を、照合（verify_design_contract.py:943〜944・:1096〜1103）と同じ形に直す（インフラ）④成績表（material_ranking.json）の作り直し＝U-1 の前（まこさんの決定カ）⑤止める線との離れ7種の役割の調べ直し（D7ウ）⑥2回目の承認の前は、条件のコマンドを Bash で走らせると走らせる前の照合と H2 の検査済みゲートが止めるので、B2 は満たせない（SAY の文で通す）⑦設計書の 2-1 の結果の欄は、2回目の承認の設計書では当てた後の結果になる（直す前の結果は .01.md）。

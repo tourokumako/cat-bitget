@@ -1140,10 +1140,13 @@ def main(argv):
         tr = argv[argv.index("--transcript") + 1] if "--transcript" in argv else None
         t0 = time.time()
         after = "--after-write" in argv
-        bad = check_all(acc, tr, trial=not after)
+        bad_a, bad_b = check_all(acc, tr, split=True, trial=not after)
+        bad = bad_a + bad_b
         if not after:
             # ★2026-10-08（160回目）＝A12 まで通したかの記録（終える前の検査は A12 を走らせず、この記録を見る＝main の下の説明）
-            _a12_ok_write(acc if not bad else None)
+            # ★2026-10-22（204回目）＝A群が0件なら書く（B群だけのときは、返信の hook が SAY の文で通す作り＝:1182〜1188）。
+            #   直す前＝A群と B群を合わせて0件のときだけ書いた＝B群だけが残ると「A12 の記録が無い」で止まり、SAY の道に届かなかった。
+            _a12_ok_write(acc if not bad_a else None)
         if bad:
             _print(bad, "📋 [承認の前の検査] 承認のプログラムの止まり所を、上から全部 確かめました。")
         elif after:

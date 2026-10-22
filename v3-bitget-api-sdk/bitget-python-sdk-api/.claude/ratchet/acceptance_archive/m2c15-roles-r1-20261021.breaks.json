@@ -1,0 +1,70 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-roles-r1-20261021",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b197_lineage_kinds_no_strength.sh",
+   "code": 1,
+   "note": "  ❌ T-L2: 答える問いの鍵が系統の区分と違う（問いだけに在る ['強さ']・区分だけに在る []）",
+   "expect": 1,
+   "means": "系統の区分から強さを外すと、札が強さの指標が区分の外になり、軽い口が落ちる",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b198_lineage_question_no_momentum.sh",
+   "code": 1,
+   "note": "  ❌ T-L2: 答える問いの鍵が系統の区分と違う（問いだけに在る ['勢い_']・区分だけに在る ['勢い']）",
+   "expect": 1,
+   "means": "答える問いから勢いの鍵を外すと、軽い口が落ちる",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b199_adx_back_to_trend.sh",
+   "code": 1,
+   "note": "  ❌ 2 件",
+   "expect": 1,
+   "means": "ADX の札をトレンドに戻すと、R-1 の確かめ（R1）が落ちる",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b200_env_no_momentum.sh",
+   "code": 1,
+   "note": "  ❌ 17 件",
+   "expect": 1,
+   "means": "型の表の環境から勢いを外すと、MACD などが環境の役割を失い、R-1 の確かめ（R3）が落ちる",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b201_exit_no_strength.sh",
+   "code": 1,
+   "note": "  ❌ 7 件",
+   "expect": 1,
+   "means": "出口の枝 REVERSE_IND の使える系統から強さを外すと、ADX などが出口の枝を失い、R-1 の確かめ（R3）が落ちる",
+   "match": true
+  },
+  {
+   "no": "6",
+   "script": "b202_role_table_ignores_r1.sh",
+   "code": 1,
+   "note": "  ❌ 1 件",
+   "expect": 1,
+   "means": "役割の一覧を作る道具が R-1 の区分を読まないと、食い違いが残り、R-1 の確かめ（R4）が落ちる",
+   "match": true
+  },
+  {
+   "no": "7",
+   "script": "b203_keep_on_dropped.sh",
+   "code": 1,
+   "note": "  ❌ 1 件",
+   "expect": 1,
+   "means": "決定アの源4（mako の欄）を入れないと、札が構造・位置から外れた種類が印で「使わない」になり、R-1 の確かめ（R5）が落ちる",
+   "match": true
+  }
+ ]
+}

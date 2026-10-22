@@ -1,0 +1,61 @@
+155,156c155,156
+< | 教科書の役割の「強さ」「勢い」に当たる系統が無い（F-1） | `grep -o -e 'k="強さ"' -e 'k="勢い"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 出力の行の数を読む（同じ行に札が並ぶ行が在るので、grep -c は使わない）。直す前は行が出ない。直した後は、札が強さ・勢いの指標の数だけ行が出る（その数は、この工事の札の一覧で、新しい系統が強さ・勢いの種類の数と同じ） | （終了コード 1） |
+< | 系統で数える法則と G3 が、出どころと違う札で数えている（F-2・F-3） | `grep -n '"ADX": dict(k=' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 直す前は、ADX（出どころ＝トレンドの強さ・向きは見ない）の札が「トレンド」で、向きを測る DI差と同じ札。そのため、同じ系統を同じ役割に重ねない決まりが、ADX と DI差を同じ役割に置けない。法則の原文「同じ系統でも見ているものが違うことがあり（ADX は強さ・DI差は向き）」と食い違う。直した後は ADX の札が「強さ」 | 5313:    "ADX": dict(k="トレンド", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),（終了コード 0） |
+---
+> | 教科書の役割の「強さ」「勢い」に当たる系統が無い（F-1） | `grep -o -e 'k="強さ"' -e 'k="勢い"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 出力の行の数を読む（同じ行に札が並ぶ行が在るので、grep -c は使わない）。直す前は行が出ない。直した後は、札が強さ・勢いの指標の数だけ行が出る（その数は、この工事の札の一覧で、新しい系統が強さ・勢いの種類の数と同じ） | k="強さ" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="強さ" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="勢い" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="強さ" ⏎ k="勢い" ⏎ k="勢い"（終了コード 0） |
+> | 系統で数える法則と G3 が、出どころと違う札で数えている（F-2・F-3） | `grep -n '"ADX": dict(k=' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 直す前は、ADX（出どころ＝トレンドの強さ・向きは見ない）の札が「トレンド」で、向きを測る DI差と同じ札。そのため、同じ系統を同じ役割に重ねない決まりが、ADX と DI差を同じ役割に置けない。法則の原文「同じ系統でも見ているものが違うことがあり（ADX は強さ・DI差は向き）」と食い違う。直した後は ADX の札が「強さ」 | 5339:    "ADX": dict(k="強さ", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),（終了コード 0） |
+358c358
+< | .claude/state/indicator_review/build_role_threshold_table.py | 役割の一覧（区分の写し・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check） | 直す |
+---
+> | .claude/state/indicator_review/build_role_threshold_table.py の <モジュール直下>・num_in_quote | 役割の一覧（区分の写し・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）。num_in_quote は中身を変えない（git の外のファイルなので、照合が全部の関数を触ったと数える＝1回目の承認の後に一覧へ足した） | 直す |
+2037c2037
+< <!-- ACC_CHECKLIST_START hash=7556ebdd0083860c gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CHECKLIST_START hash=9d5122b3ca0bc226 gen_acceptance.py が自動生成＝手で書き換えない -->
+2043c2043
+< | 2 | 【群1】`DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine` | DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。 |
+---
+> | 2 | 【群1】`DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine` | DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた。1回目の承認の後、照合の数え方に合わせて2つ足した）。 |
+2050c2050
+< | 9 | 【群1】過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行） | 過去の失敗の再演＝202回目に、札の一覧の1回目で決定の外の close vs ABER_ZG% までオシレーターにした＝この工事の札は r1_role_map.json だけから当て、前の64種が変わらないことを jq で照らした。写しの G-1 の試しで、承認の操作（--approve）を CC が打った（本物は変わっていない）＝道具から外して走らせ直した。203回目に、写しの試しでオン・オフの印を作り直さないまま、案に「オン・オフは変えません（増えた・減った種類が 0）」と書いた（監査 CP85 の修正1・17）＝写しの G-1 の試しに gen_indicator_switch.py --write を足し、作り直した後の「使う」の数を道具が測って案に書く形にした（本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34）。 |
+---
+> | 9 | 【群1】過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行） | 過去の失敗の再演＝202回目に、札の一覧の1回目で決定の外の close vs ABER_ZG% までオシレーターにした＝この工事の札は r1_role_map.json だけから当て、前の64種が変わらないことを jq で照らした。写しの G-1 の試しで、承認の操作（--approve）を CC が打った（本物は変わっていない）＝道具から外して走らせ直した。203回目に、写しの試しでオン・オフの印を作り直さないまま、案に「オン・オフは変えません（増えた・減った種類が 0）」と書いた（監査 CP85 の修正1・17）＝写しの G-1 の試しに gen_indicator_switch.py --write を足し、作り直した後の「使う」の数を道具が測って案に書く形にした（本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34）。204回目に、案を組む道具が impl_functions を構文木の差だけで数え、当てた後の照合の数え方（git の差分の .py・git の外のファイル）と合わなかった＝実装の後の確かめが済んだら、案を組む道具の数え方を照合と同じ形に直す（インフラの直し）。 |
+2055c2055
+< | 14 | 【群1】実装の指示で新しく足す関数（def）を全部 数え、DESIGN_CONTRACT の impl_functions に全部 在るかと、must_use の名前が直した後の関数の中に在るか（包みの関数を呼ぶなら包みの名前） | 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>／observe_diag.py：<モジュール直下>・_insp_lineage_range・selftest・selftest_lineage／gen_signal_families.py：build_table／build_role_threshold_table.py：<モジュール直下>／roles_r1_check.py：<モジュール直下>・usable。self_check_calls の名前は、当てた後の構文木に在ることを道具が ast で照らした。 |
+---
+> | 14 | 【群1】実装の指示で新しく足す関数（def）を全部 数え、DESIGN_CONTRACT の impl_functions に全部 在るかと、must_use の名前が直した後の関数の中に在るか（包みの関数を呼ぶなら包みの名前） | 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>／observe_diag.py：<モジュール直下>・_insp_lineage_range・selftest・selftest_lineage／engine_tuner_gen.py：_lineage_of／gen_signal_families.py：build_table／build_role_threshold_table.py：<モジュール直下>・num_in_quote／roles_r1_check.py：<モジュール直下>・usable。self_check_calls の名前は、当てた後の構文木に在ることを道具が ast で照らした。★engine_tuner_gen.py の _lineage_of と build_role_threshold_table.py の num_in_quote は、1回目の承認の後に足した（当てた後の照合が止めた＝注記だけの直しも git の差分の .py として数える・git の外のファイルは全部の関数を触ったと数える＝verify_design_contract.py:943〜944・:1096〜1103・まこさん「ウ」）。 |
+2109c2109
+< <!-- ACC_CODEREF_START hash=9991241d82bbbb43 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=24e2f2b11f4822b9 gen_acceptance.py が自動生成＝手で書き換えない -->
+2116,2117c2116,2117
+< | `selftest_lineage` | （この関数は実物に無い） |
+< | `selftest` | 7833 |
+---
+> | `selftest_lineage` | 7371 |
+> | `selftest` | 7863 |
+2119c2119
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 207件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 208件の関数が在ります）。
+2126c2126
+< <!-- ACC_SPEC_START hash=cfdc5629b2c8030c gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=42b127e709c48543 gen_acceptance.py が自動生成＝手で書き換えない -->
+2144a2145,2147
+>     "scripts/priority_rebuild/engine_tuner_gen.py": [
+>       "_lineage_of"
+>     ],
+2149c2152,2153
+<       "<モジュール直下>"
+---
+>       "<モジュール直下>",
+>       "num_in_quote"
+2156c2160
+<   "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、roles_proposal_build.py が数えた）。",
+---
+>   "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、roles_proposal_build.py が数えた）。★2026-10-22（1回目の承認の後・まこさん「ウ」）＝照合（verify_design_contract.py）の数え方に合わせて2つ足した＝①engine_tuner_gen.py の _lineage_of（実装26 は注記の1行＝構文木は変わらないが、照合は git の差分の .py を数える・注記の行 1266 は _lineage_of の中）②build_role_threshold_table.py の num_in_quote（git の外のファイルは前の版が無く、照合は全部の関数を触ったと数える＝:943〜944。中身は変えていない）。",
+2173c2177
+<     "impl_functions": "当てる前と後の関数ごとの構文木の差（roles_proposal_build.py が数えた）",
+---
+>     "impl_functions": "当てる前と後の関数ごとの構文木の差（roles_proposal_build.py が数えた）＋照合の数え方に合わせた2つ（engine_tuner_gen.py の _lineage_of・build_role_threshold_table.py の num_in_quote）",

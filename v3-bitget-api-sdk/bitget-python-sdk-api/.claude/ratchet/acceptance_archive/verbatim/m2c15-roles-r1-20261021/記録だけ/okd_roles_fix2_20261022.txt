@@ -1,0 +1,153 @@
+すみません。案の後ろに文を2行足していました。案の後ろの文は、設計書を作るプログラムがその節の中身として写してしまいます。報告を案の前に移して、出し直します。
+
+問い：なし（指示「ウ」の続き）。範囲：直した3つの節（【4-3】【7-5】【7-8】）だけです。
+
+【いまの工程】ToDo の70番 R-1（工事 m2c15-roles-r1-20261021）。実装の後の照合が止めた件を、案の直しで解いています（まこさん「ウ」）。
+【ToDo】ウの手順の3つ目「次の案を出して OK をいただく」が in_progress です。
+【止まっているもの】下の案への OK。
+【次】OK をいただいたら、逐語を記録し、設計書を作り直します。そのあと全部を読んで見直し表を作り、承認の前の検査を通します。最後に、2回目の承認のコマンドを出します。
+
+## 案の直しの中身
+
+- 照合（verify_design_contract.py）は、触った関数の一覧（impl_functions）に2つが無いと言って止めました。
+- 1つ目は engine_tuner_gen.py の _lineage_of です。実装26 は注記を1行直しただけです。それでも照合は、git の差分に出た .py をすべて数えます。
+- 2つ目は build_role_threshold_table.py の num_in_quote です。このファイルは git の外に在ります。照合は前の版が無いと見て、全部の関数を触ったと数えます（verify_design_contract.py:943〜944）。num_in_quote の中身は変えていません。
+- この2つを【7-8】の一覧に足しました。同じ事実を書いている所も揃えました。揃えたのは、【4-3】の表の行と、【7-5】の2行目・9行目・14行目です。
+- 本物のコードは、1回目の承認の設計書のとおりに当て終わっています。今回の直しで、コードは1文字も変えません。
+
+## 確かめたこと
+
+- 試しの設計書を、1回目に承認した設計書と差分で比べました。違うのは、上の3つの節と、下の2つの所だけです。
+- 見直し表は、止める理由が0件です。【4-3】【7-5】【7-8】の3行には、今回の直しと根拠の行を書き足しました。
+- 案の下書きのファイルは /private/tmp/claude-501/-Users-tachiharamasako-Documents-GitHub-cat-bitget/46295b1a-fa45-4f8b-b6e6-4ba9a5aebdab/scratchpad/next_proposal2.txt です。
+
+## お伝えしておくこと（2つ）
+
+1. 設計書の 2-1 の表（いまの状態を走らせた結果）は、道具がその場でコマンドを走らせて作ります。このため、2回目の設計書には当てた後の結果が出ます。
+   - たとえば F-1 の行は、直す前は「終了コード 1（強さ・勢いが無い）」でした。2回目の設計書では、強さ・勢いが26行見つかります。
+   - 直す前の結果は、2回目の承認のときに承認のプログラムが残します。名前は m2c15-roles-r1-20261021.01.md で、差分もつきます（approve_impl.sh:320〜331）。
+2. 行番号の表（7-7）では、selftest_lineage が「実物に無い」から「7371行」に変わります。実装を当てた後だからです。
+
+この案でよろしければ「OK」とお返事ください。案は次のとおりで、このまま設計書に入ります。
+
+案の直し（工事 m2c15-roles-r1-20261021・1回目の承認の後・まこさん「ウ」）。【4-3】【7-5】【7-8】だけを直します。本物のコードは、1回目の承認の設計書のとおりに当て終わっています。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| indicator_reference_diag の <モジュール直下>（FAMILY_LINEAGE・LINEAGE_KINDS・LINEAGE_QUESTION・MAKO_R1・R1_KEEP_ON） | 札・系統の区分・区分ごとの答える問い・決定アの34種に源4（mako の欄）を入れる | 直す |
+| observe_diag.selftest_lineage・selftest・<モジュール直下>（入口の旗）・_insp_lineage_range | 系統の区分の番人（T-L1・T-L2）を軽い口にし、全体の自己テストからも呼ぶ・数を書いた文を区分から作る | 新設・直す |
+| engine_tuner_gen._lineage_of の注記 | 系統の数を書いた注記 | 直す（注記だけ） |
+| gen_signal_families.build_table の role_lineage | 型の表の役割ごとの系統（環境に強さ・勢い、十分さに強さ） | 直す |
+| exit_families_rules.json の REVERSE_IND・BREAKOUT | 出口の枝の使える系統（強さ・勢い） | 直す |
+| .claude/state/indicator_review/build_role_threshold_table.py の <モジュール直下>・num_in_quote | 役割の一覧（区分の写し・今の系統はコードから・R-1 の種類は封つきの r1_role_map.json で照らす・--check）。num_in_quote は中身を変えない（git の外のファイルなので、照合が全部の関数を触ったと数える＝1回目の承認の後に一覧へ足した） | 直す |
+| .claude/state/indicator_review/roles_r1_check.py の <モジュール直下>・usable | R-1 の確かめ（R1〜R5）・usable＝その系統で使える役割（型の表の役割と出口の枝）の集まり | 新設 |
+- 指標を使う部品について：この工事は指標の計算と値に触りません（直すファイルの一覧に材料の計算の関数が無い・observe_diag.py の直しは番人と文だけ）。札は、材料の一覧（FAMILY_LINEAGE）の1か所で持ち、型の表・出口の表・G3・法則は全部そこから読みます。
+- オン・オフは、何もしなければ変わります（監査 CP85 の修正1）。gen_indicator_switch.py の源2（法則）は、法則 R1・R3 が数える系統「構造・位置」の札で、種類を展開します（gen_indicator_switch.py:205〜207・:307）。札が構造・位置から外れる種類のうち、源が法則だけの34種は、G-1 の gen_indicator_switch.py --write で「使わない」になります。まこさんの決定ア（「使う」に残す）のとおり、この34種に源4（定義表の mako の欄・MMI と同じ道）を入れ、「使う」に残します。写しで印を作り直した結果＝本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34。
+
+【7-5 §4.6 の照合】
+- TARGET＝indicator_reference_diag.py・observe_diag.py・engine_tuner_gen.py・gen_signal_families.py・exit_families_rules.json・build_role_threshold_table.py・roles_r1_check.py（新しいファイル）と、新しい壊すプログラムを【7-8】に書いた。主なファイルは indicator_reference_diag.py（札の正本）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた。1回目の承認の後、照合の数え方に合わせて2つ足した）。
+- 新しく作るファイルは roles_r1_check.py と壊すプログラム（NEW_FILE）。手本は b196（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買の値に触らないので、勝率・平均利益・敗率・平均損失は、この工事では動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝202回目に、札の一覧の1回目で決定の外の close vs ABER_ZG% までオシレーターにした＝この工事の札は r1_role_map.json だけから当て、前の64種が変わらないことを jq で照らした。写しの G-1 の試しで、承認の操作（--approve）を CC が打った（本物は変わっていない）＝道具から外して走らせ直した。203回目に、写しの試しでオン・オフの印を作り直さないまま、案に「オン・オフは変えません（増えた・減った種類が 0）」と書いた（監査 CP85 の修正1・17）＝写しの G-1 の試しに gen_indicator_switch.py --write を足し、作り直した後の「使う」の数を道具が測って案に書く形にした（本物の今の「使う」185種 ／ 写しで札を直して印を作り直した後 185種・減った種類 0・源4 で残した種類 34）。204回目に、案を組む道具が impl_functions を構文木の差だけで数え、当てた後の照合の数え方（git の差分の .py・git の外のファイル）と合わなかった＝実装の後の確かめが済んだら、案を組む道具の数え方を照合と同じ形に直す（インフラの直し）。
+- 新しい部品は未来を見ない（値の計算に触らない）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（indicator_reference_diag.py・observe_diag.py ほかに行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の5）。
+- 壊すプログラムが測るのは、観察の道具の軽い口（--selftest-lineage）と R-1 の確かめ（roles_r1_check.py）で、どちらも本物の結果の置き場に書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>／observe_diag.py：<モジュール直下>・_insp_lineage_range・selftest・selftest_lineage／engine_tuner_gen.py：_lineage_of／gen_signal_families.py：build_table／build_role_threshold_table.py：<モジュール直下>・num_in_quote／roles_r1_check.py：<モジュール直下>・usable。self_check_calls の名前は、当てた後の構文木に在ることを道具が ast で照らした。★engine_tuner_gen.py の _lineage_of と build_role_threshold_table.py の num_in_quote は、1回目の承認の後に足した（当てた後の照合が止めた＝注記だけの直しも git の差分の .py として数える・git の外のファイルは全部の関数を触ったと数える＝verify_design_contract.py:943〜944・:1096〜1103・まこさん「ウ」）。
+- 新しく足すコマンドの旗＝observe_diag.py の --selftest-lineage・build_role_threshold_table.py の --check。
+- 当てた後に実装の中で変わった手順が出たら、設計書に書き直してから進める。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-roles-r1-20261021）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝軽い口 T-L1・T-L2・R-1 の確かめ R1〜R5・壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/ratchet/exit_families_rules.json",
+  ".claude/state/indicator_review/build_role_threshold_table.py",
+  "scripts/priority_rebuild/engine_tuner_gen.py",
+  "scripts/priority_rebuild/gen_signal_families.py",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  ".claude/state/indicator_review/roles_r1_check.py",
+  ".claude/breaks/b197_lineage_kinds_no_strength.sh",
+  ".claude/breaks/b198_lineage_question_no_momentum.sh",
+  ".claude/breaks/b199_adx_back_to_trend.sh",
+  ".claude/breaks/b200_env_no_momentum.sh",
+  ".claude/breaks/b201_exit_no_strength.sh",
+  ".claude/breaks/b202_role_table_ignores_r1.sh",
+  ".claude/breaks/b203_keep_on_dropped.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/state/indicator_review/roles_r1_check.py",
+  ".claude/breaks/b197_lineage_kinds_no_strength.sh",
+  ".claude/breaks/b198_lineage_question_no_momentum.sh",
+  ".claude/breaks/b199_adx_back_to_trend.sh",
+  ".claude/breaks/b200_env_no_momentum.sh",
+  ".claude/breaks/b201_exit_no_strength.sh",
+  ".claude/breaks/b202_role_table_ignores_r1.sh",
+  ".claude/breaks/b203_keep_on_dropped.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b196_band_pivot_week_as_day.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。系統の区分の番人（軽い口）が在る観察の道具を照らす。札の正本は indicator_reference_diag.py の FAMILY_LINEAGE（データ）。",
+  "impl_functions": {
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>"
+   ],
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_insp_lineage_range",
+    "selftest",
+    "selftest_lineage"
+   ],
+   "scripts/priority_rebuild/engine_tuner_gen.py": [
+    "_lineage_of"
+   ],
+   "scripts/priority_rebuild/gen_signal_families.py": [
+    "build_table"
+   ],
+   ".claude/state/indicator_review/build_role_threshold_table.py": [
+    "<モジュール直下>",
+    "num_in_quote"
+   ],
+   ".claude/state/indicator_review/roles_r1_check.py": [
+    "<モジュール直下>",
+    "usable"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、roles_proposal_build.py が数えた）。★2026-10-22（1回目の承認の後・まこさん「ウ」）＝照合（verify_design_contract.py）の数え方に合わせて2つ足した＝①engine_tuner_gen.py の _lineage_of（実装26 は注記の1行＝構文木は変わらないが、照合は git の差分の .py を数える・注記の行 1266 は _lineage_of の中）②build_role_threshold_table.py の num_in_quote（git の外のファイルは前の版が無く、照合は全部の関数を触ったと数える＝:943〜944。中身は変えていない）。",
+  "self_check_calls": [
+   "selftest_lineage",
+   "selftest"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が足す・直す関数の名前。",
+  "must_use": {
+   "selftest_lineage": [
+    "FAMILY_LINEAGE",
+    "LINEAGE_KINDS",
+    "LINEAGE_QUESTION"
+   ]
+  },
+  "_must_use の意味": "系統の区分の番人 selftest_lineage は、札（FAMILY_LINEAGE）・区分（LINEAGE_KINDS）・答える問い（LINEAGE_QUESTION）の3つを読んで照らす（道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、札の値と区分の名前を足すだけ。外から読む一覧の形（FAMILY_LINEAGE の1件の形・型の表の役割の形・出口の枝の形）は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（roles_proposal_build.py が数えた）＋照合の数え方に合わせた2つ（engine_tuner_gen.py の _lineage_of・build_role_threshold_table.py の num_in_quote）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```

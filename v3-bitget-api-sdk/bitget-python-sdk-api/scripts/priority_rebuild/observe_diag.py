@@ -6311,7 +6311,7 @@ def _insp_lineage_range(bars: pd.DataFrame, cfg: dict, fake_family: str | None =
             ng.append(f"{name}: オシレーター系の分類なのに値域がオシレーターの形でない（{note}）")
     print("  ── 非同型レビュー依頼（この節を丸ごと Web Claude に渡す・実施はまこさんにお願いする）──")
     print("  依頼文: 下の「指標名 → 系統」の分類が妥当かを、実装を見ない立場で1行ずつ 妥当/疑問 で判定し、")
-    print("  疑問の行には理由を1行で書いてください。系統は トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置 の6つです。")
+    print(f"  疑問の行には理由を1行で書いてください。系統は {'／'.join(iref.LINEAGE_KINDS)} の{len(iref.LINEAGE_KINDS)}つです。")   # ★R-1（2026-10-22）＝数を書かず区分から作る
     for name, fam, k in rows:
         print(f"     {name} [{fam}] → {k}")
     return ng
@@ -7368,6 +7368,36 @@ def _J(a: str, b: str) -> str:
     return a + b
 
 
+def selftest_lineage(exit_: bool = True) -> list:
+    """T-L1・T-L2＝系統の区分（indicator_reference_diag.LINEAGE_KINDS）を確かめる（工事 m2c15-roles-r1-20261021・2026-10-22）。
+    口＝`--selftest-lineage`（壊すプログラムが使う・数秒で終わる）。全部の番人（selftest）からも、この関数を呼ぶ
+    （直す前は selftest の検査8 の番人に「8系統の外の割当」の判定が在った＝ここへ移した・同じ判定を2か所に書かない）。
+      T-L1＝系統マップ FAMILY_LINEAGE の札が、全部 系統の区分の中に在る
+      T-L2＝答える問い LINEAGE_QUESTION の鍵が系統の区分と同じで、どの区分にも問いと出典が在る（材料の文書が区分ごとに問いを出す）"""
+    ng: list = []
+    _badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get("k") not in iref.LINEAGE_KINDS]
+    if _badk8:
+        ng.append(f"T-L1: 系統マップに、系統の区分（{len(iref.LINEAGE_KINDS)}種）の外の札がある: {_badk8}")
+    _q = iref.LINEAGE_QUESTION
+    if set(_q) != set(iref.LINEAGE_KINDS):
+        ng.append(f"T-L2: 答える問いの鍵が系統の区分と違う（問いだけに在る {sorted(set(_q) - set(iref.LINEAGE_KINDS))}・"
+                  f"区分だけに在る {sorted(set(iref.LINEAGE_KINDS) - set(_q))}）")
+    _emp = [k for k, v in _q.items() if not (isinstance(v, tuple) and len(v) == 2 and all(str(x).strip() for x in v))]
+    if _emp:
+        ng.append(f"T-L2: 答える問いか出典が空の区分: {_emp}")
+    print("=" * 80)
+    print("系統の区分の番人（T-L1・T-L2・工事 m2c15-roles-r1-20261021）")
+    print(f"  系統の区分 {len(iref.LINEAGE_KINDS)} 種（{'・'.join(iref.LINEAGE_KINDS)}）／系統マップ {len(iref.FAMILY_LINEAGE)} 件")
+    if exit_:
+        if ng:
+            for x_ in ng:
+                print(f"  ❌ {x_}")
+            raise SystemExit(1)
+        print("  全部 pass（❌ 0件）")
+        raise SystemExit(0)
+    return ng
+
+
 def selftest_band(exit_: bool = True) -> list:
     """T-B1〜T-B4＝帯の部品・S1 の部品・帯の1時間足の区切りを確かめる（工事 m2c15-band-s1-20261020・2026-10-20）。
     口＝`--selftest-band`（壊すプログラム b189〜b196 が使う・数秒で終わる＝承認の前の仮当ての 900 秒に収めるため）。
@@ -8373,9 +8403,8 @@ def selftest() -> None:
     _miss8 = iref.lineage_coverage(_fam8)
     if _miss8:
         ng.append(f"系統マップ FAMILY_LINEAGE に無い family: {_miss8}（G3 の割当表は全 family 必須・載っていない family は生成不可）")
-    _badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get("k") not in iref.LINEAGE_KINDS]
-    if _badk8:
-        ng.append(f"系統マップに8系統の外の割当がある: {_badk8}")
+    # ★2026-10-22（工事 m2c15-roles-r1-20261021）＝系統の区分の判定は selftest_lineage へ移した（軽い口と同じ判定を1か所に）
+    ng += selftest_lineage(exit_=False)               # T-L1・T-L2（系統の区分と答える問い）
     _tol8, _tch8, _lb8 = _rg_zone_consts()
     _ng8 = iref.range_geo_known_check(build_range_geometry, _tol8, _tch8, _lb8)
     if _ng8:
@@ -8888,6 +8917,8 @@ if __name__ == "__main__":
         selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-band" in sys.argv:                 # ★T-B1〜T-B4 だけを（工事 m2c15-band-s1-20261020・壊すプログラム b189〜b196 が使う）
         selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-lineage" in sys.argv:              # ★T-L1・T-L2 だけを（工事 m2c15-roles-r1-20261021・壊すプログラムが使う）
+        selftest_lineage()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:
         selftest()
     else:

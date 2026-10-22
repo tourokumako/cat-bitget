@@ -5058,6 +5058,29 @@ _r(r"HA下ヒゲ比", "HA下ヒゲ比",
                     (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])
 
 
+# ══ R-1 の決定ア（2026-10-22・工事 m2c15-roles-r1-20261021・監査 CP85 の修正1〜4）═════════════════════
+# ★札が構造・位置から外れると、オン・オフの印の源2（法則 R1・R3 の系統「構造・位置」の名指し＝gen_indicator_switch.py:205〜207）
+#   から外れる種類がある。そのうち、ほかの源（ta・恒等レシピ・まこさん）を持たない34種を、源4（まこさんが個別に決めた
+#   もの＝mako の欄）で「使う」に残す。一覧は手で選んでいない＝roles_draft_build.py が、札の一覧（r1_role_map.json）と
+#   印（indicator_switch.json の sources）から数えて書いた。
+MAKO_R1 = ("2026-10-22 まこさん決定「全部直す。CCの勧めの通りでよい」（監査 CP85 の決定ア＝札が構造・位置から外れて"
+           "法則の源から落ちる種類を「使う」に残す・逐語 ok_cp85_choices_20261022）")
+R1_KEEP_ON = (
+    "高値からの経過バー", "安値からの経過バー", "close vs HILO%", "close vs LINREG%", "close vs LRb%", "close vs MAMA%",
+    "close vs FAMA%", "close vs MMAR%", "close vs RAINBOW%", "close vs RMA%", "close vs TEMA%", "close vs TRIMA%",
+    "close vs TSF%", "close vs VIDYA%", "close vs VWMA%", "close vs ZLMA%", "close vs ABER_ZG%", "ABER位置",
+    "close vs HMA%", "close vs ALMA%", "close vs DEMA%", "close vs FWMA%", "close vs HT_TRENDLINE%",
+    "close vs HWMA%", "close vs JMA%", "close vs MCGD%", "close vs MEDIAN%", "close vs MIDPOINT%",
+    "close vs MIDPRICE%", "close vs PWMA%", "close vs SINWMA%", "close vs SSF%", "close vs SWMA%", "close vs T3%",
+)
+_r1_miss = sorted(set(R1_KEEP_ON) - {_e["family"] for _e in REFS})
+if _r1_miss:
+    raise SystemExit(f"❌ R1_KEEP_ON の種類が定義表に無い: {_r1_miss}")
+for _e in REFS:
+    if _e["family"] in R1_KEEP_ON and not _e.get("mako"):
+        _e["mako"] = MAKO_R1
+
+
 # ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
 # 実測の方法＝①直近の metrics 日次 zip と REST の同系列を1時間分突き合わせ（OI・比率3種は
 # zip の時刻+5分 = REST の終了時刻ラベルで平均差ゼロ・taker は同時刻で一致）②OI の現在値
@@ -5306,13 +5329,16 @@ TA_CLASS_MAP: dict[str, tuple[str, ...]] = {
 
 
 # ══ 系統マップ（G3 同系統制限の正本・CP3 Q4・全 family を単一割当＝載っていない family は生成不可）══
-# 8系統＝トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。
+# 10系統＝トレンド／強さ／勢い／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。
+# ★2026-10-22（工事 m2c15-roles-r1-20261021）＝強さ・勢いを足し、90種の札を教科書の役割の調べ直しに合わせた
+#   （正本＝.claude/state/indicator_review/r1_role_map.json・封つき＝変える72・変えない18）。
+#   下の「# トレンド」などの見出しは、足したときの並びで、札（k）ではない。
 # 両属性の family は主用途で単一割当し、理由を note に書く（例＝MFI はオシレーター・CP3 の例示どおり）。
 FAMILY_LINEAGE: dict[str, dict] = {
     # トレンド
-    "ADX": dict(k="トレンド", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),
-    "DI差": dict(k="トレンド"), "MACD線%": dict(k="トレンド"), "MACDヒスト%": dict(k="トレンド"),
-    "MACDシグナル線%": dict(k="トレンド"), "EMA傾き": dict(k="トレンド"),
+    "ADX": dict(k="強さ", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),
+    "DI差": dict(k="トレンド"), "MACD線%": dict(k="勢い"), "MACDヒスト%": dict(k="勢い"),
+    "MACDシグナル線%": dict(k="勢い"), "EMA傾き": dict(k="トレンド"),
     # ★RSI傾き は 2026-08-11 に足して同じ日に省いた（列で持たず form=slope で作る）。経緯は
     #   observe_diag の build_catalog の RSI の所と、worklog 20260811 §44。
     "Supertrend": dict(k="トレンド", note="位置系でもあるが符号がトレンドの向きそのもの＝主用途トレンド"),
@@ -5325,7 +5351,7 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "MFI": dict(k="オシレーター", note="出来高系でもあるが行き過ぎの計測が主用途（CP3 Q4 の例示どおり）"),
     "BB%b": dict(k="オシレーター", note="ボラ由来だが 0〜1 の有界位置＝行き過ぎの計測が主用途"),
     # 業界の指標（pandas-ta 由来・フロー 段6-1 の1回目）
-    "AO%": dict(k="トレンド", note="2つの期間の平均の差＝MACD と同じ作り"),
+    "AO%": dict(k="勢い", note="2つの期間の平均の差＝MACD と同じ作り"),
     "APO%": dict(k="トレンド", note="同上。平均が単純移動平均である点だけ違う"),
     "BIAS": dict(k="オシレーター", note="移動平均からの乖離＝行き過ぎの計測"),
     "BOP": dict(k="ローソク", note="1本のバーの中で買いと売りのどちらが押し切ったか"),
@@ -5338,13 +5364,13 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "COPC": dict(k="トレンド", note="長い期間の変化率をならしたもの＝向きの計測"),
     "CTI": dict(k="トレンド", note="時間との相関＝素直に一方向へ動いているか"),
     "DM+%": dict(k="トレンド"), "DM-%": dict(k="トレンド"),
-    "ER": dict(k="ボラ", note="正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）"),
+    "ER": dict(k="強さ", note="正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）"),
     "ERI強気%": dict(k="トレンド", note="高値と平均の差＝上方向の押し込み"),
     "ERI弱気%": dict(k="トレンド", note="安値と平均の差＝下方向の押し込み"),
     "FISHER": dict(k="オシレーター"), "FISHERシグナル": dict(k="オシレーター"),
     "INERTIA": dict(k="トレンド", note="活力指数をならしたもの"),
     "KDJ%K": dict(k="オシレーター"), "KDJ%D": dict(k="オシレーター"), "KDJ%J": dict(k="オシレーター"),
-    "KST": dict(k="トレンド"), "KSTシグナル": dict(k="トレンド"),
+    "KST": dict(k="勢い"), "KSTシグナル": dict(k="勢い"),
     "LRSI": dict(k="オシレーター"),
     # 業界の指標（pandas-ta 由来・フロー 段6-1 の2回目）
     "MOM%": dict(k="トレンド", note="n 本前との差＝向きの計測"),
@@ -5352,7 +5378,7 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "PO": dict(k="オシレーター", note="直線あてはめからのずれ＝行き過ぎの計測"),
     "PSL": dict(k="オシレーター", note="上げた本数の割合＝買われすぎ・売られすぎ"),
     "RSX": dict(k="オシレーター"),
-    "PPO": dict(k="トレンド"), "PPOシグナル": dict(k="トレンド"), "PPOヒスト": dict(k="トレンド"),
+    "PPO": dict(k="勢い"), "PPOシグナル": dict(k="勢い"), "PPOヒスト": dict(k="勢い"),
     "PVO": dict(k="出来高"), "PVOシグナル": dict(k="出来高"), "PVOヒスト": dict(k="出来高"),
     "RVGI": dict(k="オシレーター", note="バスの中の終値の位置を積み上げたもの"),
     "RVGIシグナル": dict(k="オシレーター"), "RVGIヒスト": dict(k="オシレーター"),
@@ -5366,33 +5392,33 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "StochRSI%K": dict(k="オシレーター"), "StochRSI%D": dict(k="オシレーター"),
     "TD_SEQ_UP": dict(k="ローソク", note="連続した足の数え上げ＝直前の並びの形"),
     "TD_SEQ_DN": dict(k="ローソク", note="同上"),
-    "TRIX": dict(k="トレンド"), "TRIXシグナル": dict(k="トレンド"), "TRIXヒスト": dict(k="トレンド"),
-    "TSI": dict(k="トレンド"), "TSIシグナル": dict(k="トレンド"), "TSIヒスト": dict(k="トレンド"),
+    "TRIX": dict(k="勢い"), "TRIXシグナル": dict(k="勢い"), "TRIXヒスト": dict(k="勢い"),
+    "TSI": dict(k="勢い"), "TSIシグナル": dict(k="勢い"), "TSIヒスト": dict(k="勢い"),
     "UO": dict(k="オシレーター"),
-    "close vs SINWMA%": dict(k="構造・位置"), "SINWMA傾き%": dict(k="トレンド"),
-    "close vs SSF%": dict(k="構造・位置"), "SSF傾き%": dict(k="トレンド"),
-    "close vs SWMA%": dict(k="構造・位置"), "SWMA傾き%": dict(k="トレンド"),
-    "close vs T3%": dict(k="構造・位置"), "T3傾き%": dict(k="トレンド"),
-    "close vs TEMA%": dict(k="構造・位置"), "TEMA傾き%": dict(k="トレンド"),
-    "close vs TRIMA%": dict(k="構造・位置"), "TRIMA傾き%": dict(k="トレンド"),
-    "close vs TSF%": dict(k="構造・位置"), "TSF傾き%": dict(k="トレンド"),
-    "close vs VIDYA%": dict(k="構造・位置"), "VIDYA傾き%": dict(k="トレンド"),
-    "close vs VWMA%": dict(k="構造・位置"), "VWMA傾き%": dict(k="トレンド"),
-    "close vs WMA%": dict(k="構造・位置"), "WMA傾き%": dict(k="トレンド"),
-    "close vs ZLMA%": dict(k="構造・位置"), "ZLMA傾き%": dict(k="トレンド"),
+    "close vs SINWMA%": dict(k="オシレーター"), "SINWMA傾き%": dict(k="トレンド"),
+    "close vs SSF%": dict(k="オシレーター"), "SSF傾き%": dict(k="トレンド"),
+    "close vs SWMA%": dict(k="オシレーター"), "SWMA傾き%": dict(k="トレンド"),
+    "close vs T3%": dict(k="オシレーター"), "T3傾き%": dict(k="トレンド"),
+    "close vs TEMA%": dict(k="オシレーター"), "TEMA傾き%": dict(k="トレンド"),
+    "close vs TRIMA%": dict(k="オシレーター"), "TRIMA傾き%": dict(k="トレンド"),
+    "close vs TSF%": dict(k="オシレーター"), "TSF傾き%": dict(k="トレンド"),
+    "close vs VIDYA%": dict(k="オシレーター"), "VIDYA傾き%": dict(k="トレンド"),
+    "close vs VWMA%": dict(k="オシレーター"), "VWMA傾き%": dict(k="トレンド"),
+    "close vs WMA%": dict(k="オシレーター"), "WMA傾き%": dict(k="トレンド"),
+    "close vs ZLMA%": dict(k="オシレーター"), "ZLMA傾き%": dict(k="トレンド"),
     "ADXR": dict(k="トレンド"), "DI+": dict(k="トレンド"), "DI-": dict(k="トレンド"), "DX": dict(k="トレンド"),
     "AMAT_LR": dict(k="トレンド"),
-    "AROONU": dict(k="トレンド"), "AROOND": dict(k="トレンド"), "AROONOSC": dict(k="トレンド"),
-    "CHOP": dict(k="ボラ", note="もみ合いの度合い＝値動きの大きさの計測"),
+    "AROONU": dict(k="強さ"), "AROOND": dict(k="強さ"), "AROONOSC": dict(k="トレンド"),
+    "CHOP": dict(k="強さ", note="もみ合いの度合い＝トレンドが出ているかの計測（向きを持たない・係の調べの役割は強さ＝R-1）"),
     # ★2026-09-05（M2-C-4）＝MMI は CHOP・ER と同じ「もみ合いの度合い」を測る（向きを持たない）
-    "MMI": dict(k="ボラ", note="値動きがランダムに近いかの割合（向きを持たない）＝CHOP・ER と同じ物差し"),
+    "MMI": dict(k="強さ", note="値動きがランダムに近いかの割合（向きを持たない）＝CHOP・ER と同じ物差し"),
     "close vs CKSPl%": dict(k="構造・位置"), "close vs CKSPs%": dict(k="構造・位置"),
     "DPO%": dict(k="オシレーター"),
     "close vs PMAX%": dict(k="構造・位置"), "close vs PSAR%": dict(k="構造・位置"),
-    "PSAR加速": dict(k="トレンド"), "PSAR反転": dict(k="構造・位置"),
+    "PSAR加速": dict(k="トレンド"), "PSAR反転": dict(k="トレンド"),
     "QSTICK%": dict(k="ローソク", note="終値と始値の差の平均＝バスの中の押し切り方"),
     "close vs SAREXT%": dict(k="構造・位置"),
-    "TTM_TREND": dict(k="トレンド"), "VHF": dict(k="ボラ"), "VTXP": dict(k="トレンド"), "VTXM": dict(k="トレンド"),
+    "TTM_TREND": dict(k="トレンド"), "VHF": dict(k="強さ"), "VTXP": dict(k="トレンド"), "VTXM": dict(k="トレンド"),
     # 業界の指標（pandas-ta 由来・フロー 段6-1 の4回目＝volume）＝全部 出来高の系統
     "ADOSC比": dict(k="出来高"), "AOBV_LR": dict(k="出来高"),
     "EFI比": dict(k="出来高"), "EOM比": dict(k="出来高"),
@@ -5406,11 +5432,9 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "kurtosis": dict(k="ボラ", note="同上（裾の厚み）"),
     "MAD比": dict(k="ボラ"), "stdev%": dict(k="ボラ"),
     # 業界の指標（pandas-ta 由来・フロー 段6-1 の6回目＝volatility）
-    "close vs ABER_ZG%": dict(k="構造・位置", note="中心線との距離＝位置の計測（close vs SMA% と同じ作り）"),
-    "ABER位置": dict(k="構造・位置", note="帯の中の位置＝BB%b と同じ作り。★ただし BB%b は行き過ぎの計測が"
-                                          "主用途でオシレーターに置いてある。こちらは中心線が値段の平均でなく"
-                                          "HLC3 の平均で、帯の幅が ATR＝位置の計測が主用途"),
-    "close vs ACCBL%": dict(k="構造・位置", note="帯との距離＝位置の計測（Keltner 上下と同じ作り）"),
+    "close vs ABER_ZG%": dict(k="オシレーター", note="中心線との離れ（移動平均との離れと同じ作り＝R-1 の D7イでオシレーター）"),
+    "ABER位置": dict(k="オシレーター", note="帯（中心線 ± ATR）の中の位置＝BB%b と同じ作り（R-1 の D7イでオシレーター）"),
+    "close vs ACCBL%": dict(k="構造・位置", note="帯との距離＝位置の計測（帯の外への抜けを見る・R-1 の D6 で構造・位置のまま。Keltner はオシレーター）"),
     "close vs ACCBU%": dict(k="構造・位置", note="同上"),
     "close vs CE_L%": dict(k="構造・位置", note="直近高値から ATR ぶん下げた線との距離＝位置の計測"),
     "close vs CE_S%": dict(k="構造・位置", note="同上（直近安値の側）"),
@@ -5446,27 +5470,27 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "HA実体%": dict(k="ローソク", note="平均足の実体＝ならしたローソクの向きと厚み"),
     "HA上ヒゲ比": dict(k="ローソク", note="平均足の上ヒゲの割合"),
     "HA下ヒゲ比": dict(k="ローソク", note="平均足の下ヒゲの割合"),
-    "close vs MEDIAN%": dict(k="構造・位置"), "MEDIAN傾き%": dict(k="トレンド"),
+    "close vs MEDIAN%": dict(k="オシレーター"), "MEDIAN傾き%": dict(k="トレンド"),
     "LRangle": dict(k="トレンド"),
-    "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
-    "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
-    "close vs MCGD%": dict(k="構造・位置"), "MCGD傾き%": dict(k="トレンド"),
-    "close vs MIDPOINT%": dict(k="構造・位置"), "MIDPOINT傾き%": dict(k="トレンド"),
-    "close vs MIDPRICE%": dict(k="構造・位置"), "MIDPRICE傾き%": dict(k="トレンド"),
-    "close vs MMAR%": dict(k="構造・位置"), "MMAR傾き%": dict(k="トレンド"),
-    "close vs PWMA%": dict(k="構造・位置"), "PWMA傾き%": dict(k="トレンド"),
-    "close vs RAINBOW%": dict(k="構造・位置"), "RAINBOW傾き%": dict(k="トレンド"),
-    "close vs RMA%": dict(k="構造・位置"), "RMA傾き%": dict(k="トレンド"),
-    "close vs ALMA%": dict(k="構造・位置"), "ALMA傾き%": dict(k="トレンド"),
-    "close vs DEMA%": dict(k="構造・位置"), "DEMA傾き%": dict(k="トレンド"),
-    "close vs FWMA%": dict(k="構造・位置"), "FWMA傾き%": dict(k="トレンド"),
-    "close vs HILO%": dict(k="構造・位置"),
-    "close vs HMA%": dict(k="構造・位置"), "HMA傾き%": dict(k="トレンド"),
-    "close vs HT_TRENDLINE%": dict(k="構造・位置"),
-    "close vs HWMA%": dict(k="構造・位置"),
-    "close vs JMA%": dict(k="構造・位置"),
-    "close vs KAMA%": dict(k="構造・位置"), "KAMA傾き%": dict(k="トレンド"),
-    "close vs LINREG%": dict(k="構造・位置"), "LINREG傾き%": dict(k="トレンド"),
+    "close vs LRb%": dict(k="オシレーター"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
+    "close vs MAMA%": dict(k="オシレーター"), "close vs FAMA%": dict(k="オシレーター"),
+    "close vs MCGD%": dict(k="オシレーター"), "MCGD傾き%": dict(k="トレンド"),
+    "close vs MIDPOINT%": dict(k="オシレーター"), "MIDPOINT傾き%": dict(k="トレンド"),
+    "close vs MIDPRICE%": dict(k="オシレーター"), "MIDPRICE傾き%": dict(k="トレンド"),
+    "close vs MMAR%": dict(k="オシレーター"), "MMAR傾き%": dict(k="トレンド"),
+    "close vs PWMA%": dict(k="オシレーター"), "PWMA傾き%": dict(k="トレンド"),
+    "close vs RAINBOW%": dict(k="オシレーター"), "RAINBOW傾き%": dict(k="トレンド"),
+    "close vs RMA%": dict(k="オシレーター"), "RMA傾き%": dict(k="トレンド"),
+    "close vs ALMA%": dict(k="オシレーター"), "ALMA傾き%": dict(k="トレンド"),
+    "close vs DEMA%": dict(k="オシレーター"), "DEMA傾き%": dict(k="トレンド"),
+    "close vs FWMA%": dict(k="オシレーター"), "FWMA傾き%": dict(k="トレンド"),
+    "close vs HILO%": dict(k="オシレーター"),
+    "close vs HMA%": dict(k="オシレーター"), "HMA傾き%": dict(k="トレンド"),
+    "close vs HT_TRENDLINE%": dict(k="オシレーター"),
+    "close vs HWMA%": dict(k="オシレーター"),
+    "close vs JMA%": dict(k="オシレーター"),
+    "close vs KAMA%": dict(k="オシレーター"), "KAMA傾き%": dict(k="トレンド"),
+    "close vs LINREG%": dict(k="オシレーター"), "LINREG傾き%": dict(k="トレンド"),
     "VWMACD線%": dict(k="トレンド", note="出来高で重みづけた MACD"),
     "VWMACDシグナル%": dict(k="トレンド"), "VWMACDヒスト%": dict(k="トレンド"),
     # ボラ
@@ -5481,11 +5505,11 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "下ヒゲ比": dict(k="ローソク"),
     # 構造・位置
     "swing高値距離": dict(k="構造・位置"), "swing安値距離": dict(k="構造・位置"),
-    "高値からの経過バー": dict(k="構造・位置"), "安値からの経過バー": dict(k="構造・位置"),
+    "高値からの経過バー": dict(k="強さ"), "安値からの経過バー": dict(k="強さ"),
     "形スコア": dict(k="構造・位置", note="反転サインでもあるが W 窓の形＝構造の計測が主用途"),
     "W字": dict(k="構造・位置", note="同上（ダブルボトム＝構造パターン）"),
-    "close vs EMA": dict(k="構造・位置"), "close vs SMA": dict(k="構造・位置"),
-    "close vs VWAP": dict(k="構造・位置"), "Keltner上": dict(k="構造・位置"), "Keltner下": dict(k="構造・位置"),
+    "close vs EMA": dict(k="オシレーター"), "close vs SMA": dict(k="オシレーター"),
+    "close vs VWAP": dict(k="構造・位置"), "Keltner上": dict(k="オシレーター"), "Keltner下": dict(k="オシレーター"),
     "n本高値": dict(k="構造・位置"), "n本安値": dict(k="構造・位置"),
     "pivotPP": dict(k="構造・位置"), "pivotR1": dict(k="構造・位置"), "pivotS1": dict(k="構造・位置"),
     "前期間pivotPP": dict(k="構造・位置"), "前期間pivotR1": dict(k="構造・位置"), "前期間pivotS1": dict(k="構造・位置"),
@@ -5512,10 +5536,10 @@ FAMILY_LINEAGE: dict[str, dict] = {
     # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（系統は元の種類と同じ）
     "realized_vol_rv": dict(k="ボラ"), "SQZ_ON_Carter": dict(k="ボラ"), "THERMO原作%": dict(k="ボラ"), "THERMO_EMA%": dict(k="ボラ"),
     "StochRSI素%K": dict(k="オシレーター"), "DPO教科書%": dict(k="オシレーター"),
-    "TRIX_EMAシグナル": dict(k="トレンド"), "TRIX_EMAヒスト": dict(k="トレンド"),
-    "close vs SSF平均%": dict(k="構造・位置"), "close vs TRIMA_TA%": dict(k="構造・位置"), "close vs VIDYA_CMO%": dict(k="構造・位置"),
-    "close vs HT_TRENDLINE_HL%": dict(k="構造・位置"), "close vs MAMA_HL%": dict(k="構造・位置"), "close vs FAMA_HL%": dict(k="構造・位置"),
-    "ABER原作位置": dict(k="構造・位置", note="ABER位置 と同じ（帯の中の位置）"),
+    "TRIX_EMAシグナル": dict(k="勢い"), "TRIX_EMAヒスト": dict(k="勢い"),
+    "close vs SSF平均%": dict(k="オシレーター"), "close vs TRIMA_TA%": dict(k="オシレーター"), "close vs VIDYA_CMO%": dict(k="オシレーター"),
+    "close vs HT_TRENDLINE_HL%": dict(k="オシレーター"), "close vs MAMA_HL%": dict(k="オシレーター"), "close vs FAMA_HL%": dict(k="オシレーター"),
+    "ABER原作位置": dict(k="オシレーター", note="ABER位置 と同じ（帯の中の位置）"),
     # ★2026-09-05（M2-C-4）に足した。S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
     # 山と谷（2026-08-21・M2-2-6）＝高値と安値の並びそのもの＝構造・位置
@@ -5528,13 +5552,22 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "taker_ls": dict(k="需給"), "L-S比": dict(k="需給"), "CVD": dict(k="需給"),
     "時刻": dict(k="時間帯"), "曜日": dict(k="時間帯"),
 }
-LINEAGE_KINDS = ("トレンド", "オシレーター", "ボラ", "出来高", "ローソク", "構造・位置", "需給", "時間帯")
+# ★2026-10-22（工事 m2c15-roles-r1-20261021・F-1・まこさん D1「ア」＝系統に「強さ」「勢い」を足す）＝教科書の役割の区分
+#   （extract_threshold_role.py の ROLE＝強さ・向き・行き過ぎ・勢い・値動きの幅・出来高・位置）のうち、写し先の系統が無かった2つ。
+LINEAGE_KINDS = ("トレンド", "強さ", "勢い", "オシレーター", "ボラ", "出来高", "ローソク", "構造・位置", "需給", "時間帯")
 
 # 系統 → その系統の指標が「答える問い」（2026-08-09 新設・マイルストーン①のフロー 段4 が使う）。
 # ★新しい事実は作っていない。既に在る文書の記述を、系統ごとに1行へ言い換えただけ＝出典を1件ずつ付ける。
 LINEAGE_QUESTION: dict[str, tuple[str, str]] = {
     "トレンド": ("いま どちらへ動いているか",
               "technical KB §3.1 の表「Trend (トレンド系)｜方向確認」"),
+    # ★2026-10-22（工事 m2c15-roles-r1-20261021・F-1）＝出どころの原文（R-1 の調べ・照らし一致）から書いた
+    "強さ": ("トレンドが出ているか（向きは問わない）",
+            "StockCharts の ADX のページ「it measures the strength of the trend (regardless of direction) over time.」"
+            "（.claude/state/indicator_review/gemini_r1/cc_ans04.json の ADX）"),
+    "勢い": ("値動きの勢い（モメンタム）がどれくらいか",
+            "TradingView のヘルプの Awesome Oscillator「The Awesome Oscillator is an indicator used to measure market momentum.」"
+            "（.claude/state/indicator_review/gemini_r1/cc_ans04.json の AO%）"),
     "オシレーター": ("行き過ぎているか（買われすぎ・売られすぎ）",
                 "technical KB §3.1 の表「Momentum / Oscillator (オシレーター系)｜買われすぎ/売られすぎ」"),
     "ボラ": ("どれくらい大きく動いているか",

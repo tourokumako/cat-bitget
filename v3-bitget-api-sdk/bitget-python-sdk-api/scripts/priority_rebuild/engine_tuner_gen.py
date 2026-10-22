@@ -1263,7 +1263,7 @@ def _lineage_of(m: dict) -> str:
     if "time" in m:
         return "時間帯"
     if "demand" in m:
-        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は8つの系統の1つ
+        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は系統の1つ（2026-10-22 の R-1 で系統は10になった）
         #   （indicator_reference_diag.LINEAGE_KINDS）。直す前は枝が無く、需給の材料を渡すと
         #   FAMILY_LINEAGE を引きに行って落ちた（＝需給は1度も引かれていなかった証拠でもある）。
         return "需給"
