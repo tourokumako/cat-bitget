@@ -1,0 +1,46 @@
+# session_worklog_20261022.md — 203回目〜
+
+## §1 203回目＝始め・ToDo の70番（R-1 の案の前の調べ直し）
+
+- 必読9本と R-1 の読む物を Read で開いた。ToDo＝sessions/ce2e709c…/session_todo.md（77番＝この回の締め）。70番の宣言 → まこさん「OK」。
+- ★止められた2回（宣言の hook）＝ToDo のファイルが無いまま Bash を打った／状態の欄に「★いまここ（説明）」と書いた。lessons.md に書いた。
+- 案の材料を集める途中で分かった事＝「使う」の指標のうち、終値と線の離れを測る指標で、64種に入っていない物が26種在る（jq で数えた）。うち VWAP の3種（close vs VWAP・VWAP典型・当日VWAP）は係の調べで位置・向き（逐語✅）。残り23種（移動平均との離れ21・加速バンドとの離れ2）は離れの役割を誰も調べていない。MMI の注記「CHOP・ER と同じ物差し」（indicator_reference_diag.py:5388）が R-1 の後に食い違う。→ まこさんに伺った。
+- まこさんの指示（逐語）＝「前回の検索でヌケモレがあったということなら、今回も以下の方法で調べてみて」（StockCharts の一覧から住所 → curl で取り出し → 逐語をプログラムで照らす・取れない物だけ Chrome）。
+- 調べ方＝StockCharts の technical-indicators・technical-overlays の一覧（93件の住所）から12ページを curl（全部 200）・加速バンドは前の調べの住所5本を curl（全部 200）・MMI の開発者のページは curl（30秒で切れる）も Chrome（開けない＝新しいタブのまま）も取れず、web.archive.org の 2024-11-02 の写しを curl で取った。
+- 結果＝gemini_r1/cc_ans05.json（24種・逐語53件）→ verify_quotes_w.py＝一致53。r1_gemini_check.py＝24種とも「怪しい」（④区分の語が無い＝行き過ぎの語の決まりは overbought・oversold だけで、Distance From MA の原文は extreme values／③順位4だけ＝加速バンド2種と MMI）。
+- 分かった事（原文）
+  - 移動平均との離れ21種＝共通の原文は Distance From MA の "look for extreme values on either side of the zero line"（行き過ぎ）と "Our formula above is not specific about the type of moving average."。線ごとのページは、SMA・EMA＝"Moving averages can be used to identify trend direction or define potential support and resistance levels."（向き・位置）／HMA＝"A buy signal materializes when price moves above the shorter-term 20-day Hull MA."（向き）。ほかの18種は StockCharts にページが無い（DEMA・TEMA のページは2本の線の交差だけ）。
+  - ★D2 の26種の中の KAMA のページ＝"An uptrend is present when trading above the longer-term KAMA(10,5,30)."（終値が線の上か下か＝向き）・LR intercept のページ＝"when prices are overextended to the upside and downside"（行き過ぎ）。＝離れの値の符号は向き、大きさは行き過ぎ、と読める原文が両方在る（D2 は決まっている＝蒸し返さず、事実として伝える）。
+  - 加速バンド2種＝TC2000（Headley の説明）"as breakout indicators outside these bands"（向き）・"define likely support and resistance levels at the lower and upper Acceleration Bands"（位置）／LuxAlgo "were designed to be traded in the breakout direction"（行き過ぎと読むボリンジャーと対比）。＝行き過ぎではない。今の構造・位置は出どころに在る。
+  - MMI＝開発者 "It is a purely statistical algorithm and not based on volatility, trends, or cycles of the price curve."・"falling MMI is a indicator of an upcoming trend."（トレンドの局面かどうか＝強さ）。＝ボラではない。
+- ★まこさん決定（逐語）＝「OK」（D6＝移動平均との離れの21種はオシレーター・加速バンドとの離れの2種は変えない・MMI は強さ）。逐語のファイル＝verbatim/m2c15-roles-r1-20261021/ の req_research_more_20261022・okd_d6_20261022・ok_d6_20261022（gen_verbatim.py --write）。
+- r1_role_map_build.py に D6 を足した（cc_ans05 の24種・数と重なりを確かめて止まる形）。前の出力は r1_role_map_64_20261021.json・.md に控え（cp -n）。作り直し＝変える76（オシレーター49・勢い16・強さ7・ボラ3・トレンド1）・変えない12。前の64種の札と状態は1つも変わらない（jq で照らした）。
+- 材料の検査2（roles_check2_probe.py・写しの中でだけ札を差し替え）＝新しくオシレーターになる49種・落ちた列 0（07:59:15〜08:00:57）。
+- やることの表の数を直した（控え＝indicator_review/やることの表_r1_before_d6_20261022.md）＝出どころの行に D6・F-2 を76種・§1・減らす違い・2-1 の2行目（23 行＝強さ7・勢い16）・目標の②⑥・3-2 の1件目。
+- 案の材料（札を読む所）＝engine_tuner_gen.py（_lineage_of:1260・候補 :1464・合図のオシレーターの閾値の向き DC2 :1687・:1826・出口の材料 :1903）・engine_tuner_exec.py（G3 :1779〜1810・法則の系統の数え :1395・R2 :1506）・gen_signal_families.py（lineage_of :141・role_lineage :229〜265）・gen_composition_rules.py:101・gen_materials.py（:1255・:2364・:2396）・observe_diag.py（:6265 検査2・:8376 番人・:6314 印字）・.claude/tools/gen_regime_kb.py:1081・gen_stage0_match.py:95・exit_families_rules.json の REVERSE_IND・BREAKOUT の lineage_any。§2.2 の段の候補（m2_stage_candidates.json）＝段1（location）に close vs EMA%・SMA%・Keltner、段3 に経過バー＝R-1 で場所から外れる／十分さに入る（U-1 で照らす）。
+- 道具＝indicator_review/roles_draft_build.py（写しに当てて確かめる・本物の主なファイルの sha256 を前後で照らす）・roles_proposal_build.py（案を組む）・_roles_template.txt（手書きの文）。★名前を r1_ にしなかった（r1_draft_build.py は 2026-10-04 の別の工事）。実装の指示 43件（iref 22・observe_diag 4・engine_tuner_gen 1・gen_signal_families 4・exit_families_rules 4・build_role_threshold_table 7・roles_r1_check 新しいファイル 1）＋壊すプログラム6本（b197〜b202）。
+- 写しの確かめ 1回目（08:13〜08:20・❌0）＝★G-1 の試しで、写しの中で gen_signal_families.py・gen_exit_families.py の --approve を CC が打った（道具が「この操作はまこさんが行う」と出した・本物は sha256 で変わっていない）。記録＝roles_check_run1_20261022.json。→ 道具から --approve を外した。
+- 2回目（08:20〜08:26）＝型の表を作り直した後の自己テスト2本が「再承認が要る」で止まり ❌2（前からの作り＝想定どおり）→ 判定を「再承認が要る、で止まれば想定どおり」に直した。記録＝roles_check_run2_20261022.json。
+- 3回目（08:26:43〜08:32:55・❌0）＝R-1 の確かめ R1〜R4 rc 0・軽い口 --selftest-lineage rc 0・役割の一覧の作り直し＝食い違い 0・疑い 0（確かめられた 147）・A12 と同じ自己テスト（exec rc 0・observe_diag --selftest rc 0 213.5秒・gen_materials rc 1 許す落ち T6・gen extra-gate rc 0）・壊し方6本とも決めた文で落ちた・本物が変わった 0 本。部品の使える役割＝構造・位置→オシレーター 71 部品が location を外れ trigger・sufficiency に入る・トレンド→強さ 3 部品が sufficiency に入る ほか。
+- 案の試し（roles_proposal_build.py）で止まった3つ＝①数字の出どころ9件（NUM_SRC に書いた）②やることの表の 2-1 の「読み方」に数字（gen_acceptance.py:2081＝数字はコマンドの出力にだけ）→ 3行を数字なしの文に直した（向きを見る所の文＝まこさん OK 済みの文を直した）③【7-5】が群1 の20件と同じ数でない → 20件にした。
+- ★止まっている所＝工事のフォルダの逐語 okd_read_plan_20261021（202回目の読むもの宣言の CC の文）に現在地の4行（【いまの工程】【ToDo】【止まっているもの】【次】）が在り、設計書を作る道具（gen_acceptance.py:368 の KEY_RE）が案の見出しとして読んで止める。前の工事（m2c15-band-s1-20261020）のフォルダには ok_read_plan だけで okd_read_plan が無い。この2本を除いた写しでは設計書が組めた（2198 行）。→ まこさんに伺う。
+- ★まこさん決定（逐語）＝「ア」（読むもの宣言の逐語2本を下のフォルダへ移す）。逐語＝okd_/ok_readplan_place_20261022。ok_/okd_read_plan_20261021 の4本（txt・meta）を verbatim/m2c15-roles-r1-20261021/読むもの宣言/ へ mv -n（sha256 を前後で照らして同じ）。やることの表の出どころの行に移した旨を書いた。
+- 案の試し（trial_design.py --fast）で直した物＝①purpose_check.md を R-1 の物に書いた（目的と条件の行に「変えない」の語を書くと目的ゲートが止める＝「そのまま」に直した）②直す相手を Read で開いた（exit_families_rules.json・build_role_threshold_table.py・engine_tuner_gen.py・observe_diag.py・signal_families.json／.md／_approved.txt・手本 b196）③【4-3】に roles_r1_check.usable を足した（A13）④【7-4】に Q5 の1〜5 を足した ⑤must_use が空で止まった＝selftest_lineage が FAMILY_LINEAGE・LINEAGE_KINDS・LINEAGE_QUESTION を読む形にした（LINEAGE_QUESTION を getattr でなく直に読む＝実装の指示が変わった＝写しの確かめを4回目 08:58〜09:04・❌0）⑥やることの表＝題と §1 の「64種」・F-3（元の規則のファイル）・F-4（②③④を設計どおりに）・目標②の空欄・目標⑥と 3-2 の「28種」を直した ⑦【4-7】に76種の名前・【7-1】の期待値分解を文に・【4-9】の非該当の理由。
+- 試しの設計書（2284行）を Read で全部 読み、見直し表（reviews/_trial_acceptance.review.md・101項目）を埋めた＝gen_review.py --check 止める理由0・根拠116。速い試し＝A群0・古い語0。
+- 案の試し（A12 込み・09:16:28〜09:23:13・6分45秒）＝A群1件＝A12（承認の後に起きることを仮に通す）で、完成の条件 #3〜#6 の roles_r1_check.py の R4 が「r1_role_map.json に封が無い」で落ちた（役割の一覧の道具は封が無いと止まる作り＝設計どおり。封は実装の前の G-0 の手順で、本物にはまだ掛けていない）。仮当ての後、本物は元に戻っている（indicator_reference_diag.py に k="強さ" 0件・roles_r1_check.py 無し）。→ 封を今 本物に掛けてよいかを まこさんに伺う。
+- ★まこさん決定（逐語）＝「ア」（封を今 本物に掛ける）。逐語＝ok_seal_20261022（工事のフォルダ）・okd_seal_20261022（【目的の照合】の行を持つので 記録だけ/ に置いた）。seal_outputs.py --seal で r1_role_map.json と gemini_r1/ の6本に封（封の記録の控え＝scratchpad/seal_before_20261022.json）・--verify 27件 違う0。案の【4-4】【4-10】を封の済んだ文に直した。見直し表の2行を直した（check 止める理由0・根拠118）。
+- 案の試し（A12 込み・09:30:15〜09:37:02）＝A群0・古い語0・法則51件。仮当ての後、本物は元に戻っている（k="強さ" 0件・roles_r1_check.py 無し・git diff 無し）。→ 案を返信に出す。
+- 案（roles_proposal.md・814行）を返信に1文字も変えずに出した → まこさん「OK」。逐語＝okd_roles_proposal_20261022（案の部分は下書きと同じ＝diff で確かめた）・ok_roles_proposal_20261022。
+- gen_acceptance.py --work m2c15-roles-r1-20261021 --write＝acceptance.md 2284行（試しの設計書と cmp で同じ）。見直し表＝試しの表（101項目・同じ中身を読んで埋めた物）を acceptance.review.md として写した（doc= と題とパスだけ替えた）→ gen_review.py --check 止める理由0・根拠118。前の工事の表は reviews/acceptance.review_m2c15-band-s1-20261020.md に移した。
+- 依頼書を作る道具は、手書きの文書の目的の出どころに、工事のフォルダの req_ の行を求める → まこさん 2026-10-04 の発言（「…役割の改ざんも修正いただけます？」・session eca395d0）を req_roles_purpose_20261004 として書いた。設計書を作り直した＝変わらない。
+- 手書きの文書（監査依頼の手書き（設計書の監査）.md）を書いた（目的・経緯4行・必読21本・入れない2本・Q8〜Q10）。保存の検査で必読に engine_tuner_milestones.md と observe_diag.py が要ると止まり、足した。
+- まこさんの問い「札が食い違う疑いの64種の役割の正しさは監査に問うてる？」→ 答え＝一部（Q8 は変える76種だけ＝64種のうち変える54種。変えない10種は問うていない）。まこさん「念のため64種ぜんぶ確認してもらうほうがいいのでは？」→ Q8 を64種の全部と D6 で変える22種（86種）にし、変えない10種を5つ目の群にした。D6 で変えない2種（ACCBL・ACCBU）は入れていない（範囲が64種）。→ まこさん「OK」（手書きの文書）。
+- gen_audit_docs.py request-design design＝元データ cp85_work/cp85_src.gen.md は書いた。依頼書は「pre_audit_check.py --verify が通っていない」で書かなかった → pre_audit_check.py --run を裏で走らせ中（見込み約10〜11分＝記録 20261021 の「約10分」「11分23秒」）。
+- pre_audit_check.py --run＝11分21秒・NG は設計書と実物の照合の1本だけ（実装の前なので必ず 1・設計書の監査では見ない）・check_indicator_sources は既知。--verify --before-impl＝監査に出せる。追跡ファイルの変化なし（settings.json・decisions.md は前から）。
+- request-design design＝依頼書 CP85（648行・問い5・自己申告7・必読27）。check-request＝食い違い0件。全部 読んだ。
+- 見直しで見つけた抜け＝Q8 の札の出どころの原文のうち、係の調べ14種（research/out_w1〜4.json）・Gemini 4種（ans03_b.json）・D2 26種（chrome_ans02_a1.json）が必読に無い。手書きの文書の「入れないもの」に「係の調べの原文は役割の一覧で読めます」と書いたが、役割の一覧（indicator_roles_thresholds.md:78 ほか）に在るのは区分だけで逐語は無い＝誤り。手書きの文書を直した（必読に6本・入れないものから research/ を消した・Q8 に出どころの欄ごとの置き場を書いた）。保存の検査は通る。まこさんの OK を取り直す。
+- Stop の止め2つ＝①next_step の形（3-1 の日付・印の時刻）→ next_step_src.json の 3-1 を今日の状態に書き替え・書いた日を 2026-10-22 → tidy --write・--verify 通る・--selftest 27/27 ②依頼書の見直し表が無いままお願いを出そうとした → 直した手書きの文書から依頼書を作り直した（655行・必読33件・check-request 食い違い0件）→ 見直し表（reviews/2026-10-22_m2c15_roles_r1_20261021_design_cp85_audit_request.review.md・32項目）を埋めた＝gen_review.py --check 止める理由0・根拠34。next_move＝段5 ✅済。
+- まこさん「OK.別セッションで監査に出す。このセッションは終了する。」→ ToDo の70番の状態を「まだ（監査 CP85 を まこさんが別セッションで起動・次の回は結果の確認から）」にし、77番（締め）を ★いまここ にした。
+- 締めの途中で止められた所＝宣言の前に、作業場の .py を書いて走らせる Bash と heredoc の Bash を打ち、宣言の hook に止められた。さらに教訓の Edit・元データの Edit・tidy の Bash を同じ返信に並べて打ち、同じ種類の失敗の hook と同じ相手の失敗の hook に重ねて止められた。session の lessons.md に2件・diagnosis.md に2つの相手の見立てを書き、1つずつ打ち直して通した。
+- next_step_src.json の「2 次のセッションでやること」を204回目向けに書き替えた（①作る物＝R-1 の設計書の監査の結果から・②最初にやる事＝結果の確認 → 直す範囲 → 設計書の作り直し → 承認 → 実装 → G-1・G-2 → 実装の監査）。tidy --todo-from（8行）→ --write → --verify 通る・--selftest 27/27。
+- 教訓（lessons_active.md）とコミットは、宣言（ToDo の77番）と まこさんの返事の後。
