@@ -309,6 +309,33 @@ def _json_block(lines: list, where: str, bad: list):
         return None
 
 
+def _impl_from_file(line: str, bad: list):
+    """案の【4-20】の「ファイル: <根からのパス> sha256=<64桁>」から、実装の指示（json の配列）を読む。ハッシュ値が違えば bad に足す。
+    ★2026-10-22（まこさん「イ」）＝実装の指示が大きいとき、案の返信に貼らずにファイルで OK をいただく形。"""
+    m = re.match(r"^ファイル:\s*(\S+)\s+sha256=([0-9a-f]{64})\b", line.strip())
+    if not m:
+        bad.append("【4-20】＝「ファイル: <根からのパス> sha256=<64桁>」の形でない")
+        return None
+    p = Path(m.group(1))
+    if not p.is_absolute() or not p.is_file():
+        bad.append(f"【4-20】＝実装の指示のファイルが無い（根からのパスで書く）: {m.group(1)}")
+        return None
+    raw = p.read_bytes()
+    got = hashlib.sha256(raw).hexdigest()
+    if got != m.group(2):
+        bad.append(f"【4-20】＝実装の指示のファイルのハッシュ値が、OK された案と違う（案 {m.group(2)[:12]}… ／ 今 {got[:12]}…）＝ファイルが変わっている")
+        return None
+    try:
+        items = json.loads(raw.decode("utf-8"))
+    except Exception as e:                                  # noqa: BLE001
+        bad.append(f"【4-20】＝実装の指示のファイルの json が読めない（{e}）")
+        return None
+    if not isinstance(items, list):
+        bad.append("【4-20】＝実装の指示のファイルは json の配列でない")
+        return None
+    return items
+
+
 def src_from_work(work: str) -> dict:
     """工事のフォルダ（やることの表.md と逐語のファイル）から、設計書を組む中身（page が読む形）を作る。"""
     d_dir = gv.work_dir(work)
@@ -402,7 +429,7 @@ def src_from_work(work: str) -> dict:
     for k, body in auto.items():
         if new_form and k in (HEAD_FIVE, HEAD_NUMS, HEAD_UNVERIFIED):
             _read_new_head(d, k, body, bad)
-        elif re.fullmatch(r"4-(?:[0-9]|1[0-8])", k):
+        elif re.fullmatch(r"4-(?:[0-9]|1[0-8]|23)", k):          # ★2026-10-22＝4-23 置き場の地図（まこさん指示「設計書のテンプレに項目としても追加」）
             first = _text(body)
             d["設計の中身"][k] = ({"非該当": first.split("＝", 1)[-1].strip()} if first.startswith("非該当")
                                   else [ln for ln in body if ln.strip()])
@@ -411,6 +438,11 @@ def src_from_work(work: str) -> dict:
             if first.startswith("非該当"):
                 d["実装の指示"] = []
                 d["設計の中身"]["4-20"] = {"非該当": first.split("＝", 1)[-1].strip()}   # section4 が理由を求める
+            elif first.startswith("ファイル:"):
+                # ★2026-10-22（まこさん「イ」・工事 m2c15-single-source-20261022）＝実装の指示が大きい（300件超）とき、案の【4-20】には
+                #   「ファイル: <根からのパス> sha256=<64桁>」の1行だけを書き、中身はそのファイル（json の配列）から読む。
+                #   OK は、そのハッシュ値のファイルに対する OK＝ファイルが1文字でも変わると（ハッシュ値が違うと）設計書を組まない（fail-closed）。
+                d["実装の指示"] = _impl_from_file(first, bad) or []
             else:
                 d["実装の指示"] = _json_block(body, "【4-20】", bad) or []
         elif k in AUTO_TEXT:
@@ -503,7 +535,7 @@ NUM_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])")
 # 要件定義の番号 → その要件を書く、設計書の節。要件が増えて、ここに行が無ければ止まる。
 INDEX_MAP = {"1": ("3-0 目標の③",), "2": ("3-0 目標の①",),
              "3-1": ("4-7",), "3-2": ("4-7",), "3-3": ("4-7",), "3-4": ("4-7",), "3-5": ("4-7",), "3-6": ("4-4", "4-6"),
-             "4": ("4-7",), "5": ("4-8", "4-9"), "6": ("4-3", "4-13"), "7": ("4-10",),
+             "4": ("4-7",), "5": ("4-8", "4-9"), "6": ("4-3", "4-13"), "7": ("4-10", "4-23"),
              "8-1": ("7-3b",), "8-2": ("7-3b", "4-21"), "9": ("3-0 目標の①", "3-0 目標の⑤", "3-0 目標の⑥"), "10": ("2-0",)}
 
 
@@ -2540,7 +2572,7 @@ def _sample_work(base: Path, new: bool = False) -> str:
             "【4-5 異常系】", "- 見本の異常系。",
             "【4-12 出る結果の姿】", "見本の結果。",
             "【4-13 影響範囲】", "- 見本の影響。"]
-    for k in ("4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-14", "4-15", "4-16", "4-17", "4-18"):
+    for k in ("4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-14", "4-15", "4-16", "4-17", "4-18", "4-23"):   # ★2026-10-22＝4-23（置き場の地図）
         prop += [f"【{k}】", na]
     # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝TARGET が在る設計書は 4-20 を非該当にできないので、見本も1件持つ
     #   （見本の置き場の中の、まだ無い新しいファイル＝本物のファイルに頼らない）
