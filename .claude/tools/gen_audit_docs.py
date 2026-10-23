@@ -1325,6 +1325,36 @@ def _impl_evidence(iter_: str) -> dict:
     except Exception:                                        # noqa: BLE001
         rows = []
     applied = [r for r in rows if isinstance(r, dict) and r.get("report") == f"design:{iter_}"]
+    # ★2026-10-23（206回目・まこさん「修正していいよ」）＝直す前は、承認の控えを入れた commit を、確かめずに「実装の後」とした。
+    #   工事 m2c15-single-source-20261022 では、控えだけを先に commit したので、その commit に実装が入っておらず、
+    #   依頼書（CP87）が、実装の前の版を「実装の後」と書いた。
+    #   守り1＝控えの commit で変わっていない当てたファイルに、作業中の変更か git に無いファイルが在れば、実装の後＝作業中の変更と書く。
+    #   守り2＝実装の前と後で差が無い当てたファイルが1本でも在れば、依頼書を作らずに止まる（fail-closed）。
+    def _git(*a):
+        return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True)
+    files = sorted({(os.path.join("v3-bitget-api-sdk", "bitget-python-sdk-api", s[4:]) if s.startswith("SDK/") else s)
+                    for s in (_sdk(r.get("file")) for r in applied if r.get("file"))})
+    # git が無視するファイル（.gitignore に当たる新しいファイル）も「git に無いファイル」として数える（--ignored）
+    dirty = {f for f in files if _git("status", "--porcelain", "--ignored", "--", f).stdout.strip()}
+    work_tree = bool(post) and any(f in dirty for f in files if _git("diff", "--quiet", pre, post, "--", f).returncode == 0)
+    if files:
+        if post and not work_tree:
+            same = [f for f in files if _git("diff", "--quiet", pre, post, "--", f).returncode == 0]
+        else:
+            base = pre or _git("rev-parse", "--short", "HEAD").stdout.strip() or "HEAD"
+            same = [f for f in files if f not in dirty and _git("diff", "--quiet", base, "--", f).returncode == 0]
+        if same:
+            raise SystemExit("実装の前と後で差が無い当てたファイルが在る（fail-closed）。実装の後の版を決められないので、依頼書を作らない:\n  "
+                             + "\n  ".join(same))
+    if work_tree:
+        untracked = [f for f in files if _git("ls-files", "--error-unmatch", "--", f).returncode != 0]
+        pre_desc = f"commit {pre}（承認の控えを入れた commit {post} の1つ前）"
+        post_desc = (f"作業中の変更（まだ commit していない。承認の控えだけを commit {post} に先に入れたので、その commit には実装が入っていない。"
+                     f"`git diff {pre} -- <パス>` で見られる。git に無い新しいファイル（{len(untracked)}本）は、本物のファイルをそのまま読む。"
+                     "★この後に commit したときは `git log --oneline -- <パス>` でその commit を探し、"
+                     f"`git diff {pre} <その commit> -- <パス>` で見る）")
+        return {"archives": archives, "pre": pre, "post": "", "applied": applied,
+                "pre_desc": pre_desc, "post_desc": post_desc}
     # ★2026-10-01（142回目・cp57）＝直す前は、承認の控えをまだ commit していないと pre・post が空になり、
     #   依頼書に「commit （まだ commit していない）」とだけ出た＝監査は、どの版と比べればよいか決められなかった。
     #   いま＝控えが commit されていなければ、実装の前＝HEAD の版、実装の後＝作業中の変更（git diff HEAD）と書く。

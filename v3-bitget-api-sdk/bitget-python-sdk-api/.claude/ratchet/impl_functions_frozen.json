@@ -3,26 +3,45 @@
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "scripts/priority_rebuild/indicator_reference_diag.py": [
-  "<モジュール直下>"
+  "<モジュール直下>",
+  "_lineage_from_table",
+  "_r"
  ],
  "scripts/priority_rebuild/observe_diag.py": [
   "<モジュール直下>",
-  "_insp_lineage_range",
-  "selftest",
-  "selftest_lineage"
+  "_insp_direction_known",
+  "_known_ng_judge",
+  "_switch_on",
+  "build_parser",
+  "check_materials",
+  "selftest_known_ng"
  ],
- "scripts/priority_rebuild/engine_tuner_gen.py": [
-  "_lineage_of"
- ],
- "scripts/priority_rebuild/gen_signal_families.py": [
-  "build_table"
- ],
- ".claude/state/indicator_review/build_role_threshold_table.py": [
+ ".claude/tools/pre_audit_check.py": [
   "<モジュール直下>",
-  "num_in_quote"
+  "_v9_sources",
+  "known_materials_problem",
+  "main",
+  "materials_fingerprint",
+  "materials_row",
+  "run",
+  "verify_problems"
  ],
- ".claude/state/indicator_review/roles_r1_check.py": [
+ "scripts/priority_rebuild/gen_indicator_table.py": [
   "<モジュール直下>",
-  "usable"
+  "compute",
+  "counts",
+  "load_families",
+  "main",
+  "problems",
+  "read_block",
+  "render",
+  "role_of",
+  "scan_rows"
+ ],
+ ".claude/hooks/check_indicator_table_on_save.py": [
+  "<モジュール直下>",
+  "main",
+  "text_after",
+  "verify_text"
  ]
 }

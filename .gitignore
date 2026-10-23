@@ -78,5 +78,11 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 !.claude/state/indicator_review/
 .claude/state/indicator_review/*
 !.claude/state/indicator_review/make_fix_plan.py
+# ★2026-10-23 追加（206回目・まこさん「よい」）＝工事 m2c15-single-source-20261022 が頼る3本。消えると git から戻せないため。
+#   check_materials_known_ng.json＝監査に出す前のチェックが sha256 で照らす一覧／ss_impl.json＝設計書の 4-20（実装の指示）の元／
+#   r1_role_map.json＝R-1 の札の正本（gen_indicator_table.py が写す）。pre_audit_materials_pass.json は走らせるたびに変わる記録なので戻さない。
+!.claude/state/indicator_review/check_materials_known_ng.json
+!.claude/state/indicator_review/ss_impl.json
+!.claude/state/indicator_review/r1_role_map.json
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state

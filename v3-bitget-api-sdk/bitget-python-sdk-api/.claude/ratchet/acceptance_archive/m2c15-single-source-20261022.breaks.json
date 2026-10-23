@@ -1,0 +1,61 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-single-source-20261022",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b204_table_role_handwritten.sh",
+   "code": 1,
+   "note": "❌ --verify: INDICATOR_TABLE（indicator_reference_diag.py）",
+   "expect": 1,
+   "means": "表の役割を手で書き替えると、資料から作り直した物と違い、表の照らしが落ちる",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b205_row_arg_back.sh",
+   "code": 1,
+   "note": "❌ --verify: INDICATOR_TABLE（indicator_reference_diag.py）",
+   "expect": 1,
+   "means": "定義表の行に方向と性質の引数を戻すと、表の照らしが落ちる",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b206_lineage_handwritten.sh",
+   "code": 1,
+   "note": "❌ --verify: INDICATOR_TABLE（indicator_reference_diag.py）",
+   "expect": 1,
+   "means": "札の表を手書きの辞書に戻すと、表の照らしが落ちる",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b207_table_check_dropped.sh",
+   "code": 1,
+   "note": "❌ --selftest-p8: 番人 P8（監査の前に走らせる一覧 5 本が CHECKS に在る）",
+   "expect": 1,
+   "means": "監査に出す前のチェックから表の照らしを外すと、番人 P8 が落ちる",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b208_known_ng_new_ignored.sh",
+   "code": 1,
+   "note": "❌ --selftest-known-ng: 材料の検査の --known-ng の照らし（3つ）",
+   "expect": 1,
+   "means": "材料の検査の --known-ng の照らしが一覧に無い ❌ を数えないと、--selftest-known-ng が落ちる",
+   "match": true
+  },
+  {
+   "no": "6",
+   "script": "b209_table_prop_handwritten.sh",
+   "code": 1,
+   "note": "❌ --verify: INDICATOR_TABLE（indicator_reference_diag.py）",
+   "expect": 1,
+   "means": "表の性質の欄を手で書き替えると、目印の hash と違い、表の照らしが落ちる",
+   "match": true
+  }
+ ]
+}

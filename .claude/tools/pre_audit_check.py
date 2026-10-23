@@ -56,6 +56,10 @@ ORDER = [
 
 # ── 最後に走らせる検査（全部 rc=0 でなければ監査に出せない）────────────────────
 INDICATOR_SOURCES_CHECK = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/check_indicator_sources.py"
+# ★2026-10-22（工事 m2c15-single-source-20261022・F-4）＝材料の検査（検査1〜3・約35分）。分かっている ❌ の一覧と照らす。
+KNOWN_MATERIALS_PATH = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/check_materials_known_ng.json"
+MATERIALS_CSV = "data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"
+MATERIALS_CHECK = f"observe_diag.py --check-materials {MATERIALS_CSV} --known-ng {KNOWN_MATERIALS_PATH}"
 CHECKS = [
     "gen_materials.py --verify",
     "gen_materials.py --selftest",
@@ -84,12 +88,21 @@ CHECKS = [
     #   直す前は、この一覧に無かったので、設定か型の表を変えた後に組み立ての表を作り直していなくても、
     #   チェックは全部 rc=0 になった（162回目に gen_composition_rules.py --write を飛ばした件が、監査 CP70 まで出なかった）。
     "gen_composition_rules.py --verify",
+    # ★2026-10-22（工事 m2c15-single-source-20261022・F-4・まこさん「これ以上ミスで私に迷惑をかけないようにしろ」）
+    #   ＝①指標1種につき1行の表（INDICATOR_TABLE）が、定義表の行・札の表・資料と合うか ②材料の検査（検査1〜3・約35分）。
+    #   直す前は、材料の検査を走らせる所がどこにも無く、2026-08-06 から10-22 まで一度も走らなかった（❌ 119件が見つからなかった）。
+    #   ②は、分かっている ❌ の一覧（まこさんの OK つき・M-1 で消していく）に無い ❌ が出たときだけ止まる。
+    #   ★監査 CP86 の修正8（B）＝②は、検査の読むファイルの指紋が前回 rc 0 で通ったときと同じなら走らせない（materials_row）。
+    "gen_indicator_table.py --verify",
+    MATERIALS_CHECK,
 ]
 # ★この3行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・2026-10-07 の照らし・254番）
 #   ★2026-10-18＝141番の gen_audit_request.py --selftest は、古い道具の退役で外した（上の CHECKS の注記）。
 _MUST_IN_CHECKS = ("engine_tuner_gen.py --selftest-extra-gate",
                    INDICATOR_SOURCES_CHECK,
-                   "gen_composition_rules.py --verify")
+                   "gen_composition_rules.py --verify",
+                   "gen_indicator_table.py --verify",                     # ★2026-10-22（工事 m2c15-single-source-20261022）
+                   MATERIALS_CHECK)
 
 # ── 指紋の対象（このどれかが変わったら、チェックはやり直し）────────────────────
 FINGERPRINT_FILES = [
@@ -103,6 +116,9 @@ FINGERPRINT_FILES = [
     "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_roles_thresholds.json",
     "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json",
     "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/r3_draft_build.py",
+    # ★2026-10-23（工事 m2c15-single-source-20261022・監査 CP86 の修正7）＝表を書く・照らす道具と、分かっている ❌ の一覧も指紋に入れる
+    "gen_indicator_table.py",
+    KNOWN_MATERIALS_PATH,
 ]
 
 
@@ -154,6 +170,80 @@ KNOWN_NG = {
         ok="まこさん「OK」（2026-10-21・B-1＋S-1 の実装の監査の依頼書を作るため・記録 20261021）"),
 }
 
+# ★2026-10-23（工事 m2c15-single-source-20261022・監査 CP86 の修正7・まこさん「CCのおすすめでよい」＝A）
+#   ＝分かっている ❌ の一覧（材料の検査の --known-ng が読む json）は承認の門の外（.claude/state）に在る。
+#   CC が一覧に行を足すと、新しい ❌ を黙って通せる。だから一覧の sha256 と、一覧へのまこさんの OK の逐語のファイル名をここに置き、
+#   --run と --verify で照らす（違えば止める）。M-1 で行を消すたびに、まこさんの OK と sha256 の取り直しが要る。
+KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad5900750db932a4acb2bf924ddcf01c4625", ok="まこさん「OK」（2026-10-23・案 okd_proposal_20261023 の【4-20】の ss_impl.json の sha256 への OK＝この一覧の中身を含む・逐語 .claude/state/verbatim/m2c15-single-source-20261022/ok_proposal_20261023.txt）")
+
+
+def known_materials_problem() -> str | None:
+    """分かっている ❌ の一覧の sha256 が、まこさんの OK の時と同じか。違えば問題の説明を返す。"""
+    p = pathlib.Path(KNOWN_MATERIALS["path"])
+    if not p.exists():
+        return f"分かっている ❌ の一覧が無い（{p}）"
+    got = hashlib.sha256(p.read_bytes()).hexdigest()
+    if got != KNOWN_MATERIALS["sha"]:
+        return (f"分かっている ❌ の一覧の sha256 が、まこさんの OK の時と違う（OK の時 {KNOWN_MATERIALS['sha'][:16]}… ／ 今 {got[:16]}…）"
+                "＝一覧を変えたら、まこさんの OK を取り直して KNOWN_MATERIALS の sha を書き替える")
+    return None
+
+
+# ★2026-10-23（同じ工事・監査 CP86 の修正8・まこさん「CCのおすすめでよい」＝B）＝材料の検査（約35分）は、
+#   検査が読むファイルの指紋が、前回 rc 0 で通ったときと同じなら走らせない（同じ入力なら結果も同じ）。
+#   指紋は広めに取る（1本でも漏れると、走らせるべきときに省く）＝scripts/priority_rebuild の直下の .py と .json の全部・
+#   recipes の .json・5分足の CSV・分かっている ❌ の一覧・印（indicator_switch.json）・検査3 が見る V9 の3本と、その最後のコミット。
+#   限界＝ライブラリ（pandas_ta ほか）の版が変わっても指紋は変わらない。前回の記録（MATERIALS_PASS）は承認の門の外＝手で書けば通る。
+MATERIALS_PASS = ROOT / ".claude/state/pre_audit_materials_pass.json"
+
+
+def _v9_sources() -> list:
+    """検査3 が見る V9 の3本（observe_diag.py の _V9_SOURCES を構文木で読む＝ここに書き写さない）。"""
+    import ast
+    for node in ast.parse((PR / "observe_diag.py").read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "_V9_SOURCES":
+            return list(ast.literal_eval(node.value))
+    return []
+
+
+def materials_fingerprint() -> str:
+    """材料の検査が読むファイルの指紋（中身と、V9 の3本の最後のコミット）。"""
+    h = hashlib.sha256()
+    v9 = _v9_sources()
+    files = (sorted(PR.glob("*.py")) + sorted(PR.glob("*.json")) + sorted((PR / "recipes").glob("*.json"))
+             + [SDK / MATERIALS_CSV, pathlib.Path(KNOWN_MATERIALS_PATH), SDK / ".claude/ratchet/indicator_switch.json"]
+             + [SDK / rel for rel in v9])
+    for p in files:
+        h.update(str(p).encode())
+        h.update(p.read_bytes() if p.exists() else b"<no file>")
+    for rel in v9:
+        last = subprocess.run(["git", "-C", str(SDK), "log", "-1", "--format=%H", "--", rel], capture_output=True, text=True).stdout.strip()
+        h.update(f"{rel}:{last}".encode())
+    return h.hexdigest()
+
+
+def materials_row(cmd: str) -> tuple[str, dict]:
+    """材料の検査の行＝①一覧の sha256 を照らす ②指紋が前回 rc 0 と同じなら走らせない ③走らせて rc 0 なら指紋を記録する。戻り＝(画面の1行, 記録の行)。"""
+    t0 = time.time()
+    kp = known_materials_problem()
+    if kp:
+        return f"  NG {cmd}  rc=1＝{kp}", dict(cmd=cmd, kind="check", rc=1, note=kp)
+    fp = materials_fingerprint()
+    try:
+        last = json.loads(MATERIALS_PASS.read_text(encoding="utf-8")) if MATERIALS_PASS.exists() else {}
+    except ValueError:
+        last = {}
+    if last.get("fingerprint") == fp and last.get("rc") == 0:
+        note = f"走らせていない＝検査の読むファイルの指紋が、前回 rc 0 で通ったとき（{last.get('at')}）と同じ"
+        return f"  省略 {cmd}  rc=0（{note}）", dict(cmd=cmd, kind="check", rc=0, skipped=True, note=note)
+    rc = _run(cmd)
+    if rc == 0:
+        MATERIALS_PASS.write_text(json.dumps(dict(_これは何か="材料の検査が rc 0 で通ったときの、検査の読むファイルの指紋（pre_audit_check.py が書く）",
+                                                  fingerprint=fp, at=time.strftime("%Y-%m-%d %H:%M:%S"), rc=0),
+                                             ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return (f"  {'OK' if rc == 0 else 'NG'} {cmd}  rc={rc}（{time.time() - t0:.1f}秒）",
+            dict(cmd=cmd, kind="check", rc=rc, note="監査に出す前の検査（材料の検査）"))
+
 
 def _run_out(cmd: str) -> tuple:
     """_run と同じ走らせ方で、(終了コード, 標準出力＋標準エラー) を返す（分かっている食い違いの照らし用）。"""
@@ -192,6 +282,11 @@ def run(design: str | None = None) -> int:
     print("-" * 70)
     for cmd in checks_for(design):
         t0 = time.time()
+        if cmd == MATERIALS_CHECK:                       # ★2026-10-23（監査 CP86 の修正7・8）＝一覧の sha256 を照らし、指紋が同じなら省く
+            line, row = materials_row(cmd)
+            print(line)
+            rows.append(row)
+            continue
         if cmd in KNOWN_NG:
             rc, out = _run_out(cmd)
             if known_ng(cmd, rc, out):
@@ -261,6 +356,9 @@ def verify_problems(design: str | None = None, before_impl: bool = False) -> lis
     except Exception as e:                                    # noqa: BLE001
         return [f"チェックの1枚が読めない: {str(e)[:60]}"]
     ng = []
+    kp = known_materials_problem()                       # ★2026-10-23（監査 CP86 の修正7）＝分かっている ❌ の一覧が、まこさんの OK の時と同じか
+    if kp:
+        ng.append(kp)
     if d.get("fingerprint") != code_fingerprint():
         ng.append("チェックの後にコードが変わっている（指紋の不一致）＝ --run をもう一度 打つ")
     # ★2026-10-20＝チェックが照らした設計書が、問われた設計書と同じか（記録に名前が無い前の記録は acceptance.md と読む）
@@ -608,6 +706,14 @@ def main() -> int:
             rc, out = _run_out(cmd)
             print(f"{cmd}  rc={rc}  sha={hashlib.sha256(out.encode('utf-8')).hexdigest()}  一覧と同じ={known_ng(cmd, rc, out)}")
         return 0
+    if "--selftest-p8" in a:
+        # ★2026-10-22（工事 m2c15-single-source-20261022・F-4）＝番人 P8 だけを走らせる口（完成の条件と壊すプログラム b207 が測る）。
+        #   --selftest の全部は、前から落ちている P7-1（worklog 20261020）に引きずられて rc 1 になるため。P8 の判定は selftest() と同じ文。
+        _ng8 = [f"P8: 監査の前に走らせる一覧から外されている: {_m}" for _m in _MUST_IN_CHECKS if _m not in CHECKS]
+        for _x in _ng8:
+            print("  NG " + _x)
+        print(("❌" if _ng8 else "✅") + f" --selftest-p8: 番人 P8（監査の前に走らせる一覧 {len(_MUST_IN_CHECKS)} 本が CHECKS に在る）")
+        return 1 if _ng8 else 0
     if "--selftest" in a:
         return selftest()
     print(__doc__)

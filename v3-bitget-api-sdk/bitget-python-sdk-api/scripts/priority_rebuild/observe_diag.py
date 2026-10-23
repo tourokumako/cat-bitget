@@ -6068,14 +6068,28 @@ def _insp_v9_columns(bars: pd.DataFrame, cfg: dict, catalog: list | None = None)
 _HOUKOU2PROP = {"順張り値": "trend", "状態量": "none", "ボラ量": "vol", "反転サイン": "reversal"}
 _V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_v9.json")
 _V9_RECORD_SINCE = "2026-07-28 00:00"   # v9_logic.md の記録時点 2026-07-27 の翌日0時＝これ以降の変更を探す
-_OSC_BOUNDS = {"RSI": (0.0, 100.0), "Stoch%K": (0.0, 100.0), "Stoch%D": (0.0, 100.0),
-               "MFI": (0.0, 100.0), "RCI": (-100.0, 100.0),
-               # サイクル系（2026-08-11・段6-g）＝作りの上で −1〜1 に収まる（サインの値・正規化した波）
-               "EBSW": (-1.0, 1.0), "HT_SINE": (-1.0, 1.0), "HT_LEADSINE": (-1.0, 1.0),
-               "MSW_SINE": (-1.0, 1.0), "MSW_LEAD": (-1.0, 1.0)}
+# ★2026-10-22（工事 m2c15-single-source-20261022・F-4）＝オシレーターの値域は、定義表の INDICATOR_TABLE の「値域」の欄から読む
+#   （直す前は、ここに10種を手で書いていた＝0〜100 で動く種類を足しても一覧に入れず、材料の検査2 が31列を落とした）。
+_OSC_BOUNDS = {f: tuple(t["値域"]["有界"]) for f, t in iref.INDICATOR_TABLE.items() if t["値域"]["有界"]}
 # BB%b は作りの上で上限・下限が無い（価格がバンドの外に出れば 0〜1 を超える＝StockCharts %B Indicator・
 # 2026-08-06 WebResearch で確認）。端の値でなく分位と中央値で「オシレーターの形か」を見る。
-_OSC_PCTL = {"BB%b": (0.0, 1.0)}
+_OSC_PCTL = {f: tuple(t["値域"]["分位"]) for f, t in iref.INDICATOR_TABLE.items() if t["値域"]["分位"]}
+# ★2026-10-23（工事 m2c15-single-source-20261022・監査 CP86 の修正12・まこさん「CCのおすすめでよい」＝A）
+#   ＝検査1 の「役割の欄が空」を ❌ に数えるのは、印（indicator_switch.json）が「使う」の種類だけ。
+#   オフの種類は、どのロジックからも使えない（やらないことの Y-5＝オフは対応しない）＝⚠️ として出し、❌ にも分かっている ❌ の一覧にも入れない。
+_SWITCH_PATH = pathlib.Path(__file__).resolve().parents[2] / ".claude/ratchet/indicator_switch.json"
+_SWITCH_ON_CACHE: list = []
+
+
+def _switch_on() -> set | None:
+    """印が「使う」の種類の集まり。印のファイルが読めなければ None（＝全部を「使う」として ❌ に数える＝緩めない側に倒す）。"""
+    if not _SWITCH_ON_CACHE:
+        import json
+        try:
+            _SWITCH_ON_CACHE.append(set(json.load(open(_SWITCH_PATH, encoding="utf-8"))["on"]))
+        except (OSError, ValueError, KeyError):
+            _SWITCH_ON_CACHE.append(None)
+    return _SWITCH_ON_CACHE[0]
 
 
 def _mat_series(n: int = 2600):
@@ -6165,6 +6179,16 @@ def _insp_direction_known(cfg: dict, bars: pd.DataFrame | None = None, fake: dic
             continue
         houkou, prop = ref["houkou"], ref["prop"]
         faked = bool(fake and fake.get("name") == name)
+        # ★2026-10-22（工事 m2c15-single-source-20261022・F-4）＝役割の欄（INDICATOR_TABLE）が空の種類は ❌（資料に出どころが無い＝M-1 で調べ直す）
+        #   ★監査 CP86 の修正12（A）＝❌ にするのは、印が「使う」の種類だけ。印が「使わない」の種類は ⚠️（Y-5・❌ にも一覧にも入れない）
+        if not faked and not ((iref.INDICATOR_TABLE.get(ref["family"]) or {}).get("役割") or {}).get("区分"):
+            _on = _switch_on()
+            if _on is None or ref["family"] in _on:
+                ng.append(f"{name}: 役割の欄が空（資料に出どころが無い・M-1 で調べ直す）")
+                marks["❌"] += 1
+            else:
+                print(f"     ⚠️ {name} [{ref['family']}] 役割の欄が空（印が「使わない」の種類＝❌ に数えない・Y-5）")
+                marks["⚠️"] += 1
         if faked:
             houkou, prop = fake["houkou"], fake.get("prop", prop)
         cat = houkou.split("＝")[0]
@@ -6360,9 +6384,13 @@ def _insp_v9_freshness(expected: dict | None = None) -> list[str]:
     return ng
 
 
-def check_materials(bars_csv: str, config_path: str | None = None) -> None:
+def check_materials(bars_csv: str, config_path: str | None = None, known_ng: str | None = None) -> None:
     """材料検査（CP4 ②）＝3本を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。
-    ❌ が出ても直さない＝報告してまこさんの判断を仰ぐ（acceptance 2026-08-06 の決まり）。"""
+    ❌ が出ても直さない＝報告してまこさんの判断を仰ぐ（acceptance 2026-08-06 の決まり）。
+    ★2026-10-22（工事 m2c15-single-source-20261022・F-4）＝known_ng（分かっている ❌ の一覧の json・まこさんの OK つき）を渡すと、
+      ❌ の全部がその一覧に在り、一覧の行が全部 出たときだけ終了コード0（一覧に無い ❌ が1つでも在るか、
+      一覧に在る ❌ が1つでも出なければ1・❌ が0件でも照らす＝監査 CP86 の修正18）。監査に出す前のチェックが使う。
+      一覧は M-1 で1件ずつ消していく（直したら消す）。"""
     cfg = load_config(config_path)
     bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
     print("#" * 100)
@@ -6388,8 +6416,63 @@ def check_materials(bars_csv: str, config_path: str | None = None) -> None:
         else:
             print(f"  ✅ {key}: 異常なし")
     print("=" * 100)
+    if known_ng:                                     # ★監査 CP86 の修正18＝❌ が0件でも一覧と照らす（一覧に在る ❌ が全部 直ったら、行を消す合図）
+        new, gone = _known_ng_judge(fails, known_ng)
+        if new or gone:
+            raise SystemExit(1)
+        print("  ✅ ❌ は全部 分かっている一覧のとおり（M-1 の相手）")
+        return
     if bad:
         raise SystemExit(1)
+
+
+def _known_ng_judge(fails: dict, known_ng: str) -> tuple[list, list]:
+    """材料の検査の ❌（fails）を、分かっている ❌ の一覧（json の lines）と照らす。戻り＝(一覧に無い ❌, 一覧に在るが出なかった行)。
+    ★2026-10-23（監査 CP86 の修正1）＝observe_diag.py には最上段の import json が無い（関数の中だけ）＝ここで import する
+      （直す前の下書きは、ここで json を使い、❌ が1件でも在ると NameError で落ちた）。
+    データを読まない＝--selftest-known-ng が、見本の ❌ でこの関数だけを試す。"""
+    import json
+    known = set(json.load(open(known_ng, encoding="utf-8"))["lines"])
+    got = {f"{key}: {x}" for key in fails for x in (fails[key] or [])}
+    new = sorted(got - known)
+    gone = sorted(known - got)
+    print(f"  分かっている ❌（{known_ng}・{len(known)} 件）と照らした＝一覧に無い ❌ {len(new)} 件 ／ 一覧に在るが出なかった {len(gone)} 件")
+    for x in new[:40]:
+        print(f"    新しい ❌: {x}")
+    for x in gone[:40]:
+        print(f"    直った（一覧から消す）: {x}")
+    return new, gone
+
+
+def selftest_known_ng() -> None:
+    """材料の検査の --known-ng の照らしだけを、データを読まずに試す（監査 CP86 の修正2・24・壊すプログラム b208 が使う）。
+    見本の ❌ 2件に対して ①一覧に無い ❌ が出た → rc 1 ②一覧に在る ❌ が出なかった → rc 1 ③全部が一覧に在る → rc 0 の3つを照らす。
+    口＝`--selftest-known-ng`（数秒）。中で終了コードを返す（0＝全部 通る／1＝❌ あり）。"""
+    import contextlib
+    import io
+    import json
+    import os
+    fails = {"材料検査1": ["見本A: 見本の ❌"], "材料検査2": ["見本B: 見本の ❌"], "材料検査3": []}
+    have = ["材料検査1: 見本A: 見本の ❌", "材料検査2: 見本B: 見本の ❌"]
+    cases = [("①一覧に無い ❌ が出た", have[:1], 1, "一覧に無い ❌ を止めない"),
+             ("②一覧に在る ❌ が出なかった", have + ["材料検査1: 見本C: 直った行"], 1, "直った行（一覧に在るが出なかった ❌）を止めない"),
+             ("③全部が一覧に在る", have, 0, "全部が一覧に在るのに止める")]
+    ng = []
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "known_ng.json")
+        for label, lines, want, msg in cases:
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"lines": lines}, f, ensure_ascii=False)
+            with contextlib.redirect_stdout(io.StringIO()):
+                new, gone = _known_ng_judge(fails, p)
+            rc = 1 if (new or gone) else 0
+            print(f"  {'✅' if rc == want else '❌'} {label}: rc {rc}（期待 {want}）")
+            if rc != want:
+                ng.append(f"known-ng の照らし: {msg}")
+    for x in ng:
+        print("  NG " + x)
+    print(("❌" if ng else "✅") + " --selftest-known-ng: 材料の検査の --known-ng の照らし（3つ）")
+    sys.exit(1 if ng else 0)
 
 
 def check_materials_meta(bars_csv: str, config_path: str | None = None) -> None:
@@ -8889,6 +8972,8 @@ def build_parser():
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
     ap.add_argument("--title", default="", help="出力の見出しに付ける題名")
     ap.add_argument("--selftest", action="store_true", help="自己検査だけ走らせる（この道具が守ると言っていることを機械で確認）")
+    ap.add_argument("--known-ng", default=None,
+                    help="分かっている ❌ の一覧（json）。--check-materials で、❌ の全部がこの一覧に在り、一覧の行が全部 出れば終了コード0（工事 m2c15-single-source-20261022）")
     ap.add_argument("--check-materials", action="store_true",
                     help="材料検査（CP4 ②・read-only）＝方向の欄・系統分類・v9_logic.md の鮮度を機械検査＝5分足CSVのパスを1つ渡す")
     ap.add_argument("--check-materials-meta", action="store_true",
@@ -8917,6 +9002,8 @@ if __name__ == "__main__":
         selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-band" in sys.argv:                 # ★T-B1〜T-B4 だけを（工事 m2c15-band-s1-20261020・壊すプログラム b189〜b196 が使う）
         selftest_band()                               # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-known-ng" in sys.argv:             # ★材料の検査の --known-ng の照らしだけを（工事 m2c15-single-source-20261022・監査 CP86 の修正2・壊すプログラム b208 が使う）
+        selftest_known_ng()                           # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）・データを読まない
     if "--selftest-lineage" in sys.argv:              # ★T-L1・T-L2 だけを（工事 m2c15-roles-r1-20261021・壊すプログラムが使う）
         selftest_lineage()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:
@@ -8933,7 +9020,7 @@ if __name__ == "__main__":
                 check_materials_meta(path, a.config)
             else:
                 with _Tee(_out_path("materials", pathlib.Path(path).stem)):
-                    check_materials(path, a.config)
+                    check_materials(path, a.config, a.known_ng)
         elif a.rank_regime and a.add_demand:           # ★差分の口（設計書 demand-in-ranking-20260907）＝既存の分岐の手前に置く
             path = a.trades_csv or a.bars_csv
             if not path:
