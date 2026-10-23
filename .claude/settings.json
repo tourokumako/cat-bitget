@@ -4,7 +4,12 @@
       "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/692c401d-1974-4818-9ae1-ee532b7887b5/session_todo.md\")",
       "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/a7a92842-c8c6-4822-be03-63d3bac78b77/session_todo.md\")",
       "ClaudeInChromeDomain(www.google.com)",
-      "ClaudeInChromeDomain(financial-hacker.com)"
+      "ClaudeInChromeDomain(financial-hacker.com)",
+      "ClaudeInChromeDomain(en.wikipedia.org)",
+      "ClaudeInChromeDomain(chartschool.stockcharts.com)",
+      "ClaudeInChromeDomain(www.luxalgo.com)",
+      "ClaudeInChromeDomain(www.howthemarketworks.com)",
+      "ClaudeInChromeDomain(www.thepatternsite.com)"
     ]
   },
   "hooks": {
@@ -145,8 +150,7 @@
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/check_source_on_save.sh"
-          }
-          ,
+          },
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/check_indicator_table_on_save.sh"
@@ -282,6 +286,16 @@
         ]
       }
     ],
-    "UserPromptSubmit": []
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_single_source_goal.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }

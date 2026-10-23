@@ -355,6 +355,12 @@
    "役割の欄": " 撤回済み（cc_role §1.4.6.3・複数CC Workflow 常時必須を廃止） "
   },
   {
+   "名前の欄": " **show_single_source_goal** ",
+   "タイミングの欄": null,
+   "matcher の欄": null,
+   "役割の欄": " まこさんが発言を送るたびに、指標の工事（m2c15-single-source）のゴールの逐語（verbatim/m2c15-single-source-fix-20261023/req_goal_20261023.txt）を CC の文脈に出す（表示専用＝止めない）。背景＝CC が作業の途中でゴールと照らさず、まこさんに同じ1文を何十回も貼らせた（2026-10-23・まこさん「あと何回私が目的を打てば覚える？？？」） "
+  },
+  {
    "名前の欄": " **show_decisions** ",
    "タイミングの欄": null,
    "matcher の欄": null,

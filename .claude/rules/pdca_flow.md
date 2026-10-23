@@ -18,8 +18,8 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-<!-- HOOK_LIST_START hash=a4c338d3b567a413 gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
-## 1. hook 一覧（**実測 38本**・登録は settings.json）
+<!-- HOOK_LIST_START hash=e46d9ffbb9f1837e gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
+## 1. hook 一覧（**実測 39本**・登録は settings.json）
 
 > **★2026-09-19 に `show_design_check_after_write`（設計書を作り直した直後に承認の門の検査を出す）と `require_design_check_before_approval`（承認のお願いを出すターンは不足0件でなければ終われない）を足した＝75本**（まこさん指示 2026-09-19「これは何回も確認を走らせないように以下の方法で、回数を1回で直せるように強制してほしい」）。
 > **★2026-09-15 に `enforce_audit_request_gen`（hook 10）と `enforce_audit_report_form`（hook 11）を足した＝69本**（settings.json に登録された `.sh` の名前を重複を除いて数えた実測）。
@@ -91,6 +91,7 @@
 | **enforce_audit_request_gen**（hook 10） | PreToolUse | Write/Edit/MultiEdit/Bash | **【監査の依頼書は道具でしか作れない】（2026-09-15 まこさん指示・逐語「じゃあ、監査の依頼書と結果で項目をそろえて、テンプレ以外では書かないように強制すればいいじゃん。」・本体 `enforce_audit_docs.py` の request）**＝`SDK/.claude/audits/inputs/<名前>_audit_request.md` への Write・Edit・MultiEdit を全部 止め、Bash で「_audit_request.md」を含む断片は読むだけのコマンドと `python3 .claude/tools/gen_audit_docs.py` だけを通す。依頼書は `gen_audit_docs.py request <元データ.md> <依頼書.md>` でテンプレから作る（道具は、いまの監査依頼書ゲートと同じ照らし＝設計書と承認の印・設計書のハッシュ値の行・pre_audit_check --verify を道具の中で掛け、❌ なら inputs に書かない）。**限界**＝コマンドの文字に名前が出ない書き方（変数・別の .py の中）はすり抜ける／道具そのものを書き替えれば照らしを外せる。★2026-10-17（183回目・まこさんの振り分け「過剰」）＝Bash は、引用符とヒアドキュメントの中を見ず、依頼書を書き替える・消す・動かす部分だけを止める（直近30日の止めの49回のうち47回は、依頼書に触れない操作だった）。同じ判定を hook 11 も使う。jq と cmp を読むだけの語に足した。自己テスト 19件 |
 | **enforce_audit_report_form**（hook 11） | PreToolUse | Write/Edit/MultiEdit/Bash | **【監査の結果はテンプレの形でしか書けない】（2026-09-15 同じ指示・本体 `enforce_audit_docs.py` の report）**＝`SDK/.claude/audits/<名前>_audit_report.md` への Edit・MultiEdit と、既に在るファイルへの Write を止める（一度出した結果は書き替えない＝取り下げを書き足す道も無い）。新しい結果の Write は、`gen_audit_docs.py result` の目印が在り、目印の依頼書が inputs の依頼書で、`check_lines`（依頼書と1対1の対応）と `form_errors`（修正の指示の6つの欄・書けないもの・「<監査が書く>」の残り）がどちらも0件のときだけ通す。**★2026-10-01（142回目・まこさん「監査結果を出す前に見直しチェックをさせる強制の内容も怪しいので、再度確認→修正すべきなのでは？」→ 案に「それならばOK」）**＝あわせて、出す前の見直し表（`.claude/tools/gen_review.py`・置き場 `SDK/.claude/audits/cp<N>_work/cp<N>_result.review.md`）が、書く中身のいまの版の全部の見出しを ①意味が通じるか ②実物と合うか（実在する「ファイル名:行番号」）③争点に合うか と判定で埋めているかを照らす（テンプレの即実行に「出す前に見直す」の1手を足した）。Bash は hook 10 と同じ判定。**限界**＝中身の文の正しさは見ない（見直し表も、判断が正しいかは見ない＝項目を飛ばさず、実在する根拠を書いたかまで）／書けないものの語（取り下げ など）を所見の説明で使っても止まる |
 | require_workflow_for_impl | （未登録） | — | 撤回済み（cc_role §1.4.6.3・複数CC Workflow 常時必須を廃止） |
+| **show_single_source_goal** | UserPromptSubmit | — | まこさんが発言を送るたびに、指標の工事（m2c15-single-source）のゴールの逐語（verbatim/m2c15-single-source-fix-20261023/req_goal_20261023.txt）を CC の文脈に出す（表示専用＝止めない）。背景＝CC が作業の途中でゴールと照らさず、まこさんに同じ1文を何十回も貼らせた（2026-10-23・まこさん「あと何回私が目的を打てば覚える？？？」） |
 | **show_decisions** | SessionStart | startup\|resume | セッション開始時に「まこさんが決めたこと」の一覧を作り直して表示する（2026-07-26 まこさん OK・表示専用＝止めない）。背景＝CC が、まこさんが前に決めたことを知らずに判断材料として持ち出した（2026-07-26）。★2026-09-17 に一覧へ足した（役割の文は hook の先頭の説明から書いた） |
 | **enforce_no_false_report**（登録なし） |  | — | **【虚偽報告ゲート・fast-mode 限定】**（2026-07-20 まこさん指示「役に立つアピールのために虚偽報告をするな」）＝文書に金額を書くとき、根拠となる機械の出力を同じ編集の中に貼らせる。背景＝CC が report のどこにも無い数字「+$19」を2ファイルの手計算で作った（2026-07-20）。★2026-09-17 に一覧へ足した |
 | **track_fastmode_data_read**（登録なし） |  | — | fast-mode で、CSV データ（trades_*.csv）と実装（e37_range_scalp.py）を読んだかの印を立てる記録係（2026-07-16 まこさん指示・require_data_read_before_improve と対）。★2026-09-17 に一覧へ足した |
