@@ -1,0 +1,378 @@
+案です（工事 m2c15-single-source-20261022＝指標の情報の置き場を1つにする工事の a（役割・札・方向・性質・検査）。まこさんの指示＝「指標の情報をどこから読み込んで、どこに繋いでとか 全体の設計をし直せ」「とにかく、指標は１つデータから読み込むようにできないの？」「進めて良い」「よい」。a と b に分けること＝「分けてもいいけど」。a の向きを見る所＝「OK」（ok_split_a_20261022））。本物のコードには、まだ1文字も書いていません。
+
+- 実装の指示 306 件＝コードと設定 302 件（うち新しいファイル 4 本＝gen_indicator_table.py・check_indicator_table_on_save.py・check_indicator_table_on_save.sh・check_materials_known_ng.json）・新しい壊すプログラム 4 本。写しの道具（.claude/state/indicator_review/ss_draft_build.py）が、一時のフォルダの写しに全部 当てて確かめた（結果は 4-12）。
+
+【4-0 この仕組みは何か】
+指標1つの役割の情報は、札（系統）・方向の欄・性質の欄・教科書の役割の4つです。いまは、この4つが、定義表（indicator_reference_diag.py）の各行の引数（方向の欄・性質の欄）・別の表 FAMILY_LINEAGE（札）・資料の表 indicator_roles_thresholds.json（教科書の役割）に、別々の言葉で在ります。4か所の間に対応の決まりが無く、CC が別々に手で書きました。材料の検査1 は、方向の欄と性質の欄の対応（observe_diag.py:6068 の _HOUKOU2PROP）を見ますが、2026-08-06 から 10-22 まで一度も走りませんでした。
+この工事は、定義表の中に、指標1種につき1行の表（INDICATOR_TABLE）を置きます。表は、新しい道具 gen_indicator_table.py が書きます（--write）。1行の欄＝役割（教科書の区分と出どころ）・札・方向（区分と読み方）・性質（今の値）・性質（方向から＝検査1 の決まりで決めた値）・値域（検査2 用）・注記。役割は、資料の表と、R-1 の90種の札の正本（封つき r1_role_map.json）から写します。札は、役割の区分から1対1で決めます（区分が2つ以上の種類は、今の札に合う区分）。方向・読み方・性質（今）・値域・注記は、今の定義表の行・札の表・observe_diag の値域の一覧から写します。CC は値を1つも書きません。
+定義表の各行（_r(...) の呼び出し）からは、方向と性質の引数を消します。_r は、表から方向と性質を読みます（表に無い種類は、読み込んだ時点で止まります）。札の表 FAMILY_LINEAGE は、表から作る関数 _lineage_from_table() に置き替えます（読む側の10本は、名前を変えずに読めます）。観察の道具の値域の一覧（_OSC_BOUNDS・_OSC_PCTL）は、表の値域の欄から作ります。材料の検査1 に「役割の欄が空」を ❌ に数える行を足します。監査に出す前のチェック（pre_audit_check.py）に、表の照らし（--verify）と材料の検査（検査1〜3）を足します。定義表を保存する瞬間に --verify を掛ける hook を足します（登録は まこさんの手）。
+完成すると、役割の情報を変えるときに直す所は、資料の表（または r1_role_map.json）の1か所です。そこを直して gen_indicator_table.py --write を走らせると、表の役割・札・性質（方向から）が変わり、札を読む10本と、方向・性質を読む4本（engine_tuner_gen.py・engine_tuner_exec.py・gen_signal_families.py・observe_diag.py・gen_indicator_switch.py）に届きます。手で表を書き替えると、--verify（監査の前・保存の瞬間）が止めます。
+なぜこの形か＝写しに当てて数えた結果、表の種類は 種類 301・役割あり 149・役割なし 152（語の数だけ 33・無い 3・オフ 116）・性質（今）が方向の決まりと違う 50・方向の区分を決まりが読めない 2・別枠 6。直す前と後で、札の表・方向と性質・カタログの列の名前と並び・値域・系統の区分が同じ（札の表・方向・性質・カタログの列の名前と並び・値域（有界）・値域（分位）・系統の区分＝全部 直す前と同じ）。定義表の行の数は 前 301・後 301（REFS の件数＝同じ）。＝値を1つも変えずに、置き場だけを1つにできる。値を変えない理由＝119件の食い違いを1件ずつ判定するのは M-1（Y-1）。この表には「性質（今）」と「性質（方向から）」の2欄が在り、食い違い 52 種が表の中に見える。
+
+【4-1 システムの境界】
+表を書く相手＝gen_indicator_table.py --write（CC が走らせる・資料の表と r1_role_map.json を読む）。表を読む相手（直すと届く先）＝①定義表の _r（方向・性質）と _lineage_from_table（札）②札の表を読む10本＝engine_tuner_gen.py（_lineage_of:1270 ほか）・engine_tuner_exec.py（:1242・:1396・:1480・:1786・:1797）・gen_signal_families.py:145・gen_indicator_switch.py:207・gen_composition_rules.py:101・gen_materials.py:1254・:1269・observe_diag.py:6279・:6763・:7378・:8405・.claude/tools/gen_regime_kb.py:1081・.claude/tools/gen_stage0_match.py:29・.claude/state/indicator_review/build_role_threshold_table.py ③方向の欄と性質の欄を読む4本（grep -l '"houkou"\|\["houkou"\]\|"prop"\]' で数えた）＝gen_indicator_switch.py・gen_signal_families.py・engine_tuner_gen.py・observe_diag.py ④値域の欄＝observe_diag.py の材料の検査2（_insp_lineage_range）。表を照らす相手＝gen_indicator_table.py --verify（監査に出す前のチェック pre_audit_check.py と、保存の瞬間の hook check_indicator_table_on_save.py から呼ぶ）。結果を次に使う相手＝b（軸の欄を足す）・M-1（119件の判定）・U-1（使い方の照らし）。
+
+【4-2 入力と出力】
+入力＝資料の表 .claude/state/indicator_roles_thresholds.json（185種・出どころの役割の文）・封つきの .claude/state/indicator_review/r1_role_map.json（90種・出どころの区分）・今の定義表（_r の行の方向と性質・FAMILY_LINEAGE の札と注記）・observe_diag.py の _OSC_BOUNDS（10種）と _OSC_PCTL（1種）。出力＝定義表の目印（INDICATOR_TABLE_START〜END）の間の表（ハッシュ値つき）。関数とコマンドの取り決め＝gen_indicator_table.py --write（表を書き直す）・--verify [--file <写し>]（①行が方向・性質を引数で受け取っていない ②行の種類と表の種類が同じ ③札の表が表から作られている ④表の中身が資料から作り直した物と同じ ⑤札が在る。1つでも違えば rc 1）・--count（数だけ）。observe_diag.py --check-materials <csv> --known-ng <json>（❌ の全部が一覧に在れば rc 0）。check_indicator_table_on_save.py --check [--as <中身>]（hook の手で確かめる口）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| scripts/priority_rebuild/gen_indicator_table.py の <モジュール直下>（目印・CAT2LIN・HOUKOU2PROP・POS_MAX）・read_block・scan_rows・load_families・role_of・compute・render・problems・counts・main | 表を資料から書く（--write）・表と定義表の行・札の表・資料を照らす（--verify）・数を出す（--count） | 新設 |
+| indicator_reference_diag.py の <モジュール直下>（INDICATOR_TABLE＝目印の間・FAMILY_LINEAGE の代入） | 指標1種につき1行（役割・札・方向・性質・性質（方向から）・値域・注記） | 新設（道具が書く） |
+| indicator_reference_diag.py の _r | 行の登録。方向と性質を表から読む（表に無い種類は SystemExit） | 直す |
+| indicator_reference_diag.py の _lineage_from_table | 札の表を表から作る（別枠の6種＝需給3・レンジ幾何1・時間帯2 は、関数の中に今の札と注記を写す） | 新設 |
+| observe_diag.py の <モジュール直下>（_OSC_BOUNDS・_OSC_PCTL）・_insp_direction_known・check_materials・build_parser（--known-ng の旗） | 値域を表から読む・検査1 に「役割の欄が空」の ❌・--known-ng（分かっている ❌ の一覧と照らす） | 直す |
+| .claude/tools/pre_audit_check.py の <モジュール直下>（CHECKS・_MUST_IN_CHECKS）・main（--selftest-p8） | 監査に出す前に、表の照らしと材料の検査を走らせる（外すと番人 P8 が落ちる）。番人 P8 だけを走らせる口 --selftest-p8（完成の条件と b207 が測る） | 直す |
+| .claude/hooks/check_indicator_table_on_save.py の <モジュール直下>・text_after・verify_text・main と、.sh の入口 | 定義表を Write／Edit する瞬間に、保存した後の中身で --verify を走らせ、落ちれば保存を止める（fail-open＝道具が無い・相手が定義表でない） | 新設（登録は まこさん） |
+| .claude/state/indicator_review/check_materials_known_ng.json | 分かっている ❌ の一覧（428 行＝2026-10-22 の119件＋役割の欄が空の種類の列）。M-1 で消していく | 新設 |
+| .claude/breaks/b182・b199 | 壊す文字を、新しい行の形に合わせる（壊し方と測る物は変えない） | 直す |
+- 指標を使う部品について：この工事は指標の計算と値に触りません（直すファイルの一覧に材料の計算の関数が無い。observe_diag.py の直しは、値域の一覧・検査1 の1行・--known-ng の口だけ）。指標は指標一覧（material）から呼ぶ作りのままです（build_catalog に触らない）。オン・オフの印は、写しで作り直して同じ（印の「使う」＝本物の今 185 ／ 写しで作り直した後 185・使うの集まりが同じ・型の表の lineage_of が同じ）。
+
+【4-4 処理の流れ】
+1. gen_indicator_table.py --write＝今の表（最初は写しの道具が今の定義表から種を作った物）を読み、資料と r1_role_map.json から役割・札・性質（方向から）を作り直し、目印の間に書く（ハッシュ値つき）。
+2. 定義表を読み込む＝INDICATOR_TABLE → _r が各行の方向・性質を表から足す → REFS → _lineage_from_table() → FAMILY_LINEAGE。
+3. 読む側（4-1 の②③④）は、名前を変えずに読む。
+4. 確かめ＝gen_indicator_table.py --verify（①〜⑤）・observe_diag.py --selftest-lineage・--selftest・材料の検査（G-2・--known-ng つき）・監査に出す前のチェック。
+5. G-1＝型の表・出口の型の表・組み立ての表・材料の文書・オン・オフの表・役割の一覧を作り直す（札は変わらないので、jq で同じことを照らす。型の表と出口の型の表は、まこさんに再承認していただく）。
+- 条件のつなぎ方に触るとき：非該当＝型の表の役割ごとの系統・法則の判定・場面の決まりに触らない（写しで、型の表の lineage_of が直す前と同じことを照らした）。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 定義表の行の種類が表に無い | _r が読み込んだ時点で SystemExit（「INDICATOR_TABLE に無い種類」）＝定義表を読む全部のプログラムが止まる |
+| 表を手で書き替えた | --verify ④（資料から作り直した物と違う）で rc 1＝監査に出す前のチェックと、保存の瞬間の hook が止める |
+| 行に方向・性質の引数を戻した | --verify ①で rc 1（壊すプログラム b205） |
+| 札の表を手書きの辞書に戻した | --verify ③で rc 1（b206） |
+| 資料の表を直したのに --write を走らせていない | --verify ④で rc 1 |
+| 監査に出す前のチェックから表の照らしを外した | pre_audit_check.py --selftest-p8（番人 P8 だけを走らせる口・この工事で足す）が落ちる（b207） |
+| 材料の検査で、一覧に無い ❌ が出た・一覧に在る ❌ が出なくなった | --known-ng の照らしで rc 1（新しい ❌ と、直った行を画面に出す） |
+| hook の道具（gen_indicator_table.py）が無い | hook は止めない（標準エラーに1行）＝実装の前に本物に道具が無い間の形 |
+
+【4-6 制約】
+| 種類 | 決まり | 原文 | この設計でどう守るか |
+|---|---|---|---|
+| 法則 | R1・R3 | ［自動］ | 札「構造・位置」を名指しする法則。札は1つも変えない（写しで札の表が直す前と同じ＝札の表・方向・性質・カタログの列の名前と並び・値域（有界）・値域（分位）・系統の区分＝全部 直す前と同じ）。法則の判定（regime_laws.json）は書き替えない（Y-4） |
+| 型の表 | 役割ごとの系統（signal_families.json の lineage_of） | ［自動］ | 写しで作り直して直す前と同じ（4-12）。再承認は G-1 |
+| 場面の決まり | — | ［自動］ | 触らない（直すファイルの一覧に無い） |
+| そのほか | 要件定義の7番（誤りは置き場の1か所を直せば済み、直した物が全部のロジックに届く） | core_requirements_full.md の「7. 教科書と法則の扱い」 | 役割の置き場を定義表の1行にし、札・方向・性質を表から作る |
+| そのほか | 法則に合わせて指標本来の役割を改ざんしない（まこさん 2026-10-21） | memory feedback_no_role_change_to_fit_laws.md | 役割は資料の表と r1_role_map.json から写すだけ。方向・性質の値は変えない（M-1） |
+| そのほか | 文書と表は手で書かず、プログラムが作る（恒久69番） | permanent_rules.md §6 の69番 | 表は gen_indicator_table.py が書き、--verify が手書きを止める |
+| そのほか | H2（未来参照の検査済みの記録）の対象＝indicator_reference_diag.py・observe_diag.py | h2_pass.json の files | 当てた後に G-2 で取り直す |
+- 新しく足す決まり：足しません（表の照らし①〜⑤は、置き場が1つであることを守る検査で、組める条件の形を狭めない）。
+
+【4-7 探索の範囲】
+| 何 | この工事が関わるか | どう扱うか | 探し方のどの段階か | 役割・範囲・代表の値（スキャル／デイトレ）・出どころ・カタログに在るか・オンか |
+|---|---|---|---|---|
+| 指標 | 定義表の全部の種類（301）＝表の行になる。札・方向・性質の値は変えない | 情報の置き場を直す（計算・値・名前は変えない） | 最初の段階・最後の段階とも、使える役割は変わらない（札が同じ） | ［自動］ |
+| 閾値 | 関わらない（直すファイルに閾値の格子・範囲が無い） | 読むだけ | — | ［自動］ |
+| パラメータ | 関わらない（軸の欄は b で足す・Y-2） | 読むだけ | — | ［自動］ |
+| 時間足 | 関わらない（型の表の役割ごとの時間足は変えない） | 読むだけ | — | ［自動］ |
+- 役割に沿って使うこと（要件定義の3番の5）：この工事は使い方を変えない（札が同じ）。表の役割の欄は、資料の表（係の調べ・逐語がページと一致）と r1_role_map.json（R-1 の決定）から写す。役割が決まらない種類（語の数だけ 33・無い 3・オフ 116）は役割の欄が空＝検査1 が ❌ に数える（M-1 の相手）。
+
+【4-8 データ構造】
+INDICATOR_TABLE＝{種類: {"役割": {"区分": [区分…] か None, "出どころ": 文}, "札": 文, "方向": {"区分": 文, "読み方": 文}, "性質": 文, "性質（方向から）": 文 か None, "値域": {"有界": [下, 上] か None, "分位": [下, 上] か None}, "注記": 文}}。Python の定数で書く（ast.literal_eval で読み戻せる）。_r は「区分＝読み方」の形に戻して REFS の houkou に入れる（直す前と同じ文字列＝写しで照らした）。FAMILY_LINEAGE の1件の形（dict(k=札) か dict(k=札, note=注記)）は変えない。
+- 値の持ち方：非該当＝この工事は値・範囲・代表の値に触らない（b）。
+
+【4-9 設定】
+走らせる人が指定できる項目＝observe_diag.py の --known-ng <json>（既定＝無し＝直す前と同じ動き）・gen_indicator_table.py の --file <写し>（既定＝本物の定義表）。設定ファイルの値は足さない。
+- 値の持ち方：非該当＝範囲に触らない。
+
+【新しく入る数字と式の一覧】
+| 番号 | 数字か式 | 出どころ |
+|---|---|---|
+| 1 | 1 | 工事の名前の番号（R-1・M-1）・目印が1組（count(START) != 1）・終了コード 1・「1件ずつ」＝数の値ではない |
+| 2 | 0.0 | RSI ほかの値域（有界 0〜100）＝今の observe_diag.py の _OSC_BOUNDS から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 3 | 100.0 | RSI ほかの値域（有界 0〜100）＝今の observe_diag.py の _OSC_BOUNDS から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 4 | 100 | RCI の行の方向の読み方・注記の文（0〜100）＝今の定義表の行と札の表から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 5 | 1.0 | BB%b の値域（分位 0〜1）＝今の observe_diag.py の _OSC_PCTL から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 6 | 0 | 終了コード 0・目印が見つからないときの判定（find が -1 ＝ < 0）・表の注記の「0〜1」＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 7 | 2026 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない・表の注記の中の日付（2026-08-06）＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 8 | 08 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない |
+| 9 | 06 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない |
+| 10 | 11 | LeeMykland の行の方向の読み方・注記の文＝今の定義表の行と札の表から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 11 | 5 | LeeMykland の行の方向の読み方・注記の文（5分足）＝今の定義表の行と札の表から写した＝今の実物から道具が写した文字（値は1つも変えない＝写しで直す前と同じことを照らした） |
+| 12 | 1726 | ABER原作位置 の役割の出どころの文（r1_role_map.json の出どころ＝observe_diag.py の行番号）＝数の値ではない |
+| 13 | 1729 | ABER原作位置 の役割の出どころの文（r1_role_map.json の出どころ＝observe_diag.py の行番号）＝数の値ではない |
+| 14 | 25 | AROONU の役割の出どころの文（r1_role_map.json の出どころ＝StockCharts の逐語「25-day Aroon」）＝数の値ではない |
+| 15 | 10 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない |
+| 16 | 22 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない |
+| 17 | 20261022 | 説明の文の日付と工事の名前の日付（2026-10-22・m2c15-single-source-20261022・2026-08-06）＝数の値ではない |
+| 18 | 2 | 説明の文の番号（やることの F-2）＝数の値ではない |
+| 19 | 4 | 説明の文の番号（F-4）・_r の位置引数の数 4（pat・family・teigi・ryugi＝新しい _r の定義から数えた＝POS_MAX） |
+| 20 | 8 | 文字コードの名前（utf-8）＝数の値ではない |
+| 21 | 40 | 画面に出す行の上限（一覧に無い ❌ と直った行を最大40行ずつ出す）＝表示の数・売買の値ではない・CC が決めた |
+| 22 | 16 | 表の目印に書くハッシュ値の長さ（sha256 の先頭16文字）＝表示の長さ・売買の値ではない・CC が決めた |
+
+【4-10 保存先】
+本物のファイルへの上書き（実装の指示）。表は定義表の目印の間（上書き・--write で作り直せる）。分かっている ❌ の一覧は .claude/state/indicator_review/check_materials_known_ng.json（M-1 で行を消す）。
+- 置き場が1か所であること：札・方向・性質・役割は INDICATOR_TABLE の1か所（grep -c 'dict(k="' が直す前 188 → 後 0・grep -c '"反転サイン", "trend"' が 27 → 0・grep -c '^def _r(pat, family, teigi, ryugi, houkou, prop' が 1 → 0＝2-1）。残る2か所＝資料の表（出どころ）と r1_role_map.json（R-1 の決定・封つき）＝表はそこから写す物で、手で書く所ではない。
+- 直すと届く先：4-1 の①〜④（grep -l FAMILY_LINEAGE・grep -l houkou/prop で数えた）。
+- 出どころをどこまで確かめたか：役割の文が資料の表に在るかまで（係の調べの逐語がページと一致・R-1 の決定）。役割の読み取りの正しさは M-1 と設計書の監査が見る。
+
+【4-11 時刻の扱い】
+非該当＝時刻に関わる計算に触らない（直すファイルの一覧）。
+
+【4-12 出る結果の姿】
+当てた後に走らせるもの＝①python3 scripts/priority_rebuild/gen_indicator_table.py --verify ②python3 scripts/priority_rebuild/observe_diag.py --selftest-lineage ③python3 scripts/priority_rebuild/observe_diag.py --selftest ④G-1＝gen_signal_families.py --write・gen_exit_families.py --write（まこさんの --approve）・gen_composition_rules.py --write・gen_materials.py --write・gen_indicator_switch.py --write・build_role_threshold_table.py ⑤G-2＝材料の検査（--check-materials … --known-ng …・約35分・OK をいただいてから）→ G2 → H2 → 監査に出す前のチェック。写しの結果＝当てた後の写しで定義表を読めた（札の表・方向・性質・カタログの列の名前と並び・値域（有界）・値域（分位）・系統の区分＝全部 直す前と同じ・前 301・後 301（REFS の件数＝同じ））・gen_indicator_table.py --verify rc 0・軽い口 --selftest-lineage rc 0・R-1 の確かめ（R1〜R5）rc 0・役割の一覧の照らし（--check）rc 0・hook の --check rc 1（写しの hook は本物の道具のパスを見る＝本物に道具が無い間は「道具が無い」で止めない＝想定どおり）・承認の前の仮当て（A12）と同じ自己テスト＝engine_tuner_exec.py --selftest rc 0・observe_diag.py --selftest rc 0・gen_materials.py --selftest rc 0・engine_tuner_gen.py --selftest-extra-gate rc 0・G-1 の試し（承認は打たない）＝gen_signal_families.py --write rc 0・gen_exit_families.py --write rc 0・gen_indicator_switch.py --write rc 0・gen_composition_rules.py --write rc 0・gen_materials.py --write rc 0・印の「使う」＝本物の今 185 ／ 写しで作り直した後 185・使うの集まりが同じ・型の表の lineage_of が同じ・本物のファイルが変わった 0 本
+
+【4-13 影響範囲】
+1. 定義表を読む全部のプログラム（4-1 の②③④）は、読み込みの時点で INDICATOR_TABLE を通る。表に無い種類が在れば、どれも止まる（4-5）。
+2. 札・方向・性質の値は変わらない＝engine_tuner の候補・G3・法則の数え方は変わらない（写しで札の表・方向と性質・カタログの列・値域・区分が同じ）。
+3. 材料の検査1 の ❌ が増える＝役割の欄が空の種類の列（分かっている ❌ の一覧に入れた）。監査に出す前のチェックは、一覧に無い ❌ が出たときだけ止まる。
+4. 前からの壊すプログラムのうち、壊す文字が無くなる2本＝b182（close vs HILO% の行の方向・性質の引数が消える）・b199（ADX の札が FAMILY_LINEAGE の辞書から表の行に移る）＝実装の指示で、壊す文字を新しい行の形に直す（壊し方と測る物は同じ）。直すファイルの名前を本文に持つ前からの壊すプログラム＝b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b145_vwap_day_no_reset.sh・b146_pivot_week_as_day.sh・b147_vp_today_from_start.sh・b151_w_fractal_not_first.sh・b152_sr_fractal_counts_bars.sh・b153_smc_fractal_no_close_back.sh・b154_lower_half_upper_span.sh・b156_sr_fractal_unconfirmed.sh・b160_dpo_tb_lib_shift.sh・b161_thermo_orig_abs.sh・b162_stochrsi_raw_smoothed.sh・b163_trix_ema_signal_sma.sh・b164_rvol_rv_mean_subtracted.sh・b165_ssf_avg_single_input.sh・b166_sqz_carter_scalar_fixed.sh・b172_alma_weights_reversed.sh・b173_stc_zero_range_divides.sh・b174_hilo_short_column.sh・b175_dpo_centered_future.sh・b176_sarext_sign_not_abs.sh・b177_psar_af_column.sh・b178_cksp_long_short_swapped.sh・b179_pmax_ma_of_high.sh・b180_vwap_volume_weight_dropped.sh・b181_thermo_ma_column.sh・b182_copy_mark_without_known.sh・b183_copy_verified_by_tb_alone.sh・b188_stc_library_min_gate.sh・b189_band_swing_unconfirmed.sh・b190_band_swing_no_fee_floor.sh・b191_band_lines_no_top.sh・b192_lee_mykland_abs.sh・b195_lee_mykland_paper_window.sh・b196_band_pivot_week_as_day.sh・b197_lineage_kinds_no_strength.sh・b198_lineage_question_no_momentum.sh・b199_adx_back_to_trend.sh・b203_keep_on_dropped.sh（探す文字の数が当てる前と後で同じことを道具が数えた）。
+- 名前が消える・変わるとき：消える名前＝_r の引数 houkou・prop（位置引数の5つ目・6つ目）・observe_diag.py の手書きの _OSC_BOUNDS・_OSC_PCTL の中身（名前は残る）・FAMILY_LINEAGE の手書きの辞書（名前は残る）。この名前を本文に持つ壊すプログラム・hook・検査を探した結果＝上の4（b182・b199）。
+- 指標の値を変えるとき：非該当＝値は変えない。
+
+【4-23 置き場の地図】
+| 置き場 | 直す前（何が在る・誰が書く・誰が読む） | 直した後（何が在る・誰が書く・誰が読む） |
+|---|---|---|
+| indicator_reference_diag.py の定義表の1行（_r(...)・298行・301種） | 計算（照らし用）・方向の欄（手書き・位置引数5つ目）・性質の欄（手書き・6つ目）・既知答え・mako。読む＝定義表を読む全部 | 計算（照らし用）・既知答え・mako。方向と性質は INDICATOR_TABLE から _r が足す。読む＝同じ |
+| indicator_reference_diag.py の INDICATOR_TABLE（新） | 無い | 301行（役割・札・方向・性質（今）・性質（方向から）・値域・注記）。書く＝gen_indicator_table.py --write。読む＝_r・_lineage_from_table・observe_diag.py の値域と検査1 |
+| indicator_reference_diag.py の FAMILY_LINEAGE | 手書きの辞書（307件）。読む＝10本（4-1 の②） | 表から作る関数 _lineage_from_table() の戻り（301＋別枠6）。読む＝同じ10本（名前は変えない） |
+| LINEAGE_KINDS・LINEAGE_QUESTION・TA_CLASS_MAP・DEMAND_REF・RANGE_GEO_REF・TIME_REF | 手書き | いまのまま（指標1つの情報ではない） |
+| observe_diag.py の _OSC_BOUNDS・_OSC_PCTL | 手書き（10種・1種）。読む＝材料の検査2 | 表の値域の欄から作る。読む＝同じ |
+| observe_diag.py の材料の検査1・check_materials | 方向×性質の対応を見る。走らせる所が無い | 「役割の欄が空」の ❌ を足す。--known-ng で一覧と照らす。走らせる所＝監査に出す前のチェック |
+| .claude/tools/pre_audit_check.py の CHECKS・_MUST_IN_CHECKS | 表の照らし・材料の検査が無い | 2行 足す（外すと P8 が落ちる） |
+| .claude/hooks/check_indicator_table_on_save.py・.sh（新） | 無い | 定義表を保存する瞬間に --verify。登録＝まこさんが settings.json の PreToolUse Write|Edit|MultiEdit の欄（:127〜150）に足す |
+| .claude/state/indicator_review/check_materials_known_ng.json（新） | 無い | 分かっている ❌ の一覧（428 行）。M-1 で消す |
+| .claude/state/ の資料の表3つ・indicator_review/r1_role_map.json | 調べた値（出どころ）・R-1 の決定（封つき） | いまのまま＝表の役割の欄はここから写す |
+| observe_config.json・recipes/search_limits.json | パラメータの値と範囲 | いまのまま（b で直す） |
+| .claude/breaks/b182・b199 | 定義表の行・札の辞書の文字を壊す | 新しい行の形の文字を壊す（壊し方と測る物は同じ） |
+- 直した後に、その情報を変えるときの手順：役割＝資料の表（係の調べの逐語）か r1_role_map.json を直す → gen_indicator_table.py --write → --verify が通る → G-1 の表の作り直し。方向・性質・値域の値＝M-1 で判定した後に、表の欄を変える決まり（役割→方向）を道具に入れる（この工事では今の値を写すだけ）。1か所で済まない物＝別枠6種の札（_lineage_from_table の中に今の札と注記を写す。理由＝TIME_REF は FAMILY_LINEAGE より後（観察の道具が読む定義表の 6110 行目）に定義され、RANGE_GEO_REF に「レンジ幾何」の鍵が無いので、そこからは作れない。やることの表の F-2 の文と違う＝3-2 で伺う）。
+- 読む先が変わるプログラム：無い（FAMILY_LINEAGE・REFS の名前と形は同じ。写しで G-1 の表を作り直して同じ＝4-12）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| gen_indicator_table.py --verify | 2.5秒 | 写しの確かめ |
+| 軽い口 --selftest-lineage | 2.4秒 | 写しの確かめ |
+| 全体の自己テスト --selftest | 220秒 | 写しの確かめ |
+| 保存の瞬間の hook | --verify と同じ（定義表を1回 読み込む） | hook は --verify を呼ぶだけ |
+| 材料の検査（G-2） | 約35分 | 2026-10-22 の実測 34分39秒（worklog 20261022 §3） |
+
+【4-15 競合】
+2つの走行が同じファイルを触る場面は無い（表を書くのは --write の1本・hook は一時の置き場に写しを書いて読むだけ・材料の検査は結果の置き場に1本 書く）。
+
+【4-16 セキュリティ】
+取引所の鍵（config/bitget_keys.json）・本番で発注するかの切り替え（ALLOW_LIVE_ORDERS）には触らない（直すファイルの一覧に無い）。検査済みの記録（h2_pass.json・g2_pass.json）は、当てた後に G2・H2 を走らせて取り直す（indicator_reference_diag.py・observe_diag.py は H2 の対象）。
+
+【4-17 ログと進捗表示】
+--write は数（種類・役割あり・役割なし・性質が方向の決まりと違う）を出す。--verify は ①〜⑤の落ちた行と、通ったか落ちたかの1行を出す。材料の検査の --known-ng は、一覧に無い ❌ と、直った行を出す。hook は止めるとき、--verify の出力の全文と、手で確かめる口を標準エラーに出す。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| scripts/priority_rebuild/gen_indicator_switch.py | --write／--verify の形（表を書く・照らす） |
+| .claude/hooks/check_source_on_save.py | 保存の瞬間の hook の形（標準入力の json・保存した後の中身・fail-open） |
+| roles_draft_build.py・roles_proposal_build.py | 写しで確かめて、実装の指示と壊すプログラムを書き出す形 |
+| .claude/breaks/b196_band_pivot_week_as_day.sh | 壊すプログラムの形（lib.sh の guard／measure／finish） |
+
+【4-20 実装の指示】
+ファイル: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/ss_impl.json sha256=44a48c8331e687ac64e9acd021332bb5228443eedc72163aa1ba3382750978cf
+（実装の指示 306 件＝コードと設定 302・新しい壊すプログラム 4。プログラムが作った json の配列。返信には貼らず、このファイルのハッシュ値に OK をいただく＝まこさん「イ」2026-10-22。ファイルが1文字でも変わると設計書は組めない）
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 表を定義表（indicator_reference_diag.py）の中に置く | 読む側の10本は既に定義表を読み込んでいる（4-1）。定義表は H2・G2 の対象で、保存の瞬間の hook も1本で済む。まこさん「指標は１つデータから読み込むようにできないの？」 | 別の json を置く（置き場が2つになる・読む側に読み込みを足す） |
+| 方向・性質・値域・注記は今の値を写し、役割・札・性質（方向から）だけを資料から作る | 119件の値の判定は M-1（Y-1・まこさん「よい」）。値を変えずに置き場だけを1つにし、食い違いは表の2欄で見える形にする | 役割から方向を決める決まりを今 入れる（値が変わる） |
+| 札は役割の区分から1対1（CAT2LIN）。区分が2つ以上は今の札に合う区分 | R-1 の決定（D1〜D7）の札と同じになる（写しで札の表が直す前と同じ）。対応は build_role_threshold_table.py の LIN2CAT の逆 | 札を手で写す |
+| 別枠6種（需給3・レンジ幾何1・時間帯2）は _lineage_from_table の中に今の札と注記を写す | TIME_REF は FAMILY_LINEAGE より後に定義され、RANGE_GEO_REF に「レンジ幾何」の鍵が無い。6種は指標1つの情報ではない（表に入れない） | DEMAND_REF・TIME_REF から作る（定義の並びを変える工事になる） |
+| 材料の検査を監査に出す前のチェックに入れ、分かっている ❌ の一覧と照らす | 呼ぶ所の無い検査は無いのと同じ（2026-08-06〜10-22 に一度も走らなかった）。119件を M-1 で直すまで、一覧に無い ❌ だけで止める | 入れない（また走らない）／❌ 0 になるまで入れない（M-1 まで監査に出せない） |
+| 保存の瞬間の hook を足す（登録は まこさん） | 手で表を書き替えた瞬間に止める。settings.json は まこさんが直す（恒久74番） | Stop の hook（返信の後＝書いた後に気づく） |
+| 役割の欄が空の種類を検査1 の ❌ に数える | 役割が決まらない種類を、表の中で見える形にし、M-1 の相手にする | 空のまま数えない（見つからない） |
+| 同じ区分が2回 書いてある行（MMI「強さ・強さ」）は並びのまま1つにする | 資料の文の重なり。区分の集まりは同じ | そのまま |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 表の役割の読み取り（CAT2LIN・区分が2つ以上の選び方）が誤っていると、全部の札が一度に誤る | 写しで札の表が直す前と同じことを照らした（札の表・方向・性質・カタログの列の名前と並び・値域（有界）・値域（分位）・系統の区分＝全部 直す前と同じ）。設計書の監査で対応を確かめる |
+| 材料の検査（約35分）が G-2 と監査に出す前のチェックの両方で走る | 監査に出す前のチェックは、G-2 の後に1回。15分を超える走行は OK をいただく |
+| hook の登録を忘れると、保存の瞬間の照らしが効かない | 監査に出す前のチェックの --verify は登録に関わらず走る。登録は やることの表の「承認と監査で止まる所」に書いた |
+| 定義表と観察の道具を直すので、H2・G2 の検査済みの記録が外れる | G-2 で取り直す |
+| 表の行数の増加で、定義表が約300行 長くなる | 目印の間だけ。手で開く所ではない（--verify が手書きを止める） |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 実装の指示を当てる | 数分 | 当てる道具が 306 件を1件ずつ当てる |
+| 当てた後の自己テスト・G-1・G2・H2 | 約15分 | --selftest 約220秒・G2 約50秒・H2 約5分（worklog 20261020 §16）・表の作り直し |
+| 材料の検査（G-2） | 約35分 | 2026-10-22 の実測 34分39秒 |
+| 壊すプログラム 4 本 | 約2分 | 1本あたり（b204_table_role_handwritten 2.6秒・b205_row_arg_back 0.4秒・b206_lineage_handwritten 2.6秒・b207_table_check_dropped 0.1秒・b182_copy_mark_without_known 135.2秒・b199_adx_back_to_trend 5.9秒） |
+
+【確かめていないこと】
+| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |
+|---|---|---|
+| 本物で材料の検査を走らせたときの ❌ が、分かっている一覧（428 行）と1行も違わないか | 約35分の走行（G-2 で、OK をいただいてから） | python3 scripts/priority_rebuild/observe_diag.py --check-materials data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv --known-ng /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/check_materials_known_ng.json |
+| hook を settings.json に登録した後に、Write／Edit の実物で止まるか | 登録は まこさんの手（実装の後） | python3 .claude/tools/try_hooks.py --session <記録> --edit <定義表> --old <表の1行> --new <書き替えた行> |
+| 表の役割の欄（資料の文の読み取り）が、教科書の役割として正しいか | 役割の文は資料の表と r1_role_map.json から写すだけ。正しさは M-1 と設計書の監査が見る | 設計書の監査 |
+| 方向・性質の食い違い 52 種の、どちらが正しいか | M-1（Y-1） | M-1 |
+| 監査に出す前のチェックの自己テスト（pre_audit_check.py --selftest）の番人 P7-1 が落ちる件 | 前からの件（worklog 20261020 §・この工事の外）。この工事は P8 だけを --selftest-p8 で測る | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --selftest |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 役割の情報を、定義表の行の引数・別の表・資料の表に別々に手で書き、対応の決まりも、走らせる所も作らなかった（材料の検査は 2026-08-06 から10-22 まで一度も走らなかった） |
+| 期待値分解 | 売買の値に触らない（指標の値・計算・札・方向・性質・閾値・パラメータはそのまま）＝勝率・平均利益・敗率・平均損失は、この工事では動かない。動くのは、M-1 で食い違いを直した後に engine_tuner が材料を選ぶ所（net を測るのは M2-L） |
+| root か symptom か | root＝置き場が4つで対応の決まりが無いこと。119件の食い違い（M-1）と使い方（U-1）は、その上に立つ |
+| ベースアップ | indicator_data_check_20261022.md（確認の表 §1〜§4）・indicator_dir_map_20261022.md（置き場の地図）・observe_diag.py:6068（_HOUKOU2PROP）・:6071〜6080（_OSC_BOUNDS・_OSC_PCTL）・:6105（_insp_direction_known）・:6265（_insp_lineage_range）・:6363（check_materials）・indicator_reference_diag.py の _r・FAMILY_LINEAGE:5337〜5556・gen_indicator_switch.py・gen_signal_families.py:118・engine_tuner_gen.py:1273・engine_tuner_exec.py:1213・pre_audit_check.py:59〜92・check_source_on_save.py |
+
+【7-2 固定値ゼロ宣言】
+疑似シミュから取った値はありません。表の値は全部、今の定義表・札の表・値域の一覧・資料の表・r1_role_map.json から道具が写した物です。新しく入る数字は【新しく入る数字と式の一覧】に1件ずつ書いた。
+
+【7-3 変更の単位】
+変更は1つ＝指標の役割の情報（役割・札・方向・性質・値域）の置き場を、定義表の中の1つの表にし、そこから読む形にする（値は変えない）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 根拠 | 確かめ直すコマンド |
+|---|---|---|
+| 1 | 乱数を使わない（実装の指示の中身に rng・random が無い） | grep -c -e 'rng\.' -e 'random' .claude/state/indicator_review/ss_instr.json |
+| 2 | 探す値を決まった数字の一覧で先に限定しない＝範囲・閾値・パラメータに触らない | grep -c -e 'material_param_ranges' -e 'quantile' .claude/state/indicator_review/ss_instr.json |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 表の役割の読み取りが正しいか | 資料の文に在るかまでは照らした。読み取りの正しさは M-1 と設計書の監査が見る |
+| 方向・性質の値が正しいか | この工事では今の値を写すだけ（M-1） |
+| hook が登録されているか | 登録は まこさんの手。監査に出す前のチェックの --verify は登録に関わらず走る |
+| 表を Bash で書き替えた場合 | 保存の瞬間の hook は Write／Edit だけを見る（土台ゲートが別に Bash を見る）。監査に出す前のチェックの --verify が止める |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝indicator_reference_diag.py・observe_diag.py・.claude/tools/pre_audit_check.py・.claude/breaks/b182・b199 と、新しいファイル（gen_indicator_table.py・check_indicator_table_on_save.py・.sh・check_materials_known_ng.json）・新しい壊すプログラムを【7-8】に書いた。主なファイルは indicator_reference_diag.py（表の置き場）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝indicator_reference_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは NEW_FILE に書いた。手本は MODEL に書いた。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買の値に触らないので、勝率・平均利益・敗率・平均損失は、この工事では動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝2026-08-06〜10-22 に、役割の情報を4か所に手で書き、検査を走らせなかった（この工事の真因）。同じ型を防ぐため、表はプログラムが書き、--verify を監査の前と保存の瞬間の2か所で走らせる。205回目に、写しの道具の最初の版が、ループの中で登録する6種（前日・当日の POC・VAH・VAL）を数えず、構文木の列の位置をバイト数でなく文字数で切って1行を壊した＝直して、写しで文法と定義表の読み込みが通ることを確かめた。
+- 新しい部品は未来を見ない（値の計算に触らない）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（indicator_reference_diag.py に約300行 増える・observe_diag.py に行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の4）。
+- 壊すプログラムが測るのは、表の照らし（gen_indicator_table.py --verify）と監査に出す前のチェックの番人 P8（pre_audit_check.py --selftest-p8）で、どちらも本物の結果の置き場に書かない。--selftest の全部でなく P8 だけを測る理由＝--selftest は前から落ちている P7-1（worklog 20261020 の記録・この工事の外）に引きずられて rc 1 になり、完成の条件のコマンドにできない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>・_lineage_from_table・_r／observe_diag.py：<モジュール直下>・_insp_direction_known・build_parser・check_materials／pre_audit_check.py：<モジュール直下>・main／gen_indicator_table.py：<モジュール直下>・compute・counts・load_families・main・problems・read_block・render・role_of・scan_rows／check_indicator_table_on_save.py：<モジュール直下>・main・text_after・verify_text。self_check_calls の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗＝observe_diag.py の --known-ng・gen_indicator_table.py の --write／--verify／--count／--file・check_indicator_table_on_save.py の --check／--as・pre_audit_check.py の --selftest-p8（番人 P8 だけ）。
+- 当てた後に実装の中で変わった手順が出たら、設計書に書き直してから進める。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-single-source-20261022）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝表の照らし①〜⑤・軽い口 T-L1・T-L2・全体の自己テスト・壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-1＝INDICATOR_TABLE が、資料と r1_role_map.json から作り直した物と同じ（--verify の④が通る） | python3 scripts/priority_rebuild/gen_indicator_table.py --verify | 実経路 | 表の ADX の役割の区分を手で書き替える | b204_table_role_handwritten.sh | — | 未着手 |
+| F-2＝定義表の行（_r）が、方向と性質を引数で受け取らない（--verify の①が通る） | python3 scripts/priority_rebuild/gen_indicator_table.py --verify | 実経路 | ADX の行に方向と性質の引数を戻す | b205_row_arg_back.sh | — | 未着手 |
+| F-2＝札の表（FAMILY_LINEAGE）が INDICATOR_TABLE から作られる（--verify の③が通る） | python3 scripts/priority_rebuild/gen_indicator_table.py --verify | 実経路 | 札の表を手書きの辞書に戻す | b206_lineage_handwritten.sh | — | 未着手 |
+| F-4＝監査に出す前のチェックに表の照らしが在る（pre_audit_check.py --selftest-p8＝番人 P8 だけ、が通る） | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --selftest-p8 | 実経路 | CHECKS から表の照らしの行を外す | b207_table_check_dropped.sh | — | 未着手 |
+- 行が無いやることの番号と、その理由：G-1・G-2＝当てた後の手順（表の作り直し・再承認・自己テスト・材料の検査・G2・H2）で確かめる（4-12 の②〜⑤）。
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/breaks/b182_copy_mark_without_known.sh",
+  ".claude/breaks/b199_adx_back_to_trend.sh",
+  ".claude/tools/pre_audit_check.py",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  "scripts/priority_rebuild/gen_indicator_table.py",
+  ".claude/hooks/check_indicator_table_on_save.py",
+  ".claude/hooks/check_indicator_table_on_save.sh",
+  ".claude/state/indicator_review/check_materials_known_ng.json",
+  ".claude/breaks/b204_table_role_handwritten.sh",
+  ".claude/breaks/b205_row_arg_back.sh",
+  ".claude/breaks/b206_lineage_handwritten.sh",
+  ".claude/breaks/b207_table_check_dropped.sh"
+ ],
+ "NEW_FILE": [
+  "scripts/priority_rebuild/gen_indicator_table.py",
+  ".claude/hooks/check_indicator_table_on_save.py",
+  ".claude/hooks/check_indicator_table_on_save.sh",
+  ".claude/state/indicator_review/check_materials_known_ng.json",
+  ".claude/breaks/b204_table_role_handwritten.sh",
+  ".claude/breaks/b205_row_arg_back.sh",
+  ".claude/breaks/b206_lineage_handwritten.sh",
+  ".claude/breaks/b207_table_check_dropped.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b196_band_pivot_week_as_day.sh",
+  "scripts/priority_rebuild/gen_indicator_switch.py",
+  ".claude/hooks/check_source_on_save.py",
+  ".claude/hooks/check_source_on_save.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。指標1種につき1行の表（INDICATOR_TABLE）を置く定義表を照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>",
+    "_lineage_from_table",
+    "_r"
+   ],
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_insp_direction_known",
+    "build_parser",
+    "check_materials"
+   ],
+   ".claude/tools/pre_audit_check.py": [
+    "<モジュール直下>",
+    "main"
+   ],
+   "scripts/priority_rebuild/gen_indicator_table.py": [
+    "<モジュール直下>",
+    "compute",
+    "counts",
+    "load_families",
+    "main",
+    "problems",
+    "read_block",
+    "render",
+    "role_of",
+    "scan_rows"
+   ],
+   ".claude/hooks/check_indicator_table_on_save.py": [
+    "<モジュール直下>",
+    "main",
+    "text_after",
+    "verify_text"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、ss_proposal_build.py が数えた）。新しいファイルは全部の関数。",
+  "self_check_calls": [
+   "_r",
+   "_lineage_from_table"
+  ],
+  "_self_check_calls の意味": "実装の後の indicator_reference_diag.py に在るはずの、この工事が直す・足す関数の名前（_r＝行の登録・_lineage_from_table＝札の表を表から作る）。",
+  "must_use": {
+   "_r": [
+    "INDICATOR_TABLE"
+   ],
+   "_lineage_from_table": [
+    "INDICATOR_TABLE"
+   ]
+  },
+  "_must_use の意味": "_r と _lineage_from_table は、INDICATOR_TABLE（指標1種につき1行の表）を読む（道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、情報の置き場を1つにするだけ。外から読む一覧の形（FAMILY_LINEAGE の1件の形・REFS の1件の形）は変えない（写しで直す前と同じことを照らした）。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（ss_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 | 検索の言葉 |
+|---|---|---|
+| 置き場を1つにする作り（single source of truth） | 新しく Web を開いていない。要件定義の7番の文（誤りは置き場の1か所を直せば済む）と、まこさんの指示「指標は１つデータから読み込むようにできないの？」を出どころにした | single source of truth generated table verify hash |
