@@ -174,7 +174,7 @@ KNOWN_NG = {
 #   ＝分かっている ❌ の一覧（材料の検査の --known-ng が読む json）は承認の門の外（.claude/state）に在る。
 #   CC が一覧に行を足すと、新しい ❌ を黙って通せる。だから一覧の sha256 と、一覧へのまこさんの OK の逐語のファイル名をここに置き、
 #   --run と --verify で照らす（違えば止める）。M-1 で行を消すたびに、まこさんの OK と sha256 の取り直しが要る。
-KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad5900750db932a4acb2bf924ddcf01c4625", ok="まこさん「OK」（2026-10-23・案 okd_proposal_20261023 の【4-20】の ss_impl.json の sha256 への OK＝この一覧の中身を含む・逐語 .claude/state/verbatim/m2c15-single-source-20261022/ok_proposal_20261023.txt）")
+KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad5900750db932a4acb2bf924ddcf01c4625", ok="まこさん「OK」（2026-10-23・案 okd_proposal_20261023 の【4-20】の ss_impl.json の sha256 への OK＝この一覧の中身を含む・逐語 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-20261022/ok_proposal_20261023.txt＝承認の後に .claude/state/verbatim/ から移った）")
 
 
 def known_materials_problem() -> str | None:
@@ -219,6 +219,13 @@ def materials_fingerprint() -> str:
     for rel in v9:
         last = subprocess.run(["git", "-C", str(SDK), "log", "-1", "--format=%H", "--", rel], capture_output=True, text=True).stdout.strip()
         h.update(f"{rel}:{last}".encode())
+    import ast                                                          # ★監査 CP87 の修正4＝材料の検査が読むのに、指紋に入っていなかった2つを足す
+    one_min = next(ast.literal_eval(_n.value) for _n in ast.parse((PR / "observe_diag.py").read_text(encoding="utf-8")).body
+                   if isinstance(_n, ast.Assign) and getattr(_n.targets[0], "id", "") == "ONE_MIN_CSV")   # observe_diag.py の ONE_MIN_CSV を構文木で読む＝ここに書き写さない
+    h.update(f"{one_min}:{(SDK / one_min).exists()}".encode())         # load_config は1分足が在るかだけを見る（observe_diag.py:218〜223）＝在るかを指紋に入れる
+    sf = SDK / "scripts/regime/structure_features.py"                   # build_catalog→_band_fee_floor→e37_scalp→e35_box が import する（e35_box.py:36〜38）
+    h.update(str(sf).encode())
+    h.update(sf.read_bytes() if sf.exists() else b"<no file>")
     return h.hexdigest()
 
 

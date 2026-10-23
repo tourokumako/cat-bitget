@@ -8686,6 +8686,44 @@
    "file": ".claude/breaks/b209_table_prop_handwritten.sh",
    "at": "2026-10-23T09:19:30",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_indicator_table.py",
+   "at": "2026-10-23T12:39:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-single-source-cp87-decisions-20261023/ok_cp87_choices_20261023"
+  },
+  {
+   "report": "2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_indicator_table.py",
+   "at": "2026-10-23T12:39:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-single-source-cp87-decisions-20261023/ok_cp87_choices_20261023"
+  },
+  {
+   "report": "2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_indicator_table.py",
+   "at": "2026-10-23T12:39:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-single-source-cp87-decisions-20261023/ok_cp87_choices_20261023"
+  },
+  {
+   "report": "2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md",
+   "num": "4",
+   "file": ".claude/tools/pre_audit_check.py",
+   "at": "2026-10-23T12:39:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md",
+   "num": "5",
+   "file": ".claude/tools/pre_audit_check.py",
+   "at": "2026-10-23T12:39:41",
+   "how": "当てた"
   }
  ]
 }

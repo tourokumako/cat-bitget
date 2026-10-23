@@ -40,3 +40,16 @@
 - まこさん「修正していいよ」→ gen_audit_docs.py の _impl_evidence に守り2つを足した（30行・消した行0）。守り1＝控えのコミットで変わっていない当てたファイルに作業中の変更（git に無い・無視されるファイルを含む）が在れば、実装の後＝作業中の変更（`git diff 967b4ba5 -- <パス>`・新しいファイルは本物を読む）と書く。守り2＝実装の前と後で差が無い当てたファイルが1本でも在れば、依頼書を作らずに止まる。--selftest 58/58。作り直しの1回目で守り2が check_materials_known_ng.json（.gitignore:79 で無視）を止めたので、git status に --ignored を足した。CP87 を作り直した（1,151行・問い11・必読31・check-request 食い違い0）。必読の表に、実装で足した行から拾う名前が7行 増えた（7本とも手書きの文書に理由が在る）。まこさんが CP87 を起動した。
 - まこさん「よい」→ .gitignore:81-86 に、工事が頼る3本（check_materials_known_ng.json・ss_impl.json・r1_role_map.json）の例外と理由を足した。pre_audit_materials_pass.json は走らせるたびに変わる記録なので無視のまま。git status --ignored で3本が「??」、ほかは「!!」のままと確かめた。
 - まこさん「締めに進めて良い」→ ToDo の81番の宣言 →「よい」。教訓 L-717 を足した。
+
+## §3 207回目＝ToDo の80番（工事 a の実装の監査 CP87 の結果の確認と修正）・82番・83番（締め）
+
+- 必読9件を Read で開いた（指標の表3本は分けて最後の行まで）。ToDo は next_step の表どおりに書き、82番（git の確かめ）と83番（締め）を足した。
+- 監査 CP87 の結果（.claude/audits/2026-10-23_m2c15_single_source_20261022_impl_cp87_audit_report.md・406行）を全部 読んだ。結論＝GO・Critical 0・Major 1・Minor 5・Process 2。Q1〜Q3＝実装314件が設計書のとおり・設計書に無い変更0行。Q8＝札・方向・性質・カタログの列・値域が直す前と同じ。所見⑦＝前の回の CC の誤り2つ（依頼書の経緯4番目「設計書は1回目と同じ版（ハッシュ値が同じ）」は誤り＝738351c7… と 76d086a7… で違う・worklog §2 の:29 で目的の照合の hook を語の書き替えで通した）。返信で謝った。
+- 修正8件の相手の行を全部 開いて確かめた＝8件とも監査の文字がその行に在り、直す前の文字は1か所。gen_indicator_table.py:51・:125-126・:188（:33 ast・:40 HERE・:44 IREF は在る）／observe_diag.py:6068・:6438・:187・:217-223／indicator_reference_diag.py:5484／e35_box.py:36-38／pre_audit_check.py:177・:221。承認の記録2本（signal_families_approved.txt・exit_families_approved.txt）は g2_pass.json の対象に在り、gen_indicator_table.py は G2・H2 の対象に無い（jq で確かめた）。
+- ★まこさん決定（逐語）＝「３つともCCのおすすめでよい」＝①直す範囲は修正1〜8 の全部 ②修正1〜3 は今は当てず、工事 b の設計書に入れる ③修正7・8 はまこさんが再承認のコマンドを打ち、CC が G2 → H2 を取り直す。逐語＝.claude/state/verbatim/m2c15-single-source-cp87-decisions-20261023/ok_cp87_choices_20261023.txt（gen_verbatim.py・uuid d7f1ae88）。
+- apply_audit_fix.py --dry＝修正4・5 は当たる・6 は守りの仕組みなので CC が書く・7・8 は走らせるコマンド・1〜3 は未決。--decline 1,2,3 --verbatim で当てた記録に「当てない」を3件 書いた（b の設計書に入れる）。修正4・5 を --only 4,5 で当てた（pre_audit_check.py・8行足す・1行書き替え・差分は監査の文と同じ）→ py_compile rc0・--selftest-p8 rc0。指紋の関数は材料の検査の行の中からしか呼ばれないので走らせていない（監査が写しで fix4test）。
+- 修正6＝b210 を Write しようとして try_hooks.py で試すと、受け入れ条件ゲートが止めた（対象の一覧に無い）。b210 を Bash で走らせる操作も土台ゲートが止めた（あとで直すこと⑧と同じ）。まこさんに作っていただいた。1回目は、まこさんが作る前に走らせる操作を打たれた（No such file）＝CC のお願いの書き方が分かりにくかった。ファイルを作るコマンド（cat の heredoc）をお渡しし、まこさんが作って走らせた＝②が rc 0（期待 1）・期待の文が出た。observe_diag.py は元に戻った（git status 差分なし）。b210 は監査の294〜318行と diff で同じ。
+- まこさんが gen_signal_families.py --approve・gen_exit_families.py --approve を打った＝指紋は同じ（e08aa72b…・46c577da…）・日付が 2026-10-23 に。承認のコマンドの中の G2 は承認の記録を書く前に印を書くので、CC が G2 を取り直した（gen_signal_families.py --verify・既知答え13件 ✅・印 adf05749… → cf5fa3c8…）。H2（leak_causality_diag.py）＝rc0・5分16秒・未来参照0・食い違い0・印 cdc46973… のまま。
+- 残る注意＝修正4で指紋が変わったので、次の監査に出す前のチェックでは材料の検査（約35分）が1回走る。M-1 では役割から方向を決める決まりを必ず入れる（監査の Q7）。
+- 82番＝ss_impl.json の対象15本と3本は、全部 最後のコミットが aeb04d8a。今の差分は pre_audit_check.py（今日の修正4・5）だけ。settings.json は 3bc11405。
+- まこさんの問い「セッションはこのままで次へ進められる？」→ CC の勧め＝82番と締めまでこのまま・工事 b の案は新しいセッション → まこさん「OK」。
