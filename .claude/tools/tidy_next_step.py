@@ -27,7 +27,9 @@
   (h) 最初の「## 」の見出しが「## 1 毎回最初に読むこと」 (i) 項目 3・5・6 に「N回目にしたこと」（経緯）が無い
   (j) 5 やることの表 の欄が250字以内 (k) 項目 3・5・6 に同じ行が2回 無い
   (l) 教訓の現役が40件＋名指しされた物だけ（--write が古い物を lessons_archive.md へ移す）
-  (m) 結果が出た監査の写し（cp<N>_work の mirror・pristine・tmp・git の外・作って1時間 過ぎ）が無い（--write が消す）
+  (m) 結果が出た監査の写し（cp<N>_work の中のフォルダ全部と *selftest*_work・git の外・作って1時間 過ぎ）が無い（--write が消す）
+  ※ --write は、終わったセッションのフォルダ（sessions の下・最後に書いてから1日 過ぎ）と、
+    tuner_cache の古い指紋の控え（戦略ごとに いちばん新しい指紋だけを残す）も消す（--verify では見ない）。
 
 決まり:
   ・移すときは1文字も変えない。🔴／★消さない／毎回消さない の数を前後で照らし、合わなければ書かない（fail-closed）。
@@ -119,8 +121,13 @@ LESSON_HEAD_RE = re.compile(r"^## L-(\d+)")
 # 名指しされた教訓は現役に残す（控えへ移すと、名指しした文書の参照が切れるため）
 PIN_FILES = (ROOT / ".claude" / "rules" / "permanent_rules.md", ROOT / "v3-bitget-api-sdk" / "CLAUDE.md")
 AUDITS_DIR = SDK_DIR / ".claude" / "audits"
-COPY_PREFIX = ("mirror", "pristine", "tmp")   # 監査の作業のフォルダ cp<N>_work の中の写し
+# ★2026-10-24（210回目・まこさん「今その仕組を入れられないの？」）＝前は名前が mirror・pristine・tmp で始まる写しだけを消し、
+#   brk・tree_after・copy・orig などの名前の写しが 209MB 溜まった。いまは結果が出た監査の cp<N>_work の中のフォルダを、名前を問わず消す。
 COPY_MIN_AGE = 3600                           # 作って1時間 以内の写しは消さない（走っている監査を壊さない）
+SESSIONS_DIR = STATE / "sessions"
+SESSION_MIN_AGE = 86400                       # 最後に書いてから1日 以内のセッションのフォルダは消さない（動いているセッションを壊さない）
+TUNER_CACHE = SDK_DIR / "results" / "priority_rebuild" / "tuner_cache"
+CACHE_RE = re.compile(r"^(.+)_([0-9a-f]{16})_\d+\.parquet$")   # engine_tuner.py の控えの名前＝<戦略>_<指紋>_<窓の番号>.parquet
 TOP_NEXT = "## 1 毎回最初に読むこと"
 HISTORY_RE = re.compile(r"\d+回目にしたこと")
 CELL_MAX = 250                                # 0-2 の表の1つの欄の字数の上限
@@ -1011,10 +1018,13 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     _atomic_write(next_path.parent / MUST_FILE, must_file_text(must_rows(main_part) or []))
     n_les = trim_lessons(today)                    # ★2026-10-02＝教訓の現役を40件＋名指しされた物に
     n_cp = clean_audit_copies()                    # ★2026-10-02＝結果が出た監査の写しを消す
+    n_ss = clean_old_sessions()                    # ★2026-10-24＝終わったセッションのフォルダを消す
+    n_tc = clean_tuner_cache()                     # ★2026-10-24＝tuner_cache の古い指紋の控えを消す
     print(f"[tidy --write] 元データ {SRC_NAME} から作った／移した節 {rep['moved_sections']}"
           f"／5 やることの表 から移した行 {rep2['moved_rows']}／§6 の表から移した行 {rep3['moved_rows']}"
           f"（§6 を移す設定＝{bool(src.get(S6_FLAG))}）／worklog の参照を照らした（控えの外で見つからない参照 0 件）"
-          f"／(0-b-2) を json から書いた／教訓を控えへ移した {n_les} 件／監査の写しを消した {n_cp} 個")
+          f"／(0-b-2) を json から書いた／教訓を控えへ移した {n_les} 件／監査の写しを消した {n_cp} 個"
+          f"／終わったセッションのフォルダを消した {n_ss} 個／tuner_cache の古い控えを消した {n_tc} 本")
     return do_verify(next_path, limit)
 
 
@@ -1124,14 +1134,66 @@ def finished_audit_copies() -> list[pathlib.Path]:
         if not m or not list(AUDITS_DIR.glob(f"*_cp{m.group(1)}_audit_report.md")):
             continue
         for d in sorted(work.iterdir()):
-            if not d.is_dir() or not d.name.startswith(COPY_PREFIX):
+            if not d.is_dir():
                 continue
             if time.time() - d.stat().st_mtime < COPY_MIN_AGE:
                 continue
             r = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", str(d)], capture_output=True, text=True)
             if r.returncode == 0 and not r.stdout.strip():
                 out.append(d)
+    for d in sorted(AUDITS_DIR.glob("*selftest*_work")):     # 自己テストが作った一時の作業フォルダ
+        if not d.is_dir() or time.time() - d.stat().st_mtime < COPY_MIN_AGE:
+            continue
+        r = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", str(d)], capture_output=True, text=True)
+        if r.returncode == 0 and not r.stdout.strip():
+            out.append(d)
     return out
+
+
+def _newest_mtime(d: pathlib.Path) -> float:
+    ts = [p.stat().st_mtime for p in d.rglob("*") if p.is_file()]
+    return max(ts) if ts else d.stat().st_mtime
+
+
+def clean_old_sessions() -> int:
+    """終わったセッションのフォルダ（最後に書いてから1日 過ぎ・git の外）を消す。hook が読むのは、いまのセッションのフォルダだけ。"""
+    import shutil
+    import time
+    if not SESSIONS_DIR.exists():
+        return 0
+    n = 0
+    for d in sorted(SESSIONS_DIR.iterdir()):
+        if not d.is_dir() or time.time() - _newest_mtime(d) < SESSION_MIN_AGE:
+            continue
+        r = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", str(d)], capture_output=True, text=True)
+        if r.returncode == 0 and not r.stdout.strip():
+            shutil.rmtree(d)
+            n += 1
+    return n
+
+
+def clean_tuner_cache() -> int:
+    """tuner_cache の控えのうち、戦略ごとの いちばん新しい指紋でない物（作って1時間 過ぎ）を消す。
+    指紋はデータの作り方のファイルが1文字変わるだけで別物になり、古い指紋の控えは二度と読まれない（engine_tuner.py の data_fingerprint）。"""
+    import time
+    if not TUNER_CACHE.exists():
+        return 0
+    groups: dict[str, dict[str, list[pathlib.Path]]] = {}
+    for p in TUNER_CACHE.iterdir():
+        m = CACHE_RE.match(p.name)
+        if p.is_file() and m:
+            groups.setdefault(m.group(1), {}).setdefault(m.group(2), []).append(p)
+    n = 0
+    for fps in groups.values():
+        newest = max(fps, key=lambda fp: max(q.stat().st_mtime for q in fps[fp]))
+        for fp, files in fps.items():
+            if fp == newest:
+                continue
+            for q in files:
+                if time.time() - q.stat().st_mtime >= COPY_MIN_AGE:
+                    q.unlink()
+                    n += 1
+    return n
 
 
 def tidy_checks() -> list[str]:
