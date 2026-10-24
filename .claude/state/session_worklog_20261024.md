@@ -81,3 +81,10 @@ rc=0
 - まこさん「お前が思いつきでデータファイルを作りまくるのを禁止にする」→ 恒久の決まり §6 の78番・記憶 feedback_no_new_files_without_permission.md。教訓 L-720。
 - このセッションで作ったファイル＝col_snapshot.py・col_snapshot/before_20261024.json と .log・gen_read_plan_ss.py・宣言の控え2本・記憶2本（feedback_read_map_inventory_log_before_declaring.md・feedback_no_new_files_without_permission.md）。作業場（indicator_review・直下 295本）の整理は、まこさん「今はやるな」。
 - ToDo の「★いまここ」は153番のまま締めた（締めの156番へ移すと、宣言の hook が締めの書き込みとコミットを止めるため・209回目の lessons.md と同じ件）。
+
+## §6 210回目の続き＝文章の資料を1本にまとめた（まこさん「これを遂行するための文章資料は１本にしろ」）
+
+- 要件定義書＝.claude/state/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md（本文＝ゴール・目的・経緯・範囲・作る物・進め方〔修正の5つと残りの手順の全文〕・満たすこと・完成の条件と確かめ方・やらないこと・まだ決まっていない事・いまの状態／付録A＝ディレクトリマップ・B＝205回目の確認の表・C＝読む係9人の報告の全文）。写し漏れ0行を照らしてから、元の cc_requirements・cc_requirements_goalfix・cc_steps6（控えとも）・indicator_dir_map_20261022.md・indicator_data_check_20261022.md・fix_plan_with_findings_20261024.md を消した。
+- 「0. 作る物の形」＝まこさん「今後作成する戦略ファイルなど指標を使う際は、この指標一覧のデータからのみ指標のデータを取り出せるライブラリ状態にすること」を、まこさんが貼られた4段落で入れた。
+- CC の誤り＝読む係9人の報告（fix_plan_with_findings）を、中身を開かずに「使わないファイル（209回目の誤りの物）」と next_step に書いていた（まこさん「確認せずに使わない資料にしてんなよ」）。要件定義書の付録C と「10. まだ決まっていない事」（同じ指標を違う式で計算している所・帯の区切りの違い）に入れた。要件定義の追記で、頼まれていない所まで書き替えて2回 戻した。
+- 必読の表＝要件定義書・fix_inventory・value_conflicts の3本だけにした（まこさん「絶対に不要なら必読一覧からはずせ」）。外した6本（10月4日の逐語3本・資料の表3つの .md）は、ToDo の70番に戻るときに入れ直す（next_step の④）。

@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=7c96f8fe656a50c9 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=1a1800ff93f76c92 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## 1 毎回最初に読むこと
@@ -50,9 +50,8 @@
 
 **① 作る物（指標の工事 M2-C-15・工事 m2c15-single-source-fix-20261023）**
 - 中身は全部、逐語のファイルとプログラムの出力が元（記憶 project_indicator_fix_steps_20261024.md）。ゴール＝`verbatim/m2c15-single-source-fix-20261023/req_goal_20261023.txt`・修正の5つ＝`okd_plan5_20261024.txt`（同じフォルダ）。
-- 要件定義＝`cc_requirements_20261024.txt`・`cc_requirements_goalfix_20261024.txt`・6つの手順＝`cc_steps6_20261024.txt`（同じフォルダ）。
+- 要件定義＝`m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md`・6つの手順＝m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md の 6-2（同じフォルダ）。経緯＝worklog 20261022 §4〜§5／worklog 20261023 §4〜§5／worklog 20261024 §1〜§5。ディレクトリマップ・205回目の確認の表・読む係の報告は要件定義書の付録A〜C。新しい文書は作らない。
 - 範囲＝engine_tuner と採点の流れ。過去の戦略のファイルは外す（まこさん「37とか直書きしてる過去の戦略ファイルはどうでもいい」）。直す相手の一覧＝`indicator_review/fix_inventory_20261024.md`・値の食い違い＝`value_conflicts_20261024.md`（決め方は worklog 20261024 §2）。
-- 引き継ぐ5つの置き場＝経緯は worklog 20261022 §4〜§5／worklog 20261023 §4〜§5／worklog 20261024 §1〜§4。ゴール・目的・要件定義は上の逐語のファイル。ディレクトリマップは必読の表の1行目。新しい文書は作らない。
 
 **② 最初にやる事（上から順に）**
 1. 必読の表を全部、最後の行まで開いてから宣言する（切れたら続きを開く）。新しい文書を作らない（記憶 feedback_read_map_inventory_log_before_declaring.md）。
@@ -66,17 +65,9 @@
 
 | いま必ず読むもの | なぜ読むか | 外す条件 |
 |---|---|---|
-| `.claude/state/indicator_review/indicator_dir_map_20261022.md` | ディレクトリマップ（ゴール・いまの置き場・修正後・修正の5つ）。gen_indicator_dir_map.py が作る | 指標の工事の実装の監査が済んだ後 |
-| `.claude/state/indicator_review/indicator_data_check_20261022.md` | 205回目の確認の表（なぜこの修正をするか・役割の4か所） | 同じ |
-| `.claude/state/verbatim/m2c15-single-source-fix-20261023/cc_steps6_20261024.txt` | 残りの6つの手順（ToDo の150〜155番の元）。要件定義は同じフォルダの cc_requirements_20261024.txt・cc_requirements_goalfix_20261024.txt、修正の5つは okd_plan5_20261024.txt | 指標の工事の実装の監査が済んだ後 |
+| `.claude/state/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md` | この修正を進める文章の資料の1本（本文と、付録A 地図・B 205回目の表・C 読む係の報告）。最後の行まで開く | 指標の工事の実装の監査が済んだ後 |
 | `.claude/state/indicator_review/fix_inventory_20261024.md` | 直す相手の一覧（ファイル:行と①②③）。gen_fix_inventory.py が作る | 同じ |
 | `.claude/state/indicator_review/value_conflicts_20261024.md` | 置き場どうしで値が違う物の一覧（150番）。決め方は worklog 20261024 §2 | 同じ |
-| `.claude/state/verbatim/indicator-params-by-strategy-20261004/req_thinking_20261004.txt` | まこさんの指示「新セッションでは以下の思考で進めるように」（目標から、直す指標の条件までの考え方） | 指標の修正の見直しが設計書になり、承認された後（外すときは まこさんに伝える） |
-| `.claude/state/verbatim/indicator-params-by-strategy-20261004/req_six_items_20261004.txt` | engine_tuner の機能要件の6行（まこさんの逐語） | 同じ（指標の修正の見直しが設計書になり、承認された後） |
-| `.claude/state/verbatim/indicator-params-by-strategy-20261004/req_handoff_20261004.txt` | まこさんの指示「手間がかかるから確認せずに改ざんをしないように」 | 同じ（指標の修正の見直しが設計書になり、承認された後） |
-| `.claude/state/indicator_roles_thresholds.md` | 指標の役割の一覧。指標を足す・直す前に、役割を照らす（まこさん 2026-10-21「指標に関する修正期間はセッション冒頭の必読に入れてもいい」「OK」） | M2-C-15 が全部済んだ後（外すときは まこさんに伝える） |
-| `.claude/state/indicator_params_by_strategy.md` | 指標の戦略ごとの最初の値と範囲（同じ日の決定） | 同じ（M2-C-15 が全部済んだ後） |
-| `.claude/state/indicator_params_review.md` | 指標の教科書の値（スタイル別）と今の材料の値（同じ日の決定） | 同じ（M2-C-15 が全部済んだ後） |
 
 **③ ToDo の表**　この表は、前のセッションの ToDo のうち、済んでいない行をプログラムが写したものです。番号と順番は まこさんが決めたもので、入れ替えません。表に無い番号は、済んだものか、ほかの番号に置き替えた欠番です。
 
@@ -104,6 +95,7 @@
 
 **④ この先の順番**
 ToDo の表が片づいた後の順番は、まこさんが 2026-10-12 に決めました（worklog 20261012 §22）。9月30日より後の設計書の洗い出し、K-4 に戻る、指標の修正の残り、M2 へ戻る、の順です。
+ToDo の70番に戻るときは、2026-10-24 に必読から外した6本（10月4日の逐語 req_thinking・req_six_items・req_handoff と、資料の表3つの .md）を、必読の表に入れ直す。
 指標の修正の残りの順は、R-1（実装の監査）→ M-1 → U-1 → T-1 → T-2 → T-3 → P-6 → P-7 → H-1 です（まこさん 2026-10-22・全体の表の「順番と、その理由」の8）。
 
 **控えのファイル（先の工事に入るときに開く。いまの工事では開かない）**
