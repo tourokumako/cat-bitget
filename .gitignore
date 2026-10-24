@@ -84,5 +84,12 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 !.claude/state/indicator_review/check_materials_known_ng.json
 !.claude/state/indicator_review/ss_impl.json
 !.claude/state/indicator_review/r1_role_map.json
+# ★2026-10-24 追加（210回目）＝指標の工事（m2c15-single-source-fix-20261023）の必読の3本。消えると git から戻せないため。
+#   要件定義書＝この修正を進める文章の資料の1本／fix_inventory＝直す相手の一覧／value_conflicts＝置き場どうしで値が違う物の一覧。
+!.claude/state/verbatim/m2c15-single-source-fix-20261023/
+.claude/state/verbatim/m2c15-single-source-fix-20261023/*
+!.claude/state/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md
+!.claude/state/indicator_review/fix_inventory_20261024.md
+!.claude/state/indicator_review/value_conflicts_20261024.md
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
