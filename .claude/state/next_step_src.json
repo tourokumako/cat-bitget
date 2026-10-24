@@ -1881,6 +1881,16 @@
          " 2026-10-21 ",
          " worklog 20261021 §6 "
         ]
+       },
+       {
+        "欄": [
+         " **267** ",
+         " **engine_tuner_gen.py か engine_tuner_fire_diag.py を次に直すとき** ",
+         " **2本が、記録の書き先を sdk の外（v3-bitget-api-sdk/results）に作る** ",
+         " engine_tuner_fire_diag.py の56行と engine_tuner_gen.py の8045行は HERE.parents[2] / \"results\" と書く。HERE はフォルダ（scripts/priority_rebuild）なので、2段上は sdk でなく v3-bitget-api-sdk になる。engine_tuner.py と tuner_judgement.py は HERE がファイルなので正しい。走らせるたびに sdk の外に firediag と gen_runs ができる（2026-10-24 に43本を消した） ",
+         " 2026-10-24 ",
+         " worklog 20261024 §7 "
+        ]
        }
       ]
      }

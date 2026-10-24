@@ -30,7 +30,6 @@ v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 *.bak
 .env
 **/state/
-v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 
 # L-236 physical enforcement hooks state (machine-generated timestamp)
 # ★2026-08-07 まこさん OK で書き換え（保存場所は動かさず、除外の巻き添えだけを外す）。

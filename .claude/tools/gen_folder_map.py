@@ -38,21 +38,21 @@ ROLES = {
         "tools/": "道具（文書を作る・検査する・片づける）",
         "settings.json": "Claude Code の設定（hook の登録）。git に入っている",
         "settings.local.json": "この PC だけの許可の設定",
-    },
-    "sdk": {
         "archive_rules/": "使わなくなったルールの控え",
-        "audits/": "監査の依頼書・結果・作業のフォルダ",
         "context/": "V9 の頃の資料（構造の地図・ファイル構成・リリース手順・テストの一覧）",
         "instructions/": "指示書",
+        "templates/": "指示書のひな形",
+        "ml_axis_catalog.md": "ML の決める値（23軸）の一覧（2026-05）",
+        "pm_review_template.md": "PM の見直しのサブエージェントへの説明のひな形",
+        "review_lens.md": "Web 版 Claude の見直しの視点（凍結・参照のみ）",
+    },
+    "sdk": {
+        "audits/": "監査の依頼書・結果・作業のフォルダ",
         "memory/": "教訓（lessons_active・lessons_archive）・知識の文書（KB）",
         "ratchet/": "マイルストーン・やることリスト（m2_todo.json）・設計書の控え・決定（decisions.md）",
         "rules/": "BOT の中身の決まり（要件定義書 cat_requirements.md ほか）",
         "state": "直下の .claude/state への近道（シンボリックリンク）＝同じフォルダ",
-        "templates/": "指示書のひな形",
         "auditor_template.md": "監査のサブエージェントへの説明のひな形",
-        "ml_axis_catalog.md": "ML の決める値（23軸）の一覧（2026-05）",
-        "pm_review_template.md": "PM の見直しのサブエージェントへの説明のひな形",
-        "review_lens.md": "Web 版 Claude の見直しの視点（凍結・参照のみ）",
     },
 }
 

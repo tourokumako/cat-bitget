@@ -88,3 +88,17 @@ rc=0
 - 「0. 作る物の形」＝まこさん「今後作成する戦略ファイルなど指標を使う際は、この指標一覧のデータからのみ指標のデータを取り出せるライブラリ状態にすること」を、まこさんが貼られた4段落で入れた。
 - CC の誤り＝読む係9人の報告（fix_plan_with_findings）を、中身を開かずに「使わないファイル（209回目の誤りの物）」と next_step に書いていた（まこさん「確認せずに使わない資料にしてんなよ」）。要件定義書の付録C と「10. まだ決まっていない事」（同じ指標を違う式で計算している所・帯の区切りの違い）に入れた。要件定義の追記で、頼まれていない所まで書き替えて2回 戻した。
 - 必読の表＝要件定義書・fix_inventory・value_conflicts の3本だけにした（まこさん「絶対に不要なら必読一覧からはずせ」）。外した6本（10月4日の逐語3本・資料の表3つの .md）は、ToDo の70番に戻るときに入れ直す（next_step の④）。
+
+## §7 210回目の続き＝データの整理（まこさん「データを管理しろ」「整理整頓しろ」）
+
+- 棚卸し＝cat-bitget の下のフォルダ83個（.venv と .git を除き、深さ2まで）を、ファイルの数・git の数・大きさ・最後に書いた日・名前で読むプログラムの数で数えた（機械で20秒）。sdk の下は始めに 11GB（52,672本・git に入っているのは2,679本）だった。
+- CC の誤り＝1回目の数え方は、探す先のフォルダの一覧を zsh の変数1つに入れて渡したため、1つの名前として扱われ、全部「読むプログラム0本」と出た。別の探し方で数え直して気づいた。ml_phase のフォルダでは、ファイルだけを数えたためリンク3本を数え漏らした（行き先が無くなったので消した）。
+- 消した物（すべて git に入っていない物・まこさんの OK の後）＝A：__pycache__ 7つ・.claude/state/_selftest_* 4つ・runner/backup・直下の session_todo_posted（134本）／B1：archive/leak_invalid_20260513（1.5GB・.gitignore の33行も消した）／B2：labels_mfe_mae_pct_sample.parquet（104MB）／B3：results/priority_rebuild/tuner_cache（44本・1.4GB）／B4：results/priority_rebuild/archive（3本・1.3GB）／B5：ml_phase* の md 以外（1,519本＋リンク3本・1.2GB。md 9本は残した）／B6：dashboard/regime_prototype の古い判定の21の版（319本。目次 index.json からも外した・控え＝作業場の index.json.before）／B7：data の期間の重なる CSV 8本（338MB・残す物と数の値で1行も違わないことを照らした）・oi の控え・_binance_tmp と _binance_tmp_1m（116本・147MB）／B9：.venv311（830MB・.venv311 で走らせると書いてあるテスト2本を、ふだんの python3 で 6/6・15/15 通してから）／B10：sdk の外の v3-bitget-api-sdk/results（43本）。
+- 残した物＝labels_mfe_mae_pct の3本（e37_range_scalp.py の _load_features が読む・要件定義書の10に1行足した）・1分足 taker の2本（2023-06 からの物と、CVD が直書きで読む 2024-03 からの物・要件定義書の10に1行足した）・.venv（Bitget の窓口が使う requests と pycryptodome が入っている）。
+- 見つけた不具合＝engine_tuner_fire_diag.py の56行と engine_tuner_gen.py の8045行が、HERE（フォルダ）から2段上に results を作るので、sdk の外に書く。next_step の「あとで直すこと」の267番に足した。
+- 結果＝sdk の下は 11GB から 4.1GB になった。
+- 続き＝B11：results の研究のフォルダ11個・results の直下の13本・backups（389本・71MB。observe_config.json の338行と記録の文書が名指しする4本は残した）／B12：結果が出た監査の cp*_work の中の写しのフォルダ48個と gad_selftest の一時フォルダ（6,008本・リンク157本・209MB）。消した後に git status で、git に入っているファイルが消えた扱いになっていないこと（0件）を確かめた。sdk の下は 3.8GB になった。
+- 写しが溜まった原因＝tidy_next_step.py の122行は、mirror・pristine・tmp で始まる名前の写しだけを消す。brk・tree_after などの名前は残る。
+- 2つの .claude のまとめ（今すぐ動かせる分・まこさん「よい」）＝sdk の .claude の instructions・context・templates・archive_rules・ml_axis_catalog.md・pm_review_template.md・review_lens.md（133本・全部 git）を git mv で直下の .claude へ動かした。scripts・runner・hook から読む所は2通りの探し方で0本だった。gen_folder_map.py の ROLES の7行を sdk の側から直下の側へ移し、--write で README_folder_map.md を作り直した（--verify 通った）。動かしていない物＝ratchet（scripts 42本が名指し）・state（18本）・memory（8本）・rules（5本）・audits（3本）・auditor_template.md（1本）。
+- .claude/state/sessions（まこさん「このようなデータは必要なの？」→「ok」）＝hook と道具は、いまのセッションの id のフォルダだけを読み書きする（require_work_declaration.py の41行・block_repeat_failure.py の117行・136行）。ほかのセッションのフォルダをまとめて読む書き方は、2通りの探し方で0件だった。いまのセッションと1日以内に書かれたフォルダの7個を残し、236個（842本・git 0）を消した。消す仕組みが無いので、また溜まる（整頓の4番で扱う）。
+- .claude/state/indicator_review（まこさん「この配下のデータは必要なの？」）＝373本（.py 117・json 104・md 39・txt 26）。一部は本番のプログラムが読む（settings.json が ss_new/check_indicator_table_on_save.sh を hook に登録／r1_role_map.json・research/w1.json・research/out_w1.json・gemini_r1/cc_ans04.json・check_materials_known_ng.json・ss_impl.json・_w2_before_20261011 の中の物を scripts/priority_rebuild の .py が読む）。大半は工事ごとに案と下書きを作った1回きりのプログラムと途中の物と見られる。依存をたどる調べは、まこさん「時間かかるならやらなくてよい」で止めた。__pycache__ の28本だけ消した（まこさん「ok」）。残りは指標の工事の中で分ける。

@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=80fcadaa8dfca917 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=56b63f78c10c4f58 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 控え（毎回は読まない・要るときに、節を選んで開く）
 
 ★ここから後ろは、プログラム（tidy_next_step.py）が、控えのファイル `.claude/state/next_step_reference.md` に出す。next_step.md には載らない。
@@ -375,6 +375,7 @@
 | **264** | **ToDo の73番の残り** | **設計書を作るプログラム（gen_acceptance.py）の固定の文と、設計書の元のひな型（design_origin_todo_template.md）の文が、まだ公用文作成の考え方の書き方になっていない** | 依頼書の道具の文は 2026-10-21 に直した。設計書の側も直す（まこさん「設計書、のほうの自動生成の仕組みも…修正すべきなのでは？」「書き直しで良いので、しっかり修正して」）。B-1＋S-1 のやることの表の手書きの項目と案（okd_）の文の書き直しも残る。案の書き直しは、まこさんの OK が要る | 2026-10-21 | worklog 20261021 §4・§7 |
 | **265** | **まこさんに伺う** | **m2_todo.json の M2-C-15 の「結ぶ要件」の文に「＝」が残り、依頼書の目的と経緯の3番にそのまま写る** | この文は、まこさんが 2026-10-20 に OK した文なので、CC は書き替えていない。書き直すかを まこさんに伺う | 2026-10-21 | worklog 20261021 §6 |
 | **266** | **次に依頼書の数字の表を直すとき** | **依頼書の Q2 の新しく入る数字の表に、説明に出るだけの数（CP83 の 62・70・71番）が混じる** | 道具は、案の出どころの欄に「説明の文」「数の値ではない」と在る行だけを外す（gen_audit_docs.py の _design_five_questions）。案を書くときに、説明の数の出どころに「説明の文」と書けば外れる | 2026-10-21 | worklog 20261021 §6 |
+| **267** | **engine_tuner_gen.py か engine_tuner_fire_diag.py を次に直すとき** | **2本が、記録の書き先を sdk の外（v3-bitget-api-sdk/results）に作る** | engine_tuner_fire_diag.py の56行と engine_tuner_gen.py の8045行は HERE.parents[2] / "results" と書く。HERE はフォルダ（scripts/priority_rebuild）なので、2段上は sdk でなく v3-bitget-api-sdk になる。engine_tuner.py と tuner_judgement.py は HERE がファイルなので正しい。走らせるたびに sdk の外に firediag と gen_runs ができる（2026-10-24 に43本を消した） | 2026-10-24 | worklog 20261024 §7 |
 
 | **40** | **② E38 を使うとき**（★まこさん決定 2026-08-22・逐語「E38を使うときに修正すればいいのでは？」＝私の「① いますぐ」を差し戻し） | **★E38 の本体が、2026-08-03 から実行できない状態** | 設定 `e38_logics.json` の `global.regime` に `name`／`entry_col`／`block_col`／`note_2026_08_03` の4つが在る。`e38_priority_stack.py` の 103-105行 は そこから `note` **だけ**を外して残り全部を実エンジンへ渡す。実エンジンはその4つを受け取れないので、実行の瞬間に落ちる。**機械で再現した出力＝`TypeError: run_e37() got an unexpected keyword argument 'name'`。**git で1つずつ確かめた結果、commit `b0fc646`（2026-08-03・監査 4-19 の対応）から。**誰も気づかなかった理由＝それ以降 E38 の本体を1回も走らせていない（出力CSV 0件）。**直すのは 103-105行 の1箇所（実エンジンが受け取れる名前だけを渡す形にする）。**★戦略ファイルなので、受け入れ条件を書いてまこさんの承認をもらってから直す。**いまは診断 `leak_causality_diag.py` の中だけで正しく絞り込み、落ちている事実を毎回 画面に出している | **2026-08-09** | このセッションのチャット（打ち切り再現テストの実行中に発覚）・`scripts/priority_rebuild/e38_priority_stack.py:103` |
 | **49** | **⑥ 直さない**（必要になったら再検討） | **入れ子（連続・過去N本以内）の本数を 1 にできない＝「1本前に成立していた」を書けない** | 塞いでいるのは**2か所**＝生成器 `engine_tuner_gen.py` の `if n >= 2` の絞りと、**検証器 `engine_tuner_exec.py:269-270` の「入れ子の本数が 1 は生成禁止（正規形・CP3 提案7）」**。**生成器だけ外しても検証器が拒否する。**★2026-08-13 に「閾値とのクロス」を入れたので、当面この回り道は要らない。**外すかどうかは、監査の決まり（CP3 提案7）を崩す判断が要る** | **2026-08-13** | `engine_tuner_milestones.md` の M1-C-6 の「★1番の直し方」 |
