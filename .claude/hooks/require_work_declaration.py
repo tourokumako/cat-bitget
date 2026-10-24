@@ -9,6 +9,10 @@
   1. このセッションの ToDo（.claude/state/sessions/<セッションの id>/session_todo.md）に「★いまここ」の行が、ちょうど1つ在る。
   2. その番号の宣言が、CC の返信に在る。形＝「【宣言】ToDo の N番」と、【作業内容】【目的】【経緯】【ゴール】の4つ（どれも中身つき）。
   3. その宣言より後に、まこさんの発言が在る（hook の差し戻しの文・途中で止めた印は数えない）。
+  4. ★2026-10-24（212回目・まこさん「次回セッションでインプットしろ」「強制するレベルだ」「読むだけではだめ」「理解できてるのか証拠をだすようにしろ」「やれ」）
+     ＝必読の一覧（must_read_now.txt）のファイルを、このセッションで Read で開いた記録（sessions/<id>/read_log.txt）が在る。
+     かつ、宣言の中に、必読のファイルごとに根拠「<ファイル名>:<行番号>「<その行の逐語・10字以上>」」が1つ以上在り、
+     逐語がそのファイルの、その行の前後3行に1文字も違わずに在る（211回目・212回目に、必読を開いても使わずに設計書を作れなかった）。
 止めるもの＝Write・Edit・MultiEdit・NotebookEdit・読むだけでない Bash・Agent。
 止めないもの＝読む操作／検査だけの実行（--selftest・--verify・--check・--help・--dry・try_hooks.py・next_move.py。--write の付く物は除く）／
   セッションの置き場（ToDo）・worklog・memory・計画のファイルへの書き込み／サブエージェント／記録が読めないとき／
@@ -55,6 +59,46 @@ GIT_EXTRA = re.compile(r"^git\s+check-ignore(\s|$)")               # 無視さ�
 TOOL_CHECK = re.compile(r"^python[0-9.]*\s+\S*(try_hooks|next_move)\.py(\s|$)")  # 書き込まない道具（2026-10-17）
 MIN_BODY = 8                                   # 見出しの後の中身の字数の下限（見出しだけの宣言を通さない）
 FILE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
+MUST_FILE = ROOT / ".claude" / "state" / "must_read_now.txt"   # 必読の一覧（tidy_next_step.py が next_step の必読の表から書く）
+EVID_MIN = 10                                  # 根拠の逐語の字数の下限
+EVID_WIN = 3                                   # 逐語を探す、行番号の前後の行の数
+
+
+def must_list() -> list:
+    """必読の一覧（「#」の行と空の行は読み飛ばす）。一覧が無ければ空＝決まり4は掛けない。"""
+    if not MUST_FILE.exists():
+        return []
+    return [ln.strip() for ln in MUST_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+            if ln.strip() and not ln.lstrip().startswith("#")]
+
+
+def must_problems(todo: pathlib.Path, decl: str) -> list:
+    """決まり4（2026-10-24）。必読を Read で開いた記録と、宣言の中の必読ごとの根拠を照らす。戻り＝足りない所の一覧（空＝足りている）。"""
+    log = todo.parent / "read_log.txt"
+    seen = {s.strip() for s in log.read_text(encoding="utf-8", errors="replace").splitlines()} if log.exists() else set()
+    probs = []
+    for p in must_list():
+        full = p if p.startswith("/") else str(ROOT / p)
+        name = pathlib.Path(p).name
+        if full not in seen:
+            probs.append(f"{name} を、このセッションで Read で開いた記録が無い")
+            continue
+        try:
+            lines = pathlib.Path(full).read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            probs.append(f"{name} が読めない")
+            continue
+        ok = False
+        pat = re.escape(name) + r":(\d+)[^\n「]{0,20}「([^」\n]{%d,})」" % EVID_MIN
+        for m in re.finditer(pat, decl):
+            n, q = int(m.group(1)), m.group(2)
+            if q in "\n".join(lines[max(0, n - 1 - EVID_WIN): n + EVID_WIN]):
+                ok = True
+                break
+        if not ok:
+            probs.append(f"宣言に {name} の根拠「{name}:行番号「その行の逐語（{EVID_MIN}字以上）」」が無いか、"
+                         f"逐語がその行の前後{EVID_WIN}行に無い")
+    return probs
 
 
 def session_id(d: dict):
@@ -138,7 +182,10 @@ def check(transcript: pathlib.Path, todo: pathlib.Path):
         if probs is None:
             continue
         if not probs and any(x[0] == "user" for x in ev[i + 1:]):
-            return None                        # 足りている宣言が在り、その後に まこさんの発言が在る
+            mp = must_problems(todo, e[1])     # ★2026-10-24＝決まり4（必読を開いた記録と、宣言の中の根拠）
+            if not mp:
+                return None                    # 足りている宣言が在り、その後に まこさんの発言が在る
+            probs = ["必読の証拠＝" + x for x in mp]
         last = (i, probs)
     if last is None:
         return f"ToDo の {num}番の宣言が、CC の返信に無い"
@@ -208,6 +255,9 @@ def hook() -> int:
           "   ToDo の1件を始める前に、返信に次の形で宣言を書き、まこさんの返事の後に作業を始めてください"
           "（まこさん指示 2026-10-12）。\n"
           "     【宣言】ToDo の N番\n     【作業内容】…\n     【目的】…\n     【経緯】…\n     【ゴール】…\n"
+          "   ★宣言には、必読の一覧（.claude/state/must_read_now.txt）のファイルごとに、根拠を1つ以上書く＝"
+          "<ファイル名>:<行番号>「<その行の逐語・10字以上>」。必読は先に Read で開く"
+          "（まこさん 2026-10-24「読むだけではだめ」「理解できてるのか証拠をだすようにしろ」）。\n"
           "   止めないもの＝読む操作・検査だけの実行・ToDo と worklog と memory への書き込み。\n"
           "   同じ操作を打ち直しても通りません（宣言と返事がそろうまで）。", file=sys.stderr)
     return 2
@@ -232,9 +282,11 @@ def selftest() -> int:
              "【経緯】171回目に項目の表が固まり、172回目に続きを進める\n【ゴール】直す所の一覧を返信に出して止まる")
     todo3 = "| 番号 | やること | 状態 | 記録 |\n|---|---|---|---|\n| 2 | 前の件 | ✅済 | §1 |\n| 3 | いまの件 | ★いまここ | — |\n| 4 | 次の件 | まだ | — |\n"
     ng = 0
+    global MUST_FILE
     with tempfile.TemporaryDirectory() as td:
         tdp = pathlib.Path(td)
         tr, todo = tdp / "t.jsonl", tdp / "session_todo.md"
+        MUST_FILE = tdp / "must_none.txt"           # T1〜T28 は決まり4を掛けない（必読の一覧が無い＝掛けない）
 
         def run(name, lines, todo_text, want_block, d=None):
             nonlocal ng
@@ -302,7 +354,22 @@ def selftest() -> int:
         # ★2026-10-18（監査 CP79）＝find -delete・sort -o を読むだけと見ていた穴（require_check_after_failure.bash_is_read の直しで止まる）
         run("T27 find -delete → 止まる", [_user("始めて")], None, True, bash("find /tmp/x -name a.md -delete"))
         run("T28 sort -o → 止まる", [_user("始めて")], None, True, bash("sort -o /tmp/out.txt /tmp/in.txt"))
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 28件のうち、期待と違う {ng} 件")
+        # ★2026-10-24（212回目）＝決まり4（必読を開いた記録と、宣言の中の根拠）
+        doc = tdp / "doc.md"
+        doc.write_text("見出しの行\n要件の一行目はここに在ります\n二行目は閾値とパラメータの範囲を書く所です\n", encoding="utf-8")
+        MUST_FILE = tdp / "must.txt"
+        MUST_FILE.write_text("# 見出し\n" + str(doc) + "\n", encoding="utf-8")
+        log = tdp / "read_log.txt"
+        good = decl3 + "\n根拠＝doc.md:3「二行目は閾値とパラメータの範囲を書く所です」"
+        log.unlink(missing_ok=True)
+        run("T29 必読を Read で開いた記録が無い → 止まる", [_say(good), _user("OK")], todo3, True)
+        log.write_text(str(doc) + "\n", encoding="utf-8")
+        run("T30 開いた記録は在るが、宣言に根拠が無い → 止まる", [_say(decl3), _user("OK")], todo3, True)
+        run("T31 開いた記録と、行の前後に在る逐語の根拠 → 通る", [_say(good), _user("OK")], todo3, False)
+        run("T32 根拠の逐語が、その行の前後に無い → 止まる",
+            [_say(decl3 + "\n根拠＝doc.md:3「ファイルのどこにも無い文をここに書きました」"), _user("OK")], todo3, True)
+        MUST_FILE = tdp / "must_none.txt"
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 32件のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 
