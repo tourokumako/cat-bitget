@@ -1636,8 +1636,10 @@ def _design_five_questions(d: dict, md: str, src_label: str, okd: str, engine: b
     def q(num, why, name, body, fix):
         out.append((num, "A", why, name, "\n".join(list(body) + ([""] + _fix_lines(fix, src_label, okd) if fix else [])).strip()))
     todo = d.get("やることの一覧") or []
-    tab_todo = ["| 番号 | 施策（一文） | 出どころ |", "|---|---|---|"] + [
-        f"| {_cell(r.get('番号'))} | {_cell(r.get('一文'))} | {_cell(r.get('出どころ'))} |" for r in todo]
+    # ★2026-10-24（213回目）＝一覧は修正内容（種類・直すファイル・直す所・直す前・直し方）を持つ（gen_acceptance.TODO_COLS）。監査人にも全部の欄を見せる
+    tab_todo = ["| 番号 | 施策（一文） | 種類 | 直すファイル | 直す所 | 直す前 | 直し方 | 出どころ |", "|---|---|---|---|---|---|---|---|"] + [
+        "| " + " | ".join(_cell(r.get(c)) for c in ("番号", "一文", "種類", "直すファイル", "直す所", "直す前", "直し方", "出どころ")) + " |"
+        for r in todo]
     # ── 1. 目的と施策 ──
     q("Q1", "目的や施策が誤っていると、設計書がどれだけ正しくても、目標につながらない工事が実装に進む",
       "目的と施策は正しいか",
@@ -3049,7 +3051,7 @@ def selftest(keep: bool = False) -> int:
         q1n, q3n, q5n = qbody(req_n, "Q1"), qbody(req_n, "Q3"), qbody(req_n, "Q5")
         case("5問が、目的と施策の表・出どころ・コードと検査の直しの4つ・完成の条件・書き方を問い、修正の書き先（やることの表は自動で入る／案の写しは自動では入らない）を出す",
              "「### §1 概要」" in q1n and FIX_AUTO[0] in q1n and "読むもの宣言から写しています" in q1n
-             and "| 番号 | 施策（一文） | 出どころ |" in q1n and "正しい手段か" in q1n and "「## 一覧」の表" in q1n
+             and "| 番号 | 施策（一文） | 種類 | 直すファイル | 直す所 | 直す前 | 直し方 | 出どころ |" in q1n and "正しい手段か" in q1n and "「## 一覧」の表" in q1n
              and "| 直すファイル | 実装の指示の番号 |" in q3n and "「4-22」" in q3n and f"【{ga.HEAD_FIVE}】" in q3n and FIX_OK[0] in q3n
              and "完成の条件" in qbody(req_n, "Q4") and "--dry-run" in q5n and "修正の指示は書きません" in q5n)
         case("設計書の「確かめていないこと」が、自己申告に1件ずつ写る",

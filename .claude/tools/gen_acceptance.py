@@ -242,7 +242,22 @@ TODO_MD = "やることの表.md"
 HAND_KEYS = ("§1 概要", "2-1 何を測るか", "3-1 やらないこと", "3-2 決めてほしいこと", "4-19 通しの例")
 # ★2026-10-13（工事 design-doc-gen-form-20261013）＝新しい形の やることの表（共通の ひな型 design_origin_todo_template.md）の手書きの項目。
 #   見分け方＝手書きの項目に「### 目標」が在れば、新しい形。無ければ、いままでの形（上の5つ）のまま読む。
-HAND_KEYS_NEW = ("§1 概要", "この工事が結ぶ要件と、減らす違い", "2-1 何を測るか", "目標", "3-2 決めてほしいこと", "4-19 通しの例")
+# ★2026-10-24（213回目・まこさん「一覧の各行に「直すファイル・直す所・直し方」の欄を必須に今すぐ修正しろ」「現状項目だと、こんな無意味なものができる」
+#   「じゃあやることの表を修正しろ！！」）＝修正内容（どのファイルの・どこを・どう直すか）を、やることの表に必ず書かせる。
+#   直す前は、一覧が「番号・一文・出どころ」だけで、設計の中身（4-0〜4-18）は案の文をそのまま写すだけだった＝要件の文を写しただけでも設計書ができた。
+HAND_DESIGN = {"4-4 処理の流れ": ("4-4", ("順", "読む物", "すること", "書く先")),
+               "4-5 止まる条件": ("4-5", ("条件", "止める所", "画面に出す文")),
+               "4-8 作る物の形": ("4-8", ("作るファイル", "欄の名前", "型", "写す元", "1件の例")),
+               "4-13 影響範囲": ("4-13", ("読む側", "この工事の後どうなるか", "受け持つ工事"))}
+TODO_COLS = ("番号", "一文", "種類", "直すファイル", "直す所", "直す前", "直し方", "出どころ")
+TODO_KINDS = ("作る", "直す", "消す")
+EXAMPLE_COLS = ("修正の番号", "欄の名前", "直す前の値", "直した後の値")
+# ★2026-10-24（213回目・ToDo の178番・まこさん「この雛形の直しの残り（7〜9）」）＝完成の条件も やることの表に書く（案の【7-6】の欄の前に「修正の番号」）
+HAND_ACCEPT = "7-6 完成の条件"
+ACCEPT_COLS = ("修正の番号", "条件", "コマンド", "経路", "壊し方", "壊すプログラム", "監査確認", "いまの状態")
+HAND_KEYS_NEW = ("§1 概要", "この工事が結ぶ要件と、減らす違い", "2-1 何を測るか", "目標", "3-2 決めてほしいこと",
+                 *HAND_DESIGN, "4-19 通しの例", HAND_ACCEPT)
+TODO_OWNED = {no for no, _c in HAND_DESIGN.values()} | {"4-19", "7-6"}   # 新しい形で、案（【】の返信）に書くと止める節
 NEW_FORM_MARK = "目標"
 AUTO_TEXT = {"7-2": "固定値ゼロ宣言", "7-3": "変更の単位"}
 AUTO_TABLE = {"5": ("決めたことと理由", ("決めたこと", "理由", "捨てた案")),
@@ -393,6 +408,8 @@ def src_from_work(work: str) -> dict:
         rows = []
         for ln in (d_dir / f"{n}.txt").read_text(encoding="utf-8").splitlines():
             km = KEY_RE.match(ln) if is_cc else None
+            if km and km.group(1).split()[0] in DECL_HEADS:      # 宣言の見出しの下の行は、案に数えない（見出しの外の行と同じ扱い）
+                km, cur = None, None
             if km:
                 cur = km.group(1).split()[0]
                 owner[cur] = n
@@ -429,6 +446,8 @@ def src_from_work(work: str) -> dict:
     for k, body in auto.items():
         if new_form and k in (HEAD_FIVE, HEAD_NUMS, HEAD_UNVERIFIED):
             _read_new_head(d, k, body, bad)
+        elif new_form and k in TODO_OWNED:
+            bad.append(f"OK された案に【{k}】が在る（この節は、やることの表の手書きの項目に書く＝同じ事を2か所に書かない）")
         elif re.fullmatch(r"4-(?:[0-9]|1[0-8]|23)", k):          # ★2026-10-22＝4-23 置き場の地図（まこさん指示「設計書のテンプレに項目としても追加」）
             first = _text(body)
             d["設計の中身"][k] = ({"非該当": first.split("＝", 1)[-1].strip()} if first.startswith("非該当")
@@ -481,6 +500,12 @@ def src_from_work(work: str) -> dict:
             j = _json_block(body, "【7-8】", bad) or {}
             for kk in ("TARGET", "NEW_FILE", "MODEL", "DESIGN_CONTRACT"):
                 if kk in j:
+                    # ★2026-10-24（ToDo の178番）＝新しい形の TARGET・NEW_FILE は一覧から作る。案に書いて、一覧と違えば止める（2か所に書かない）
+                    if new_form and kk in ("TARGET", "NEW_FILE"):
+                        if sorted(str(x) for x in (j[kk] or [])) != list(d.get(kk) or []):
+                            bad.append(f"案の【7-8】の {kk} が、やることの表の一覧から作った物と違う（案 {j[kk]} ／ 一覧 {d.get(kk)}）"
+                                       "＝新しい形では、TARGET・NEW_FILE を案に書かない")
+                        continue
                     d[kk] = j[kk]
         else:
             bad.append(f"OK された案に、知らない見出し【{k}】が在る（写す先の項目が無い）")
@@ -490,8 +515,14 @@ def src_from_work(work: str) -> dict:
     need = ["何を作るか", "真因", "期待値分解", "root か symptom か", "ベースアップ", "固定値ゼロ宣言", "変更の単位",
             "完成の条件", "TARGET", "DESIGN_CONTRACT", "ハード制約の照合"]
     for k in need:
+        if new_form and k == "TARGET" and not d.get(k) and d.get("NEW_FILE"):
+            continue                                       # ★2026-10-24（ToDo の178番）＝作る物だけの工事は、一覧から作る TARGET が空でよい
         if not d.get(k):
-            bad.append(f"「{k}」が無い（{'やることの表の §1 概要' if k == '何を作るか' else 'OK された案の【】の見出し'}）")
+            where = ("やることの表の §1 概要" if k == "何を作るか"
+                     else f"やることの表の「### {HAND_ACCEPT}」" if new_form and k == "完成の条件"
+                     else "やることの表の一覧（種類と直すファイル）" if new_form and k == "TARGET"
+                     else "OK された案の【】の見出し")
+            bad.append(f"「{k}」が無い（{where}）")
     for k in ("決めたことと理由", "リスク", "見積もり", "塞げないもの", "実装の指示"):
         d.setdefault(k, [])
     if touches_trading(d) and not d.get("作ってはいけないものとの照合"):
@@ -519,6 +550,7 @@ PLAN_REQ_KEY = "★**結ぶ要件の項目**："
 HEAD_FIVE = "検査やプログラムを直す工事で書く5つ"       # 案の新しい見出し（項目の正本の 4-22）
 HEAD_NUMS = "新しく入る数字と式の一覧"                 # 同（項目の正本の 4-21）
 HEAD_UNVERIFIED = "確かめていないこと"                 # 同（設計書の 6-5）
+DECL_HEADS = ("宣言", "作業内容", "目的", "経緯", "ゴール")   # ★2026-10-24（3-2 の10件目・まこさん「ok」）＝ToDo の宣言の見出し。案の見出しではない
 # 工事の種類を決める語。直すファイルの一覧（TARGET・NEW_FILE）のパスに1つでも在れば、種類①
 KIND1_WORDS = ("scripts/priority_rebuild", "engine_tuner", "regime_laws", "indicator_switch", "signal_families",
                "material_ranking", "search_limits", "observe_config", "indicator_params", "indicator_roles",
@@ -580,6 +612,47 @@ def _plan_link(work: str, d_dir: Path) -> tuple:
                     "「結ぶ要件の項目」の行が無い（require_read_plan_before_design.py --write で宣言を作る）"), ""
 
 
+def _check_todo_rows(rows: list, bad: list) -> None:
+    """一覧の各行が、修正内容（種類・直すファイル・直す所・直す前・直し方）を持つかを見る。足りない物は bad に全部 足す。"""
+    if not rows:
+        bad.append("## 一覧 に行が無い")
+    for r in rows:
+        no, kind = r["番号"], r["種類"].strip()
+        if kind not in TODO_KINDS:
+            bad.append(f"一覧の {no} の「種類」が「{kind}」（作る・直す・消す のどれか1つを書く）")
+        for c in ("一文", "直すファイル", "直す所", "直し方", "出どころ"):
+            if r[c].strip() in EMPTY_WORDS:
+                bad.append(f"一覧の {no} の「{c}」が空")
+        if kind != "作る" and r["直す前"].strip() in EMPTY_WORDS:
+            bad.append(f"一覧の {no} の「直す前」が空（種類が「作る」でない行は、いまの姿を実物の行で書く）")
+        if kind in ("直す", "消す"):
+            f = r["直すファイル"].strip().strip("`")
+            if f and not (Path(f) if f.startswith("/") else ROOT / f).exists():
+                bad.append(f"一覧の {no} の「直すファイル」が実在しない: {f}（根からのパスで書く）")
+            if not re.search(r"[0-9A-Za-z_]", r["直す所"]):
+                bad.append(f"一覧の {no} の「直す所」に、行の番号か名前が無い: {r['直す所']}")
+
+
+def _read_design_hand(d: dict, hand: dict, k: str, no: str, cols: tuple, bad: list) -> None:
+    """やることの表の手書きの設計の表（4-4・4-5・4-8・4-13）を読み、設計の中身へ入れる。空の欄は止める。
+    非該当にしてよいのは 4-8（作る物が無い工事）だけ。"""
+    lines = [ln for ln in (hand.get(k) or []) if not ln.strip().startswith("★向きを見る所")]
+    first = _text(lines)
+    if first.startswith("非該当"):
+        if no != "4-8":
+            bad.append(f"「### {k}」は非該当にできない（どの工事でも書く）")
+        d["設計の中身"][no] = {"非該当": first.split("＝", 1)[-1].strip()}
+        return
+    rows = _md_table(lines, cols, f"### {k}", bad)
+    if any(ln.strip().startswith("|") for ln in lines) and not rows:
+        bad.append(f"「### {k}」の表に行が無い")
+    for r in rows:
+        for c in cols:
+            if r[c].strip() in EMPTY_WORDS:
+                bad.append(f"「### {k}」の行（{r[cols[0]]}）の「{c}」が空")
+    d["設計の中身"][no] = [ln for ln in lines if ln.strip()]
+
+
 def _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: Path) -> None:
     """新しい形の やることの表から、手書きの項目・やることの一覧・やらないことを読む。足りない物は bad に全部 足す。"""
     d["何を作るか"] = _para(hand.get("§1 概要") or [])
@@ -597,7 +670,47 @@ def _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: 
         if r["番号"] in ("④", "⑥") and r["中身"].strip() in EMPTY_WORDS:
             bad.append(f"目標の{r['番号']}（{r['欄']}）が空（空では出せない。無いと書くときは、根拠と確かめ直すコマンドを書く）")
     d["目標"] = goal
-    d["やることの一覧"] = _md_table(top.get("一覧") or [], ("番号", "一文", "出どころ"), "## 一覧", bad)
+    d["やることの一覧"] = _md_table(top.get("一覧") or [], TODO_COLS, "## 一覧", bad)
+    _check_todo_rows(d["やることの一覧"], bad)
+    for k, (no, cols) in HAND_DESIGN.items():
+        _read_design_hand(d, hand, k, no, cols, bad)
+    if isinstance(d["設計の中身"].get("4-8"), dict) and any(r["種類"] == "作る" for r in d["やることの一覧"]):
+        bad.append("一覧に種類「作る」の行が在るのに、「### 4-8 作る物の形」が非該当（作る物の欄と写す元と1件の例を書く）")
+    ex_lines = [ln for ln in (hand.get("4-19 通しの例") or []) if ln.strip().startswith("|")]
+    ex_rows = _md_table(ex_lines, EXAMPLE_COLS, "### 4-19 通しの例", bad) if ex_lines else []
+    if not ex_lines:
+        bad.append("「### 4-19 通しの例」に表が無い（見出しの欄＝" + "｜".join(EXAMPLE_COLS) + "。実物の1件で、一覧の全部の番号を通す）")
+    for r in ex_rows:
+        for c in EXAMPLE_COLS:
+            if r[c].strip() in EMPTY_WORDS:
+                bad.append(f"「### 4-19 通しの例」の行（{r['修正の番号']}）の「{c}」が空")
+    have_ex = {r["修正の番号"] for r in ex_rows}
+    for r in d["やることの一覧"]:
+        if r["番号"] not in have_ex:
+            bad.append(f"一覧の番号 {r['番号']} が、「### 4-19 通しの例」の表に無い（実物の1件で、一覧の全部の番号を通す）")
+    # ★2026-10-24（ToDo の178番）＝完成の条件は やることの表の「### 7-6 完成の条件」から読む。条件の文の頭に修正の番号を付けて、
+    #   いまの完成の条件の欄（承認のプログラム・壊すプログラムが読む7つ）のまま持つ。行が無い番号の理由の行もここから読む。
+    acc_lines = [ln for ln in (hand.get(HAND_ACCEPT) or []) if not ln.strip().startswith("★向きを見る所")]
+    acc_rows = _md_table(acc_lines, ACCEPT_COLS, f"### {HAND_ACCEPT}", bad)
+    for r in acc_rows:
+        for c in ("修正の番号", "条件", "コマンド"):
+            if r[c].strip() in EMPTY_WORDS:
+                bad.append(f"「### {HAND_ACCEPT}」の行（{r['修正の番号']}）の「{c}」が空")
+    d["完成の条件"] = [dict({c: r[c] for c in ACCEPT_COLS[1:]}, 条件=f"{r['修正の番号']}：{r['条件']}") for r in acc_rows]
+    d["完成の条件の注記"] = [ln for ln in acc_lines if ln.strip().startswith("- 行が無いやることの番号")]
+    # ★同（9）＝TARGET（直す・消すの行の直すファイル）と NEW_FILE（作るの行の直すファイル）は、一覧からプログラムが作る
+    def _files(kinds):
+        return sorted({r["直すファイル"].strip().strip("`") for r in d["やることの一覧"]
+                       if r["種類"].strip() in kinds and r["直すファイル"].strip() not in EMPTY_WORDS})
+    d["TARGET"], d["NEW_FILE"] = _files(("直す", "消す")), _files(("作る",))
+    # ★2026-10-24（213回目・まこさん「ok」）＝7-6 の「壊すプログラム」の欄に書いた .claude/breaks/ の .sh も足す。当てる道具は、
+    #   新しいファイルを承認済みの設計書の NEW_FILE に在るときだけ作る（apply_audit_fix.py:672）＝一覧だけから作ると、壊すプログラムを作れない。
+    #   まだ無いファイルは NEW_FILE、もう在るファイルは TARGET に入れる。
+    for r in acc_rows:
+        for nm in re.findall(r"(?:\.claude/breaks/)?([\w.\-]+\.sh)", r["壊すプログラム"]):   # 名前だけの書き方（run_breaks.py が読む形）も
+            b = f".claude/breaks/{nm}"
+            (d["TARGET"] if (ROOT / b).exists() else d["NEW_FILE"]).append(b)
+    d["TARGET"], d["NEW_FILE"] = sorted(set(d["TARGET"])), sorted(set(d["NEW_FILE"]))
     d["やらないこと"] = [{k: r[k] for k in ("中身", "理由", "出どころ")}
                        for r in _md_table(top.get("やらないこと") or [], ("番号", "中身", "理由", "出どころ"), "## やらないこと", bad)]
     nums, req, why, text = _plan_link(work, d_dir)
@@ -700,11 +813,12 @@ def _finish_new(d: dict, bad: list) -> None:
         bad.append("案の【7-3b】が無い（番号・根拠・確かめ直すコマンドの表）")
     # 完成の条件に、やることの番号ごとの行が在るか（別セッションの監査 2026-10-12 の M-7）
     cond = " ".join(str(r.get("条件") or "") for r in d.get("完成の条件") or [])
-    excuse = " ".join(ln for ln in (d.get("案の文") or {}).get("7-6") or [] if ln.strip().startswith("- 行が無いやることの番号"))
+    excuse = " ".join([ln for ln in (d.get("案の文") or {}).get("7-6") or [] if ln.strip().startswith("- 行が無いやることの番号")]
+                      + list(d.get("完成の条件の注記") or []))
     for r in d.get("やることの一覧") or []:
         n = str(r["番号"])
         if not _named(n, cond) and not _named(n, excuse):
-            bad.append(f"やることの番号 {n} に、完成の条件（【7-6】）の行が無い（行を足すか、「- 行が無いやることの番号と、その理由：」の行に理由を書く）")
+            bad.append(f"やることの番号 {n} に、完成の条件（やることの表の「### {HAND_ACCEPT}」）の行が無い（行を足すか、「- 行が無いやることの番号と、その理由：」の行に理由を書く）")
 
 
 def sec_state(d: dict, sec: str) -> tuple:
@@ -754,8 +868,8 @@ def _sec2_new(d: dict) -> list:
     L += [f"| {_esc(r['欄'])} | {_esc(r['中身'])} |" for r in d.get("どの行の工事か") or []]
     L += ["", "### 2-0b やることの一覧", "",
           _tag("自動", "やることの表の「## 一覧」から、プログラムが写した"),
-          "| 番号 | 一文 | 出どころ |", "|---|---|---|"]
-    L += [f"| {_esc(r['番号'])} | {_esc(r['一文'])} | {_esc(r['出どころ'])} |" for r in d.get("やることの一覧") or []]
+          "| " + " | ".join(TODO_COLS) + " |", "|" + "---|" * len(TODO_COLS)]
+    L += ["| " + " | ".join(_esc(r.get(c, "")) for c in TODO_COLS) + " |" for r in d.get("やることの一覧") or []]
     return L + [""]
 
 
@@ -1239,7 +1353,9 @@ def build_spec(d: dict) -> str:
     #   設計書を作り直して承認を打ち直していた（承認2回）。★直す前の文字がちょうど1か所ずつ無ければ止める（fail-closed）。
     src_text = path.read_text(encoding="utf-8")
     for it in d.get("実装の指示") or []:
-        if it.get("対象のファイル") != impl or it.get("種類") != "直した後の文字":
+        # ★2026-10-24（213回目）＝対象のファイルは実物の場所で比べる（文字のまま比べると、根からの書き方〔.claude/state/…〕と
+        #   impl_file の書き方〔../../.claude/state/…〕が違うだけで当てず、直す前の中身から SPEC を作っていた）
+        if _repo(it.get("対象のファイル")).resolve() != path.resolve() or it.get("種類") != "直した後の文字":
             continue
         old = it.get("直す前の文字") or ""
         # ★2026-10-07（監査 CP63 の修正13・Minor-4）＝直した後の文字が直す前の文字の中に含まれる指示（消すだけの指示）は、
@@ -1880,8 +1996,10 @@ def section4(d: dict) -> str:
             add(_end("IMPL"))
             add("")
             continue
-        add(_wtag("手書き" if no == "4-19" else "自動",
+        _hand_no = {v[0]: k for k, v in HAND_DESIGN.items()} if new else {}
+        add(_wtag("手書き" if no == "4-19" or no in _hand_no else "自動",
                   "やることの表の「4-19 通しの例」" if no == "4-19"
+                  else f"やることの表の「{_hand_no[no]}」" if no in _hand_no
                   else f"まこさんが OK した案の【{dict((v, k) for k, v in SECTION_ALIAS.items()).get(no, no) if new else no}】"))
         if isinstance(got, dict):
             for line in got.get("本文") or []:
@@ -2031,6 +2149,19 @@ def page(d: dict) -> str:
     add(_wtag("手書き", "やることの表の「§1 概要」"))
     add(d["何を作るか"])
     add("")
+    if new:
+        # ★2026-10-24（ToDo の178番・8）＝この工事でやること（結論）は、一覧の種類と直すファイルから、プログラムが作る（手で2か所に書かない）
+        add("### 1-1 この工事でやること（結論）")
+        add("")
+        add(_tag("自動", "やることの表の「## 一覧」の種類・直すファイル・番号から、プログラムが作った"))
+        for kind in TODO_KINDS:
+            rows = [r for r in d.get("やることの一覧") or [] if r.get("種類", "").strip() == kind]
+            files: dict = {}
+            for r in rows:
+                files.setdefault(r["直すファイル"].strip().strip("`"), []).append(r["番号"])
+            for f, nos in files.items():
+                add(f"- {kind}：{f}（{'・'.join(nos)}）")
+        add("")
 
     add("## 2｜背景と範囲")
     add("")
@@ -2304,7 +2435,8 @@ def page(d: dict) -> str:
     add("")
     add("### 7-6 完成の条件")
     add("")
-    add(_wtag("自動", "条件とコマンドは まこさんが OK した案の【7-6】・状態の欄は承認のプログラムが書く"))
+    add(_wtag("手書き", f"条件とコマンドは やることの表の「{HAND_ACCEPT}」・状態の欄は承認のプログラムが書く") if new
+        else _wtag("自動", "条件とコマンドは まこさんが OK した案の【7-6】・状態の欄は承認のプログラムが書く"))
     add("**★状態は全部「未着手」です。「済」にするのはプログラムです**"
         "（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。"
         "**自分で「直った」と判定しません**（恒久の決まり64番）。")
@@ -2315,7 +2447,8 @@ def page(d: dict) -> str:
     add("")
     # ★2026-10-20（ToDo の26番・監査 CP78 の Minor C）＝検査が読む「行が無いやることの番号と、その理由」の行を、設計書にも写す
     #   （直す前は、検査が読むのに設計書に出ず、監査が理由を見られなかった）。新しい形だけ（案の文は新しい形にだけ在る）
-    _excuse = [ln.strip() for ln in (d.get("案の文") or {}).get("7-6") or [] if ln.strip().startswith("- 行が無いやることの番号")] if new else []
+    _excuse = ([ln.strip() for ln in (d.get("案の文") or {}).get("7-6") or [] if ln.strip().startswith("- 行が無いやることの番号")]
+               + [ln.strip() for ln in d.get("完成の条件の注記") or []]) if new else []
     if _excuse:
         add(_wtag("自動", "まこさんが OK した案の【7-6】の、行が無いやることの番号と理由の行"))
         for ln in _excuse:
@@ -2373,8 +2506,11 @@ def write(dry: bool = False, dest: Path = None) -> int:
     # ★2026-09-29（やることの表 P1-3）＝［手書き］の印は、割り当ての5つ（HAND_KEYS）とちょうど同じ数でなければ書かない
     # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事のフォルダの1本だけなので、いつも数える
     n_hand = sum(1 for ln in body.splitlines() if ln.startswith("［手書き］"))
-    if n_hand != len(_hk(d)):
-        raise SystemExit(f"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(_hk(d))} 個・fail-closed）")
+    # ★2026-10-24（213回目）＝やることの表の設計の表のうち、非該当にした物（4-8 だけ）は見出しを立てないので、印の数から引く
+    n_na = sum(1 for _k, (no, _c) in HAND_DESIGN.items()
+               if d.get("形") == "新" and isinstance((d.get("設計の中身") or {}).get(no), dict))
+    if n_hand != len(_hk(d)) - n_na:
+        raise SystemExit(f"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(_hk(d)) - n_na} 個・fail-closed）")
     if dry:
         print(body)
         return 0
@@ -2611,6 +2747,16 @@ def _sample_work(base: Path, new: bool = False) -> str:
                  "| 見本の確かめ | 見本 | 見本のコマンド |",
                  "【7-3b 作ってはいけないものとの照合】", "| 番号 | 根拠 | 確かめ直すコマンド |", "|---|---|---|",
                  "| 1 | 見本の根拠 | 見本のコマンド |", "| 2 | 見本の根拠 | 見本のコマンド |"]
+        # ★2026-10-24（213回目・ToDo の177番・178番）＝新しい形では 4-4・4-5・4-8・4-13・4-19・7-6 は やることの表に書く
+        #   （案に書くと止まる）ので、見本の案から外す
+        keep, skip = [], False
+        for ln in prop:
+            km = KEY_RE.match(ln)
+            if km:
+                skip = km.group(1).split()[0] in TODO_OWNED
+            if not skip:
+                keep.append(ln)
+        prop = keep
     rows = [{"type": "user", "uuid": "s-u1", "timestamp": "2026-01-01T00:00:00Z",
              "message": {"role": "user", "content": "見本の要件の文"}},
             {"type": "assistant", "uuid": "s-a1", "timestamp": "2026-01-01T00:00:01Z",
@@ -2634,7 +2780,8 @@ def _sample_work(base: Path, new: bool = False) -> str:
             "### 4-19 通しの例", "", "見本の通しの例。", ""]
     if new:
         todo = ["# やることの表｜工事 selftest-sample-new（見本）", "",
-                "## 一覧", "", "| 番号 | 一文 | 出どころ |", "|---|---|---|", "| 見本 | 見本のやること | 見本 |", "",
+                "## 一覧", "", "| " + " | ".join(TODO_COLS) + " |", "|" + "---|" * len(TODO_COLS),
+                "| 見本 | 見本のやること | 直す | .claude/tools/gen_verbatim.py | def summary | 見本の直す前 | 見本の直し方 | 見本 |", "",
                 "## やらないこと", "", "| 番号 | 中身 | 理由 | 出どころ |", "|---|---|---|---|", "| Y-1 | 見本のやらないこと | 見本 | 見本 |", "",
                 # ★2026-10-18（ToDo の15番）＝共通の ひな型と同じく、割り当ての表を持つ（監査依頼書を作るプログラムが、この表から問い W を作る）
                 "## 手書きと自動の割り当て", "", "| 項目 | 手書き／自動 |", "|---|---|",
@@ -2650,7 +2797,14 @@ def _sample_work(base: Path, new: bool = False) -> str:
                 "| ④ | 無駄だったと分かる物 | 見本の物 |", "| ⑤ | 済んだ直後に、②を何で確かめるか | 見本 |",
                 "| ⑥ | この工事が損なう恐れのある要件 | 見本の要件 |", "",
                 "### 3-2 決めてほしいこと", "", "★向きを見る所。", "無し", "",
-                "### 4-19 通しの例", "", "見本の例。", ""]
+                "### 4-4 処理の流れ", "", "| 順 | 読む物 | すること | 書く先 |", "|---|---|---|---|", "| 1 | 見本の読む物 | 見本のすること | 見本の書く先 |", "",
+                "### 4-5 止まる条件", "", "| 条件 | 止める所 | 画面に出す文 |", "|---|---|---|", "| 見本の条件 | 見本の所 | 見本の文 |", "",
+                "### 4-8 作る物の形", "", "非該当＝見本は作る物が無い", "",
+                "### 4-13 影響範囲", "", "| 読む側 | この工事の後どうなるか | 受け持つ工事 |", "|---|---|---|", "| 見本の読む側 | 変わらない | 見本 |", "",
+                "### 4-19 通しの例", "", "見本の例。", "", "| " + " | ".join(EXAMPLE_COLS) + " |", "|" + "---|" * len(EXAMPLE_COLS),
+                "| 見本 | 見本の欄 | 見本の直す前 | 見本の直した後 |", "",
+                f"### {HAND_ACCEPT}", "", "| " + " | ".join(ACCEPT_COLS) + " |", "|" + "---|" * len(ACCEPT_COLS),
+                "| 見本 | 見本 | python3 ../../.claude/tools/gen_verbatim.py --verify x | 道具 | — | — | 要 | 未着手 |", ""]
         (gv.work_dir(work) / PLAN_COPY).write_text(
             f"【読むもの宣言】\n設計書: {work}\n{PLAN_NUM_KEY}なし（やることリストに行が無い工事）\n{PLAN_REQ_KEY}要件定義の9番（見本）\n",
             encoding="utf-8")
@@ -3005,7 +3159,15 @@ def selftest() -> int:
                 ("手書きの項目に知らない見出しが在ると止まる", _o21 + "\n### 知らない見出し\n\n見本\n", "知らない見出し「### 知らない見出し」"),
                 ("目標の④が空だと止まる", _o21.replace("| ④ | 無駄だったと分かる物 | 見本の物 |", "| ④ | 無駄だったと分かる物 | 無し |"), "空では出せない"),
                 # ★設計書の監査 CP77 の修正＝完成の条件に、やることの番号ごとの行が在るかの照らしを測る
-                ("やることの番号に、完成の条件の行が無いと止まる", _o21.replace("| 見本 | 見本のやること | 見本 |", "| 番号X9 | 見本のやること | 見本 |"), "やることの番号 番号X9 に、完成の条件")):
+                ("やることの番号に、完成の条件の行が無いと止まる", _o21.replace("| 見本 | 見本のやること |", "| 番号X9 | 見本のやること |"), "やることの番号 番号X9 に、完成の条件"),
+                # ★2026-10-24（213回目）＝修正内容（直すファイル・直す所・直し方ほか）と設計の表が空なら止まるかを測る
+                ("一覧の直し方が空だと止まる", _o21.replace("| 見本の直し方 |", "| — |"), "「直し方」が空"),
+                ("一覧の直すファイルが実在しないと止まる", _o21.replace("| .claude/tools/gen_verbatim.py | def summary |", "| .claude/tools/無いファイル.py | def summary |"), "「直すファイル」が実在しない"),
+                ("処理の流れの欄が空だと止まる", _o21.replace("| 1 | 見本の読む物 |", "| 1 | — |"), "「読む物」が空"),
+                ("通しの例に一覧の番号が無いと止まる", _o21.replace("| 見本 | 見本の欄 |", "| 別 | 見本の欄 |"), "「### 4-19 通しの例」の表に無い"),
+                # ★2026-10-24（ToDo の178番）＝TARGET は一覧から作る。案の【7-8】の TARGET が一覧と違えば止まる
+                ("案の【7-8】の TARGET が一覧と違うと止まる", _o21.replace("| .claude/tools/gen_verbatim.py | def summary |", "| .claude/tools/gen_acceptance.py | def page |"), "案の【7-8】の TARGET が"),
+                ("完成の条件の表が無いと止まる", _o21.replace(f"### {HAND_ACCEPT}", "### 7-6 完成の条件を消した見出し"), f"「### {HAND_ACCEPT}」が無い")):
             total += 1
             _tp.write_text(_txt, encoding="utf-8")
             try:
@@ -3018,6 +3180,20 @@ def selftest() -> int:
                 else:
                     print(f"   T{total} 別の理由で止まった → fail（{str(e)[:200]}）")
             _tp.write_text(_o21, encoding="utf-8")
+        # ★2026-10-24（213回目・まこさん「ok」）＝7-6 の壊すプログラムの欄の .claude/breaks/ の .sh が、まだ無ければ NEW_FILE に入るか
+        total += 1
+        _nb = ".claude/breaks/zz_selftest_new_break.sh"
+        _tp.write_text(_o21.replace("| 道具 | — | — | 要 |", f"| 道具 | 見本の壊し方 | {_nb}（見本） | 要 |"), encoding="utf-8")
+        try:
+            _d22 = src()
+            if _nb in _d22["NEW_FILE"] and _nb not in _d22["TARGET"]:
+                ok += 1
+                print(f"   T{total} 7-6 の壊すプログラム（まだ無い .sh）が NEW_FILE に入る → pass")
+            else:
+                print(f"   T{total} 7-6 の壊すプログラムが NEW_FILE に入らない → fail（NEW_FILE {_d22['NEW_FILE']}）")
+        except SystemExit as e:
+            print(f"   T{total} 7-6 の壊すプログラムを足すと止まった → fail（{str(e)[:200]}）")
+        _tp.write_text(_o21, encoding="utf-8")
         total += 1
         _sections_rc = lambda: (1, "見本の抜け")                # noqa: E731  検算が落ちた場面を作る
         try:
@@ -3033,7 +3209,7 @@ def selftest() -> int:
         # 読むもの宣言が「なし」なのに、やることの表の一覧に、やることリストの行の番号が在ると止まる（すり抜けを塞ぐ）
         total += 1
         _nums = [str(t.get("番号")) for t in (_load(TODO).get("やること") or []) if isinstance(t, dict) and t.get("番号")]
-        _tp.write_text(_o21.replace("| 見本 | 見本のやること | 見本 |", f"| 見本 | {_nums[0]} の続きのやること | 見本 |"), encoding="utf-8")
+        _tp.write_text(_o21.replace("| 見本 | 見本のやること |", f"| 見本 | {_nums[0]} の続きのやること |"), encoding="utf-8")
         try:
             src()
             print(f"   T{total} 宣言が「なし」で、一覧に やることリストの行の番号が在っても通った → fail")
