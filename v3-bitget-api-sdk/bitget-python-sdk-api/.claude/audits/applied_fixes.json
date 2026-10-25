@@ -8949,6 +8949,21 @@
    "file": ".claude/breaks/ss1_f8_verify.sh",
    "at": "2026-10-25T17:53:55",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "35",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-26T00:01:48",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "39",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-26T00:01:49",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-single-source-redirect-20261025/ok_fix39_decline_20261025"
   }
  ]
 }
