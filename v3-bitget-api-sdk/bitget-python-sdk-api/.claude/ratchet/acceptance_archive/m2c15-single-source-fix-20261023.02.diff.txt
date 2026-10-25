@@ -1,0 +1,23 @@
+371a372
+> | <モジュール直下>（import・定数 ROOT・SDK・PR・ST・HERE・OUT・INV・FIELDS・DECIDED_PROP・OWN・JSON_PATH・JSON_OWN・TABLE・EXTRA・EXTRA_OF と、別枠の表どうしの名前の重なりの止め） | 写す元の置き場・書く先・記録の23の欄・方向「向きつき」の1行・決まった欄の置き場・別枠の材料の定義の表を、関数の外で1回だけ決める。全文を書き替えるので、照合A はこのまとまりも触ったと数える（2026-10-25 に impl_functions に足した） | F-2〜F-7 |
+1862c1863
+< <!-- ACC_CHECKLIST_START hash=9b870e389e0c1919 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CHECKLIST_START hash=1aba8865e1b6bc77 gen_acceptance.py が自動生成＝手で書き換えない -->
+1868c1869
+< | 2 | 【群1】`DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine` | DESIGN_CONTRACT は【7-8】に書きます。impl_file は gen_indicators_draft.py です。impl_functions は、実装の指示の1件目（写すプログラムの全文）の一番外の関数25個です（全文を書き替えるので、全部が触る関数。CP89 の修正6 で _carry を足した）。 |
+---
+> | 2 | 【群1】`DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine` | DESIGN_CONTRACT は【7-8】に書きます。impl_file は gen_indicators_draft.py です。impl_functions は、実装の指示の1件目（写すプログラムの全文）の一番外の関数25個と、モジュール直下（関数の外の import・定数・一番外の処理のまとまり）です（全文を書き替えるので、全部が触るまとまり。CP89 の修正6 で _carry を足した。写すプログラムは git に入っていないので、照合A は中の全部のまとまりを触ったと数える＝2026-10-25 に設計↔実装のゲートが止めて足した）。 |
+1880c1881
+< | 14 | 【群1】実装の指示で新しく足す関数（def）を全部 数え、DESIGN_CONTRACT の impl_functions に全部 在るかと、must_use の名前が直した後の関数の中に在るか（包みの関数を呼ぶなら包みの名前） | 写すプログラムの一番外の関数は25個です（jload・_carry・module_assign・plain・src_text・called・defaults・resolve・kinds_in・narrow・norm・decide・nums・inventory・row_name・parsed・in_selftest・row_kind・code_copy・json_copy・build・coverage・verify・selftest・main）。全文を書き替えるので、全部を DESIGN_CONTRACT の impl_functions に書きました。 |
+---
+> | 14 | 【群1】実装の指示で新しく足す関数（def）を全部 数え、DESIGN_CONTRACT の impl_functions に全部 在るかと、must_use の名前が直した後の関数の中に在るか（包みの関数を呼ぶなら包みの名前） | 写すプログラムの一番外の関数は25個です（jload・_carry・module_assign・plain・src_text・called・defaults・resolve・kinds_in・narrow・norm・decide・nums・inventory・row_name・parsed・in_selftest・row_kind・code_copy・json_copy・build・coverage・verify・selftest・main）。全文を書き替えるので、全部と、モジュール直下（"<モジュール直下>"）を DESIGN_CONTRACT の impl_functions に書きました。 |
+1955c1956
+< <!-- ACC_SPEC_START hash=84fc4395a7a42591 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=f926faf026ebd014 gen_acceptance.py が自動生成＝手で書き換えない -->
+1996c1997,1998
+<       "main"
+---
+>       "main",
+>       "<モジュール直下>"

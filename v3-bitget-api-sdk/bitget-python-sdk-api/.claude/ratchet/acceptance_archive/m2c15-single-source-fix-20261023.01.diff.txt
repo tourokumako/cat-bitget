@@ -1,0 +1,8 @@
+546c546
+< <!-- ACC_IMPL_START hash=43fecdc2cfc78ef7 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_IMPL_START hash=432c821afc7be3d6 gen_acceptance.py が自動生成＝手で書き換えない -->
+1368c1368
+< 根拠の抜き書き: やることの表の一覧 F-2〜F-8（直すファイル＝.claude/state/indicator_review/gen_indicators_draft.py）・4-4 処理の流れ・4-5 止まる条件・4-8 作る物の形
+---
+> 根拠の抜き書き: .claude/state/indicator_review/gen_indicators_draft.py:26「OUT = Path(__file__).resolve().parent / "indicators_draft"」（直す前の書く先＝一覧の F-2。ファイルの全文を、一覧の F-2〜F-8・4-4 処理の流れ・4-5 止まる条件・4-8 作る物の形のとおりに書き替える）

@@ -535,6 +535,11 @@ def a11_apply_dry(acc):
         fixes = a.read_design_fixes(md)
         if not fixes:
             return []
+        # ★2026-10-25（214回目・まこさん「どちらも修正でいい」）＝当てる道具は、当てる前に6つの欄の形を見て、1件でも違えば全部止める
+        #   （apply_audit_fix.py:884〜890）。直す前の A11 は check_one だけを試し、この形を見なかったので、承認の後に初めて止まった。
+        form = [e for num, block in a.read_design_blocks(md) for e in a.g.item_errors(num, block)]
+        if form:
+            return ["A11 承認の後に当てる道具が、実装の指示の欄の形で止める（1件も当たらない）:\n" + _tail("\n".join(form), 20)]
 
         def sim(mod):
             mod.DESIGN, mod.APPROVED = acc, mark
@@ -730,6 +735,10 @@ def _a12_restore():
                 bad.append(p)
         elif os.path.exists(p):
             os.remove(p)
+            if e.get("dir_new"):                                 # ★2026-10-25＝仮当てが作ったフォルダは、空なら消す
+                import contextlib
+                with contextlib.suppress(OSError):
+                    os.rmdir(os.path.dirname(p))
     import shutil
     shutil.rmtree(BK_DIR, ignore_errors=True)
     return bad
@@ -859,7 +868,8 @@ def _a12_trial_locked(acc):
             p = os.path.realpath(p)
             if any(e["path"] == p for e in man):
                 return
-            e = {"path": p, "existed": os.path.isfile(p), "bak": f"{len(man)}.bak", "mode": 0o644, "sha": ""}
+            e = {"path": p, "existed": os.path.isfile(p), "bak": f"{len(man)}.bak", "mode": 0o644, "sha": "",
+                 "dir_new": not os.path.isdir(os.path.dirname(p))}   # ★2026-10-25＝仮当てが作ったフォルダか（戻すときに空なら消す）
             if e["existed"]:
                 data = open(p, "rb").read()
                 open(os.path.join(BK_DIR, e["bak"]), "wb").write(data)
@@ -913,6 +923,11 @@ def _a12_trial_locked(acc):
         for f in fixes:
             if f["番号"] not in done:
                 bad.append(f"当てる道具を2回 打っても当たらない件＝件{f['番号']}（{f['対象のファイル']}）")
+        # ★2026-10-25（214回目・監査 CP88 の修正15・16・まこさん「それでよい」）＝完成の条件のコマンドが新しく書くファイル
+        #   （NEW_FILE に在るのに、実装の指示では書かない物＝例 写すプログラムが書く indicators.json）も、走らせる前に控えの一覧に入れる。
+        #   直す前は控えの一覧に入らず、戻す所（_a12_restore）が消さないので、仮当ての後も本物の置き場に残った（2026-10-24・25 に2回）
+        for nf in [x.strip() for t in re.findall(r"^NEW_FILE:\s*(.+)$", md, re.M) for x in t.split(",") if x.strip()]:
+            keep(nf if nf.startswith("/") else os.path.join(ROOT, nf))
         m = re.search(r"<!-- ACCEPT_TABLE_START -->(.*?)<!-- ACCEPT_TABLE_END -->", md, re.S)
         for ln in (m.group(1).splitlines() if m else []):
             cells = [c.strip() for c in ln.strip().strip("|").split("|")]
@@ -932,6 +947,18 @@ def _a12_trial_locked(acc):
         wrong = [l for l in (out or "").splitlines() if "期待と違う" in l or "まだ測れない" in l]
         if rc not in (0,) or wrong:
             bad.append(f"壊すプログラムが当てた後に期待どおりでない（rc={rc}）:\n" + _tail("\n".join(wrong) or out, 12))
+        # ★2026-10-25（214回目・まこさん「ア・イの両方で進めてよい」）＝当てた後に、照合A（触ったまとまりが impl_functions に在るか）を見る。
+        #   A12_SELFTESTS の verify_design_contract.py --diff は照合A を含まず、"<モジュール直下>" の抜けを承認の後のゲートが初めて止めた。
+        try:
+            sys.path.insert(0, SDK + "/scripts/priority_rebuild")
+            import verify_design_contract as _vdc
+            _ifn = (_vdc.extract_contract(md) or {}).get("impl_functions") or {}
+            for _rel, _want in _ifn.items():
+                _extra = sorted(_vdc.touched_functions(_vdc._resolve_impl(acc, _rel)) - set(_want))
+                if _extra:
+                    bad.append(f"照合A＝当てた後に触ったまとまりが、設計書の impl_functions に無い（{_rel}）: {'・'.join(_extra)}")
+        except Exception as e:                               # noqa: BLE001
+            bad.append(f"照合A を当てた後に走らせられない（{e}）")
         # ★2026-10-06（156回目・next_step の手順6）＝仮当てのまま、自己テスト6本も走らせる（A12_SELFTESTS の説明）。
         for st in A12_SELFTESTS:
             cmd6 = ["python3", SDK + "/scripts/priority_rebuild/" + st[0]] + list(st[1:])

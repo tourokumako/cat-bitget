@@ -32,9 +32,9 @@
 | gen_s22_combi.py | 0 | 3 | 0 | 0 |
 | gen_signal_families.py | 2 | 49 | 1 | 0 |
 | gen_stage0_match.py | 0 | 3 | 0 | 0 |
-| indicator_reference_diag.py | 318 | 27 | 0 | 0 |
+| indicator_reference_diag.py | 325 | 65 | 0 | 0 |
 | leak_causality_diag.py | 0 | 7 | 0 | 0 |
-| observe_diag.py | 317 | 79 | 300 | 0 |
+| observe_diag.py | 318 | 89 | 300 | 0 |
 | pre_audit_check.py | 0 | 7 | 0 | 0 |
 | precheck.py | 1 | 2 | 3 | 0 |
 | ratchet_guards.py | 1 | 2 | 0 | 0 |
@@ -170,7 +170,7 @@
 
 ## 照らし（エージェントの報告の行）
 
-範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 220 行
+範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 223 行
 
 - e38_logic_parts.py:37-39  _resample_htf  [自前で計算]  上位足（label=left・closed=left）
 - engine_tuner_fire_diag.py:155-169  build_geo  [自前で計算]  レンジ幾何の列名と式
@@ -197,6 +197,9 @@
 - engine_tuner_fire_diag.py:81-82  cond_label の role  [持つ]  役割の名前と日本語の対応表
 - engine_tuner_fire_diag.py:493-503  _synth_recipe  [持つ（テスト用）]  場面の判定の列名・SL の幅
 - engine_tuner_fire_diag.py:514,529-530  selftest  [持つ（テスト用）]  条件の形と閾値
+- gen_acceptance.py:523-525  KIND1_WORDS  [持つ]  ファイル名だけ（工事の種類を決める語）
+- gen_acceptance.py:527-533  PARAMS・ROLES・THRESHOLD_KEY・OBS_CFG  [持つ（パス・鍵）]  資料の表2本・閾値の鍵・時間足の置き場
+- gen_acceptance.py:3054-3097  自己テストの見本  [持つ]  見本の指標の行
 - gen_audit_request.py:123  N_LAWS  [持つ]  法則の件数
 - gen_audit_request.py:125-138  SOURCES  [持つ]  指標と場面の判定のコードの場所
 - gen_composition_rules.py:114-122  `_extra_lineage`  [持つ]  geo と time の系統
@@ -225,7 +228,6 @@
 - observe_diag.py:187  `ONE_MIN_CSV`  [持つ]  前処理（1m・3m の元データ）
 - observe_diag.py:200  `BARS_CSV`  [持つ]  前処理（元の5分足）
 - observe_diag.py:250-259  `_DEMAND_FILES`  [持つ]  需給の指標3種（名前・ファイル・列）
-- observe_diag.py:471  `_SR_ATR_TOL_LO, _SR_ATR_TOL_HI`  [持つ]  閾値（許容幅の下限と上限）
 - observe_diag.py:490  `_H1_BASE`  [持つ]  前処理（1時間足の元になる5分足）
 - observe_diag.py:873-890  `_CYC_MEMO`・`_cyc`  [持つ]  前処理（サイクル系の計算を使い回す）
 - observe_diag.py:903  `MATERIAL_FAMILIES`  [持つ]  種類の名前・列の名前の型・方向・計算の式
@@ -294,6 +296,7 @@
 - engine_tuner_fire_diag.py:209  funnel_one  [読む]  場面の判定の列
 - engine_tuner_fire_diag.py:357  run_main  [読む]  役割と件数/日の下限
 - engine_tuner_fire_diag.py:384,393,416,436-437  run_main  [読む／作る]  材料の候補・時間足・材料の列・分位の一覧・分位から閾値を出す表
+- gen_acceptance.py:812-826  _table_kinds  [読む]  型の表の部品から指標の種類を引く
 - gen_acceptance.py:829-840  _timeframe_rows  [読む]  使える時間足と、役割ごとの時間足
 - gen_acceptance.py:843-878  _indicator_rows  [読む]  指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の
 - gen_acceptance.py:881-922  _auto_rows  [読む]  法則（番号・場面・一文・説明・機械が読む判定）・型の id と name
@@ -301,6 +304,7 @@
 - gen_acceptance.py:1031-1077  build_laws  [読む]  機械が読む判定の「数える部品」
 - gen_acceptance.py:1080-1108  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
 - gen_acceptance.py:1319-1361  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
+- gen_acceptance.py:1673-1682  indicator_sources_problems  [読む]  check_indicator_sources.check1 を呼ぶ
 - gen_audit_docs.py:1655-1676  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
 - gen_audit_request.py:286-318  copy_all_laws  [読む]  法則の一覧
 - gen_exit_families.py:403-410  confirm_conditions  [読む]  確認の条件の材料・閾値
@@ -373,7 +377,6 @@
 - observe_diag.py:5376-5399  `_recipe_families`  [読む]  レシピが使う family
 - observe_diag.py:5485-5511  `_dup_used_in_repo`  [読む]  レシピ・設定で使っているか
 - observe_diag.py:5514-5558  `_dup_keep_of_group`  [読む]  V9 か・レシピか・業界の関数の有無・暖機
-- observe_diag.py:5583-5627  `_tol_saturation_cells`・`_insp_tol_saturation`（検査16）  [読む]  S-R の帯の許容幅の上下限（閾値）
 - observe_diag.py:5630-5742  `inspect_data`  [読む]  カタログを名前で絞る
 - observe_diag.py:5764-5809  `_v9_preprocess_frame`・`_v9_price_kinds`  [読む]  V9 の指標の列
 - observe_diag.py:6682-6694  `_independent_step`  [読む]  時間足の長さ
@@ -393,7 +396,7 @@
 - tuner_judgement.py:131-168  role_of・role_floor  [読む]  役割と件数/日の下限
 - tuner_judgement.py:354-453  neighbor_points  [読む／作る]  パラメータ・閾値の前後の点
 
-## エージェントの行で、このプログラムが拾えなかった物（220行・文は報告のまま・実物の最初の行を付けた）
+## エージェントの行で、このプログラムが拾えなかった物（223行・文は報告のまま・実物の最初の行を付けた）
 
 | ファイル | 行 | 報告の欄 | 名前 | 報告の中身 | 実物の最初の行 | 振り分け |
 |---|---|---|---|---|---|---|
@@ -422,6 +425,9 @@
 | engine_tuner_fire_diag.py | 81-82 | 持つ | cond_label の role | 役割の名前と日本語の対応表 | role = {"trigger": "引き金", "env": "環境認識", "sufficiency": "十分性", "location": "位置"}.get( | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 493-503 | 持つ（テスト用） | _synth_recipe | 場面の判定の列名・SL の幅 | def _synth_recipe(conds: list[dict]) -> dict: | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 514,529-530 | 持つ（テスト用） | selftest | 条件の形と閾値 | bull_cond = {"role": "trigger", "form": "candle_dir", "value": {"dir": "bull"}} | 外す（B・指標の情報ではない） |
+| gen_acceptance.py | 523-525 | 持つ | KIND1_WORDS | ファイル名だけ（工事の種類を決める語） | else "やることの表の一覧（種類と直すファイル）" if new_form and k == "TARGET" | 振り分けが無い |
+| gen_acceptance.py | 527-533 | 持つ（パス・鍵） | PARAMS・ROLES・THRESHOLD_KEY・OBS_CFG | 資料の表2本・閾値の鍵・時間足の置き場 | d.setdefault(k, []) | 振り分けが無い |
+| gen_acceptance.py | 3054-3097 | 持つ | 自己テストの見本 | 見本の指標の行 | total += 1 | 振り分けが無い |
 | gen_audit_request.py | 123 | 持つ | N_LAWS | 法則の件数 | N_LAWS = 50                                   # §11 の法則の件数（C10＋R10＋U10＋D9＋S6＋T5） | 振り分けが無い |
 | gen_audit_request.py | 125-138 | 持つ | SOURCES | 指標と場面の判定のコードの場所 | SOURCES = [ | 振り分けが無い |
 | gen_composition_rules.py | 114-122 | 持つ | `_extra_lineage` | geo と time の系統 | def _extra_lineage(sig: dict) -> dict: | 振り分けが無い |
@@ -450,7 +456,6 @@
 | observe_diag.py | 187 | 持つ | `ONE_MIN_CSV` | 前処理（1m・3m の元データ） | ONE_MIN_CSV = "data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv"   # ★2026-09-08（設計 | 外す（B・指標の情報ではない） |
 | observe_diag.py | 200 | 持つ | `BARS_CSV` | 前処理（元の5分足） | BARS_CSV = "data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv" | 外す（B・指標の情報ではない） |
 | observe_diag.py | 250-259 | 持つ | `_DEMAND_FILES` | 需給の指標3種（名前・ファイル・列） | _DEMAND_FILES = { | ①写す→②消す（A・指標の情報） |
-| observe_diag.py | 471 | 持つ | `_SR_ATR_TOL_LO, _SR_ATR_TOL_HI` | 閾値（許容幅の下限と上限） | _SR_ATR_TOL_LO, _SR_ATR_TOL_HI = 0.0015, 0.006 | ①写す→②消す（A・指標の情報） |
 | observe_diag.py | 490 | 持つ | `_H1_BASE` | 前処理（1時間足の元になる5分足） | _H1_BASE: dict = {"bars": None} | 外す（B・指標の情報ではない） |
 | observe_diag.py | 873-890 | 持つ | `_CYC_MEMO`・`_cyc` | 前処理（サイクル系の計算を使い回す） | _CYC_MEMO: dict = {"sig": None, "v": {}} | 外す（B・指標の情報ではない） |
 | observe_diag.py | 903 | 持つ | `MATERIAL_FAMILIES` | 種類の名前・列の名前の型・方向・計算の式 | MATERIAL_FAMILIES: dict[str, tuple] = {} | ①写す→②消す（A・指標の情報） |
@@ -519,14 +524,16 @@
 | engine_tuner_fire_diag.py | 209 | 読む | funnel_one | 場面の判定の列 | ok, up = ex._regime_series(df, recipe) | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 357 | 読む | run_main | 役割と件数/日の下限 | role, rfloor = tj.role_floor(a.strategy) | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 384,393,416,436-437 | 読む／作る | run_main | 材料の候補・時間足・材料の列・分位の一覧・分位から閾値を出す表 | pool, tfs, cat_total = gen.material_pool() | ③向け直す |
-| gen_acceptance.py | 829-840 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | def _timeframe_rows() -> list: | 振り分けが無い |
-| gen_acceptance.py | 843-878 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ | def _indicator_rows(text: str) -> list: | 振り分けが無い |
-| gen_acceptance.py | 881-922 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | def _auto_rows(no: str, lines: list, d: dict) -> list: | 振り分けが無い |
-| gen_acceptance.py | 965-1028 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | def build_materials(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1031-1077 | 読む | build_laws | 機械が読む判定の「数える部品」 | def build_laws(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1080-1108 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | def build_ranking(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1319-1361 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | def build_stages(d: dict) -> str: | 振り分けが無い |
-| gen_audit_docs.py | 1655-1676 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
+| gen_acceptance.py | 812-826 | 読む | _table_kinds | 型の表の部品から指標の種類を引く | if not d.get("作ってはいけないものとの照合"): | 振り分けが無い |
+| gen_acceptance.py | 829-840 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | got = body.get(sec) | 振り分けが無い |
+| gen_acceptance.py | 843-878 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ | def _state(sec: str) -> str: | 振り分けが無い |
+| gen_acceptance.py | 881-922 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | _tag("手書き", "やることの表の「目標」（①は、プログラムが、結ぶ要件と「その違いを、どこまで減らすか」から写した）"), | 振り分けが無い |
+| gen_acceptance.py | 965-1028 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | # 名前の相手に、オンとオフの一覧も入れる（オフの指標・資料に行が無い指標も、行に出す）。 | 振り分けが無い |
+| gen_acceptance.py | 1031-1077 | 読む | build_laws | 機械が読む判定の「数える部品」 | nums = d.get("新しく入る数字") or [] | 振り分けが無い |
+| gen_acceptance.py | 1080-1108 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | """探す材料の一覧＝印がオンの指標・役割ごとの系統・時間足・範囲・格子。""" | 振り分けが無い |
+| gen_acceptance.py | 1319-1361 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | #   壊し方を1つ目の行の文で代表させた＝#4・#5 に #3 の壊し方が付いた・worklog 20260929 §49 の5） | 振り分けが無い |
+| gen_acceptance.py | 1673-1682 | 読む | indicator_sources_problems | check_indicator_sources.check1 を呼ぶ | if not str(r.get("理由", "")).strip(): | 振り分けが無い |
+| gen_audit_docs.py | 1655-1676 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | # ── 2. 設計の主張と出どころ ── | 振り分けが無い |
 | gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 | def copy_all_laws() -> list[str]: | 振り分けが無い |
 | gen_exit_families.py | 403-410 | 読む | confirm_conditions | 確認の条件の材料・閾値 | confirm_conditions=dict( | ③向け直す |
 | gen_indicator_switch.py | 64-74 | 読む | `ta_classes` | ta のクラス | def ta_classes() -> list[tuple[str, str]]: | ②消す（プログラムごと無くなる） |
@@ -598,7 +605,6 @@
 | observe_diag.py | 5376-5399 | 読む | `_recipe_families` | レシピが使う family | def _recipe_families() -> set: | ③向け直す |
 | observe_diag.py | 5485-5511 | 読む | `_dup_used_in_repo` | レシピ・設定で使っているか | def _dup_used_in_repo(name: str) -> int: | ③向け直す |
 | observe_diag.py | 5514-5558 | 読む | `_dup_keep_of_group` | V9 か・レシピか・業界の関数の有無・暖機 | def _dup_keep_of_group(grp: list[str], warm: dict ／ None = None) -> tuple[str, str, str]: | ③向け直す |
-| observe_diag.py | 5583-5627 | 読む | `_tol_saturation_cells`・`_insp_tol_saturation`（検査16） | S-R の帯の許容幅の上下限（閾値） | def _tol_saturation_cells(k, x) -> list: | ③向け直す |
 | observe_diag.py | 5630-5742 | 読む | `inspect_data` | カタログを名前で絞る | def inspect_data(bars_csv: str, config_path: str ／ None = None, only: str ／ None = None, | ③向け直す |
 | observe_diag.py | 5764-5809 | 読む | `_v9_preprocess_frame`・`_v9_price_kinds` | V9 の指標の列 | def _v9_preprocess_frame(bars: pd.DataFrame, calc_rows: int = 30000) -> tuple[pd.DataFrame | ③向け直す |
 | observe_diag.py | 6682-6694 | 読む | `_independent_step` | 時間足の長さ | def _independent_step(tf: str, n: int) -> int: | 外す（B・指標の情報ではない） |
@@ -937,21 +943,21 @@
 | gen_acceptance.py | 152 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_acceptance.py | 153 | 読む | json の名前「material_ranking.json」 | ③向け直す |
 | gen_acceptance.py | 154 | 読む | json の名前「search_limits.json」 | ③向け直す |
-| gen_acceptance.py | 525 | 読む | json の名前「materials.json」 | ③向け直す |
-| gen_acceptance.py | 527 | 読む | json の名前「indicator_params_by_strategy.json」 | ③向け直す |
-| gen_acceptance.py | 528 | 読む | json の名前「indicator_roles_thresholds.json」 | ③向け直す |
-| gen_acceptance.py | 533 | 読む | json の名前「observe_config.json」 | ③向け直す |
-| gen_acceptance.py | 813 | 読む | json の名前「承認済みの型の表（signal_families.json の parts）に部品が在る、指標の種類。
+| gen_acceptance.py | 557 | 読む | json の名前「materials.json」 | ③向け直す |
+| gen_acceptance.py | 559 | 読む | json の名前「indicator_params_by_strategy.json」 | ③向け直す |
+| gen_acceptance.py | 560 | 読む | json の名前「indicator_roles_thresholds.json」 | ③向け直す |
+| gen_acceptance.py | 565 | 読む | json の名前「observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 927 | 読む | json の名前「承認済みの型の表（signal_families.json の parts）に部品が在る、指標の種類。
     部品の名」 | ③向け直す |
-| gen_acceptance.py | 1673 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
-| gen_acceptance.py | 1673 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
-| gen_acceptance.py | 3054 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3059 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3060 | 直書き | POC | ③向け直す |
-| gen_acceptance.py | 3063 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3063 | 直書き | POC | ③向け直す |
-| gen_acceptance.py | 3063 | 直書き | 前日POC | ③向け直す |
-| gen_audit_docs.py | 3097 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 1789 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 1789 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
+| gen_acceptance.py | 3230 | 直書き | ADX | ③向け直す |
+| gen_acceptance.py | 3235 | 直書き | ADX | ③向け直す |
+| gen_acceptance.py | 3236 | 直書き | POC | ③向け直す |
+| gen_acceptance.py | 3239 | 直書き | ADX | ③向け直す |
+| gen_acceptance.py | 3239 | 直書き | POC | ③向け直す |
+| gen_acceptance.py | 3239 | 直書き | 前日POC | ③向け直す |
+| gen_audit_docs.py | 3099 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
 | gen_audit_request.py | 169 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_audit_request.py | 496 | 持つ | _REF_MD_RE（名前が定義の表） | ①写す→②消す |
 | gen_audit_request.py | 497 | 持つ | _REF_SEC_RE（名前が定義の表） | ①写す→②消す |
@@ -1215,6 +1221,15 @@
 | indicator_reference_diag.py | 1944 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 1955 | 読む | json の名前「取れる距離の床（独立の実装の側）＝e37_scalp.SCALP_FLOOR × 設定ファイル observe_conf」 | ③向け直す |
 | indicator_reference_diag.py | 1959 | 読む | json の名前「observe_config.json」 | ③向け直す |
+| indicator_reference_diag.py | 2150 | 持つ | _LM_X, _LM_Y（パラメータの定数 0.01, 0.1） | ①写す→②消す |
+| indicator_reference_diag.py | 2153 | 読む | _LM_X | ③向け直す |
+| indicator_reference_diag.py | 2153 | 読む | _LM_Y | ③向け直す |
+| indicator_reference_diag.py | 2164 | 読む | _LM_X | ③向け直す |
+| indicator_reference_diag.py | 2164 | 読む | _LM_Y | ③向け直す |
+| indicator_reference_diag.py | 2170 | 読む | _LM_X | ③向け直す |
+| indicator_reference_diag.py | 2170 | 読む | _LM_X | ③向け直す |
+| indicator_reference_diag.py | 2170 | 読む | _LM_Y | ③向け直す |
+| indicator_reference_diag.py | 2170 | 読む | _LM_Y | ③向け直す |
 | indicator_reference_diag.py | 2173 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 2178 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 2182 | 持つ | _r(...) の呼び出し | ①写す→②消す |
@@ -1405,7 +1420,35 @@
 | indicator_reference_diag.py | 4504 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 4508 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 4511 | 持つ | _r(...) の呼び出し | ①写す→②消す |
+| indicator_reference_diag.py | 4525 | 持つ | _ABER_L, _ABER_A（パラメータの定数 5, 15） | ①写す→②消す |
+| indicator_reference_diag.py | 4526 | 持つ | _ACCB_L, _ACCB_C（パラメータの定数 20, 4.0） | ①写す→②消す |
+| indicator_reference_diag.py | 4527 | 持つ | _CE_L, _CE_M（パラメータの定数 22, 3.0） | ①写す→②消す |
+| indicator_reference_diag.py | 4528 | 持つ | _HW_NA, _HW_NB, _HW_NC, _HW_ND, _HW_S（パラメータの定数 0.2, 0.1, 0.1, 0.1, 1.0） | ①写す→②消す |
+| indicator_reference_diag.py | 4529 | 持つ | _MASSI_F, _MASSI_S（パラメータの定数 9, 25） | ①写す→②消す |
 | indicator_reference_diag.py | 4530 | 持つ | _THERMO_L（パラメータの定数 20） | ①写す→②消す |
+| indicator_reference_diag.py | 4552 | 読む | _ABER_L | ③向け直す |
+| indicator_reference_diag.py | 4553 | 読む | _ABER_A | ③向け直す |
+| indicator_reference_diag.py | 4570 | 読む | _ACCB_C | ③向け直す |
+| indicator_reference_diag.py | 4571 | 読む | _ACCB_L | ③向け直す |
+| indicator_reference_diag.py | 4571 | 読む | _ACCB_L | ③向け直す |
+| indicator_reference_diag.py | 4587 | 読む | _CE_L | ③向け直す |
+| indicator_reference_diag.py | 4588 | 読む | _CE_L | ③向け直す |
+| indicator_reference_diag.py | 4588 | 読む | _CE_L | ③向け直す |
+| indicator_reference_diag.py | 4588 | 読む | _CE_M | ③向け直す |
+| indicator_reference_diag.py | 4588 | 読む | _CE_M | ③向け直す |
+| indicator_reference_diag.py | 4622 | 読む | _HW_NA | ③向け直す |
+| indicator_reference_diag.py | 4622 | 読む | _HW_NA | ③向け直す |
+| indicator_reference_diag.py | 4623 | 読む | _HW_NB | ③向け直す |
+| indicator_reference_diag.py | 4623 | 読む | _HW_NB | ③向け直す |
+| indicator_reference_diag.py | 4624 | 読む | _HW_NC | ③向け直す |
+| indicator_reference_diag.py | 4624 | 読む | _HW_NC | ③向け直す |
+| indicator_reference_diag.py | 4627 | 読む | _HW_S | ③向け直す |
+| indicator_reference_diag.py | 4628 | 読む | _HW_S | ③向け直す |
+| indicator_reference_diag.py | 4629 | 読む | _HW_ND | ③向け直す |
+| indicator_reference_diag.py | 4629 | 読む | _HW_ND | ③向け直す |
+| indicator_reference_diag.py | 4648 | 読む | _MASSI_F | ③向け直す |
+| indicator_reference_diag.py | 4649 | 読む | _MASSI_F | ③向け直す |
+| indicator_reference_diag.py | 4650 | 読む | _MASSI_S | ③向け直す |
 | indicator_reference_diag.py | 4679 | 読む | _THERMO_L | ③向け直す |
 | indicator_reference_diag.py | 4706 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 4711 | 持つ | _r(...) の呼び出し | ①写す→②消す |
@@ -1425,6 +1468,7 @@
 | indicator_reference_diag.py | 4781 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 4801 | 持つ | _HT_START_A（パラメータの定数 12） | ①写す→②消す |
 | indicator_reference_diag.py | 4802 | 持つ | _HT_START_B（パラメータの定数 37） | ①写す→②消す |
+| indicator_reference_diag.py | 4803 | 持つ | _EBSW_L, _EBSW_B（パラメータの定数 40, 10） | ①写す→②消す |
 | indicator_reference_diag.py | 4804 | 持つ | _MSW_P（パラメータの定数 5） | ①写す→②消す |
 | indicator_reference_diag.py | 4903 | 読む | _HT_START_A | ③向け直す |
 | indicator_reference_diag.py | 4907 | 読む | _HT_START_B | ③向け直す |
@@ -1433,6 +1477,13 @@
 | indicator_reference_diag.py | 4921 | 読む | _HT_START_B | ③向け直す |
 | indicator_reference_diag.py | 4925 | 読む | _HT_START_B | ③向け直す |
 | indicator_reference_diag.py | 4929 | 読む | _HT_START_B | ③向け直す |
+| indicator_reference_diag.py | 4941 | 読む | _EBSW_L | ③向け直す |
+| indicator_reference_diag.py | 4943 | 読む | _EBSW_L | ③向け直す |
+| indicator_reference_diag.py | 4944 | 読む | _EBSW_L | ③向け直す |
+| indicator_reference_diag.py | 4944 | 読む | _EBSW_L | ③向け直す |
+| indicator_reference_diag.py | 4945 | 読む | _EBSW_B | ③向け直す |
+| indicator_reference_diag.py | 4946 | 読む | _EBSW_B | ③向け直す |
+| indicator_reference_diag.py | 4951 | 読む | _EBSW_L | ③向け直す |
 | indicator_reference_diag.py | 4966 | 読む | _MSW_P | ③向け直す |
 | indicator_reference_diag.py | 4996 | 持つ | _r(...) の呼び出し | ①写す→②消す |
 | indicator_reference_diag.py | 5005 | 持つ | _r(...) の呼び出し | ①写す→②消す |
@@ -1486,6 +1537,13 @@
 | leak_causality_diag.py | 255 | 読む | json の名前「/observe_config.json」 | ③向け直す |
 | leak_causality_diag.py | 262 | 読む | json の名前「v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regi」 | ③向け直す |
 | observe_diag.py | 177 | 読む | json の名前「/observe_config.json」 | ③向け直す |
+| observe_diag.py | 471 | 持つ | _SR_ATR_TOL_LO, _SR_ATR_TOL_HI（パラメータの定数 0.0015, 0.006） | ①写す→②消す |
+| observe_diag.py | 520 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 520 | 読む | _SR_ATR_TOL_LO | ③向け直す |
+| observe_diag.py | 682 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 682 | 読む | _SR_ATR_TOL_LO | ③向け直す |
+| observe_diag.py | 775 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 775 | 読む | _SR_ATR_TOL_LO | ③向け直す |
 | observe_diag.py | 781 | 持つ | _BAND_IMPL（名前 8・例 帯VA, 帯VA1時間ATR, 帯pivot） | ①写す→②消す |
 | observe_diag.py | 796 | 読む | _BAND_IMPL | ③向け直す |
 | observe_diag.py | 1020 | 読む | MATERIAL_FAMILIES | ③向け直す |
@@ -2099,6 +2157,10 @@
 | observe_diag.py | 5372 | 読む | _V9_LABEL_TO_FAMILIES | ③向け直す |
 | observe_diag.py | 5406 | 持つ | _USE_PATTERNS（名前 15・例 ADX, ATR%, BB%b） | ①写す→②消す |
 | observe_diag.py | 5431 | 読む | _USE_PATTERNS | ③向け直す |
+| observe_diag.py | 5594 | 読む | _SR_ATR_TOL_LO | ③向け直す |
+| observe_diag.py | 5595 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 5615 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 5615 | 読む | _SR_ATR_TOL_LO | ③向け直す |
 | observe_diag.py | 5844 | 読む | json の名前「search_limits.json」 | ③向け直す |
 | observe_diag.py | 5848 | 読む | json の名前「部品の n・m に使う数字を recipes/search_limits.json の int_grid から引く（手で」 | ③向け直す |
 | observe_diag.py | 6028 | 読む | json の名前「  ★『対応なし』の列だけ、うちの材料に条件の部品を当てた列とも比べる（部品4種＝そのまま／n本前との差／m本の平均／m」 | ③向け直す |

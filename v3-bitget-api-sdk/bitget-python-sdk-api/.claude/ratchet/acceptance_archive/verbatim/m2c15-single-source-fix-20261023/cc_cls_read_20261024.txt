@@ -1,0 +1,40 @@
+「読む」の行を、実物の最初の行の文字と関数の名前で分けました。判断は私の物です。
+
+**③向け直す の相手（指標の情報を読んでいる所）**
+- engine_tuner.py：:157〜187 catalog_size・catalog_columns、:428〜449 _resolve_space、:595 ほか（固定値）
+- engine_tuner_exec.py：
+  - :37〜41（iref の import）
+  - :166〜232（オン・オフを読む関数5つ）
+  - :733 _check_param_range（パラメータの範囲）
+  - :1100（RANGE_GEO_REF）
+  - :1289 load_regime_laws
+  - :1812 G2（列ごとの標本の数）
+  - :1990 _vnum_q（列ごとの分位）
+  - :2032 material_array（列の計算）
+  - :2247（touch の許容幅）
+  - :2676・:2756（atr・adx の列）
+  - :3964 _with_parts_cols
+  - :4541 const_registry_live_check
+- engine_tuner_fire_diag.py：:155 build_geo（レンジ幾何の式）、:101、:384
+- gen_exit_families.py :403、gen_regime_kb.py :236・:1110・:1208、gen_signal_families.py :53・:999・:1291
+- observe_diag.py：
+  - :115、:203 load_config
+  - :2214・:2220（material_params・drop_columns）
+  - :2426 load_demand、:2452・:2484（レンジ幾何）
+  - :2933、:3489、:3540、:3777、:3914、:4109
+  - :4510〜:5809 の検査の関数15本（照合・性質・先読み・名前の窓・標本・需給・軸・V9 の期間・レシピ・重複・許容幅・inspect_data・V9 の列）
+- regime_r9_diag.py：:228、:305、:354、:364、:568、:719
+- tuner_judgement.py：:354 neighbor_points（パラメータと閾値の前後の点）
+
+**②消す側と一緒に無くなる物**
+- gen_indicator_switch.py の :64・:135・:213 と、gen_indicator_table.py の :55・:66・:192
+- このプログラム自体が要らなくなるので、読む所も一緒に無くなります。
+
+**B. 外す（指標の情報を読んでいない・範囲の外）**
+- 時間足・データ・手数料・場面：regime_label.py :367・:46・:84、engine_tuner_exec.py :1342・:1552・:3707、observe_diag.py :709・:2326・:2579・:3419・:3427・:6682、regime_r9_diag.py :202・:550・:1009
+- 指標に共通の確かめ：engine_tuner_exec.py :750
+- 戦略の役割・場面の表示：engine_tuner.py :199・:235、engine_tuner_fire_diag.py :84・:209・:357、tuner_judgement.py :131
+- 過去の戦略の再現・テスト：engine_tuner_exec.py :3496・:2483・:5147
+- 照合に使うライブラリの読み込み：indicator_reference_diag.py :28〜49
+
+これで、拾えなかった146行が全部、A・C・③・②・B のどれかに入りました。次は、この振り分けを一覧（fix_inventory）に入れて、直す相手の一覧を仕上げます。

@@ -1,0 +1,24 @@
+ありがとうございます。続けます。
+
+拾えなかった146行のうち、「持つ」の行を、実物の最初の行の文字（上の出力）で分けました。分けた判断は私の物です。根拠は、その行の文字です。
+
+**A. 指標の情報（①写す→②消す の相手に入れる）**
+- gen_signal_families.py :229〜273 role_lineage（役割ごとに使える系統）、:275〜297 DC1〜4（向きの決まり）
+- indicator_reference_diag.py :946〜953 MAKO_K3 ほか（mako の欄の値）、:942 REFS、:5346 RANGE_GEO_TF（レンジ幾何の時間足）、:5846〜5969 SKIP_APPROVED・INDUSTRY_SKIP（ライブラリの関数を入れない理由）
+- observe_diag.py :250〜259 _DEMAND_FILES（需給の指標3種の名前と列）、:471 _SR_ATR_TOL_LO・_HI（S-R の許容幅の上下限）、:903 MATERIAL_FAMILIES、:1507〜1538 _MA_FUNCS（移動平均24種の名前と関数）、:4983〜4984 _DIST_PAT・_SLOPE_PAT（列の名前の規則）、:5856〜5882 _v9_part_variants（V9 の部品）
+- engine_tuner_exec.py :1059〜1066（時間帯「時刻」の範囲）
+
+**C. 指標の情報を読む所（③向け直す の相手に入れる）**
+- engine_tuner_exec.py :795〜810 _material_family（名前から系統を決める関数）
+- analyze.py :231〜232・:251（記録の列の名前 adx_at_entry ほか）
+
+**B. 指標の情報ではない（外す）**
+- データの場所・時間足の仕組み：observe_diag.py :178・:186・:187・:200・:490・:873、gen_signal_families.py :90 _TF_MIN
+- 指標に共通の部品・設定：engine_tuner_exec.py :417〜449・:563〜567・:647、engine_tuner.py :90・:99、gen_indicator_switch.py :473〜490、gen_indicator_table.py :52、gen_regime_kb.py :75
+- 戦略の設定：engine_tuner_exec.py :2386（V11_SL_BUF）・:2521（SCALP_FLOOR）、observe_diag.py :3469・:3990（down 型の 1.005）、precheck.py :46
+- 過去の戦略の再現（範囲の外）：engine_tuner_exec.py :3008〜3022・:3174〜3178・:3496〜3611
+- テスト・控え・ファイルの場所：engine_tuner_exec.py :4478、engine_tuner_fire_diag.py :493・:514、observe_diag.py :7558・:6069、ratchet_guards.py :175、regime_r9_diag.py :888、indicator_reference_diag.py :51・:1720・:6052
+- 名前の対応ではない文字の表：engine_tuner_fire_diag.py :81（条件の役割の日本語）、report.py :30（決済の理由の日本語）、regime_r9_diag.py :275（判定の列）
+
+**残り**
+146行のうち、残りの約96行は、エージェントの報告で「読む」の行です（関数が指標の情報を読んでいる所）。これらは③の相手です。指標の情報を本当に読んでいるかを、行の中身で確かめるのが、次の作業です。

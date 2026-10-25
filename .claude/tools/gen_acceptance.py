@@ -332,6 +332,8 @@ def _impl_from_file(line: str, bad: list):
         bad.append("【4-20】＝「ファイル: <根からのパス> sha256=<64桁>」の形でない")
         return None
     p = Path(m.group(1))
+    if not p.is_file() and "/.claude/state/verbatim/" in str(p):   # ★2026-10-25＝承認で工事のフォルダが acceptance_archive/verbatim/ へ移った後も読む（中身は下のハッシュ値で照らす）
+        p = ARCHIVE / "verbatim" / str(p).split("/.claude/state/verbatim/", 1)[1]
     if not p.is_absolute() or not p.is_file():
         bad.append(f"【4-20】＝実装の指示のファイルが無い（根からのパスで書く）: {m.group(1)}")
         return None

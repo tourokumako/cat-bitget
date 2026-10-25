@@ -1,0 +1,53 @@
+この報告は ①集める（設計書1の修正・3回目の承認の前）の中身です。
+
+結論：設計書の関数の一覧（【7-8】の impl_functions）に "<モジュール直下>" を1つ足し、【7-5】の同じ事実の2行と、【4-3】の部品の表に1行を足しました。直したのはこの4行だけです。実装の指示（【4-20】）は変えていません（当てた実装をそのまま使う）。
+
+なぜ要るか＝写すプログラムは git に入っていないので、設計↔実装の照合（照合A）は、中の全部のまとまり（関数25個と、関数の外のモジュール直下）を「触った」と数えます。一覧にモジュール直下が無いので、写すプログラムを走らせる前のゲートが止めました。前の設計書も、全文を書き替えるときはモジュール直下を一覧に入れていました（approval-audit-plumbing-20260907.md ほか）。
+
+あわせて、当てた実装を当てる前に戻しました（写すプログラムを109行の直す前の全文に戻し、今日作った壊すプログラム8本を消した）。承認の前の検査の A12 には、当てた後に照合A（触ったまとまりが一覧に在るか）を見る行を足しました（約12行・消した行0）。3回目の承認の後に、当てる道具で当て直します。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 責任 | 一覧の番号 |
+|---|---|---|
+| 読む部品（jload・module_assign・inventory・row_name・parsed・in_selftest・row_kind・code_copy・json_copy） | 4-4 の1〜9の写す元を全部読む。直す相手の一覧の「①写す」の行を読み、代入の右辺を ast で写す。自己テストの関数の中の見本の行は写さない。直す相手の一覧に無いレンジ幾何のパラメータの置き場5つ（e37_scalp.py:213 の V25_K・scripts/dashboard/build_range_gate_dashboard.py:50〜52・scripts/dashboard/build_regime_gate_rg.py:262 の _adaptive_tol_1h）と、時刻の閾値の範囲（recipes/search_limits.json:24 の hour_range）も、ast と json で読む（監査 CP89 の修正1） | F-3 |
+| 名前をそろえる部品（resolve・kinds_in・narrow） | 計算の登録の名前を、INDICATOR_TABLE の名前1つにそろえる。別枠の材料13種（RANGE_GEO_REF・DEMAND_REF・TIME_REF の名前）も、その名前の記録に当てる（CP88 の修正10）。置き場の値のうち、その種類に当たる所を残す | F-5 |
+| 記録を組む部品（build・plain・src_text・called・defaults・_carry） | 23の欄に並べる。INDICATOR_TABLE の301種と、別枠の材料13種の記録を組む（合わせて314種）。閾値の代表の固定値と閾値の範囲の2つの欄は null で持つ（CP88 の修正11）。時刻の閾値の範囲だけは hour_range を写す（CP89 の修正1・2）。別枠の定義の表の「同上」は、1つ前の行の値に置き換え、方向の区分は方向の読み方の「＝」の前を写す（CP89 の修正5・6）。別枠の表どうしで名前が重なれば止まる。どの種類の名前も含まない置き場は、区分の言葉の表（ほかの置き場）に入れる | F-4 |
+| 食い違いを1つにする部品（build の中・norm・nums） | 3-2 の1件目の決め方で1つの値にし、選ばなかった側を残す | F-6 |
+| 札と性質を決める部品（decide） | 役割の区分の表から札を、方向から性質への対応の表から性質の一覧（1つ以上）を決める。プログラムの中に区分の一覧を書かない。表に無い区分・方向が在れば止まる。別枠の材料13種は、性質を表から決めないので通さない（CP89 の修正3） | F-7 |
+| 書く部品（main） | indicators.json に書く。もう在れば、写す元から作り直した物と同じかを照らし、書かない | F-1・F-2 |
+| 照らす部品（verify・coverage・selftest） | 記録の値と写す元の値を1件ずつ比べる。「①写す」の行が全部どこかに入ったかを見る。2つの表に1行足すと通るかを試す。書かない | F-8・F-7 |
+| <モジュール直下>（import・定数 ROOT・SDK・PR・ST・HERE・OUT・INV・FIELDS・DECIDED_PROP・OWN・JSON_PATH・JSON_OWN・TABLE・EXTRA・EXTRA_OF と、別枠の表どうしの名前の重なりの止め） | 写す元の置き場・書く先・記録の23の欄・方向「向きつき」の1行・決まった欄の置き場・別枠の材料の定義の表を、関数の外で1回だけ決める。全文を書き替えるので、照合A はこのまとまりも触ったと数える（2026-10-25 に impl_functions に足した） | F-2〜F-7 |
+
+【7-5 §4.6 の照合】
+- TARGET は、写すプログラム .claude/state/indicator_review/gen_indicators_draft.py の1本です。新しく作る indicators.json は NEW_FILE に書きます（3-2 の9件目）。
+- DESIGN_CONTRACT は【7-8】に書きます。impl_file は gen_indicators_draft.py です。impl_functions は、実装の指示の1件目（写すプログラムの全文）の一番外の関数25個と、モジュール直下（関数の外の import・定数・一番外の処理のまとまり）です（全文を書き替えるので、全部が触るまとまり。CP89 の修正6 で _carry を足した。写すプログラムは git に入っていないので、照合A は中の全部のまとまりを触ったと数える＝2026-10-25 に設計↔実装のゲートが止めて足した）。
+- NEW_FILE は v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.json と、7-6 の壊すプログラム8本（.claude/breaks/ss1_f1_count.sh ほか）です（設計書を作るプログラムが、一覧と 7-6 から作る）。MODEL は .claude/state/indicator_review/gen_indicators_draft.py です。
+- 真因は【7-1】に書きました（要件定義書 §3）。
+- 期待値分解は【7-1】に書きました。
+- root か symptom かは【7-1】に書きました（root）。
+- ベースアップは【7-1】に書きました。
+- 1レバーです。記録を作ることだけで、読む側も元の置き場も変えません（やらないことの Y-03・Y-04）。
+- 211回目と212回目の失敗（修正内容を書かずに形を埋めた・worklog 20261024 §9・§12・§15）を再演しないように、修正内容をやることの表に書き、設計書を作るプログラムが空の欄を止める形にしました（ToDo の177番）。工事 a で写しの置き場を3つ増やした失敗を再演しないように、作業場の下書き indicators_draft/ は、設計書3の消す物に入れます。
+- 非該当です。案を作るプログラムに、新しい部品・前処理を足しません（やらないことの Y-03）。
+- engine_tuner_exec.py・engine_tuner_gen.py を直さないので、行がずれる文書はありません（Y-03）。直す gen_indicators_draft.py の名前を指す文書と道具は0件です（2026-10-24 に grep）。
+- 直す gen_indicators_draft.py の名前で .claude/breaks を grep すると、当たる壊すプログラムは0件です（2026-10-24 に grep）。
+- この工事の壊すプログラム（8本）は、壊す相手（indicators.json・写すプログラム・写す元の1か所）の控えを取ってから1か所だけ壊し、照らす口（--verify）を走らせ、必ず控えから戻します（.claude/breaks/lib.sh の guard と trap・戻した後にハッシュ値を照らす）。
+- 写すプログラムの一番外の関数は25個です（jload・_carry・module_assign・plain・src_text・called・defaults・resolve・kinds_in・narrow・norm・decide・nums・inventory・row_name・parsed・in_selftest・row_kind・code_copy・json_copy・build・coverage・verify・selftest・main）。全文を書き替えるので、全部と、モジュール直下（"<モジュール直下>"）を DESIGN_CONTRACT の impl_functions に書きました。
+- 新しく足す口（書く口と照らす口）は、【7-6】の完成の条件で1回ずつ走らせます。
+- 実装の後に設計書を作り直すときは、変わった手順を 4-4・やらないこと・4-13・4-19・見積もりに書き直してから作り直します。
+- 固定値ゼロの宣言は【7-2】に書きました。
+- ARC の行は、設計書を作るプログラムが入れます。数字は書きません。
+- 1変更です（8つ目の答え）。過去の失敗は、9つ目の答えのとおり再演しません。
+- 自己検査は、写すプログラムの照らす口です。照らす相手は、4-4 の1〜9の写す元と、直す相手の一覧の「①写す」の行です。わざと壊して止まるかは、【7-6】の壊すプログラムで試します。
+
+【7-8 プログラムが読む設定】
+```json
+{"MODEL": [".claude/state/indicator_review/gen_indicators_draft.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/state/indicator_review/gen_indicators_draft.py",
+                     "self_check_calls": ["verify", "selftest", "decide", "coverage", "build"],
+                     "impl_functions": {"../../.claude/state/indicator_review/gen_indicators_draft.py":
+                       ["jload", "_carry", "module_assign", "plain", "src_text", "called", "defaults", "resolve", "kinds_in", "narrow", "norm",
+                        "decide", "nums", "inventory", "row_name", "parsed", "in_selftest", "row_kind", "code_copy", "json_copy",
+                        "build", "coverage",
+                        "verify", "selftest", "main", "<モジュール直下>"]}}}
+```
