@@ -544,7 +544,7 @@ MODEL: .claude/state/indicator_review/gen_indicators_draft.py
 ### 4-20 実装の指示（プログラムが実物に当てる形・6つの欄）
 
 ［自動］CC が書いて、まこさんが OK した案の【4-20】＝コードの文字は CC の手書き
-<!-- ACC_IMPL_START hash=432c821afc7be3d6 gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_IMPL_START hash=0b5af74cf0344f48 gen_acceptance.py が自動生成＝手で書き換えない -->
 出どころ＝元データの `実装の指示`。当て方＝`python3 .claude/tools/apply_audit_fix.py --design [--dry]`（承認の印と設計書のハッシュ値が合うときだけ当たる）。
 
 #### 実装 1
@@ -1120,7 +1120,7 @@ def build() -> dict:
                  {"observe_config の material_params": nums(mp.get(f)), "by_strategy の今の値": nums(b.get("今の値")),
                   "review の今のパラメータの組": nums(rv.get("今のパラメータの組")), "materials の期間": nums(mper.get(f))})
         conflict("範囲", [[d.get("lo"), d.get("hi")] for d in lim.get(f) or []] or None, "search_limits.json の material_param_ranges",
-                 {"by_strategy の範囲": [[d.get("下限"), d.get("上限")] for d in b.get("範囲") or []]})
+                 {"by_strategy の範囲": [[d.get("下限"), d.get("上限")] for d in b.get("範囲") or []]}, skip_empty=False)
         state = "オン" if f in on else "オフ" if f in off else "どちらにも無い"
         eng = (mrows.get(f) or {}).get("engine_tuner")
         if state == "オン" and (eng is None or not str(eng).startswith("選べる")):
@@ -1757,7 +1757,7 @@ finish
 ### 6-1 わざと壊して止まるか試すテスト
 
 ［自動］CC が書いて、まこさんが OK した案の【7-6】の壊し方の欄
-<!-- ACC_SELFTEST_START hash=d065971eba572905 gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_SELFTEST_START hash=44d89382739d488e gen_acceptance.py が自動生成＝手で書き換えない -->
 出どころ＝まこさんが OK した案の【7-6】。
 
 | 壊すプログラム | 守る行 | 壊し方 |
@@ -1771,7 +1771,7 @@ finish
 | `ss1_f7_prop.sh` | #7 | 方向から性質への対応の元（gen_indicator_table.py:51 の HOUKOU2PROP）から1組を消す |
 | `—（自己テストで見る）` | #8 | —（自己テストの2件が、表に無いときと1行足したときを両方試す） |
 | `ss1_f8_verify.sh` | #9 | 記録の値を1つ変える |
-| `—（jq の照らしで見る）` | #10 | —（jq の照らしで見る） |
+| `—（jq の照らしで見る）` | #10・#12 | —（jq の照らしで見る） |
 | `—（git の差で見る）` | #11 | いま在るファイルを1行直す |
 
 **★終了コードは、承認のプログラムが実際に走らせて記録します。**0 以外だったときだけ、その行を「済」にできます。
@@ -1916,17 +1916,18 @@ finish
 
 | # | 完成の条件 | その数字を出したコマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
 |---|---|---|---|---|---|---|---|
-| 1 | F-1：indicators.json が在り、記録が314種（INDICATOR_TABLE の301種と別枠の材料13種）、1種につき1つ（写すプログラムが書く。もう在れば、写す元から作り直した物と同じかを照らし、書かない） | `python3 .claude/state/indicator_review/gen_indicators_draft.py` | 本番の置き場 | 記録を1つ消す | `ss1_f1_count.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json から記録を1つ消すと、照らす口が「記録が無い」で落ちる |
+| 1 | F-1：indicators.json が在り、記録が314種（INDICATOR_TABLE の301種と別枠の材料13種）、1種につき1つ（写すプログラムが書く。もう在れば、写す元から作り直した物と同じかを照らし、書かない） | `python3 .claude/state/indicator_review/gen_indicators_draft.py` | 本番の置き場 | 記録を1つ消す | `ss1_f1_count.sh` | 要 | **未着手** |
 | 2 | F-2：写すプログラムが作業場の下書きの置き場に書かない | `! grep -n '"indicators_draft' .claude/state/indicator_review/gen_indicators_draft.py` | 写すプログラム | 書く先を作業場に戻す | `ss1_f2_out.sh` | 要 | **未着手** |
-| 3 | F-3：直す相手の一覧の「①写す」の行のうち、記録にも3つの表にも入らない行が0件。4-4 の1〜8の写す元は、写すプログラムが読んだ値と indicators.json の値が同じかを見る（写すプログラムが読まない値は、照らす口では見つからない＝7-4） | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 写す元の1つを読まないようにする | `ss1_f3_source.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝写す元の1つ（observe_config.json の material_first_hidden）を読まないようにすると、照らす口が落ちる |
-| 4 | F-4：記録が 4-8 の23の欄を全部持つ | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 欄を1つ消す | `ss1_f4_fields.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の記録から欄を1つ消すと、照らす口が「23の欄と違う」で落ちる |
-| 5 | F-5：名前の違う56種（オンでは32種）が表の名前にそろい、つながらない登録が0件 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 写すプログラム | 登録の名前を1つ、どの種類にもつながらない名前にする | `ss1_f5_name.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝計算の登録の名前の型を、どの種類にもつながらない名前にすると、写すプログラムが止まる |
-| 6 | F-6：置き場どうしで違う値が1つの値になり、選ばなかった側が食い違いの記録に在る | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 食い違いの記録を1つ消す | `ss1_f6_conflict.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の食い違いの記録を1つ消すと、照らす口が落ちる |
+| 3 | F-3：直す相手の一覧の「①写す」の行のうち、記録にも3つの表にも入らない行が0件。4-4 の1〜8の写す元は、写すプログラムが読んだ値と indicators.json の値が同じかを見る（写すプログラムが読まない値は、照らす口では見つからない＝7-4） | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 写す元の1つを読まないようにする | `ss1_f3_source.sh` | 要 | **未着手** |
+| 4 | F-4：記録が 4-8 の23の欄を全部持つ | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 欄を1つ消す | `ss1_f4_fields.sh` | 要 | **未着手** |
+| 5 | F-5：名前の違う56種（オンでは32種）が表の名前にそろい、つながらない登録が0件 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 写すプログラム | 登録の名前を1つ、どの種類にもつながらない名前にする | `ss1_f5_name.sh` | 要 | **未着手** |
+| 6 | F-6：置き場どうしで違う値が1つの値になり、選ばなかった側が食い違いの記録に在る | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 食い違いの記録を1つ消す | `ss1_f6_conflict.sh` | 要 | **未着手** |
 | 7 | F-7：indicators.json に2つの表が在り、札と性質が表から決まり、決められない種類が0件。写すプログラムの中に、区分の名前を書いた辞書は DECIDED_PROP の「向きつき」の1行だけ（3-2 の11件目）。2つの表の元は、設計書1では gen_indicator_table.py:49〜51 の CAT2LIN・HOUKOU2PROP と DECIDED_PROP で、indicators.json の表に手で1行を足すと照らす口が落ちる。表に1行を足して増やせるのは、indicators.json を正本にした後 | `! grep -n -e '"順張り値"' -e '"行き過ぎ"' .claude/state/indicator_review/gen_indicators_draft.py && python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 写すプログラム | 方向から性質への対応の元（gen_indicator_table.py:51 の HOUKOU2PROP）から1組を消す | `ss1_f7_prop.sh` | 要 | **未着手** |
 | 8 | F-7：表に1行を足すと、プログラムを直さずに新しい区分・方向が使える（表に無ければ止める物として返る） | `python3 .claude/state/indicator_review/gen_indicators_draft.py --selftest` | 写すプログラムの札と性質を決める所（decide） | —（自己テストの2件が、表に無いときと1行足したときを両方試す） | `—（自己テストで見る）` | 要 | **未着手** |
-| 9 | F-8：--verify が違い0件で終わりのコード 0。記録の値を1つ変えると0以外 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 記録の値を1つ変える | `ss1_f8_verify.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の記録の値を1つ変えると、照らす口が落ちる |
+| 9 | F-8：--verify が違い0件で終わりのコード 0。記録の値を1つ変えると0以外 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 記録の値を1つ変える | `ss1_f8_verify.sh` | 要 | **未着手** |
 | 10 | F-3・F-4（CP89）：W% の記録の「ほかの置き場の値」に、レンジ幾何のパラメータの置き場5つ（V25_K・ZONE_TOL・ZONE_TOUCH・ZONE_LOOKBACK・_adaptive_tol_1h の引数の既定値）の名前が全部在る。時刻の「閾値の範囲」の下限と上限が、recipes/search_limits.json の hour_range と同じ。res_lo の流儀が res_hi の流儀と同じ（「同上」が置き換わった）。W% の方向の区分が空でない（照らす口は写すプログラムが読まない値を見つけないので、CP89 で足した作りを名前で見る・まこさん 2026-10-25「足す」） | `jq -e --slurpfile L scripts/priority_rebuild/recipes/search_limits.json '(["V25_K","ZONE_TOL","ZONE_TOUCH","ZONE_LOOKBACK","_adaptive_tol_1h の引数の既定値"] - [.["記録"]["W%"]["ほかの置き場の値"][]["名前"]] == []) and ([.["記録"]["時刻"]["閾値の範囲"][0]["lo"], .["記録"]["時刻"]["閾値の範囲"][0]["hi"]] == [$L[0]["hour_range"]["lo"], $L[0]["hour_range"]["hi"]]) and (.["記録"]["res_lo"]["照合の関数・既知答え"][0]["流儀"] == .["記録"]["res_hi"]["照合の関数・既知答え"][0]["流儀"]) and (.["記録"]["W%"]["方向・性質"]["方向"]["区分"] != null)' scripts/priority_rebuild/indicators/indicators.json` | indicators.json | —（jq の照らしで見る） | `—（jq の照らしで見る）` | 要 | **未着手** |
 | 11 | F-1〜F-8：scripts の下のいま在るファイルに差が無い（やらないことの Y-03） | `git diff --quiet -- scripts/priority_rebuild` | git | いま在るファイルを1行直す | `—（git の差で見る）` | 要 | **未着手** |
+| 12 | F-3・F-6（CP90）：オンの種類で、indicator_params_by_strategy.json に範囲が在るのに、記録の「範囲」が空で、「食い違いの記録」にも範囲が無い種類が0件（照らす口は写すプログラムが読まない値を見つけないので、CP90 の修正1 で入れた範囲を名前で見る。直す前の indicators.json〔commit 69944a8d〕では42種・まこさん 2026-10-25「ok」） | `jq -e --slurpfile B ../../.claude/state/indicator_params_by_strategy.json 'reduce .["記録"][] as $r (0; . + (if $r["オン/オフ"]["状態"] == "オン" and $r["範囲"] == null and ([$r["食い違いの記録"][]["欄"]] - ["範囲"] == [$r["食い違いの記録"][]["欄"]]) and any($B[0]["指標"][]; .["種類"] == $r["名前"] and ((.["範囲"] // []) != [])) then 1 else 0 end)) == 0' scripts/priority_rebuild/indicators/indicators.json` | indicators.json | —（jq の照らしで見る） | `—（jq の照らしで見る）` | 要 | **未着手** |
 
 <!-- ACCEPT_TABLE_END -->
 

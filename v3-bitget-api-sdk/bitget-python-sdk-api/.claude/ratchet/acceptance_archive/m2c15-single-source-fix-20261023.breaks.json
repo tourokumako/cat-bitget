@@ -6,65 +6,65 @@
   {
    "no": "1",
    "script": "ss1_f1_count.sh",
-   "code": 1,
-   "note": "❌ 違い 1 件",
-   "expect": 1,
-   "means": "indicators.json から記録を1つ消すと、照らす口が「記録が無い」で落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f1_count.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "2",
    "script": "ss1_f2_out.sh",
-   "code": 1,
-   "note": "40:OUT = HERE / \"indicators_draft\" / \"indicators.json\"                 # F-2＝書く先（作業場には書かない）",
-   "expect": 1,
-   "means": "写すプログラムの書く先を作業場の下書きの置き場に戻すと、F-2 の grep が当たって落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f2_out.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "3",
    "script": "ss1_f3_source.sh",
-   "code": 1,
-   "note": "❌ 違い 43 件",
-   "expect": 1,
-   "means": "写す元の1つ（observe_config.json の material_first_hidden）を読まないようにすると、照らす口が落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f3_source.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "4",
    "script": "ss1_f4_fields.sh",
-   "code": 1,
-   "note": "❌ 違い 1 件",
-   "expect": 1,
-   "means": "indicators.json の記録から欄を1つ消すと、照らす口が「23の欄と違う」で落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f4_fields.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "5",
    "script": "ss1_f5_name.sh",
-   "code": 1,
-   "note": "❌ 計算の登録の名前が、INDICATOR_TABLE の名前1つにつながらない: ['RSI']",
-   "expect": 1,
-   "means": "計算の登録の名前の型を、どの種類にもつながらない名前にすると、写すプログラムが止まる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f5_name.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "6",
    "script": "ss1_f6_conflict.sh",
-   "code": 1,
-   "note": "❌ 違い 1 件",
-   "expect": 1,
-   "means": "indicators.json の食い違いの記録を1つ消すと、照らす口が落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f6_conflict.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "7",
    "script": "ss1_f7_prop.sh",
-   "code": 1,
-   "note": "❌ 方向が、方向から性質への対応の表に無い種類が在る（表に1行を足すと通る）: ATR%（ボラ量）・BB幅（ボラ量）・Donchian幅（ボラ量）・HWC幅%（ボラ量）・MAD比（ボラ量）・THERMO%（ボラ量）・THERMO_EMA%（ボラ量）・THERMO原作%（ボラ量）・TR%（ボラ量）・UI（ボラ量）・realized_vol（ボラ量）・realized_vol_rv（ボラ量）・stde",
-   "expect": 1,
-   "means": "方向から性質への対応の元から1組を消すと、その方向の種類の性質を決められず、写すプログラムが止まる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f7_prop.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "8",
@@ -75,11 +75,11 @@
   {
    "no": "9",
    "script": "ss1_f8_verify.sh",
-   "code": 1,
-   "note": "❌ 違い 1 件",
-   "expect": 1,
-   "means": "indicators.json の記録の値を1つ変えると、照らす口が落ちる",
-   "match": true
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/ss1_f8_verify.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   },
   {
    "no": "10",
@@ -89,6 +89,12 @@
   },
   {
    "no": "11",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "12",
    "script": null,
    "code": null,
    "note": "壊すプログラムが無い＝この行は済にできない"

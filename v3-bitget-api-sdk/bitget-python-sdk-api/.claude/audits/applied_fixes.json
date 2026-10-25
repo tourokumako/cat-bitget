@@ -8881,66 +8881,73 @@
    "how": "当てた"
   },
   {
+   "report": "2026-10-25_m2c15_single_source_fix_20261023_impl_cp90_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-fix-20261023/impl_4-20_20261024.json",
+   "at": "2026-10-25T17:09:08",
+   "how": "当てた"
+  },
+  {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "1",
    "file": ".claude/state/indicator_review/gen_indicators_draft.py",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "2",
    "file": ".claude/breaks/ss1_f1_count.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "3",
    "file": ".claude/breaks/ss1_f2_out.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "4",
    "file": ".claude/breaks/ss1_f3_source.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "5",
    "file": ".claude/breaks/ss1_f4_fields.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "6",
    "file": ".claude/breaks/ss1_f5_name.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "7",
    "file": ".claude/breaks/ss1_f6_conflict.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "8",
    "file": ".claude/breaks/ss1_f7_prop.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   },
   {
    "report": "design:m2c15-single-source-fix-20261023",
    "num": "9",
    "file": ".claude/breaks/ss1_f8_verify.sh",
-   "at": "2026-10-25T14:02:26",
+   "at": "2026-10-25T17:53:55",
    "how": "当てた"
   }
  ]

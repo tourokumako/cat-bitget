@@ -1,0 +1,36 @@
+547c547
+< <!-- ACC_IMPL_START hash=432c821afc7be3d6 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_IMPL_START hash=0b5af74cf0344f48 gen_acceptance.py が自動生成＝手で書き換えない -->
+1123c1123
+<                  {"by_strategy の範囲": [[d.get("下限"), d.get("上限")] for d in b.get("範囲") or []]})
+---
+>                  {"by_strategy の範囲": [[d.get("下限"), d.get("上限")] for d in b.get("範囲") or []]}, skip_empty=False)
+1760c1760
+< <!-- ACC_SELFTEST_START hash=d065971eba572905 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=44d89382739d488e gen_acceptance.py が自動生成＝手で書き換えない -->
+1774c1774
+< | `—（jq の照らしで見る）` | #10 | —（jq の照らしで見る） |
+---
+> | `—（jq の照らしで見る）` | #10・#12 | —（jq の照らしで見る） |
+1919c1919
+< | 1 | F-1：indicators.json が在り、記録が314種（INDICATOR_TABLE の301種と別枠の材料13種）、1種につき1つ（写すプログラムが書く。もう在れば、写す元から作り直した物と同じかを照らし、書かない） | `python3 .claude/state/indicator_review/gen_indicators_draft.py` | 本番の置き場 | 記録を1つ消す | `ss1_f1_count.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json から記録を1つ消すと、照らす口が「記録が無い」で落ちる |
+---
+> | 1 | F-1：indicators.json が在り、記録が314種（INDICATOR_TABLE の301種と別枠の材料13種）、1種につき1つ（写すプログラムが書く。もう在れば、写す元から作り直した物と同じかを照らし、書かない） | `python3 .claude/state/indicator_review/gen_indicators_draft.py` | 本番の置き場 | 記録を1つ消す | `ss1_f1_count.sh` | 要 | **未着手** |
+1921,1924c1921,1924
+< | 3 | F-3：直す相手の一覧の「①写す」の行のうち、記録にも3つの表にも入らない行が0件。4-4 の1〜8の写す元は、写すプログラムが読んだ値と indicators.json の値が同じかを見る（写すプログラムが読まない値は、照らす口では見つからない＝7-4） | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 写す元の1つを読まないようにする | `ss1_f3_source.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝写す元の1つ（observe_config.json の material_first_hidden）を読まないようにすると、照らす口が落ちる |
+< | 4 | F-4：記録が 4-8 の23の欄を全部持つ | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 欄を1つ消す | `ss1_f4_fields.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の記録から欄を1つ消すと、照らす口が「23の欄と違う」で落ちる |
+< | 5 | F-5：名前の違う56種（オンでは32種）が表の名前にそろい、つながらない登録が0件 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 写すプログラム | 登録の名前を1つ、どの種類にもつながらない名前にする | `ss1_f5_name.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝計算の登録の名前の型を、どの種類にもつながらない名前にすると、写すプログラムが止まる |
+< | 6 | F-6：置き場どうしで違う値が1つの値になり、選ばなかった側が食い違いの記録に在る | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 食い違いの記録を1つ消す | `ss1_f6_conflict.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の食い違いの記録を1つ消すと、照らす口が落ちる |
+---
+> | 3 | F-3：直す相手の一覧の「①写す」の行のうち、記録にも3つの表にも入らない行が0件。4-4 の1〜8の写す元は、写すプログラムが読んだ値と indicators.json の値が同じかを見る（写すプログラムが読まない値は、照らす口では見つからない＝7-4） | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 写す元の1つを読まないようにする | `ss1_f3_source.sh` | 要 | **未着手** |
+> | 4 | F-4：記録が 4-8 の23の欄を全部持つ | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 欄を1つ消す | `ss1_f4_fields.sh` | 要 | **未着手** |
+> | 5 | F-5：名前の違う56種（オンでは32種）が表の名前にそろい、つながらない登録が0件 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 写すプログラム | 登録の名前を1つ、どの種類にもつながらない名前にする | `ss1_f5_name.sh` | 要 | **未着手** |
+> | 6 | F-6：置き場どうしで違う値が1つの値になり、選ばなかった側が食い違いの記録に在る | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 食い違いの記録を1つ消す | `ss1_f6_conflict.sh` | 要 | **未着手** |
+1927c1927
+< | 9 | F-8：--verify が違い0件で終わりのコード 0。記録の値を1つ変えると0以外 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 記録の値を1つ変える | `ss1_f8_verify.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝indicators.json の記録の値を1つ変えると、照らす口が落ちる |
+---
+> | 9 | F-8：--verify が違い0件で終わりのコード 0。記録の値を1つ変えると0以外 | `python3 .claude/state/indicator_review/gen_indicators_draft.py --verify` | 照らす口 | 記録の値を1つ変える | `ss1_f8_verify.sh` | 要 | **未着手** |
+1929a1930
+> | 12 | F-3・F-6（CP90）：オンの種類で、indicator_params_by_strategy.json に範囲が在るのに、記録の「範囲」が空で、「食い違いの記録」にも範囲が無い種類が0件（照らす口は写すプログラムが読まない値を見つけないので、CP90 の修正1 で入れた範囲を名前で見る。直す前の indicators.json〔commit 69944a8d〕では42種・まこさん 2026-10-25「ok」） | `jq -e --slurpfile B ../../.claude/state/indicator_params_by_strategy.json 'reduce .["記録"][] as $r (0; . + (if $r["オン/オフ"]["状態"] == "オン" and $r["範囲"] == null and ([$r["食い違いの記録"][]["欄"]] - ["範囲"] == [$r["食い違いの記録"][]["欄"]]) and any($B[0]["指標"][]; .["種類"] == $r["名前"] and ((.["範囲"] // []) != [])) then 1 else 0 end)) == 0' scripts/priority_rebuild/indicators/indicators.json` | indicators.json | —（jq の照らしで見る） | `—（jq の照らしで見る）` | 要 | **未着手** |
