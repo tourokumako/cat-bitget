@@ -8964,6 +8964,43 @@
    "at": "2026-10-26T00:01:49",
    "how": "まこさんが当てないと決めた",
    "verbatim": "m2c15-single-source-redirect-20261025/ok_fix39_decline_20261025"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "40",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-26T07:16:57",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "54",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-26T07:16:57",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "61",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-26T07:16:57",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "55",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-26T07:27:07",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-params-in-name-20261026/ok_cp60_decline_55_59_20261026"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "59",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-26T07:27:07",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-params-in-name-20261026/ok_cp60_decline_55_59_20261026"
   }
  ]
 }

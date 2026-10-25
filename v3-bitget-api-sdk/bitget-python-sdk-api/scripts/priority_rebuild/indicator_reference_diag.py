@@ -1457,10 +1457,10 @@ _r(r"下ヒゲ比", "下ヒゲ比",
                      [(-1, 0.625, 1e-9)])])
 # ── 形 ──
 _r(r"swing高値距離%(\d+)", "swing高値距離",
-   "n 本最高値からの乖離%（0に近いほど高値圏）", "標準。close vs n本高値% と同一の式＝重複列（歩2 の同系統制限の対象）", tb=_tb_dist_high,
+   "n 本最高値からの乖離%（0に近いほど高値圏）", "n 本最高値（Donchian 上限）。教科書の swing（前後が下がった山）ではない＝それは fractal高値距離%。全列が drop_columns に在る（監査 CP60）", tb=_tb_dist_high,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])
 _r(r"swing安値距離%(\d+)", "swing安値距離",
-   "n 本最安値からの乖離%", "標準。close vs n本安値% と同一の式＝重複列", tb=_tb_dist_low,
+   "n 本最安値からの乖離%", "n 本最安値（Donchian 下限）。教科書の swing（前後が上がった谷）ではない＝それは fractal安値距離%。全列が drop_columns に在る（監査 CP60）", tb=_tb_dist_low,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-9)])])
 _r(r"高値からの経過バー(\d+)", "高値からの経過バー",
    "n 本窓の最高値から何本たったか", "標準", tb=_tb_bars_since_high,
@@ -1662,19 +1662,19 @@ _r(r"fib位置(\d+)", "fib位置",
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.5, 1e-9)])])
 _r(r"close vs POC%(\d+)", "POC",
    "出来高プロファイルの最厚価格帯 POC からの乖離%",
-   "Market Profile。窓 n 本・25分割の近似。同量の帯が並んだら価格の高い側を採る（実装の決め）", tb=lambda d, p: _tb_vs_vp(d, p, 0),
+   "Market Profile。窓 n 本・24区画（端が25個）。同量の帯が並んだら価格の高い側を採る（実装の決め）", tb=lambda d, p: _tb_vs_vp(d, p, 0),
    # 手計算の既知答え（2026-08-09 新設・フロー 段3 の 3-4）。POC＝出来高が一番 厚い区画の中央。
    # 場合1（出来高が下に偏る 10:1）も 場合2（6:4）も、一番 厚いのは下の区画＝答えは同じ。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
                     (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind="写し")
 _r(r"close vs VAH%(\d+)", "VAH",
-   "バリューエリア上端（出来高上位70%帯の上端）からの乖離%", "Market Profile。25分割の近似", tb=lambda d, p: _tb_vs_vp(d, p, 1),
+   "バリューエリア上端（出来高上位70%帯の上端）からの乖離%", "Market Profile。24区画（端が25個）・POC から隣を足す作り（監査 CP60）", tb=lambda d, p: _tb_vs_vp(d, p, 1),
    # 場合1＝下の区画だけで出来高の91%を占める→上位70%帯は1区画で足りる→上端も下の区画。
    # 場合2＝下の区画は60%しか無い→上位70%帯に上の区画も要る→上端は上の区画。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
                     (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])], tb_kind="写し")
 _r(r"close vs VAL%(\d+)", "VAL",
-   "バリューエリア下端からの乖離%", "Market Profile。25分割の近似", tb=lambda d, p: _tb_vs_vp(d, p, 2),
+   "バリューエリア下端からの乖離%", "Market Profile。24区画（端が25個）・POC から隣を足す作り（監査 CP60）", tb=lambda d, p: _tb_vs_vp(d, p, 2),
    # 下端は どちらの場合も下の区画。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
                     (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind="写し")
@@ -5348,7 +5348,10 @@ RANGE_GEO_TF = ("5m（1h ゾーンは label=right・closed=right で5分足の�
                 "切り替えられる＝その区切りの最後の5分足（10:55）の行から使う。既定は今の区切り・状態機械は過去 close の逐次更新）")
 RANGE_GEO_REF: dict[str, dict] = {
     "res_hi": dict(kind="price", teigi="レジスタンス帯の上端（1h 確定 fractal スイング高値を tol で束ねた帯・padding 込み）",
-                   ryugi="RG ゾーンビルダー（build_regime_gate_rg._zones_1h_rg・fractal j+2 確定＝L-179 型の確定遅延）",
+                   ryugi="RG ゾーンビルダー（build_regime_gate_rg._zones_1h_rg・fractal j+2 確定＝L-179 型の確定遅延）。"
+                         "★engine_tuner（e38_logics.json の global.regime.v25_adaptive_band=true）は RG-v6＝束ね幅 "
+                         "tol=clamp(0.5×ATR%_1h,0.15%,0.6%)（build_regime_gate_rg._adaptive_tol_1h・ATR は TR の14本単純平均）の帯を使う。"
+                         "既知答え（range_geo_known_check）は固定 tol（RG-v5・adaptive_k=None）の帯",
                    houkou="価格水準＝placement の幾何参照専用（条件の材料には使えない・H6）"),
     "res_lo": dict(kind="price", teigi="レジスタンス帯の下端", ryugi="同上", houkou="同上"),
     "sup_hi": dict(kind="price", teigi="サポート帯の上端", ryugi="同上", houkou="同上"),
