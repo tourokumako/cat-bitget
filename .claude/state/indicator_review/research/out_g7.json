@@ -1,0 +1,424 @@
+[
+ {
+  "種類": "RCI",
+  "元の指標": "RCI（Rank Correlation Index・順位相関指数。考案者は見つけた出どころに書いていない）",
+  "パラメータの名前": [
+   "n（期間）"
+  ],
+  "既定": [
+   {
+    "値": [
+     12
+    ],
+    "URL": "https://api.anychart.com/anychart.core.stock.indicators.RCI",
+    "逐語": "period number 12 Period.",
+    "出どころの質": "ライブラリの説明（AnyChart の API リファレンス）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+    "逐語": "RCIの期間設定に決まりはありませんが、一般的には9日間とする場合が多いようです。『外貨ネクストネオ』リッチアプリ版でも、RCI（中期）のデフォルトの設定値は9日間となっています。",
+    "出どころの質": "証券会社・ブログ（外為どっとコムの初心者向けの解説）"
+   },
+   {
+    "値": [
+     9,
+     26,
+     52
+    ],
+    "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+    "逐語": "RCIを算出するための期間を指定します。3本まで可能で、デフォルトは9、26、52です。",
+    "出どころの質": "証券会社・ブログ（OANDA の解説・インジケーター OANDA_RCI の設定）（3本の線の既定）"
+   },
+   {
+    "値": [
+     9,
+     26,
+     52
+    ],
+    "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+    "逐語": "Standard Japanese Setup: ShortPeriod=9, MediumPeriod=26, LongPeriod=52 (traditional Japanese technical analysis ratios)",
+    "出どころの質": "その他（StrategyQuant のインジケーターの説明・RCI 3 Lines）（3本の線の既定）"
+   },
+   {
+    "値": [
+     5,
+     10,
+     15
+    ],
+    "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+    "逐語": "期間1…5、期間2…10、期間3…15",
+    "出どころの質": "証券会社・ブログ（楽天証券 MarketSpeed FX のヘルプ・初期設定）（3本の線の初期設定）"
+   },
+   {
+    "値": [
+     10,
+     30,
+     50
+    ],
+    "URL": "https://www.mql5.com/en/market/product/177426",
+    "逐語": "Short Period 10 Period for the fast RCI line Middle Period 30 Period for the medium RCI line Long Period 50 Period for the slow RCI line",
+    "出どころの質": "その他（MQL5 マーケットの有料インジケーター RCI 3Lines の説明）（3本の線の既定）"
+   },
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+    "逐語": "The default 10-period setting uses the last 10 bars to rank prices and compute the correlation coefficient.",
+    "出どころの質": "証券会社・ブログ（pineify の解説）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     5,
+     14,
+     26
+    ],
+    "URL": "https://www.mql5.com/en/market/product/177426",
+    "逐語": "Scalping (M1-M5) 5 14 26",
+    "出どころの質": "その他（MQL5 マーケットの有料インジケーター RCI 3Lines の説明）（M1〜M5＝1分足〜5分足。3本の線）"
+   },
+   {
+    "値": [
+     5
+    ],
+    "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+    "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+    "出どころの質": "証券会社・ブログ（pineify の解説）（1時間足より下の足）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://blog.wikibit.com/?p=3008",
+    "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+    "出どころの質": "証券会社・ブログ（WikiBit のブログ）（5分足〜15分足）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://blog.wikibit.com/?p=3008",
+    "逐語": "Setup A (scalp): RCI-9 on a 5-minute chart.",
+    "出どころの質": "証券会社・ブログ（WikiBit のブログ）（5分足）"
+   },
+   {
+    "値": [
+     9,
+     26,
+     52
+    ],
+    "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+    "逐語": "次のチャートはユーロドルの5分足のチャートに期間9、26、52のRCIを同時に表示させたものです。",
+    "出どころの質": "証券会社・ブログ（OANDA の解説・インジケーター OANDA_RCI の設定）（5分足のチャートの例。3本の線）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://www.ebc.com/jp/forex/296767.html",
+    "逐語": "まず、短期RCIとしてよく使われるのが「9期間」です。これは価格の変化に対して敏感に反応するため、エントリーや決済のタイミングを素早く捉えるのに適しています。デイトレードやスキャルピングなど、短期売買を行う場合に有効です。",
+    "出どころの質": "証券会社・ブログ（EBC の解説）（スキャルとデイトレの短期売買。時間足の指定なし）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     10,
+     30,
+     50
+    ],
+    "URL": "https://www.mql5.com/en/market/product/177426",
+    "逐語": "Day Trading (M15-H1) 10 30 50",
+    "出どころの質": "その他（MQL5 マーケットの有料インジケーター RCI 3Lines の説明）（M15〜H1＝15分足〜1時間足。3本の線）"
+   },
+   {
+    "値": "Short=5-7, Medium=15-21, Long=30-42（デイトレーダー向け。時間足の指定なし）",
+    "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+    "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+    "出どころの質": "その他（StrategyQuant のインジケーターの説明・RCI 3 Lines）（時間足の指定なし）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://blog.wikibit.com/?p=3008",
+    "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+    "出どころの質": "証券会社・ブログ（WikiBit のブログ）（5分足〜15分足）"
+   },
+   {
+    "値": [
+     26,
+     52
+    ],
+    "URL": "https://blog.wikibit.com/?p=3008",
+    "逐語": "Want trend confirmation → use RCI-26 or RCI-52 on 1H+ charts and filter by price above/below a 50-period MA.",
+    "出どころの質": "証券会社・ブログ（WikiBit のブログ）（1時間足以上）"
+   },
+   {
+    "値": [
+     9,
+     26,
+     52
+    ],
+    "URL": "https://zai.diamond.jp/articles/-/37691",
+    "逐語": "そして、ＲＣＩの線の組み合わせは、９、２６、５２という期間の３線としている。",
+    "出どころの質": "証券会社・ブログ（ザイFX! のトレーダーへの取材記事）（同じ記事は 4時間足・1時間足・15分足、または 1時間足・15分足・5分足 の組で見ると書く）"
+   },
+   {
+    "値": [
+     5
+    ],
+    "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+    "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+    "出どころの質": "証券会社・ブログ（pineify の解説）（1時間足より下の足）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://www.ebc.com/jp/forex/296767.html",
+    "逐語": "まず、短期RCIとしてよく使われるのが「9期間」です。これは価格の変化に対して敏感に反応するため、エントリーや決済のタイミングを素早く捉えるのに適しています。デイトレードやスキャルピングなど、短期売買を行う場合に有効です。",
+    "出どころの質": "証券会社・ブログ（EBC の解説）（スキャルとデイトレの短期売買。時間足の指定なし）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "3-100（短期の線）",
+    "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+    "逐語": "ShortPeriod (Default: 9) – Controls the fast RCI line for capturing immediate momentum shifts. Range: 3-100.",
+    "出どころの質": "その他（StrategyQuant のインジケーターの説明・RCI 3 Lines）"
+   },
+   {
+    "値": "10-200（中期の線）",
+    "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+    "逐語": "MediumPeriod (Default: 26) – Sets the intermediate RCI line for identifying developing trends. Range: 10-200.",
+    "出どころの質": "その他（StrategyQuant のインジケーターの説明・RCI 3 Lines）"
+   },
+   {
+    "値": "20-500（長期の線）",
+    "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+    "逐語": "LongPeriod (Default: 52) – Defines the slow RCI line for confirming major trend direction. Range: 20-500.",
+    "出どころの質": "その他（StrategyQuant のインジケーターの説明・RCI 3 Lines）"
+   },
+   {
+    "値": "5-20（よく使う値 5・10・14）",
+    "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+    "逐語": "5-20 (most common: 5, 10, 14)",
+    "出どころの質": "証券会社・ブログ（pineify の解説）"
+   },
+   {
+    "値": "小さくすると細かい動きに敏感・大きくすると滑らか（数の範囲は書いていない）",
+    "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+    "逐語": "The number of bars in the RCI calculation. Smaller values make the oscillator more responsive to minor fluctuations; larger values offer a smoother response for analyzing trends.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   }
+  ],
+  "メモ": "今の組 7・9・26・52 のうち 9・26・52 は日本の出どころ（OANDA・StrategyQuant・EBC・ザイFX!）が3本の線の既定に挙げる組と同じで、7 はデイトレーダー向けの短期 5〜7（StrategyQuant）の中に入るが、1分足〜5分足に挙げる 5・14 と既定に挙げる 10・12・30・50 は含まない。"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "既定": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "P = (prevHigh + prevLow + prevClose) / 3",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "日足のチャートは前の月",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（1・5・10・15分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（15分足を含む 1・5・10・15分足）"
+   },
+   {
+    "値": "前週の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（30・60・120分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   },
+   {
+    "値": "1W（前週）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足より上で日足より下）"
+   }
+  ],
+  "範囲": "無い",
+  "メモ": "今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "既定": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "R1 = P * 2 - prevLow",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "日足のチャートは前の月",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（1・5・10・15分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（15分足を含む 1・5・10・15分足）"
+   },
+   {
+    "値": "前週の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（30・60・120分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   },
+   {
+    "値": "1W（前週）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足より上で日足より下）"
+   }
+  ],
+  "範囲": "無い",
+  "メモ": "今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータの名前": [],
+  "既定": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "S1 = P * 2 - prevHigh",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "日足のチャートは前の月",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（1・5・10・15分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（15分足を含む 1・5・10・15分足）"
+   },
+   {
+    "値": "前週の高値・安値・終値",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（30・60・120分足）"
+   },
+   {
+    "値": "1D（前日）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）"
+   },
+   {
+    "値": "1W（前週）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足より上で日足より下）"
+   }
+  ],
+  "範囲": "無い",
+  "メモ": "今の定義は日中の足をすべて前の日で作るが、StockCharts は 30・60・120分足を前の週で作り、TradingView の自動の設定は 15分足より上で日足より下の足を前の週で作る（1〜15分足を前の日、日足を前の月で作る所は同じ）。"
+ }
+]

@@ -1,0 +1,359 @@
+[
+{"種類": "S-Rタッチ1時間ATR",
+ "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）＋ ATR（Wilder の Average True Range・1時間足）",
+ "パラメータの名前": ["n（過去の本数）", "倍率（許容幅 ＝ 倍率 × 1時間足の ATR%）", "ATR の期間"],
+ "既定": [
+  {"値": [null, null, 14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr", "逐語": "Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [null, null, 14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr", "逐語": "The “parameters” box to the right of the indicator contains the default value, 14, for the number of periods used to smooth the data.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [null, null, 14], "URL": "https://ta-lib.org/functions/atr.html", "逐語": "optInTimePeriod integer 14 1–100000 Smoothing period", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [null, null, 14], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/volatility/atr.py", "逐語": "length (int): It's period. Default: 14", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": [
+  {"値": [null, null, "5〜10"], "URL": "https://atrindicator.com/best-atr-settings/", "逐語": "Best ATR Period: 5 to 10", "出どころの質": "ブログ（ATR 解説サイト）。見出しは Scalping (1-min to 5-min charts)。逐語は WebFetch が返した引用（curl はボット対策で本文を取れなかった）"},
+  {"値": [null, null, "5〜10（10 が中心）"], "URL": "https://atrindicator.com/atr-settings-5-minute-chart/", "逐語": "ATR(10): Balanced setting for most scalping systems", "出どころの質": "ブログ（ATR 解説サイト・5分足の記事）。逐語は WebFetch が返した引用。同じ記事に \"ATR Period: 5 to 10\" と \"Avoid using the default 14-period—it may be too slow for quick trades\" も在る"},
+  {"値": [null, null, "5〜14"], "URL": "https://tradingbrokers.com/atr-scalping-strategy/", "逐語": "Set the period of the ATR to a value that suits your scalping style (usually between 5 and 14 periods).", "出どころの質": "ブログ（証券会社比較サイト）。逐語は WebFetch が返した引用"}
+ ],
+ "デイトレ": [
+  {"値": [null, null, "10〜14"], "URL": "https://atrindicator.com/best-atr-settings/", "逐語": "Best ATR Period: 10 to 14", "出どころの質": "ブログ（ATR 解説サイト）。見出しは Intraday Trading (15-min to 1-hour charts)。逐語は WebFetch が返した引用"}
+ ],
+ "範囲": [
+  {"値": "8（Wilder がよく使った期間）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr", "逐語": "In his work, Wilder often used an 8-period ATR.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/atr.html", "逐語": "optInTimePeriod integer 14 1–100000 Smoothing period", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の ATR の期間 7・14・21 のうち 14 が既定と同じで、ATR は1時間足で計算しているが、見つかったスキャル・デイトレの値はそれぞれのチャートの足で計算した ATR を指しており、n（144・288）と倍率（0.5・1.0・1.5）には出どころが無い。"},
+
+{"種類": "S-Rタッチ数",
+ "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+ "パラメータの名前": ["n（過去の本数）", "許容幅（割合）"],
+ "既定": "無い", "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "StockCharts の Support & Resistance の解説（https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance）は支持帯・抵抗帯の考え方を書くが、何本を見るか・帯の幅を何%にするかの数字は書いておらず、今の n（144・288）と許容幅（0.15%・0.3%・0.6%）に当たる出どころは見つからなかった。"},
+
+{"種類": "SMC_SWEEP",
+ "元の指標": "流動性の刈り取り（Smart Money Concept / ICT の liquidity sweep）",
+ "パラメータの名前": ["length（直前の高値・安値を見る本数）", "wick_mult（ひげと実体の比の倍率）"],
+ "既定": [
+  {"値": [15, 1.5], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/momentum/smc_sweep.py", "逐語": "Default Inputs:\n        length=15, wick_mult=1.5", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。出典の欄は \"Smart Money Concept / ICT trading methodology\" で、原典の数字は書かれていない"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "今のパラメータの組は空で、observe_diag.py:1026 は smc_sweep を length・wick_mult を渡さずに呼んでいるため、ライブラリの既定 length=15・wick_mult=1.5 で計算されている（LuxAlgo の解説 https://www.luxalgo.com/library/concept/liquidity-sweep/ は1分足から週足まで出ると書くが数字は無い）。"},
+
+{"種類": "close vs ALMA%",
+ "元の指標": "ALMA（Arnaud Legoux Moving Average）",
+ "パラメータの名前": ["window（本数）", "offset", "sigma"],
+ "既定": [
+  {"値": [9, 0.85, 6], "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/", "逐語": "By default, the window is set to 9 periods, but it can be customized to fit any trading style. Offset: This element is the Gaussian that is applied to the combo line and can be aligned to the current price. It’s default is set to 0.85, but by setting it to 1, you can make it align fully to the current price", "出どころの質": "定番の教育サイト（TradingView のヘルプ）。sigma は同じページの \"The default is set to 6 and it is not recommended to change the setting.\""},
+  {"値": [9, 0.85, 6], "URL": "https://ta-lib.org/functions/alma.html", "逐語": "optInTimePeriod integer 9 1–100000 Number of bars in the window optInSigma real 6 ≥ 0.01 Divides the period to give the Gaussian's width in bars optInOffset real 0.85 0–1 Position of the peak weight, 0 at the oldest bar and 1 at the newest", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [9, 0.85, 6], "URL": "https://www.prorealcode.com/prorealtime-indicators/alma-arnaud-legoux-moving-average/", "逐語": "// parameters // Window = 9 // Sigma = 6 // Offset = 0.85", "出どころの質": "取引ソフトの利用者サイト（ProRealCode）"},
+  {"値": [10, 0.85, 6.0], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/alma.py", "逐語": "length (int): It's period, window size. Default: 10\n    sigma (float): Smoothing value. Default 6.0\n    distribution_offset (float): Value to offset the distribution min 0\n        (smoother), max 1 (more responsive). Default 0.85", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": [
+  {"値": ["7〜9", 0.9, 5], "URL": "https://pineify.app/resources/blog/arnaud-legoux-moving-average-alma-indicator-tradingview-pine-script", "逐語": "Scalping 1-5 min 7-9 0.9 5 Fast entries, quick exits", "出どころの質": "ブログ（Pine Script 道具の会社）。表の列は Style Timeframe Length Offset Sigma Why"}
+ ],
+ "デイトレ": [
+  {"値": ["14〜21", 0.85, 6], "URL": "https://pineify.app/resources/blog/arnaud-legoux-moving-average-alma-indicator-tradingview-pine-script", "逐語": "Intraday swing 15-60 min 14-21 0.85 6 Balances noise and response", "出どころの質": "ブログ（Pine Script 道具の会社）"},
+  {"値": [18, 0.86, 6], "URL": "https://syntiumalgo.com/best-alma-indicator-settings/", "逐語": "Recommended setup: Length 18, Offset 0.86, Sigma 6 This setup works well for day trading and intraday strategies.", "出どころの質": "ブログ（シグナル販売の会社）。見出しは Forex Trading（同じ記事の Crypto Trading は Length 21, Offset 0.90, Sigma 6 で、スタイルの指定は無い）"},
+  {"値": [9, 0.85, 6], "URL": "https://www.tradingsim.com/blog/5-strategies-day-trading-arnaud-legoux-moving-average", "逐語": "What are the best ALMA settings for day trading? The common starting point is a window of 9, an offset of 0.85 and a sigma of 6.", "出どころの質": "教育サイト・ブログ（TradingSim）"}
+ ],
+ "範囲": [
+  {"値": "offset 0〜1・sigma 0.01 以上（ライブラリが受け付ける値）", "URL": "https://ta-lib.org/functions/alma.html", "逐語": "optInSigma real 6 ≥ 0.01 Divides the period to give the Gaussian's width in bars optInOffset real 0.85 0–1 Position of the peak weight, 0 at the oldest bar and 1 at the newest", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今は window 20・50・200 の3つで、既定（9・ライブラリは10）やスキャル・デイトレの値（7〜21）より長く、offset はライブラリに 0.15 を渡しているが observe_diag.py:1105 の注記はこれを重みの向きが逆のライブラリで教科書の 0.85 と同じ重みにするためと書いており、sigma はライブラリの既定 6 のまま。"},
+
+{"種類": "close vs DEMA%",
+ "元の指標": "DEMA（Double Exponential Moving Average・Mulloy）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [20], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/double-exponential-moving-average-dema", "逐語": "The default setting for this overlay is 20 periods.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [30], "URL": "https://ta-lib.org/functions/dema.html", "逐語": "optInTimePeriod integer 30 1–100000 Smoothing period for both EMA passes", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/dema.py", "逐語": "length (int): It's period. Default: 10", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"},
+  {"値": [9], "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial", "逐語": "Setting Typical Default What to adjust Length 9 Period for the EMA calculation.", "出どころの質": "ブログ（練習ソフトの会社）。TradingView の既定として書いている"}
+ ],
+ "スキャル": [
+  {"値": ["速い 5・遅い 13"], "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial", "逐語": "Trading Style Fast DEMA Slow DEMA Timeframe Scalping 5 13 1m – 5m", "出どころの質": "ブログ（練習ソフトの会社）"}
+ ],
+ "デイトレ": [
+  {"値": ["速い 9・遅い 21"], "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial", "逐語": "Day trading 9 21 5m – 1H", "出どころの質": "ブログ（練習ソフトの会社）"},
+  {"値": ["5・9・21"], "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial", "逐語": "What is the best DEMA period for day trading? There is no universally optimal period. Common starting points for day trading include 5, 9, and 21.", "出どころの質": "ブログ（練習ソフトの会社）"}
+ ],
+ "範囲": [
+  {"値": "5・15・100 を例に挙げる", "URL": "https://www.tradingview.com/support/solutions/43000589132-double-exponential-moving-average-ema/", "逐語": "To calculate Double EMA, first choose the look-back period you would like to examine (i.e. five, 15, 100 periods).", "出どころの質": "定番の教育サイト（TradingView のヘルプ）"},
+  {"値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/dema.html", "逐語": "optInTimePeriod integer 30 1–100000 Smoothing period for both EMA passes", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 のうち 20 は StockCharts の既定と同じだが、既定は出どころで 9・10・20・30 と食い違い、スキャル（5・13）とデイトレ（9・21）に書かれた値は 20 と 50 の間か下にある。"},
+
+{"種類": "close vs FWMA%",
+ "元の指標": "FWMA（Fibonacci Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/fwma.py", "逐語": "length (int): It's period. Default: 10", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。出典の欄は \"Source: Kevin Johnson\" だけで原典の数字は無い"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "今は 20 の1つだけで、見つかった既定はライブラリの 10 だけ（教育サイト・原典の値は見つからなかった）。"},
+
+{"種類": "close vs HILO%",
+ "元の指標": "Gann HiLo Activator（Robert Krausz）",
+ "パラメータの名前": ["high_length（高値の平均の本数）", "low_length（安値の平均の本数）"],
+ "既定": [
+  {"値": [3, 3], "URL": "https://www.luxalgo.com/library/indicator/gann-hilo-activator/", "逐語": "Length (default 3): lookback of both averages, the classic default from Krausz's construction.", "出どころの質": "指標の販売会社の解説（LuxAlgo）"},
+  {"値": [3, 3], "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/", "逐語": "Robert Krausz's original uses n = 3 with simple averages of the prior bars' highs and lows.", "出どころの質": "指標の販売会社の解説（LuxAlgo）。原典（Stocks & Commodities V16:2）そのものは開けていない"},
+  {"値": [13, 21], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hilo.py", "逐語": "high_length (int): It's period. Default: 13\n    low_length (int): It's period. Default: 21", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今のパラメータの組は空で、observe_diag.py:1148 は hilo を本数を渡さずに呼んでいるためライブラリの既定 13・21 で計算されており、Krausz の原型として LuxAlgo が書く 3 と食い違う（LuxAlgo は日中の足では本数を長くすると書くが数字は無い）。"},
+
+{"種類": "close vs HMA%",
+ "元の指標": "HMA（Hull Moving Average・Alan Hull）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [20], "URL": "https://alanhull.com/hull-moving-average", "逐語": "period:=Input(“period”,1,200,20);", "出どころの質": "開発者の原典（Alan Hull のサイトの MetaStock の式）"},
+  {"値": [20], "URL": "https://ta-lib.org/functions/hma.html", "逐語": "The default period of 20 is Alan Hull's own default.", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [20], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma", "逐語": "By default, the moving average is calculated with 20 periods, but the number of periods can be adjusted to meet your technical analysis needs.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [9], "URL": "https://www.tradingsim.com/blog/hull-ma", "逐語": "The default setting is 9 periods for the Hull MA.", "出どころの質": "教育サイト・ブログ（TradingSim）。同じ記事に \"The default setting in Tradingsim is 9.\"＝自社ソフトの既定"},
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hma.py", "逐語": "length (int): It's period. Default: 10", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": [
+  {"値": ["9 か 16"], "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/", "逐語": "Best Settings for Hull MA Trading Style Recommended HMA Period Scalping / Intraday 9 or 16 HMA", "出どころの質": "ブログ（移動平均の解説サイト）。スキャルと日中を1行にまとめている"}
+ ],
+ "デイトレ": [
+  {"値": ["9 か 16"], "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/", "逐語": "Best Settings for Hull MA Trading Style Recommended HMA Period Scalping / Intraday 9 or 16 HMA", "出どころの質": "ブログ（移動平均の解説サイト）。スキャルと日中を1行にまとめている"}
+ ],
+ "範囲": [
+  {"値": "1〜200", "URL": "https://alanhull.com/hull-moving-average", "逐語": "period:=Input(“period”,1,200,20);", "出どころの質": "開発者の原典（MetaStock の入力の下限・上限・既定）"},
+  {"値": "長い期間の例 200", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma", "逐語": "In addition, HMAs with longer periods (e.g. 200-period HMA) can be used to identify the current overall trend.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の 20・50・200 のうち 20 は Hull の原典の既定と同じで、200 は原典の入力の上限と StockCharts の長い期間の例に当たり、スキャル・日中として書かれた 9・16 は今の組に無い。"},
+
+{"種類": "close vs HT_TRENDLINE%",
+ "元の指標": "HT_TRENDLINE（Ehlers の Hilbert Transform Instantaneous Trendline）",
+ "パラメータの名前": [],
+ "既定": "無い", "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "TA-Lib の説明（https://ta-lib.org/functions/ht_trendline.html）は入力が価格の列だけで期間の欄が無く（窓は支配的な周期から自動で決まる）、今のパラメータの組が空なのと合っている。"},
+
+{"種類": "close vs HWMA%",
+ "元の指標": "HWMA（Holt-Winters Moving Average）",
+ "パラメータの名前": ["na（平滑の係数）", "nb（傾きの係数）", "nc（季節の係数）"],
+ "既定": [
+  {"値": [0.2, 0.1, 0.1], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py", "逐語": "na (float): Smoothed series parameter (from 0 to 1). Default: 0.2\n    nb (float): Trend parameter (from 0 to 1). Default: 0.1\n    nc (float): Seasonality parameter (from 0 to 1). Default: 0.1", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "3つとも 0〜1", "URL": "https://www.mql5.com/en/code/20856", "逐語": "The indicator has four input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); Applied price - price used for calculations.", "出どころの質": "コード共有サイト（MQL5 CodeBase・ライブラリが出典に挙げるページ）"}
+ ],
+ "メモ": "今のパラメータの組は空で、observe_diag.py:1152 は hwma を係数を渡さずに呼んでいるためライブラリの既定 0.2・0.1・0.1 で計算されている。"},
+
+{"種類": "close vs JMA%",
+ "元の指標": "JMA（Jurik Moving Average）",
+ "パラメータの名前": ["length（本数）", "phase"],
+ "既定": [
+  {"値": [null, 0], "URL": "https://pdfcoffee.com/jurik1-pdf-free.html", "逐語": "JMA phase ranges from -100 (max lag) to +100 (min lag). Its default value is 0.", "出どころの質": "開発者の原典（Jurik Research の説明書 © 2002 の第三者サイト上の写し）"},
+  {"値": [7, 0], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/jma.py", "逐語": "length (int): Period of calculation. Default: 7\n    phase (float): How heavy/light the average is [-100, 100]. Default: 0", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "length 3〜80", "URL": "https://pdfcoffee.com/jurik1-pdf-free.html", "逐語": "Typical values for LENGTH range from 3 to 80. You can even use decimal numbers, such as 27.3.", "出どころの質": "開発者の原典（Jurik Research の説明書の写し）"},
+  {"値": "phase -100〜+100", "URL": "https://pdfcoffee.com/jurik1-pdf-free.html", "逐語": "JMA phase ranges from -100 (max lag) to +100 (min lag).", "出どころの質": "開発者の原典（Jurik Research の説明書の写し）"},
+  {"値": "短い 7・中くらい 35・長い 175（比べるときの3つの長さ）", "URL": "http://jurikres.com/faq1/faq_ama.htm", "逐語": "What we mean by \"short, medium and long time frames\" is that the comparisons must include three separate JMA lengths: 7 (short), 35 (medium), 175 (long).", "出どころの質": "開発者の原典（Jurik Research の FAQ）。足の時間ではなく JMA の長さの短・中・長"}
+ ],
+ "メモ": "今の 20・50・200 のうち 20・50 は Jurik の典型の範囲 3〜80 の中、200 はその外で、phase は渡していないのでライブラリの既定 0（Jurik の既定と同じ）。"},
+
+{"種類": "close vs KAMA%",
+ "元の指標": "KAMA（Kaufman's Adaptive Moving Average）",
+ "パラメータの名前": ["length（効率比の本数）", "fast", "slow"],
+ "既定": [
+  {"値": [10, 2, 30], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama", "逐語": "Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool・Kaufman の推奨として）"},
+  {"値": [30, 2, 30], "URL": "https://ta-lib.org/functions/kama.html", "逐語": "optInTimePeriod integer 30 1–100000 Lookback window for the efficiency ratio", "出どころの質": "ライブラリの説明（TA-Lib 公式）。式は \"SC = (ER*(2/3 - 2/31) + 2/31)^2\"＝速い 2・遅い 30 で固定"},
+  {"値": [10, 2, 30], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/kama.py", "逐語": "length (int): It's period. Default: 10\n    fast (int): Fast MA period. Default: 2\n    slow (int): Slow MA period. Default: 30", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": [
+  {"値": ["5〜7", 2, 30], "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial", "逐語": "Trading Style ER Length Fast Length Slow Length Timeframe Scalping 5–7 2 30 1m – 5m", "出どころの質": "ブログ（練習ソフトの会社）"}
+ ],
+ "デイトレ": [
+  {"値": ["7〜10", 2, 30], "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial", "逐語": "Day trading 7–10 2 30 5m – 1h", "出どころの質": "ブログ（練習ソフトの会社）"},
+  {"値": ["7〜10", null, null], "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance", "逐語": "For day trading, try a shorter setting of 7 to 10 on 5-minute or hourly charts.", "出どころの質": "ブログ（Pine Script 道具の会社）"}
+ ],
+ "範囲": [
+  {"値": "length 7〜10・fast 2・slow 20〜30", "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance", "逐語": "Parameter Default Setting Recommended Range Purpose Length 10 periods 7-10 periods Determines ER calculation window Fastest EMA 2 periods 2 periods Maximum trend responsiveness Slowest EMA 30 periods 20-30 periods Optimal noise filtering", "出どころの質": "ブログ（Pine Script 道具の会社）"},
+  {"値": "length は増やさず減らす・fast を上げて滑らかにする（例 KAMA(10,5,30)）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama", "逐語": "The first parameter is for the Efficiency Ratio and chartists should refrain from increasing this number. Instead, chartists can decrease it to increase sensitivity. Chartists looking to smooth KAMA for longer-term trend analysis can increase the middle parameter incrementally.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今は効率比の本数だけを 20・50・200 にして fast・slow はライブラリの既定 2・30 のままで、StockCharts は効率比の本数を 10 から増やさないよう書き、スキャル・デイトレの値は 5〜10。"},
+
+{"種類": "close vs LINREG%",
+ "元の指標": "線形回帰の線（Linear Regression Curve／Least Squares Moving Average・TA-Lib の LINEARREG）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/linearreg.html", "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-forecast", "逐語": "Periods. The default setting is 14, but you can change it to any number of bars you wish to use to calculate LRF.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool・Linear Regression Forecast）"},
+  {"値": [25], "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/", "逐語": "length = input(title=\"Length\", defval=25)", "出どころの質": "定番の教育サイト（TradingView のヘルプの Pine Script）"},
+  {"値": [14], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linreg.py", "逐語": "length (int): It's period.  Default: 14", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/linearreg.html", "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は既定 14（TradingView は 25）より長く、スタイル別の値は見つからなかった。"},
+
+{"種類": "close vs LRb%",
+ "元の指標": "線形回帰の切片（Linear Regression Intercept・TA-Lib の LINEARREG_INTERCEPT）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-intercept", "逐語": "Periods. The default setting is 14, but you can change it to any number of bars you wish to use to calculate LR-I.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [14], "URL": "https://ta-lib.org/functions/linearreg_intercept.html", "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [14], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linregintercept.py", "逐語": "length (int): Lookback period. Default: 14", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/linearreg_intercept.html", "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は既定 14 より長く、StockCharts は日中の足で特に役立つと書く（\"Short-term traders find them especially useful in intraday charts.\"）が、スタイル別の数字は無い。"},
+
+{"種類": "close vs MAMA%",
+ "元の指標": "MAMA（Ehlers の MESA Adaptive Moving Average）",
+ "パラメータの名前": ["FastLimit", "SlowLimit"],
+ "既定": [
+  {"値": [0.5, 0.05], "URL": "https://www.mesasoftware.com/papers/MAMA.pdf", "逐語": "The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05.", "出どころの質": "開発者の原典（Ehlers の論文。curl で PDF を開いて文字を拾った。WebFetch は 403 で開けなかった）。同じ PDF のコードは \"Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);\""},
+  {"値": [0.5, 0.05], "URL": "https://ta-lib.org/functions/mama.html", "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [0.5, 0.05], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py", "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）", "URL": "https://ta-lib.org/functions/mama.html", "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今のパラメータの組は空で、observe_diag.py:642 は mama を引数なしで呼んでいるためライブラリの既定 0.5・0.05（Ehlers の推奨と同じ）で計算されているが、Ehlers の原典の入力は終値でなく (H+L)/2。"},
+
+{"種類": "close vs FAMA%",
+ "元の指標": "FAMA（MAMA の追従線・Ehlers。MAMA と同じ計算から出る2本目）",
+ "パラメータの名前": ["FastLimit", "SlowLimit"],
+ "既定": [
+  {"値": [0.5, 0.05], "URL": "https://www.mesasoftware.com/papers/MAMA.pdf", "逐語": "The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05.", "出どころの質": "開発者の原典（Ehlers の論文。curl で PDF を開いて文字を拾った。WebFetch は 403 で開けなかった）"},
+  {"値": [0.5, 0.05], "URL": "https://ta-lib.org/functions/mama.html", "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [0.5, 0.05], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py", "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）", "URL": "https://ta-lib.org/functions/mama.html", "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今のパラメータの組は空で、MAMA と同じ呼び出し（observe_diag.py:642・引数なし）から出るのでライブラリの既定 0.5・0.05 で計算されている。"},
+
+{"種類": "close vs MCGD%",
+ "元の指標": "McGinley Dynamic（John McGinley）",
+ "パラメータの名前": ["N（本数）", "c（分母の係数）"],
+ "既定": [
+  {"値": [14, null], "URL": "https://ta-lib.org/functions/mcgd.html", "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [14, null], "URL": "https://fxopen.com/blog/en/how-to-trade-with-the-mcginley-dynamic-indicator/", "逐語": "The McGinley Dynamic has a single input: its length. It’s set to 14 by default, but you’re welcome to customise it to suit your preferences.", "出どころの質": "証券会社（FXOpen）のブログ"},
+  {"値": [14, null], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/", "逐語": "The default value is 14, but you can reduce it to 10 for more convenient intraday trading.", "出どころの質": "証券会社（LiteFinance）のブログ"},
+  {"値": [10, null], "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator", "逐語": "It's often set to a default value of 10, but can be adjusted based on individual trading strategies and preferences.", "出どころの質": "証券会社（Capital.com）の解説"},
+  {"値": [10, 1], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mcgd.py", "逐語": "length (int): Indicator's period. Default: 10\n    offset (int): Number of periods to offset the result. Default: 0\n    c (float): Multiplier for the denominator, sometimes set to 0.6. Default: 1", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": [10, null], "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator", "逐語": "When it comes to the McGinley dynamic indicator settings, a common choice is to set the period to 10 for short-term strategies, such as day trading.", "出どころの質": "証券会社（Capital.com）の解説"},
+  {"値": [10, null], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/", "逐語": "The default value is 14, but you can reduce it to 10 for more convenient intraday trading.", "出どころの質": "証券会社（LiteFinance）のブログ"}
+ ],
+ "範囲": [
+  {"値": "まねる移動平均の本数の約 60%（例 20 本の平均に 12）", "URL": "https://ta-lib.org/functions/mcgd.html", "逐語": "McGinley suggests a period of about 60% of the simple moving average being emulated: a Dynamic of 12 to follow a 20-bar average.", "出どころの質": "ライブラリの説明（TA-Lib 公式）。McGinley の原典そのものは開けていない（Investopedia は WebFetch で開けなかった）"},
+  {"値": "まねる移動平均の本数の 60%", "URL": "https://sacredtraders.com/the-mcginley-dynamic-by-brian-twomey/", "逐語": "McGinley states that N should be 60% of the moving average you wish to emulate.", "出どころの質": "ブログ（Brian Twomey の記事の転載）"},
+  {"値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/mcgd.html", "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は既定（10 または 14）とデイトレの 10 より長く、c は渡していないのでライブラリの既定 1 のままで、McGinley の 60% の考え方では 20・50・200 は約 33・83・333 本の移動平均に当たる。"},
+
+{"種類": "close vs MIDPOINT%",
+ "元の指標": "MIDPOINT（n 本の終値の最高と最安の中央・TA-Lib の MIDPOINT）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/midpoint.html", "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [2], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midpoint.py", "逐語": "length (int): Its period. Default: 2", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/midpoint.html", "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は、出どころで食い違う既定（TA-Lib 14・ライブラリ 2）のどちらより長い。"},
+
+{"種類": "close vs MIDPRICE%",
+ "元の指標": "MIDPRICE（n 本の高値の最高と安値の最安の中央・TA-Lib の MIDPRICE）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/midprice.html", "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [2], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midprice.py", "逐語": "length (int): Its period. Default: 2", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/midprice.html", "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は、出どころで食い違う既定（TA-Lib 14・ライブラリ 2）のどちらより長い。"},
+
+{"種類": "close vs MMAR%",
+ "元の指標": "MMAR（Madrid Moving Average Ribbon・EMA の帯）",
+ "パラメータの名前": ["length（帯の1本の EMA の本数）"],
+ "既定": [
+  {"値": "5・10・15 … 90 の EMA 18本 と 100 の EMA", "URL": "https://www.prorealcode.com/topic/conversion-of-madrid-moving-average-ribbon-from-tradingview/", "逐語": "study(title=\"Madrid Moving Average Ribbon\", shorttitle=\"MMAR\", overlay=true) exponential = input(true, title=\"Exponential MA\") src = close ma05 = exponential ? ema(src, 05) : sma(src, 05) ma10 = exponential ? ema(src, 10) : sma(src, 10) ma15 = exponential ? ema(src, 15) : sma(src, 15) … ma90 = exponential ? ema(src, 90) : sma(src, 90) ma100 = exponential ? ema(src, 100) : sma(src, 100)", "出どころの質": "開発者の原典のコードの写し（作者 Madrid の TradingView のコードを ProRealCode の掲示板に貼ったもの。TradingView の元のページは削除されていた）。… は ma20〜ma85 の同じ形の行を省いた所"},
+  {"値": "最初 10・間隔 5・6本（10・15・20・25・30・35）", "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mmar.py", "逐語": "length (int): Initial EMA period. Default: 10\n    step (int): Period increment between ribbons. Default: 5\n    num_ribbons (int): Number of EMA ribbons. Default: 6", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"},
+  {"値": "SMA 10本・間隔 5・20〜65（Madrid に限らない一般の移動平均の帯）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon", "逐語": "By default, the overlay uses 10 SMAs, spaced 5 periods apart, ranging between 20 and 65 periods.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "6〜8本・例 10・20・30・40・50・60（一般の移動平均の帯）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon", "逐語": "A common setting for a Moving Average Ribbon is to use 6 to 8 moving averages of different lengths, such as 10, 20, 30, 40, 50, and 60 periods.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の 10・15・25・30・35 は、ライブラリの既定の帯（10〜35・間隔5）から 20 を除いた5本で、Madrid の原作の帯（5〜90 と 100）の一部に当たる。"},
+
+{"種類": "close vs PWMA%",
+ "元の指標": "PWMA（Pascal's Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/pwma.py", "逐語": "length (int): It's period.  Default: 10", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。出典の欄は \"Source: Kevin Johnson\" だけで原典の数字は無い"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "今の 20・50・200 は、見つかった唯一の既定（ライブラリの 10）より長い。"},
+
+{"種類": "close vs RAINBOW%",
+ "元の指標": "Rainbow Charts（Mel Widner・Stocks & Commodities 1997年7月）",
+ "パラメータの名前": ["L（1回あたりの SMA の本数）", "k（何回 重ねがけするか）"],
+ "既定": [
+  {"値": [2, 10], "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/", "逐語": "The core of the Rainbow Charts is a 2-period Simple Moving Average to which recursive smoothing is applied. In this way, nine other moving averages are created, each new one based on the previous average.", "出どころの質": "ブログ（TradingPedia）。1本目＋9本＝10本"},
+  {"値": [2, 10], "URL": "https://docs.motivewave.com/studies/q-r#rainbow-c", "逐語": "Rainbow C was authored by Mel Widner in the Stocks and Commodities Magazine 07/1997. It is a colorful display of ten smoothed moving averages. Calculation //input = price, user defined, default is close //method = moving average = ma, user defined, default is SMA //period = user defined, default is 2", "出どころの質": "取引ソフト会社の説明（MotiveWave）"},
+  {"値": [2, 10], "URL": "https://www.luxalgo.com/library/concept/rainbow-ma-stack/", "逐語": "His construction starts from a two-period simple average of price and smooths it nine more times, so the inner lines hug price while the outer ones carry progressively longer effective lag.", "出どころの質": "指標の販売会社の解説（LuxAlgo）"},
+  {"値": [2, 10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rainbow.py", "逐語": "length (int): SMA period. Default: 2", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。同じファイルに \"num_ribbons (int): Number of rainbow bands. Default: 10\""}
+ ],
+ "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "今の L=2 と k=1〜10 は、Widner の作り（2本の SMA を重ねて10本）の10本をそれぞれ1つの材料にしたもので、既定と同じ値の中に収まっている。"},
+
+{"種類": "close vs RMA%",
+ "元の指標": "RMA（Wilder の平滑移動平均・SMMA）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/rma.html", "逐語": "Wilder's own writing uses a period of 14, and pandas-ta defaults to 10. The default here is the one the rest of the moving-average family carries, so a call that swaps one MA for another keeps its period.", "出どころの質": "ライブラリの説明（TA-Lib 公式）が Wilder の原典の値として書いたもの"},
+  {"値": [30], "URL": "https://ta-lib.org/functions/rma.html", "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rma.py", "逐語": "length (int): It's period. Default: 10", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）", "URL": "https://ta-lib.org/functions/rma.html", "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "メモ": "今の 20・50・200 は、出どころで食い違う既定（Wilder 14・TA-Lib 30・ライブラリ 10）のうち 20 が 14 と 30 の間にある。"},
+
+{"種類": "close vs SINWMA%",
+ "元の指標": "SINWMA（Sine Weighted Moving Average・ライブラリの出典は TradingView の Everget のスクリプト）",
+ "パラメータの名前": ["length（本数）"],
+ "既定": [
+  {"値": [14], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py", "逐語": "length (int): It's period. Default: 14", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。コードも \"length = _pos_int(length, 14, \"length\")\""},
+  {"値": [10], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py", "逐語": "Default Inputs:\n        length=10", "出どころの質": "同じライブラリのソースの説明文。同じファイルの中で 14 と 10 が食い違っている"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い", "範囲": "無い",
+ "メモ": "今の 20・50・200 は、ライブラリの既定（コードは 14・説明文は 10）より長く、元の TradingView のスクリプト（https://www.tradingview.com/script/6MWFvnPO-Sine-Weighted-Moving-Average/）のページには数字が載っていなかった。"},
+
+{"種類": "close vs SSF%",
+ "元の指標": "SSF（Ehlers の SuperSmoother フィルター）",
+ "パラメータの名前": ["length（臨界周期の本数）", "poles"],
+ "既定": [
+  {"値": [10, null], "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf", "逐語": "I have compared a 10 bar Exponential Moving Average (EMA) with my SuperSmoother filter set to a critical period of 10 bars for an apples-to-apples comparison in Figure 2.", "出どころの質": "開発者の原典（Ehlers の記事 Predictive Indicators の PDF の第三者サイト上の写し。curl で開いて文字を拾った）"},
+  {"値": [10, null], "URL": "https://toslc.thinkorswim.com/center/reference/Tech-Indicators/studies-library/E-F/EhlersSuperSmootherFilter", "逐語": "Note that the period of 10 bars is a default value which can be customized using the cutoff length input parameter.", "出どころの質": "証券会社（thinkorswim）の説明"},
+  {"値": [10, 2], "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/ssf.py", "逐語": "length (int): It's period. Default: 10\n    poles (int): The number of poles to use, either 2 or 3. Default: 2", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "スキャル": "無い", "デイトレ": "無い",
+ "範囲": [
+  {"値": "10本より長い滑らかにする窓は要らない（Ehlers の考え）", "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf", "逐語": "If we just want to eliminate Aliasing noise, we do not need a smoothing filter longer than a 10 bar cycle period. In fact, using a smoothing filter longer than 10 bars attenuates the data we are trying to use in trading.", "出どころの質": "開発者の原典（Ehlers の記事の写し）。同じ記事は \"regardless of the time frame you are trading\" と足の時間によらないと書く"},
+  {"値": "poles 2 か 3", "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/ssf.py", "逐語": "poles (int): The number of poles to use, either 2 or 3. Default: 2", "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）"}
+ ],
+ "メモ": "今の 20・50・200 は、原典・証券会社・ライブラリが一致する既定 10 より長く、Ehlers は 10 本より長い窓は使う値動きを弱めると書いている。"}
+]

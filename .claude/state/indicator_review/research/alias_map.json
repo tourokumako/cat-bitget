@@ -1,0 +1,17 @@
+{
+ "_説明": "工事 K-3a（m2c15-period-textbook-20261007）で足す11種の材料は、新しく調べずに、同じ指標の今の行の調べた結果（out_g*・out_w*・照らした結果）を使う（まこさん決定「B」2026-10-07＝.claude/state/verbatim/m2c15-k3a-decisions-20261007/ok_k3a_rows_20261007.txt・案＝okd_k3a_rows_20261007.txt）。この表は「新しい種類 → 元にする種類」の対応だけを持つ。値も文も持たない。行を作るのは、新しい種類が「使う」の一覧（on_families.json）に入った後だけ（make_param_table.py・extract_threshold_role_add.py --alias・build_role_threshold_table.py が読む）。",
+ "決定": ["ok_k3a_rows_20261007.txt", "ok_k3_split_20261007.txt", "ok_k7_pivot_thermo_20261007.txt"],
+ "対応": {
+  "close vs VWAP典型": {"元": "close vs VWAP", "なぜ": "監査 CP60 の修正41 の (b)＝典型価格・n 本の移動窓。同じ VWAP の、値段を典型価格にした版"},
+  "当日VWAP": {"元": "close vs VWAP", "なぜ": "監査 CP60 の修正41 の (c)＝UTC 0時から積み上げる典型価格。同じ VWAP の、セッションの始まりから積み上げる版"},
+  "前日POC": {"元": "POC", "なぜ": "監査 CP60 の修正42＝前の UTC の日で固定する版"},
+  "前日VAH": {"元": "VAH", "なぜ": "監査 CP60 の修正42＝前の UTC の日で固定する版"},
+  "前日VAL": {"元": "VAL", "なぜ": "監査 CP60 の修正42＝前の UTC の日で固定する版"},
+  "当日POC": {"元": "POC", "なぜ": "監査 CP60 の修正42＝その日の0時から育つ版"},
+  "当日VAH": {"元": "VAH", "なぜ": "監査 CP60 の修正42＝その日の0時から育つ版"},
+  "当日VAL": {"元": "VAL", "なぜ": "監査 CP60 の修正42＝その日の0時から育つ版"},
+  "前週pivotPP": {"元": "前期間pivotPP", "なぜ": "K-7 の決定（ok_k7_pivot_thermo_20261007）＝前の週の版"},
+  "前週pivotR1": {"元": "前期間pivotR1", "なぜ": "K-7 の決定（ok_k7_pivot_thermo_20261007）＝前の週の版"},
+  "前週pivotS1": {"元": "前期間pivotS1", "なぜ": "K-7 の決定（ok_k7_pivot_thermo_20261007）＝前の週の版"}
+ }
+}

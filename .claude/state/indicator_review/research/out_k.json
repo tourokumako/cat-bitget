@@ -1,0 +1,50 @@
+{
+ "これは何か": "傾き（移動平均の向き）の比べる本数 k の出どころ。153回目（2026-10-04）に CC がページを開いて照らした逐語。まこさん「A」（LuxAlgo のページを照らし、ほかのサイトも探す）→「いいよ」（k の範囲を 1〜10 にする・この2つの逐語と URL を調べた結果の元に足して封をする）",
+ "取り方": "WebFetch でページを開き、要約の道具に逐語を写させた（道具が写した文＝原文と1文字ずつ照らしてはいない）",
+ "対象": "名前に「傾き」を持つ材料の、比べる本数 k の軸（EMA傾き の slope_lookback_k・監査 CP60 の修正7〜12 で k を名前に出す22系統の傾き・RAINBOW傾き）",
+ "出どころ": [
+  {
+   "URL": "https://www.luxalgo.com/library/indicator/tSPnFR8g-moving-average-slope/",
+   "名前": "LuxAlgo「Moving Average Slope」",
+   "欄": "範囲",
+   "逐語": "Measure the slope as the average's value on this bar minus its value n bars back, with n commonly between 1 and 10.",
+   "照らした印": "✅",
+   "照らした日": "2026-10-04"
+  },
+  {
+   "URL": "https://www.luxalgo.com/library/indicator/tSPnFR8g-moving-average-slope/",
+   "名前": "LuxAlgo「Moving Average Slope」",
+   "欄": "既定",
+   "逐語": "k: slope lookback in bars (default 1)",
+   "照らした印": "✅",
+   "照らした日": "2026-10-04"
+  },
+  {
+   "URL": "https://www.tradingview.com/script/Fs9jpcoy-Dual-Timeframe-Slope-Confluence/",
+   "名前": "TradingView「Dual Timeframe Slope Confluence」（TheScalpingAnt）",
+   "欄": "既定",
+   "逐語": "The Slope Lookback parameter (default: 10 bars) determines how far back the slope calculation references.",
+   "照らした印": "✅",
+   "照らした日": "2026-10-04"
+  },
+  {
+   "URL": "https://www.tradingview.com/script/Fs9jpcoy-Dual-Timeframe-Slope-Confluence/",
+   "名前": "TradingView「Dual Timeframe Slope Confluence」（TheScalpingAnt）",
+   "欄": "スキャル",
+   "逐語": "Aggressive scalping: Slope lookback: 5",
+   "照らした印": "✅",
+   "照らした日": "2026-10-04"
+  },
+  {
+   "URL": "https://www.tradingview.com/script/Fs9jpcoy-Dual-Timeframe-Slope-Confluence/",
+   "名前": "TradingView「Dual Timeframe Slope Confluence」（TheScalpingAnt）",
+   "欄": "デイトレ",
+   "逐語": "Intraday: Slope lookback: 8",
+   "照らした印": "✅",
+   "照らした日": "2026-10-04"
+  }
+ ],
+ "使わなかったもの": [
+  "検索の要約だけにあった「Intraday 3 to 5／Daily 5 to 10」＝出どころのページを3つ開いたが見つからない（in.tradingview.com/scripts/slope・tradingview.com/scripts/movingaverage/page-29・kr.tradingview.com/script/vViqsU3y）"
+ ]
+}

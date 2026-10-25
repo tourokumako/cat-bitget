@@ -1,0 +1,1679 @@
+[
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/swma.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/overlap/help/pandas_ta.overlap.swma.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   4
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/swma/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   5
+  ],
+  "URL": "https://vectoralpha.dev/projects/ta/indicators/swma/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   0.7
+  ],
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   0.7
+  ],
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_t.c",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   0.7
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/t3.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14,
+   0.7
+  ],
+  "URL": "https://www.tradingview.com/script/bG5ADjmc-T3-DCAUT/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   0.7
+  ],
+  "URL": "https://forexobroker.com/best-trend-indicators-scalping-mt4/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "期間 8〜21、vfactor 0.5〜0.8",
+  "URL": "https://positioned.app/traders-glossary/tillson-t3-moving-average-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "期間 8〜34",
+  "URL": "https://positioned.app/traders-glossary/tillson-t3-moving-average-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "vfactor 0.01〜1.0（刻み0.05）※推奨範囲。受け付ける値は 0.0〜1.0",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_t.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "期間 1〜200（刻み1）※T3 の期間は TA_DEF_TimePeriod_Positive を使う。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/triple-exponential-moving-average-tema.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/tema.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/tema.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   9
+  ],
+  "URL": "https://www.icfmindia.com/blog/triple-exponential-moving-average-tema-helps-traders-identify-trends-faster-with-minimal-lag",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   9,
+   20
+  ],
+  "URL": "https://www.icfmindia.com/blog/triple-exponential-moving-average-tema-helps-traders-identify-trends-faster-with-minimal-lag",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   50
+  ],
+  "URL": "https://www.tradingsim.com/blog/triple-exponential-moving-average",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜200（刻み1）※TA_DEF_TimePeriod_Positive の推奨範囲。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "（上の2つの数の並びの読み方）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/include/ta_abstract.h",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/trima.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/trima.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   9
+  ],
+  "URL": "https://steemit.com/hive-108451/@beckie96830/crypto-trading-strategy-with-triangular-moving-average-trima-indicator-crypto-academy-s6w4-homework-post-for-professor",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://steemit.com/hive-108451/@beckie96830/crypto-trading-strategy-with-triangular-moving-average-trima-indicator-crypto-academy-s6w4-homework-post-for-professor",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜200（刻み1）※TA_DEF_TimePeriod_Positive の推奨範囲。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "（上の2つの数の並びの読み方）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/include/ta_abstract.h",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/tsf.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://vectoralpha.dev/projects/ta/indicators/tsf/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-forecast.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "4〜200（刻み1）※TA_DEF_TimePeriod_Positive_Minimum2 の推奨範囲。受け付ける値は 2〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "（上の2つの数の並びの読み方）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/include/ta_abstract.h",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   9
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/vidya/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14,
+   "CMO も同じ length"
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/vidya.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14,
+   "sensitivity 0.65"
+  ],
+  "URL": "https://help.ctrader.com/indicators/built-in/other/vidya/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   "CMO 9"
+  ],
+  "URL": "https://www.tradingview.com/script/64ynXU2e/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   "CMO 9",
+   "12 か 21"
+  ],
+  "URL": "https://positioned.app/traders-glossary/variable-moving-average",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "base 9〜12",
+   "CMO 5〜7"
+  ],
+  "URL": "https://forexmt4indicators.com/volumatic-vidya-indicator-mt4/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   14,
+   9
+  ],
+  "URL": "https://forexmt4indicators.com/volumatic-vidya-indicator-mt4/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "9〜20（既定がこのあたりにある、という書き方）",
+  "URL": "https://forexmt4indicators.com/volumatic-vidya-indicator-mt4/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "length 4〜200（刻み1）※推奨範囲。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_v.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "CMO の期間 4〜200（刻み1）※TA_DEF_TimePeriod_Positive_Minimum2 を使う。受け付ける値は 2〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_v.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/vwma.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volume/vwma.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://www.tradingsetupsreview.com/volume-weighted-moving-average-vwma/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   15
+  ],
+  "URL": "https://ninjatrader.com/futures/blogs/what-is-a-volume-weighted-moving-average-vwma/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "10〜20",
+  "URL": "https://pineify.app/resources/blog/vwma-strategy-guide-master-volume-weighted-moving-average-for-trading-success",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "10〜20",
+  "URL": "https://pineify.app/resources/blog/vwma-strategy-guide-master-volume-weighted-moving-average-for-trading-success",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜200（刻み1）※TA_DEF_TimePeriod_Positive の推奨範囲。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "（上の2つの数の並びの読み方）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/include/ta_abstract.h",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/wma.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/wma.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502589-moving-averages/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   14,
+   9
+  ],
+  "URL": "https://www.goatfundedtrader.com/blog/best-moving-average-for-day-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜200（刻み1）※TA_DEF_TimePeriod_Positive の推奨範囲。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "（上の2つの数の並びの読み方）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/include/ta_abstract.h",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   "ema"
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/zlma.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/zlema.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tmgm.com/en-in/academy/trading-academy/zero-lag-exponential-moving-average",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   21
+  ],
+  "URL": "https://www.tmgm.com/en-in/academy/trading-academy/zero-lag-exponential-moving-average",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "9〜14",
+  "URL": "https://trendsandbreakouts.com/zlema",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   9
+  ],
+  "URL": "https://www.stockgro.club/blogs/trading/zero-lag-exponential-moving-average-zlema/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "12〜30",
+  "URL": "https://positioned.app/traders-glossary/zero-lag-ema-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "1〜200（刻み1）※ZLEMA は TA_DEF_UI_TimePeriod_30（TA_DEF_TimePeriod_Positive）を使う。受け付ける値は 1〜100000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   3,
+   20
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/cksp.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/chande-kroll-stop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "P 10〜21、X 1.0〜1.5（日足のスイング）",
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "倍率 0.5〜5.0（刻み0.5）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_c.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "P（optInTimePeriod）4〜200（刻み1）※TA_DEF_TimePeriod_Positive_Minimum2 を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "Q（optInStopPeriod）1〜200（刻み1）※TA_DEF_TimePeriod_Positive を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   3,
+   20
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/cksp.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/chande-kroll-stop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "P 10〜21、X 1.0〜1.5（日足のスイング）",
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "倍率 0.5〜5.0（刻み0.5）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_c.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "P（optInTimePeriod）4〜200（刻み1）※TA_DEF_TimePeriod_Positive_Minimum2 を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "Q（optInStopPeriod）1〜200（刻み1）※TA_DEF_TimePeriod_Positive を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   "EMA"
+  ],
+  "URL": "https://www.tradingview.com/script/sU9molfV/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   3.0,
+   10,
+   "EMA"
+  ],
+  "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   3.0,
+   10
+  ],
+  "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "ATR Length 1〜100、ATR Multiplier 0.1〜100、Moving Average Length 1〜100（画面で選べる範囲）",
+  "URL": "https://forum.amibroker.com/t/pmax-indicator-in-amibroker/30028",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sar.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "AF 0.03〜0.04",
+   "max 0.25〜0.30"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   "Step 0.01",
+   "Maximum 0.1"
+  ],
+  "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   "step 0.022"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   "step 0.021（M5）"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   0.02,
+   0.01,
+   0.2
+  ],
+  "URL": "https://alchemymarkets.com/education/indicators/parabolic-sar/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "AF 0.01",
+   "max 0.08"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "step 0.018〜0.021、maximum 0.018〜0.021",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "Step 0.01〜0.03、Maximum Step 0.10〜0.20（感度の比べ方の例）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sar.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "AF 0.03〜0.04",
+   "max 0.25〜0.30"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   "Step 0.01",
+   "Maximum 0.1"
+  ],
+  "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   "step 0.022"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   "step 0.021（M5）"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   0.02,
+   0.01,
+   0.2
+  ],
+  "URL": "https://alchemymarkets.com/education/indicators/parabolic-sar/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "AF 0.01",
+   "max 0.08"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "step 0.018〜0.021、maximum 0.018〜0.021",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "Step 0.01〜0.03、Maximum Step 0.10〜0.20（感度の比べ方の例）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0,
+   0,
+   0.02,
+   0.02,
+   0.2,
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "OffsetOnReverse 0.01〜0.15、AF Init 0.01〜0.19、AF 0.01〜0.2、AF Max 0.2〜0.4（どれも刻み0.01）※推奨範囲（買い側・売り側とも同じ）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/median.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/statistics/median.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "4〜200（刻み1）※推奨範囲。受け付ける値は 2〜10000",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_m.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/aberration.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/volatility/help/pandas_ta.volatility.aberration.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   "50日の移動平均",
+   "±2標準偏差"
+  ],
+  "URL": "https://concretumgroup.substack.com/p/how-to-size-your-trend-trades",
+  "判定": "一致"
+ },
+ {
+  "種類": "ABER位置",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/aberration.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "ABER位置",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/volatility/help/pandas_ta.volatility.aberration.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "ABER位置",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   "50日の移動平均",
+   "±2標準偏差"
+  ],
+  "URL": "https://concretumgroup.substack.com/p/how-to-size-your-trend-trades",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   "2×(H−L)/((H+L)/2)＝4×(H−L)/(H+L)"
+  ],
+  "URL": "https://www.bigtrends.com/education/inside-bigtrends-acceleration-bands-indicator/",
+  "判定": "一部"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   "20 か 80"
+  ],
+  "URL": "https://www.bigtrends.com/education/catching-big-trends-with-acceleration-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://ta-lib.org/functions/accbands.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/accbands.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/acceleration-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   20,
+   0.001
+  ],
+  "URL": "https://www.motivewave.com/studies/acceleration_bands.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "20 か 80",
+  "URL": "https://help.tc2000.com/m/69445/l/755840-acceleration-bands",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "期間 4〜200（刻み1）※ACCBANDS は TA_DEF_UI_TimePeriod_20_MINIMUM2（TA_DEF_TimePeriod_Positive_Minimum2）を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   "2×(H−L)/((H+L)/2)＝4×(H−L)/(H+L)"
+  ],
+  "URL": "https://www.bigtrends.com/education/inside-bigtrends-acceleration-bands-indicator/",
+  "判定": "一部"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   "20 か 80"
+  ],
+  "URL": "https://www.bigtrends.com/education/catching-big-trends-with-acceleration-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://ta-lib.org/functions/accbands.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/accbands.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/acceleration-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   20,
+   0.001
+  ],
+  "URL": "https://www.motivewave.com/studies/acceleration_bands.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "20 か 80",
+  "URL": "https://help.tc2000.com/m/69445/l/755840-acceleration-bands",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "期間 4〜200（刻み1）※ACCBANDS は TA_DEF_UI_TimePeriod_20_MINIMUM2（TA_DEF_TimePeriod_Positive_Minimum2）を使う",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/ta_def_ui.c",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   22,
+   3.0
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/chandelier-exit.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   22,
+   3
+  ],
+  "URL": "https://www.netpicks.com/chandelier-exit/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   22,
+   3
+  ],
+  "URL": "https://optinod.com/en/learn/chandelier-exit/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   14,
+   "4.0〜5.0"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14,
+   "3.5〜4.5"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "倍率 2.5〜3.5（日足）",
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "倍率 5（値動きの荒い銘柄の例）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/chandelier-exit.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   22,
+   3.0
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/chandelier-exit.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   22,
+   3
+  ],
+  "URL": "https://www.netpicks.com/chandelier-exit/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   22,
+   3
+  ],
+  "URL": "https://optinod.com/en/learn/chandelier-exit/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   14,
+   "4.0〜5.0"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14,
+   "3.5〜4.5"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "倍率 2.5〜3.5（日足）",
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "倍率 5（値動きの荒い銘柄の例）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/chandelier-exit.md",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.2,
+   0.1,
+   0.1,
+   0.1,
+   1.0
+  ],
+  "URL": "https://www.mql5.com/en/code/download/20857/HWC.mq5",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.2,
+   0.1,
+   0.1,
+   0.1,
+   1
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/hwc.py）",
+  "判定": "取れない"
+ },
+ {
+  "種類": "HWC位置",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "na・nb・nc・nd とも 0〜1",
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HT_DCPHASE",
+  "欄": "既定",
+  "番号": 0,
+  "値": "パラメータなし",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/cycle_indicators.html",
+  "判定": "不一致"
+ }
+]

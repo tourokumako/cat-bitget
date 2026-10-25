@@ -1,0 +1,1632 @@
+[
+ {
+  "種類": "RSI",
+  "元の指標": "RSI（Relative Strength Index・Wilder）",
+  "パラメータの名前": [
+   "n（期間）"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+    "逐語": "This RSI calculation is based on 14 periods, the default Wilder suggested in his book.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（開発者 Wilder の本の既定として紹介）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+    "逐語": "The number of bars to be used in calculating the RSI. 14 bars is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "real = RSI(close, timeperiod=14)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     2,
+     3
+    ],
+    "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+    "逐語": "When trading on a 1-minute chart, the best RSI setting is typically RSI 2 or 3.",
+    "出どころの質": "証券会社・ブログ（1分足）"
+   },
+   {
+    "値": "7〜9（5分足。または 14 のまま水準を 80/20 に広げる）",
+    "URL": "https://bullynx.com/blog/best-rsi-settings",
+    "逐語": "Most intraday traders run 7 to 9 periods on a 5-minute chart, or stay on 14 and widen the bands to 80/20.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   },
+   {
+    "値": [
+     5
+    ],
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "RSI should be equally nimble here. Use a 5-period RSI with 80/20 thresholds to match the faster pace.",
+    "出どころの質": "証券会社・ブログ（5分足のスキャルの節。暗号資産の取引の記事）"
+   },
+   {
+    "値": "5〜7（スキャル）／9〜10（デイトレ）。どちらも 5分足のページ",
+    "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+    "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://bullynx.com/blog/best-rsi-settings",
+    "逐語": "On a 15-minute chart the 14-period default holds up well and is what most platforms leave in place.",
+    "出どころの質": "証券会社・ブログ（15分足）"
+   },
+   {
+    "値": "9（15分足）／14（1時間足）",
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "For 15-minute charts, try a 9-period RSI with 75/25 thresholds. On the 1-hour, the classic 14-period works well with standard 70/30 levels.",
+    "出どころの質": "証券会社・ブログ（15分足・1時間足。暗号資産の取引の記事）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-15-minute-chart/",
+    "逐語": "Use a 14‑period RSI with 70/30 overbought/oversold levels to balance sensitivity and reliability on 15‑minute charts, catching momentum shifts early without excessive false signals.",
+    "出どころの質": "証券会社・ブログ（15分足）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "2（短期のトレーダー。時間足の指定なし）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+    "逐語": "Short-term traders sometimes use 2-period RSI to look for overbought readings above 80 and oversold readings below 20.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "14 から下げると敏感・上げると鈍感（数の範囲は書いていない）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+    "逐語": "The default look-back period for RSI is 14, but you can lower it to increase sensitivity or raise it to decrease sensitivity.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "7〜9（日中の足のデイトレ）〜21（日足のスイング）",
+    "URL": "https://bullynx.com/blog/best-rsi-settings",
+    "逐語": "Day traders commonly shorten the period to 7 to 9 on intraday charts, swing traders commonly keep 14 or stretch it to 21 on the daily, and traders in a strong trend commonly widen the bands to 80/20.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 7・9・14・21 は、既定の 14 と、出どころが 5分足に挙げる 7〜9・15分足の 9 と 14・1時間足の 14・日足のスイングの 21 を含み、1分足に挙げる 2・3 と 5分足に挙げる 5 は含まない。"
+ },
+ {
+  "種類": "ROC",
+  "元の指標": "ROC（Rate of Change）",
+  "パラメータの名前": [
+   "n（何本前と比べるか）"
+  ],
+  "既定": [
+   {
+    "値": [
+     12
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/rate-of-change-roc",
+    "逐語": "When the indicator is first chosen from the dropdown list, its parameter is set to 12 by default; from there, it can be adjusted to increase or decrease sensitivity.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502343-rate-of-change-roc/",
+    "逐語": "The time period to be used in calculating the ROC. 9 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "real = ROC(close, timeperiod=10)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     5
+    ],
+    "URL": "https://www.tradingsim.com/blog/price-rate-of-change",
+    "逐語": "In the above example, we can see how price remained caught within a range of $29.58 and $29.42 on the 5-minute time frame. Here, we are using a 5-period look back from the ROC so that the momentum can be captured easily.",
+    "出どころの質": "証券会社・ブログ（5分足の例）"
+   },
+   {
+    "値": [
+     9
+    ],
+    "URL": "https://www.stockgro.club/blogs/trading/rate-of-change-indicator/",
+    "逐語": "Use 9 periods for intraday scalping and 14 periods for day trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.stockgro.club/blogs/trading/rate-of-change-indicator/",
+    "逐語": "Use 9 periods for intraday scalping and 14 periods for day trading.",
+    "出どころの質": "証券会社・ブログ（時間足の指定なし）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "9（よく使う）・14・25",
+    "URL": "https://www.tradingsim.com/blog/price-rate-of-change",
+    "逐語": "There are various settings that can be used for the ROC oscillator. For one, the common setting used for this indicator is 9-periods. Other commonly used indicator settings include 14 and 25 as well.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "9〜14（デイトレーダー向けとして書いているが『日足』と書いている）",
+    "URL": "https://www.tradingsim.com/blog/price-rate-of-change",
+    "逐語": "For day traders, it is important to find a balance between the 9 and 14 periods setting for a daily chart.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "9〜12（5〜15分足の日中）／14〜21（日足のスイング）",
+    "URL": "https://www.stockgro.club/blogs/trading/rate-of-change-indicator/",
+    "逐語": "ROC’s best timeframe depends on trading style: intraday traders use 9-12 periods on 5-15-minute charts, swing traders prefer 14-21 periods on daily charts, and long-term investors look at 26-52 weeks to identify major cycle trends and smooth noise effectively.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "21・63・126・252（日足の長期の例）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/rate-of-change-roc",
+    "逐語": "The chart above shows IBM with the 252-day, 126-day, 63-day and 21-day Rate of Change.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "今の組 3・6・12・24 は、StockCharts の既定 12 を含み、TradingView の既定 9・TA-Lib の既定 10・5分足の例の 5・日中の 9〜14 は含まない。"
+ },
+ {
+  "種類": "Stoch%K",
+  "元の指標": "ストキャスティクス（Stochastic Oscillator・Lane）",
+  "パラメータの名前": [
+   "n（%K の高安を見る本数）",
+   "%K の平滑（slow）",
+   "%D（%K の移動平均の本数）"
+  ],
+  "既定": [
+   {
+    "値": "Fast (14,3)・Slow (14,3)・Full (14,3,3)",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "The default settings are as follows: Fast Stochastic Oscillator (14,3), Slow Stochastic Oscillator (14,3) and Full Stochastic Oscillator (14,3,3).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "%K 14・%D 3・平滑 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "The time period to be used in calculating the %K. 14 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "%D 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "%K 14・%D 3（よく使う組）",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "That being said, the most common choices are a 14 period %K and a 3 period SMA for %D.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     5,
+     3,
+     3
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "slowk, slowd = STOCH(high, low, close, fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）（StockCharts・TradingView の 14 と食い違う）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     [
+      9,
+      3,
+      3
+     ],
+     [
+      5,
+      3,
+      3
+     ]
+    ],
+    "URL": "https://blog.opofinance.com/en/stochastic-settings-for-5-minutes-chart/",
+    "逐語": "For traders navigating the rapid movements of a 5-minute chart, the best stochastic settings for a 5-minute chart typically involve a quicker response time, often found in configurations like 9, 3, 3 or even 5, 3, 3.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   },
+   {
+    "値": [
+     5,
+     3,
+     3
+    ],
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "The best stochastic settings for a 5 minute chart are typically a 5/3/3 configuration—5 periods for the lookback, 3 periods for %K smoothing, and 3 periods for the %D signal line.",
+    "出どころの質": "証券会社・ブログ（5分足。暗号資産の取引の記事）"
+   },
+   {
+    "値": [
+     21,
+     1,
+     3
+    ],
+    "URL": "https://fxopen.com/blog/en/1-minute-scalping-trading-strategies-with-examples/",
+    "逐語": "Settings of 21, 1, 3 are used to capture momentum and potential reversal points.",
+    "出どころの質": "証券会社・ブログ（証券会社 FXOpen・1分足の ALMA とストキャスの手法の中）"
+   },
+   {
+    "値": "決まった最良の値は無い（基準として 14・3・3 から試す）",
+    "URL": "https://www.luxalgo.com/blog/how-to-adjust-stochastic-settings-for-scalping-success/",
+    "逐語": "There is no universal best setting. Use a named baseline, such as a 14-bar range with three-bar %K smoothing and a three-bar %D average, then test limited alternatives with the same entry, exit and cost assumptions.",
+    "出どころの質": "証券会社・ブログ（スキャルの記事）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.netpicks.com/stochastic-settings-15-minute/",
+    "逐語": "The best stochastic settings for a 15-minute stock chart is generally a 14-period %K (fast stochastic line) and a 3-period %D (slow stochastic line) with settings of 14,3,3.",
+    "出どころの質": "証券会社・ブログ（15分足）"
+   },
+   {
+    "値": [
+     8,
+     3,
+     3
+    ],
+    "URL": "https://www.netpicks.com/stochastic-settings-15-minute/",
+    "逐語": "In our example, we will be using my favorite slow stochastic oscillator setting of 8, 3, 3 on a 15 minute stock chart.",
+    "出どころの質": "証券会社・ブログ（15分足・筆者の好み）"
+   },
+   {
+    "値": [
+     [
+      9,
+      3,
+      3
+     ],
+     [
+      12,
+      3,
+      3
+     ]
+    ],
+    "URL": "https://blog.opofinance.com/en/stochastic-settings-for-15-minutes-chart/",
+    "逐語": "Day Traders, who typically hold positions for several hours within a single trading day, might find settings like (9, 3, 3) or (12, 3, 3) to be a good balance between sensitivity and reliability.",
+    "出どころの質": "証券会社・ブログ（15分足のページ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "長くする例 20（14 に対して）・平滑 5（3 に対して）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "A longer look-back period (20 days versus 14) and longer moving averages for smoothing (5 versus 3) produce a less sensitive oscillator with fewer signals.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "短くする例 10（14 に対して）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "The shorter look-back period (10 versus 14) increases the sensitivity of the oscillator for more overbought readings.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "今の組 5・9・14（%K の平滑なし）は、既定の 14、5分足に挙げる 5 と 9、15分足に挙げる 9 と 14 を含み、15分足の 8・12 と 1分足の 21 は含まない。"
+ },
+ {
+  "種類": "Stoch%D",
+  "元の指標": "ストキャスティクス（Stochastic Oscillator・Lane）",
+  "パラメータの名前": [
+   "n（%K の高安を見る本数）",
+   "%K の平滑（slow）",
+   "%D（%K の移動平均の本数）"
+  ],
+  "既定": [
+   {
+    "値": "Fast (14,3)・Slow (14,3)・Full (14,3,3)",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "The default settings are as follows: Fast Stochastic Oscillator (14,3), Slow Stochastic Oscillator (14,3) and Full Stochastic Oscillator (14,3,3).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "%K 14・%D 3・平滑 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "The time period to be used in calculating the %K. 14 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "%D 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "%K 14・%D 3（よく使う組）",
+    "URL": "https://www.tradingview.com/support/solutions/43000502332-stochastic-stoch/",
+    "逐語": "That being said, the most common choices are a 14 period %K and a 3 period SMA for %D.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     5,
+     3,
+     3
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "slowk, slowd = STOCH(high, low, close, fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）（StockCharts・TradingView の 14 と食い違う）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     [
+      9,
+      3,
+      3
+     ],
+     [
+      5,
+      3,
+      3
+     ]
+    ],
+    "URL": "https://blog.opofinance.com/en/stochastic-settings-for-5-minutes-chart/",
+    "逐語": "For traders navigating the rapid movements of a 5-minute chart, the best stochastic settings for a 5-minute chart typically involve a quicker response time, often found in configurations like 9, 3, 3 or even 5, 3, 3.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   },
+   {
+    "値": [
+     5,
+     3,
+     3
+    ],
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "The best stochastic settings for a 5 minute chart are typically a 5/3/3 configuration—5 periods for the lookback, 3 periods for %K smoothing, and 3 periods for the %D signal line.",
+    "出どころの質": "証券会社・ブログ（5分足。暗号資産の取引の記事）"
+   },
+   {
+    "値": [
+     21,
+     1,
+     3
+    ],
+    "URL": "https://fxopen.com/blog/en/1-minute-scalping-trading-strategies-with-examples/",
+    "逐語": "Settings of 21, 1, 3 are used to capture momentum and potential reversal points.",
+    "出どころの質": "証券会社・ブログ（証券会社 FXOpen・1分足の ALMA とストキャスの手法の中）"
+   },
+   {
+    "値": "決まった最良の値は無い（基準として 14・3・3 から試す）",
+    "URL": "https://www.luxalgo.com/blog/how-to-adjust-stochastic-settings-for-scalping-success/",
+    "逐語": "There is no universal best setting. Use a named baseline, such as a 14-bar range with three-bar %K smoothing and a three-bar %D average, then test limited alternatives with the same entry, exit and cost assumptions.",
+    "出どころの質": "証券会社・ブログ（スキャルの記事）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.netpicks.com/stochastic-settings-15-minute/",
+    "逐語": "The best stochastic settings for a 15-minute stock chart is generally a 14-period %K (fast stochastic line) and a 3-period %D (slow stochastic line) with settings of 14,3,3.",
+    "出どころの質": "証券会社・ブログ（15分足）"
+   },
+   {
+    "値": [
+     8,
+     3,
+     3
+    ],
+    "URL": "https://www.netpicks.com/stochastic-settings-15-minute/",
+    "逐語": "In our example, we will be using my favorite slow stochastic oscillator setting of 8, 3, 3 on a 15 minute stock chart.",
+    "出どころの質": "証券会社・ブログ（15分足・筆者の好み）"
+   },
+   {
+    "値": [
+     [
+      9,
+      3,
+      3
+     ],
+     [
+      12,
+      3,
+      3
+     ]
+    ],
+    "URL": "https://blog.opofinance.com/en/stochastic-settings-for-15-minutes-chart/",
+    "逐語": "Day Traders, who typically hold positions for several hours within a single trading day, might find settings like (9, 3, 3) or (12, 3, 3) to be a good balance between sensitivity and reliability.",
+    "出どころの質": "証券会社・ブログ（15分足のページ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "長くする例 20（14 に対して）・平滑 5（3 に対して）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "A longer look-back period (20 days versus 14) and longer moving averages for smoothing (5 versus 3) produce a less sensitive oscillator with fewer signals.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "短くする例 10（14 に対して）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full",
+    "逐語": "The shorter look-back period (10 versus 14) increases the sensitivity of the oscillator for more overbought readings.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "今の組 5・9・14 に %D 3本を掛けた形は、既定の %D 3 と同じで、出どころが挙げる %K の平滑 3（Slow・Full の形）は今の定義には無い。"
+ },
+ {
+  "種類": "MFI",
+  "元の指標": "MFI（Money Flow Index・Quong と Soudack）",
+  "パラメータの名前": [
+   "n（期間）"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/money-flow-index-mfi",
+    "逐語": "The example below is based on a 14-period MFI, which is the default setting in SharpCharts and the setting recommended by the creators.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（作った人が勧めた値として紹介）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502348-money-flow-mfi/",
+    "逐語": "The time period to be used in calculating the MFI. 14 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "real = MFI(high, low, close, volume, timeperiod=14)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "14（1分足。5分足は避けるとも書いている）",
+    "URL": "https://www.liberatedstocktrader.com/money-flow-index/",
+    "逐語": "Our testing shows that the best setting for Money Flow Index is 14 on an OHLC/Candlestick 1-minute or daily chart; this configuration yielded a 43% win rate. Avoid MFI on a 5-minute chart, as this has only a 23% win rate.",
+    "出どころの質": "証券会社・ブログ（自分のバックテストの記事・米国株）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "14（60分足）",
+    "URL": "https://www.liberatedstocktrader.com/money-flow-index/",
+    "逐語": "Our 396 years of TrendSpider backtests revealed conclusively that the best setting for the Money Flow Index is using MFI-14 on a 1 or 60-minute chart.",
+    "出どころの質": "証券会社・ブログ（自分のバックテストの記事・米国株）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "10（短い）〜20（長い）",
+    "URL": "https://protraderdashboard.com/blog/money-flow-index/",
+    "逐語": "The default MFI period is 14, which works well for most situations. However, you can adjust it: Shorter period (10): More sensitive, more signals, more false signals Longer period (20): Less sensitive, fewer signals, more reliable signals",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 14 だけは、既定の 14、1分足と 60分足に挙げる 14 と同じで、範囲に挙がる 10 と 20 は含まない。"
+ },
+ {
+  "種類": "CMF",
+  "元の指標": "CMF（Chaikin Money Flow）",
+  "パラメータの名前": [
+   "n（期間）"
+  ],
+  "既定": [
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+    "逐語": "Once the indicator is chosen from the dropdown list, a CMF indicator is added to the chart with the default setting of 20 periods.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     [
+      20
+     ],
+     [
+      21
+     ]
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+    "逐語": "Chaikin Money Flow sums Money Flow Volume for a specific look-back period, typically 20 or 21 days, instead of using a cumulative total.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     [
+      20
+     ],
+     [
+      21
+     ]
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+    "逐語": "Any look-back period can be used however the most popular settings would be 20 or 21 days.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     21
+    ],
+    "URL": "https://www.daytrading.com/chaikin-money-flow",
+    "逐語": "The default number of periods for the Chaikin Money Flow is 21 given it’s most commonly applied to the daily chart.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://senzoukria.com/indicators/chaikin-money-flow",
+    "逐語": "Period defaults to 20, Chaikin's original setting and roughly a month of daily sessions; on intraday bars it is simply a 20-bar window.",
+    "出どころの質": "証券会社・ブログ（開発者 Chaikin の元の値として紹介）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "24（5分足で2時間ぶん）",
+    "URL": "https://www.daytrading.com/chaikin-money-flow",
+    "逐語": "For short-term traders, applying a 24-period CMF on a 5-minute chart would provide two hours of trend/momentum data.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   },
+   {
+    "値": "36（5分足で3時間ぶん）・96（5分足で8時間ぶん）",
+    "URL": "https://www.daytrading.com/chaikin-money-flow",
+    "逐語": "For those trading from the 5-minute chart, a 36-period CMF would interpret the trend from the previous three hours of price data; a 96-period CMF would capture the trend of the past eight hours.",
+    "出どころの質": "証券会社・ブログ（5分足）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "24（1時間足で1日ぶん）・120（1時間足で1週間ぶん）",
+    "URL": "https://www.daytrading.com/chaikin-money-flow",
+    "逐語": "Those who use the hourly/60-minute chart typically hold positions over the course of days, rather than intra-day only. In this case, a 24-period CMF would give the trend over the past day (for 24/5 markets, like forex ), with a 120-period CMF giving the trend over the past week.",
+    "出どころの質": "証券会社・ブログ（1時間足。日をまたいで持つ人向けと書いている）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "1〜500（入力できる範囲）",
+    "URL": "https://senzoukria.com/indicators/chaikin-money-flow",
+    "逐語": "The accepted range is 1 to 500, and the plot is purple (#ab47bc) by default.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 20 だけは、StockCharts の既定 20 と同じで、TradingView と daytrading.com の 21、5分足に挙げる 24・36・96、1時間足に挙げる 24・120 は含まない。"
+ },
+ {
+  "種類": "OBV傾き",
+  "元の指標": "OBV（On Balance Volume・Granville）",
+  "パラメータの名前": [
+   "n（OBV の変化を見る本数。教科書の OBV には無い、このプロジェクトの加工の値）"
+  ],
+  "既定": [
+   {
+    "値": "パラメータ無し",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/on-balance-volume-obv",
+    "逐語": "The indicator does not have any parameters, but the settings panel can be used to change the line style or to add an overlay to the indicator.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "パラメータ無し",
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volume_indicators.html",
+    "逐語": "real = OBV(close, volume)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "20（OBV に重ねる EMA の例。図の説明）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/on-balance-volume-obv",
+    "逐語": "On Balance Volume smoothed with a 20-day EMA",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "教科書の OBV には期間が無く、今の組 10・20 は OBV の変化を見る本数で、出どころの図の例にある平滑の EMA 20 と数は同じだが、使い道が違う。"
+ },
+ {
+  "種類": "BB%b",
+  "元の指標": "ボリンジャーバンド（Bollinger Bands）の %b",
+  "パラメータの名前": [
+   "n（移動平均と標準偏差の本数）",
+   "k（標準偏差の倍率）"
+  ],
+  "既定": [
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+    "逐語": "The default setting for %B is based on the default setting for Bollinger Bands (20,2).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+    "逐語": "9. The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.",
+    "出どころの質": "開発者の原典（John Bollinger 本人のサイト）"
+   },
+   {
+    "値": "n 20",
+    "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+    "逐語": "The time period to be used in calculating the SMA which creates the base for the Upper and Lower Bands. 20 days is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "k 2",
+    "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+    "逐語": "The number of Standard Deviations away from the SMA that the Upper and Lower Bands should be. 2 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+    "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://fxopen.com/blog/en/1-minute-scalping-trading-strategies-with-examples/",
+    "逐語": "Bollinger Bands settings for a 1-minute chart are a 20-period simple moving average (middle band) and two outer bands set at a standard deviation level of 2 from the middle band.",
+    "出どころの質": "証券会社・ブログ（証券会社 FXOpen・1分足）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+    "逐語": "RSI (2 or 3), EMA 9, and Bollinger Bands (20, 2) for scalping at 1 minute.",
+    "出どころの質": "証券会社・ブログ（1分足・図の説明）"
+   },
+   {
+    "値": "k 2.2（5分足）",
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Shorter timeframes like the 5-minute chart require a slightly wider band (2.2 SD) to account for faster price movements.",
+    "出どころの質": "証券会社・ブログ（証券会社 Pocket Option）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "k 2.2（5分足）・2.1（15分足）・2.0（1時間足）",
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Timeframe Optimal Band Width Signal Strength 5-minute 2.2 SD Moderate 15-minute 2.1 SD Strong 1-hour 2.0 SD Very Strong",
+    "出どころの質": "証券会社・ブログ（証券会社 Pocket Option・表）"
+   },
+   {
+    "値": "n 20〜21（デイトレ）",
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Adjust the Period Length to your preferred setting (usually 20-21 for day trading).",
+    "出どころの質": "証券会社・ブログ（証券会社 Pocket Option）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(10, 1.9)〜(20, 2)〜(50, 2.1)",
+    "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+    "逐語": "11. For consistent price containment: If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.",
+    "出どころの質": "開発者の原典（John Bollinger 本人のサイト）"
+   },
+   {
+    "値": "(50, 2.1)（長い時間枠）・(10, 1.9)（短い時間枠）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+    "逐語": "A Bollinger Band overlay can be set at (50,2.1) for a longer timeframe or at (10,1.9) for a shorter timeframe.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "k 2.1・2.3（攻めた手法）",
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Set the Standard Deviation to your desired level (you can experiment with 2.1 or 2.3 for more aggressive strategies).",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 (20, 2.0)・(50, 2.0) は、既定の (20, 2) を含み、50本のときは開発者のルールが 2.1 と書いているのに対し 2.0 で、10本・1.9 の組と 5分足の 2.2・15分足の 2.1 は含まない。"
+ },
+ {
+  "種類": "volume_ratio",
+  "元の指標": "相対出来高（Relative Volume・RVOL）",
+  "パラメータの名前": [
+   "n（平均出来高の本数）"
+  ],
+  "既定": [
+   {
+    "値": [
+     50
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-volume-rvol",
+    "逐語": "By default, the average volume used in the formula is calculated with a 50-period simple moving average, but the number of periods as well as the type of moving average (SMA or EMA) can be modified to fit the timeframe being analyzed.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": "同じ時刻の過去10〜20日（時刻ごとに比べる形で、バーの本数ではない）",
+    "URL": "https://daytradingtoolkit.com/beginners-guide/relative-volume-rvol-explained",
+    "逐語": "Relative volume (RVOL) is a ratio that compares a stock's current trading volume to its average trading volume over a specific lookback period—usually the same time of day over the past 10 to 20 trading sessions.",
+    "出どころの質": "証券会社・ブログ（米国株のデイトレ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "50・100 本",
+    "URL": "https://trendspider.com/learning-center/introduction-to-relative-volume-indicator/",
+    "逐語": "Choose a lookback period, such as 50 or 100 bars, to calculate the average volume.",
+    "出どころの質": "証券会社・ブログ（チャートの会社 TrendSpider の学習ページ）"
+   },
+   {
+    "値": "10・20・30 日",
+    "URL": "https://daytradingtoolkit.com/beginners-guide/relative-volume-rvol-explained",
+    "逐語": "Common lookback windows are 10, 20, or 30 trading days.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 20・50 は、StockCharts の既定 50 と TrendSpider の例 50 を含み、デイトレの出どころが書く『同じ時刻の過去の日と比べる』形は今の定義（直前 n 本の平均と比べる）と計算が違う。"
+ },
+ {
+  "種類": "CCI",
+  "元の指標": "CCI（Commodity Channel Index・Lambert）",
+  "パラメータの名前": [
+   "n（期間）"
+  ],
+  "既定": [
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/commodity-channel-index-cci",
+    "逐語": "The default setting is 20 periods, but this can be adjusted to suit analysis needs.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502001-commodity-channel-index-cci/",
+    "逐語": "The time period to be used in calculating the SMA portion of the CCI (20 is the default).",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "real = CCI(high, low, close, timeperiod=14)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）（StockCharts・TradingView の 20 と食い違う）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingsim.com/blog/commodity-channel-index",
+    "逐語": "The default is 14 periods, which suits most swing and intraday use.",
+    "出どころの質": "証券会社・ブログ（StockCharts・TradingView の 20 と食い違う）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://daytradingz.com/cci-indicator/",
+    "逐語": "The most common CCI setting is a 20-period lookback with overbought and oversold lines at +100 and -100, the configuration closest to Lambert’s original design.",
+    "出どころの質": "証券会社・ブログ（開発者 Lambert の元の形に近いとして紹介）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "14 以下（1分足・5分足）",
+    "URL": "https://daytradingz.com/cci-indicator/",
+    "逐語": "Many intraday traders shorten the period to 14 or lower to make the index react faster on 1-minute and 5-minute charts, accepting more false signals in exchange for speed.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "14（1分足・5分足）",
+    "URL": "https://fxnx.com/en/blog/mastering-cci-momentum-how-trade-commodity-channel-index",
+    "逐語": "Yes, you can use a shorter 14-period CCI on a 1-minute or 5-minute chart to identify quick momentum bursts.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "20（1時間足・4時間足）",
+    "URL": "https://fxnx.com/en/blog/mastering-cci-momentum-how-trade-commodity-channel-index",
+    "逐語": "The CCI is versatile, but it shines on the 1-hour and 4-hour timeframes for most forex pairs. On these timeframes, the 20-period setting effectively captures the multi-session momentum cycles that drive major currency moves.",
+    "出どころの質": "証券会社・ブログ（為替の記事）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "10（短い）・40（長い）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/commodity-channel-index-cci",
+    "逐語": "A shorter CCI (10 periods) will be more volatile with a smaller percentage of values between +100 and -100.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "40（長い）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/commodity-channel-index-cci",
+    "逐語": "Conversely, a longer CCI (40 periods) will have a higher percentage of values between +100 and -100.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "7〜10（短い）・20〜30（長い）",
+    "URL": "https://www.tradingsim.com/blog/commodity-channel-index",
+    "逐語": "Shorter settings such as 7 to 10 react faster but generate more false signals, while longer settings like 20 to 30 smooth the line and highlight bigger swings.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 7・9・14・21 は、TA-Lib と Tradingsim の既定 14、1分足・5分足に挙げる 14 以下、短い側の 7〜10 を含み、StockCharts と TradingView の既定 20・1時間足に挙げる 20・長い側の 40 は含まない。"
+ },
+ {
+  "種類": "PVO",
+  "元の指標": "PVO（Percentage Volume Oscillator）",
+  "パラメータの名前": [
+   "fast（短い EMA）",
+   "slow（長い EMA）",
+   "signal（シグナルの EMA）"
+  ],
+  "既定": [
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "The default settings for the PVO are (12,26,9), which is the same as MACD or the PPO.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     12,
+     26
+    ],
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "The default has the fast moving average set to 12 periods and the slow moving average set to 26 periods.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "The default settings (12, 26, 9) work well for most pairs and timeframes.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": "(8, 18, 5)（出どころの呼び名は Scalping、時間足は M15〜M30）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ（為替の指標の配布サイト・表。同じページに『M1 と M5 では遅れる』とも書いている）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(5, 21)（短期のトレーダー）",
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "Shorter settings are best for short-term traders. For example, 5-period for the fast moving average and 21-period for the slow moving average would make the PVO more sensitive and cause choppier behavior and/or more frequent oscillations.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "(1, 250)・(5, 250)（日足で1年平均と比べる例）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "A PVO(5,250) would be positive when the 5-day Volume EMA is above the 250-day EMA.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "(16, 34, 12)（スイング H4〜日足）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 (12, 26, 9) は既定と同じで、短期に挙げる (5, 21) と M15〜M30 に挙げる (8, 18, 5) は含まない。"
+ },
+ {
+  "種類": "PVOシグナル",
+  "元の指標": "PVO（Percentage Volume Oscillator）",
+  "パラメータの名前": [
+   "fast（短い EMA）",
+   "slow（長い EMA）",
+   "signal（シグナルの EMA）"
+  ],
+  "既定": [
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "The default settings for the PVO are (12,26,9), which is the same as MACD or the PPO.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     12,
+     26
+    ],
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "The default has the fast moving average set to 12 periods and the slow moving average set to 26 periods.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "The default settings (12, 26, 9) work well for most pairs and timeframes.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": "(8, 18, 5)（出どころの呼び名は Scalping、時間足は M15〜M30）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ（為替の指標の配布サイト・表。同じページに『M1 と M5 では遅れる』とも書いている）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(5, 21)（短期のトレーダー）",
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "Shorter settings are best for short-term traders. For example, 5-period for the fast moving average and 21-period for the slow moving average would make the PVO more sensitive and cause choppier behavior and/or more frequent oscillations.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "(1, 250)・(5, 250)（日足で1年平均と比べる例）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "A PVO(5,250) would be positive when the 5-day Volume EMA is above the 250-day EMA.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "(16, 34, 12)（スイング H4〜日足）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 (12, 26, 9) のシグナル 9 は既定と同じで、M15〜M30 に挙げるシグナル 5 は含まない。"
+ },
+ {
+  "種類": "PVOヒスト",
+  "元の指標": "PVO（Percentage Volume Oscillator）",
+  "パラメータの名前": [
+   "fast（短い EMA）",
+   "slow（長い EMA）",
+   "signal（シグナルの EMA）"
+  ],
+  "既定": [
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "The default settings for the PVO are (12,26,9), which is the same as MACD or the PPO.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     12,
+     26
+    ],
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "The default has the fast moving average set to 12 periods and the slow moving average set to 26 periods.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     12,
+     26,
+     9
+    ],
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "The default settings (12, 26, 9) work well for most pairs and timeframes.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": "(8, 18, 5)（出どころの呼び名は Scalping、時間足は M15〜M30）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ（為替の指標の配布サイト・表。同じページに『M1 と M5 では遅れる』とも書いている）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(5, 21)（短期のトレーダー）",
+    "URL": "https://www.daytrading.com/percent-volume-oscillator-pvo",
+    "逐語": "Shorter settings are best for short-term traders. For example, 5-period for the fast moving average and 21-period for the slow moving average would make the PVO more sensitive and cause choppier behavior and/or more frequent oscillations.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "(1, 250)・(5, 250)（日足で1年平均と比べる例）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-volume-oscillator-pvo",
+    "逐語": "A PVO(5,250) would be positive when the 5-day Volume EMA is above the 250-day EMA.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "(16, 34, 12)（スイング H4〜日足）",
+    "URL": "https://www.forexcracked.com/forex-indicator/percentage-volume-oscillator-indicator/",
+    "逐語": "Parameter Default Scalping (M15-M30) Swing (H4-Daily) Short EMA Period 12 8 (more responsive) 16 (smoother) Long EMA Period 26 18 (faster signals) 34 (less noise) Signal Period 9 5 (quicker trigger) 12 (fewer false signals)",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 (12, 26, 9) は既定と同じで、PVO とシグナルの差なので PVO・PVOシグナルと同じ値の組を使う。"
+ },
+ {
+  "種類": "StochRSI%K",
+  "元の指標": "StochRSI（Chande と Kroll）",
+  "パラメータの名前": [
+   "n（RSI の本数とストキャスの本数）",
+   "%K の平滑",
+   "%D（%K の移動平均の本数）"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+    "逐語": "The “parameters” value specifies the number of periods used in the calculation (default is 14).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "%K 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "The time period to be used in calculating the %K. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（RSI の本数とストキャスの本数の既定の数はヘルプの文に書いていない）"
+   },
+   {
+    "値": "%D 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "RSI 14・%K 5・%D 3",
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   },
+   {
+    "値": [
+     14,
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "The Stochastics RSI values are generally a 14 period look back of the RSI and 3 period SMA. It is commonly referred to as the 14, 14, 3, 3 setting.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   },
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "StochRSI can be turbocharged for day trading as well. The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+    "出どころの質": "証券会社・ブログ（暗号資産の取引の記事・時間足の指定なし）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(21, 5, 5)（日足で遅くする）",
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "Slower settings (21/5/5) work better on daily charts where you want to filter intraday noise.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 7・9・14・21（%K の平滑なし）は、既定と 5分足・15分足に挙げる 14 と、日足に挙げる 21 を含み、出どころが挙げる %K の平滑 3 は今の定義には無い。"
+ },
+ {
+  "種類": "StochRSI%D",
+  "元の指標": "StochRSI（Chande と Kroll）",
+  "パラメータの名前": [
+   "n（RSI の本数とストキャスの本数）",
+   "%K の平滑",
+   "%D（%K の移動平均の本数）"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+    "逐語": "The “parameters” value specifies the number of periods used in the calculation (default is 14).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "%K 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "The time period to be used in calculating the %K. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（RSI の本数とストキャスの本数の既定の数はヘルプの文に書いていない）"
+   },
+   {
+    "値": "%D 3",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "RSI 14・%K 5・%D 3",
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   },
+   {
+    "値": [
+     14,
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "The Stochastics RSI values are generally a 14 period look back of the RSI and 3 period SMA. It is commonly referred to as the 14, 14, 3, 3 setting.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   },
+   {
+    "値": [
+     14,
+     3,
+     3
+    ],
+    "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+    "逐語": "StochRSI can be turbocharged for day trading as well. The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+    "出どころの質": "証券会社・ブログ（暗号資産の取引の記事・時間足の指定なし）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(21, 5, 5)（日足で遅くする）",
+    "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+    "逐語": "Slower settings (21/5/5) work better on daily charts where you want to filter intraday noise.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 7・9・14・21 に %D 3本を掛けた形は、既定の %D 3 と同じで、出どころが挙げる %K の平滑 3 は今の定義には無い。"
+ },
+ {
+  "種類": "UO",
+  "元の指標": "Ultimate Oscillator（Larry Williams）",
+  "パラメータの名前": [
+   "短い本数",
+   "中の本数",
+   "長い本数"
+  ],
+  "既定": [
+   {
+    "値": [
+     7,
+     14,
+     28
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ultimate-oscillator",
+    "逐語": "This example is based on the default settings (7,14,28).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     7,
+     14,
+     28
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502328-ultimate-oscillator-uo/",
+    "逐語": "The length of the 1st time period. 7 is the Default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（2番目 14・3番目 28 も同じ形で Default と書いている）"
+   },
+   {
+    "値": [
+     7,
+     14,
+     28
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+    "逐語": "real = ULTOSC(high, low, close, timeperiod1=7, timeperiod2=14, timeperiod3=28)",
+    "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     5,
+     10,
+     20
+    ],
+    "URL": "https://ultimateoscillator.com/ultimate-oscillator-best-settings/",
+    "逐語": "For day traders looking for quicker signals , you can shorten the periods: Short-term: 5 Mid-term: 10 Long-term: 20 → Setting: 5-10-20 These settings make the oscillator more responsive, perfect for: 5-min or 15-min charts Scalping or intraday reversals",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     5,
+     10,
+     20
+    ],
+    "URL": "https://ultimateoscillator.com/ultimate-oscillator-best-settings/",
+    "逐語": "For day traders looking for quicker signals , you can shorten the periods: Short-term: 5 Mid-term: 10 Long-term: 20 → Setting: 5-10-20 These settings make the oscillator more responsive, perfect for: 5-min or 15-min charts Scalping or intraday reversals",
+    "出どころの質": "証券会社・ブログ（5分足・15分足）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(4, 8, 16)（敏感にする例）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ultimate-oscillator",
+    "逐語": "Shortening the timeframe to (4,8,16) increased sensitivity and generated at least six overbought or oversold readings.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "(10, 20, 40)（変動の大きい市場）・(14, 28, 56)（日足）",
+    "URL": "https://ultimateoscillator.com/ultimate-oscillator-best-settings/",
+    "逐語": "Yes. Higher volatility markets may need slower settings like 10-20-40 . 5. Can I use Ultimate Oscillator for long-term trading? Yes, just lengthen the periods — e.g., 14-28-56 for daily charts.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "入力の今のパラメータの組は空（[]）で、値を変える軸を持っておらず、出どころの既定は (7, 14, 28)、5分足・15分足に挙げる値は (5, 10, 20)。"
+ },
+ {
+  "種類": "DPO%",
+  "元の指標": "DPO（Detrended Price Oscillator）",
+  "パラメータの名前": [
+   "n（移動平均の本数。ずらす本数は n/2+1）"
+  ],
+  "既定": [
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/detrended-price-oscillator-dpo",
+    "逐語": "The default parameter is 20 periods, but this can be adjusted accordingly to find cycles.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/detrended_price_oscillator.php",
+    "逐語": "The default indicator window is set at 20 days.",
+    "出どころの質": "証券会社・ブログ（チャートソフトの説明）"
+   },
+   {
+    "値": [
+     21
+    ],
+    "URL": "https://www.daytrading.com/detrended-price-oscillator",
+    "逐語": "The default setting on the indicator is generally 21 periods.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://capital.com/en-int/learn/technical-analysis/detrended-price-oscillator",
+    "逐語": "The default period is 20, with a displacement of 11 candles; shorter periods such as 14 may suit more active traders, while longer periods such as 40 may suit longer-term analysis.",
+    "出どころの質": "証券会社・ブログ（証券会社 Capital.com）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": "10 まで下げる（15分足・1時間足）",
+    "URL": "https://www.daytrading.com/detrended-price-oscillator",
+    "逐語": "For those who trade off smaller time compressions (e.g., 15-minute chart, hourly chart), and trade actively, the period could be set as low as 10 periods.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "14（活発なトレーダー）〜40（長期）",
+    "URL": "https://capital.com/en-int/learn/technical-analysis/detrended-price-oscillator",
+    "逐語": "The default period is 20, with a displacement of 11 candles; shorter periods such as 14 may suit more active traders, while longer periods such as 40 may suit longer-term analysis.",
+    "出どころの質": "証券会社・ブログ（証券会社 Capital.com）"
+   },
+   {
+    "値": "50・100 以上（長く持つ人）",
+    "URL": "https://www.daytrading.com/detrended-price-oscillator",
+    "逐語": "Those who plan to be in trades for even longer might set the period to perhaps 50 periods, 100 periods, or higher.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 20・48 は、既定の 20 を含み、daytrading.com の既定 21・15分足と1時間足に挙げる 10・Capital.com の 14 と 40 は含まない。"
+ },
+ {
+  "種類": "EFI比",
+  "元の指標": "Force Index（Elder）",
+  "パラメータの名前": [
+   "n（EMA の本数）"
+  ],
+  "既定": [
+   {
+    "値": [
+     13
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/force-index",
+    "逐語": "While the default Force Index parameter is 13, chartists can use higher or lower numbers for more or less smoothing, respectively.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     13
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502259-elder-s-force-index-efi/",
+    "逐語": "The time period to be used in calculating the EFI, 13 by default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     13
+    ],
+    "URL": "https://www.daytrading.com/force-index",
+    "逐語": "Alexander Elder recommended a 13-period exponential moving average and this is usually the default setting on charting software.",
+    "出どころの質": "証券会社・ブログ（開発者 Elder が勧めた値として紹介）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "2（調整の場面を見る）・22（傾向を見る EMA）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/force-index",
+    "逐語": "Alexander Elder recommends using a 22-day EMA for trend identification and a 2-day Force Index to identify corrections.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（開発者 Elder の勧めとして紹介）"
+   },
+   {
+    "値": "13（短期）・39・100（中長期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/force-index",
+    "逐語": "In this regard, the 100-day Force Index can be used to determine the medium- or long-term trend.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "13（短めの傾向）・100（中長期）",
+    "URL": "https://www.tradingview.com/support/solutions/43000502259-elder-s-force-index-efi/",
+    "逐語": "Typically, a 13 period EFI can be used for a shorter-term trend. Something like a 100 Period EFI can be used for an intermediate or longer-term trend.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "2（短期のタイミング）・13（中期）",
+    "URL": "https://www.luxalgo.com/blog/elders-force-index-indicator-quantifying-market-force-and-direction/",
+    "逐語": "Elder used a 2-period EMA of the raw series for short-term timing, spotting brief pauses in pressure inside an established trend, and a 13-period EMA for the intermediate balance between buyers and sellers.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "50・100 以上（長期）",
+    "URL": "https://www.daytrading.com/force-index",
+    "逐語": "For longer-term traders, the period setting might be set to 50 periods, 100 periods, or even longer.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 10・20 は、既定の 13 も、出どころが挙げる 2・22・39・50・100 も含まない。"
+ },
+ {
+  "種類": "EOM比",
+  "元の指標": "Ease of Movement（Arms）",
+  "パラメータの名前": [
+   "n（平均の本数）"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ease-of-movement-emv",
+    "逐語": "Once the indicator is chosen from the dropdown menu, an EMV indicator is added to the chart with the default setting of 14 periods.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（14本の単純移動平均）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502256-ease-of-movement-eom/",
+    "逐語": "The time period to be used in calculating the EOM. 14 is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "10（指数移動平均）",
+    "URL": "https://www.incrediblecharts.com/indicators/ease_of_movement.php",
+    "逐語": "The Ease of Movement default is set at 10 days smoothing by an exponential moving average.",
+    "出どころの質": "証券会社・ブログ（チャートソフトの説明。StockCharts・TradingView の 14 と食い違う）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 10・20 は、Incredible Charts の既定 10 を含み、StockCharts と TradingView の既定 14 は含まない。"
+ },
+ {
+  "種類": "NVI傾き",
+  "元の指標": "NVI（Negative Volume Index・Dysart と Fosback）",
+  "パラメータの名前": [
+   "n（NVI の増分を見る本数。教科書の NVI は積み上げで期間が無く、期間はシグナルの EMA にだけある）"
+  ],
+  "既定": [
+   {
+    "値": "シグナルの EMA 255",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/negative-volume-index-nvi",
+    "逐語": "According to Fosback, the odds favor a bull market when NVI is above its 255-day EMA and the odds favor a bear market when NVI is below.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（Fosback の値として紹介）"
+   },
+   {
+    "値": "シグナルの EMA 255",
+    "URL": "https://www.tradingview.com/support/solutions/43000773005-negative-volume-index-nvi/",
+    "逐語": "The default is 255, which corresponds to approximately one year on a daily equities chart.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": "シグナルは1年の移動平均",
+    "URL": "https://en.wikipedia.org/wiki/Negative_volume_index",
+    "逐語": "He derived buy or sell signals by whether the NVI or PVI was above or below its one-year moving average.",
+    "出どころの質": "百科事典（Wikipedia）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "シグナルの EMA 100（上昇の中の調整を見る）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/negative-volume-index-nvi",
+    "逐語": "A move below the 100-day EMA shows a correction within this uptrend.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "1（移動平均を外す）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/negative-volume-index-nvi",
+    "逐語": "Setting the parameter to “1” will essentially remove the moving average.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "今の組 10・20 は NVI の増分を見る本数で、教科書の期間（シグナルの EMA 255・100）とは使い道が違い、数も重ならない。"
+ },
+ {
+  "種類": "PVT傾き",
+  "元の指標": "PVT（Price Volume Trend）",
+  "パラメータの名前": [
+   "n（PVT の増分を見る本数。教科書の PVT は積み上げで期間が無い）"
+  ],
+  "既定": "無い",
+  "スキャル": [
+   {
+    "値": "シグナル無し、または 9本の EMA（1〜5分足）",
+    "URL": "https://pineify.app/resources/blog/price-volume-trend-indicator-tradingview-pine-script",
+    "逐語": "Settings by Trading Style: Style Chart MA Overlay Focus Day trading 1-5 minute Raw PVT or 9-period EMA Intraday divergences",
+    "出どころの質": "証券会社・ブログ（表。出どころの呼び名は Day trading、時間足は 1〜5分足）"
+   },
+   {
+    "値": "1時間足より短い足では使わない",
+    "URL": "https://pineify.app/pine-script/indicators/pvt",
+    "逐語": "Stop using PVT on anything below 1H.",
+    "出どころの質": "証券会社・ブログ（上と同じ会社の別のページで、食い違う）"
+   }
+  ],
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "シグナルの移動平均 14〜21（1〜4時間足）・9 未満と 50 超は避ける",
+    "URL": "https://pineify.app/resources/blog/price-volume-trend-indicator-tradingview-pine-script",
+    "逐語": "On 1-hour to 4-hour charts, pair a raw PVT line with a 14- to 21-period moving average. That smooths short-term noise without adding too much lag. I'd stay away from periods under 9 (too noisy) or over 50 (too slow).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "シグナルの移動平均 10・20",
+    "URL": "https://pineify.app/pine-script/indicators/pvt",
+    "逐語": "The fix: overlay a short-term moving average (10 or 20 periods) on the PVT line and use crossovers for signals, rather than reading the raw PVT level.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組 10・20 は PVT の増分を見る本数で、出どころが挙げる 10・20 はシグナルの移動平均の本数なので、数は同じだが使い道が違う。"
+ }
+]

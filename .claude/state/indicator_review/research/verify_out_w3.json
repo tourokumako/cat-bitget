@@ -1,0 +1,713 @@
+[
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://api.anychart.com/anychart.core.stock.indicators.RCI",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 3,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 4,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 5,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 6,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 7,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 8,
+  "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 9,
+  "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 10,
+  "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 11,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 12,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 13,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "既定",
+  "番号": 14,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "範囲",
+  "番号": 2,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "範囲",
+  "番号": 3,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 2,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 3,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 4,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 5,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 6,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 7,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 8,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "スキャル",
+  "番号": 9,
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 3,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 4,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 5,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 6,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 7,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 8,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 9,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 10,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 11,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 12,
+  "URL": "https://zai.diamond.jp/articles/-/37691",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 13,
+  "URL": "https://zai.diamond.jp/articles/-/37691",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 14,
+  "URL": "https://zai.diamond.jp/articles/-/37691",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 15,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "パラメータ",
+  "名前": "n",
+  "欄": "デイトレ",
+  "番号": 16,
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://jp.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 3,
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 4,
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 5,
+  "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 6,
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 7,
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 8,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 2,
+  "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 3,
+  "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 4,
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 5,
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 2,
+  "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 3,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 2,
+  "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 3,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 4,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 2,
+  "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 3,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 4,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ }
+]

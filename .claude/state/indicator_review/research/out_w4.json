@@ -1,0 +1,112 @@
+[
+  {
+    "種類": "LeeMykland",
+    "元の指標": "Lee-Mykland の jump の検定統計 L(i)（Suzanne S. Lee と Per A. Mykland・\"Jumps in Financial Markets: A New Nonparametric Test and Jump Dynamics\"・Review of Financial Studies 2008 v21 n6）",
+    "パラメータ": [
+      {
+        "名前": "K",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": [
+          {
+            "値": 270,
+            "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+            "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+            "出どころの順位": 1
+          },
+          {
+            "値": 270,
+            "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+            "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+            "出どころの順位": 4
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 156,
+            "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+            "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+            "出どころの順位": 1
+          },
+          {
+            "値": 110,
+            "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+            "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+            "出どころの順位": 1
+          },
+          {
+            "値": 78,
+            "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+            "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+            "出どころの順位": 1
+          },
+          {
+            "値": 156,
+            "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+            "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+            "出どころの順位": 4
+          },
+          {
+            "値": 110,
+            "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+            "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+            "出どころの順位": 4
+          },
+          {
+            "値": 78,
+            "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+            "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+            "出どころの順位": 4
+          }
+        ]
+      }
+    ],
+    "役割": [
+      {
+        "何を見るか": "値動きの幅",
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "In essence, we compare a realized return at any given time to a consistently estimated instantaneous volatility using corresponding local movements of returns. More speciﬁcally, the ratio of realized return to estimated volatility creates the test statistic for jumps.",
+        "出どころの順位": 1
+      },
+      {
+        "何を見るか": "値動きの幅",
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "This article introduces a new nonparametric test to detect jump arrival times and realized jump sizes in asset prices up to the intra-day level.",
+        "出どころの順位": 1
+      }
+    ],
+    "閾値": {
+      "既定": [
+        {
+          "値": [
+            1
+          ],
+          "意味": "棄却の境目を決める有意水準の例として 1%",
+          "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+          "逐語": "To apply this result for selecting a rejection region, for instance, we can set a signiﬁcance level of 1%.",
+          "出どころの順位": 1
+        },
+        {
+          "値": [
+            4.6001
+          ],
+          "意味": "有意水準 1% のときの境目 β*。標準化した |L(i)| がこれを超えると「jump が無い」を棄却する",
+          "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+          "逐語": "Equivalently, β∗ =− log(− log(0.99)) = 4.6001.",
+          "出どころの順位": 1
+        },
+        {
+          "値": [
+            5
+          ],
+          "意味": "論文のシミュレーションで使った有意水準 5%",
+          "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+          "逐語": "The signiﬁcance level for this study is 5%.",
+          "出どころの順位": 1
+        }
+      ],
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    }
+  }
+]

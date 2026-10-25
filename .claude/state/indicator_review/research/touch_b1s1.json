@@ -1,0 +1,184 @@
+{
+  "_説明": "工事 m2c15-band-s1-20261020（B-1＋S-1）の調べる係の結果のうち、帯スイングのタッチの回数（m）の逐語。帯スイングは別名の表（alias_map_b1s1.json）で S-Rタッチ確定数 の行を使い、パラメータを写さない（名前のパラメータ3つと調べた軸1つが合わない）ため、表を作るプログラムが読む out_g*・out_w* に入れず、ここに残す。observe_config.json の band_touch（2・3・4）の出どころ（まこさん「OK」ok_touch_234_20261021・ok_alias_b1s1_20261021）。",
+  "g": [
+    {
+      "種類": "帯スイング",
+      "元の指標": "支持線・抵抗線（Support and Resistance）と長方形（Rectangle）のパターン（考案者は出どころに書いていない）",
+      "パラメータの名前": [
+        "m（タッチの回数）"
+      ],
+      "既定": [
+        {
+          "値": [
+            2
+          ],
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/rectangle",
+          "逐語": "At least two equivalent reaction highs are required to form the upper resistance line and two equivalent reaction lows to form the lower support line.",
+          "出どころの質": "定番の教育サイト（StockCharts ChartSchool・Rectangle）（上の線と下の線のそれぞれに2回以上）"
+        },
+        {
+          "値": [
+            2
+          ],
+          "URL": "https://www.luxalgo.com/library/concept/rectangle/",
+          "逐語": "Find a consolidation whose highs stall repeatedly at one level and whose lows hold repeatedly at another, with at least two genuine touches per boundary.",
+          "出どころの質": "その他（LuxAlgo のライブラリの説明・Rectangle）（線ごとに2回以上）"
+        },
+        {
+          "値": [
+            2
+          ],
+          "URL": "https://www.luxalgo.com/library/concept/trading-range/",
+          "逐語": "The common minimum is two touches per side, since a single touch is just a swing point.",
+          "出どころの質": "その他（LuxAlgo のライブラリの説明・Trading Range）（片側ごとに2回が最低）"
+        },
+        {
+          "値": [
+            2,
+            3
+          ],
+          "URL": "https://www.luxalgo.com/library/concept/support-level/",
+          "逐語": "Two reversals near the same price are the usual minimum, and a third is widely read as confirmation.",
+          "出どころの質": "その他（LuxAlgo のライブラリの説明・Support Level）（2回が最低・3回目で確かめ）"
+        },
+        {
+          "値": [
+            2
+          ],
+          "URL": "https://www.luxalgo.com/library/concept/resistance-level/",
+          "逐語": "Require at least two reactions from roughly the same area, then draw a zone covering the wick extremes and nearby candle bodies rather than a single line.",
+          "出どころの質": "その他（LuxAlgo のライブラリの説明・Resistance Level）（2回以上）"
+        },
+        {
+          "値": [
+            3,
+            2
+          ],
+          "URL": "https://thepatternsite.com/rectbots.html",
+          "逐語": "Price should touch one trendline at least three time and the other trendline twice (5-touch minimum) using distinct peaks and valleys.",
+          "出どころの質": "その他（Thomas Bulkowski の ThePatternSite・Rectangle Bottoms）（片方の線に3回以上・もう片方に2回・合わせて5回が最低）"
+        },
+        {
+          "値": [
+            3,
+            2
+          ],
+          "URL": "https://thepatternsite.com/recttops.html",
+          "逐語": "Price should touch one trendline at least three times and twice on the other trendline, using distinct peaks and valleys, but be flexible.",
+          "出どころの質": "その他（Thomas Bulkowski の ThePatternSite・Rectangle Tops）（片方の線に3回以上・もう片方に2回）"
+        }
+      ],
+      "スキャル": "無い",
+      "デイトレ": "無い",
+      "範囲": "無い",
+      "メモ": "今の組のタッチの回数 m＝3・4 に対して、StockCharts と LuxAlgo は線ごとに2回を最低とし、Bulkowski は片方の線に3回・もう片方に2回と書いています。4回と書いた出どころは見つかりませんでした。時間足を名指しした回数は、どの出どころにもありませんでした。TradingView のヘルプ（/support/）には、タッチの回数を書いたページを見つけられませんでした。"
+    }
+  ],
+  "w": [
+    {
+      "種類": "帯スイング",
+      "元の指標": "支持線・抵抗線（Support and Resistance）と長方形（Rectangle）のパターン（考案者は出どころに書いていない）",
+      "パラメータ": [
+        {
+          "名前": "m",
+          "既定": [
+            {
+              "値": 2,
+              "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/rectangle",
+              "逐語": "At least two equivalent reaction highs are required to form the upper resistance line and two equivalent reaction lows to form the lower support line.",
+              "出どころの順位": 2
+            },
+            {
+              "値": 2,
+              "URL": "https://www.luxalgo.com/library/concept/rectangle/",
+              "逐語": "Find a consolidation whose highs stall repeatedly at one level and whose lows hold repeatedly at another, with at least two genuine touches per boundary.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 2,
+              "URL": "https://www.luxalgo.com/library/concept/trading-range/",
+              "逐語": "The common minimum is two touches per side, since a single touch is just a swing point.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 2,
+              "URL": "https://www.luxalgo.com/library/concept/support-level/",
+              "逐語": "Two reversals near the same price are the usual minimum, and a third is widely read as confirmation.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 3,
+              "URL": "https://www.luxalgo.com/library/concept/support-level/",
+              "逐語": "Two reversals near the same price are the usual minimum, and a third is widely read as confirmation.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 2,
+              "URL": "https://www.luxalgo.com/library/concept/resistance-level/",
+              "逐語": "Require at least two reactions from roughly the same area, then draw a zone covering the wick extremes and nearby candle bodies rather than a single line.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 3,
+              "URL": "https://thepatternsite.com/rectbots.html",
+              "逐語": "Price should touch one trendline at least three time and the other trendline twice (5-touch minimum) using distinct peaks and valleys.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 2,
+              "URL": "https://thepatternsite.com/rectbots.html",
+              "逐語": "Price should touch one trendline at least three time and the other trendline twice (5-touch minimum) using distinct peaks and valleys.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 3,
+              "URL": "https://thepatternsite.com/recttops.html",
+              "逐語": "Price should touch one trendline at least three times and twice on the other trendline, using distinct peaks and valleys, but be flexible.",
+              "出どころの順位": 4
+            },
+            {
+              "値": 2,
+              "URL": "https://thepatternsite.com/recttops.html",
+              "逐語": "Price should touch one trendline at least three times and twice on the other trendline, using distinct peaks and valleys, but be flexible.",
+              "出どころの順位": 4
+            }
+          ],
+          "範囲": "無い",
+          "スキャル": "無い",
+          "デイトレ": "無い"
+        }
+      ],
+      "役割": [
+        {
+          "何を見るか": "位置",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+          "逐語": "Support is the level where demand is strong enough to prevent the price from declining further, while resistance is where selling is strong enough to stop the price from rising further.",
+          "出どころの順位": 2
+        },
+        {
+          "何を見るか": "位置",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/rectangle",
+          "逐語": "It is easily identifiable by two comparable highs and two comparable lows, which can be connected to form two parallel lines that make up the top and bottom of a rectangle.",
+          "出どころの順位": 2
+        },
+        {
+          "何を見るか": "位置",
+          "URL": "https://www.luxalgo.com/library/concept/support-level/",
+          "逐語": "A support level is a price where a market has repeatedly stopped falling and turned higher, drawn as a horizontal line beneath current price.",
+          "出どころの順位": 4
+        },
+        {
+          "何を見るか": "位置",
+          "URL": "https://www.luxalgo.com/library/concept/resistance-level/",
+          "逐語": "A resistance level is a price area above the current market where advances have repeatedly stalled or reversed.",
+          "出どころの順位": 4
+        }
+      ],
+      "閾値": {
+        "既定": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+[
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 3,
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 4,
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "パラメータ",
+  "名前": "K",
+  "欄": "デイトレ",
+  "番号": 5,
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ }
+]

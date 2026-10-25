@@ -1,0 +1,738 @@
+[
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volatility_indicators.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/atr.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 6,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   7
+  ],
+  "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   7
+  ],
+  "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   20,
+   22
+  ],
+  "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "5〜21（スキャル 5・7／トレンド狙い 20・21）",
+  "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://www.bollingerbands.com/bollinger-bands",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   5,
+   2.0
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜14",
+   "1.5〜2"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   "10〜14",
+   "1.5〜2"
+  ],
+  "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   null,
+   2.2
+  ],
+  "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "20〜21",
+   null
+  ],
+  "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   null,
+   "2.1（15分足）・2.0（1時間足）"
+  ],
+  "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "(10,1.9)〜(50,2.1)",
+  "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "(10,1.9)〜(50,2.1)",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+  "判定": "一致"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "期間 50・倍率 2.5（スイング・長期）",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/historical-volatility/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10・20・30・60・90・120・150・180 日",
+  "URL": "https://www.ivolatility.com/education/historical-volatility/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "10〜252 日（ふだん 21・63・252、10 より短くしない）",
+  "URL": "https://www.macroption.com/historical-volatility-excel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/donchian.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   50
+  ],
+  "URL": "https://www.daytrading.com/donchian-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜15"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "10〜20"
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10〜50 以上（短期 10–20／中期 20–50／長期 50 以上）",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "10（短く）〜20（既定）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "MMI",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   200,
+   300,
+   400,
+   500
+  ],
+  "URL": "https://financial-hacker.com/boosting-systems-by-trade-filtering/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MMI",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "200〜500 本（200・300・400・500）",
+  "URL": "https://financial-hacker.com/boosting-systems-by-trade-filtering/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "不一致"
+ },
+ {
+  "種類": "ER",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/er.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   2,
+   20,
+   1.5
+  ],
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "不一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20,
+   2,
+   20,
+   1.5
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   2,
+   20,
+   1.5
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   10,
+   1.5,
+   10,
+   1.0
+  ],
+  "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   20,
+   2.0
+  ],
+  "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+  "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/chop.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingsim.com/blog/choppiness-index-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   14
+  ],
+  "URL": "https://choppinessindex.com/choppiness-index-tradingview-setup/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   28
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   18
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   28
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/vhf.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "VHF",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   28
+  ],
+  "URL": "https://theindicatorlab.com/reviews/vertical-horizontal-filter/",
+  "判定": "一致"
+ },
+ {
+  "種類": "MAD比",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/mad.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "stdev%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/standard-deviation-volatility",
+  "判定": "一致"
+ },
+ {
+  "種類": "stdev%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/statistic_functions.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "stdev%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/stdev.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.2,
+   0.1,
+   0.1,
+   0.1,
+   1
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "na・nb・nc・nd とも 0〜1",
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   9,
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   9,
+   25
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000589169-mass-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   9,
+   25
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "THERMO%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   22
+  ],
+  "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "UI",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ulcer-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "UI",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/ui.py",
+  "判定": "不一致"
+ }
+]

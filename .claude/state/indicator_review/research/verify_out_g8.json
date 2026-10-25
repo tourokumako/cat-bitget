@@ -1,0 +1,90 @@
+[
+ {
+  "種類": "LeeMykland",
+  "欄": "既定",
+  "番号": 0,
+  "値": "K=pmin(floor(sqrt(252*n)), n)",
+  "URL": "https://search.r-project.org/CRAN/refmans/yuima/html/lm.jumptest.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   270
+  ],
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   270
+  ],
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   156
+  ],
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   110
+  ],
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   78
+  ],
+  "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   156
+  ],
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 4,
+  "値": [
+   110
+  ],
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ },
+ {
+  "種類": "LeeMykland",
+  "欄": "デイトレ",
+  "番号": 5,
+  "値": [
+   78
+  ],
+  "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+  "判定": "一致"
+ }
+]

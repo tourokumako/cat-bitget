@@ -1,0 +1,3350 @@
+[
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc2",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc3",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "roc4",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma2",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma3",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "sma4",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/ppo/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/ppo/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://arongroups.co/technical-analyze/ppo-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/ppo/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/concept/ppo/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://arongroups.co/technical-analyze/ppo-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-schaff-trend-cycle.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-schaff-trend-cycle.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "fast",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "slow",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "パラメータ",
+  "名前": "cycle",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://pineify.app/pine-script/indicators/stc",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "first",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "first",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "first",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "second",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "second",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "second",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "パラメータ",
+  "名前": "signal",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tikitrade.com/momentum/true-strength-index-tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "WMA傾き%",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/wma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "WMA傾き%",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/wma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "WMA傾き%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://alchemymarkets.com/education/indicators/weighted-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "WMA傾き%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://alchemymarkets.com/education/indicators/weighted-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%K",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "n（RSI の本数とストキャスの本数）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%K の平滑",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "パラメータ",
+  "名前": "%D（%K の移動平均の本数）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "StochRSI%D",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/stochrsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PVT傾き",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502345-price-volume-trend-pvt/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PVT傾き",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502345-price-volume-trend-pvt/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/historical-volatility/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.macroption.com/historical-volatility-excel/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000589145-historical-volatility/",
+  "判定": "一致"
+ },
+ {
+  "種類": "realized_vol",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000589145-historical-volatility/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://help.tc2000.com/m/69404/l/749623-kaufman-efficiency-ratio",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "ER",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "bb_length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "bb_length",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "bb_stdev_mult",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "bb_stdev_mult",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "kc_length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "kc_length",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "kc_atr_mult",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "パラメータ",
+  "名前": "kc_atr_mult",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+  "判定": "一致"
+ },
+ {
+  "種類": "SQZ_ON",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingsim.com/blog/choppiness-index-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "CHOP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://theindicatorlab.com/reviews/vertical-horizontal-filter/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "VHF",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-vertical-horizontal-filter.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "MAD比",
+  "区分": "パラメータ",
+  "名前": "period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/mad.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MAD比",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/script/C892NmWm-MAD-Volatility-Percentile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "MAD比",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/script/C892NmWm-MAD-Volatility-Percentile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "na",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "na",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "na",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nb",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nb",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nb",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nc",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nc",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nc",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nd",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nd",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "nd",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "パラメータ",
+  "名前": "scalar",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20857",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "パラメータ",
+  "名前": "ema_period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "パラメータ",
+  "名前": "ema_period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "パラメータ",
+  "名前": "sum_period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "パラメータ",
+  "名前": "sum_period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000589169-mass-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "MASSI",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "パラメータ",
+  "名前": "ema_period",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "パラメータ",
+  "名前": "ema_period",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "パラメータ",
+  "名前": "ema_period",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 3,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "THERMO%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TR%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-range",
+  "判定": "一致"
+ },
+ {
+  "種類": "TR%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/true_range.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 2,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 3,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 4,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 2,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 3,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "スキャル",
+  "番号": 4,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "パラメータ",
+  "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "パラメータ",
+  "名前": "k（左右の本数・Periods）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "スキャル",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "パラメータ",
+  "名前": "基準にする前の期間（Pivots Timeframe）",
+  "欄": "デイトレ",
+  "番号": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ }
+]

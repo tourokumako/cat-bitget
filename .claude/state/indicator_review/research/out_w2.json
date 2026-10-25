@@ -1,0 +1,2126 @@
+[
+  {
+    "種類": "VAH",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "パラメータ": [
+      {
+        "名前": "Value Area の割合",
+        "既定": [
+          {
+            "値": 70,
+            "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+            "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+            "出どころの順位": 2
+          },
+          {
+            "値": 70,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "行の数（Row Size）",
+        "既定": "無い",
+        "範囲": [
+          {
+            "下限": 100,
+            "上限": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ]
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "位置",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+        "逐語": "Value area high (VAH): The highest price level within the value area.",
+        "出どころの順位": 2
+      }
+    ]
+  },
+  {
+    "種類": "VAL",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "パラメータ": [
+      {
+        "名前": "Value Area の割合",
+        "既定": [
+          {
+            "値": 70,
+            "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+            "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+            "出どころの順位": 2
+          },
+          {
+            "値": 70,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "行の数（Row Size）",
+        "既定": "無い",
+        "範囲": [
+          {
+            "下限": 100,
+            "上限": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 200,
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher)",
+            "出どころの順位": 4
+          }
+        ]
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "位置",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+        "逐語": "Value area low (VAL): The lowest price level within the value area.",
+        "出どころの順位": 2
+      }
+    ]
+  },
+  {
+    "種類": "S-Rタッチ数",
+    "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+    "パラメータ": [
+      {
+        "名前": "n（過去の本数）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "許容幅（割合）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": [
+        {
+          "値": [
+            2
+          ],
+          "意味": "After the second test of support, this level is well established",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+          "逐語": "The stock rose to 1150 but fell back to test support at 935. After the second test of support at 935, this level is well established.",
+          "出どころの順位": 2
+        }
+      ],
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "位置",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+        "逐語": "Support is the price level at which demand is thought to be strong enough to prevent the price from declining further.",
+        "出どころの順位": 2
+      }
+    ]
+  },
+  {
+    "種類": "SMC_SWEEP",
+    "元の指標": "流動性の刈り取り（Smart Money Concept / ICT の liquidity sweep）",
+    "パラメータ": [
+      {
+        "名前": "length（直前の高値・安値を見る本数）",
+        "既定": [
+          {
+            "値": 50,
+            "URL": "https://github.com/joshyattridge/smart-money-concepts/blob/master/README.md",
+            "逐語": "smc.swing_highs_lows(ohlc, swing_length = 50) ... swing_length: int - the amount of candles to look back and forward to determine the swing high or low",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "wick_mult（ひげと実体の比の倍率）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "位置",
+        "URL": "https://github.com/joshyattridge/smart-money-concepts/blob/master/README.md",
+        "逐語": "Liquidity is when there are multiply highs within a small range of each other. ... Swept = the index of the candle that swept the liquidity",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs ALMA%",
+    "元の指標": "ALMA（Arnaud Legoux Moving Average）",
+    "パラメータ": [
+      {
+        "名前": "window（本数）",
+        "既定": [
+          {
+            "値": 9,
+            "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+            "逐語": "By default, the window is set to 9 periods, but it can be customized to fit any trading style.",
+            "出どころの順位": 2
+          },
+          {
+            "値": 9,
+            "URL": "https://ta-lib.org/functions/alma.html",
+            "逐語": "optInTimePeriod integer 9 1–100000 Number of bars in the window",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/alma.html",
+            "逐語": "length (int): It's period, window size. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/alma.html",
+            "逐語": "optInTimePeriod integer 9 1–100000 Number of bars in the window",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "offset",
+        "既定": [
+          {
+            "値": 0.85,
+            "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+            "逐語": "It's default is set to 0.85, but by setting it to 1, you can make it align fully to the current price.",
+            "出どころの順位": 2
+          },
+          {
+            "値": 0.85,
+            "URL": "https://ta-lib.org/functions/alma.html",
+            "逐語": "optInOffset real 0.85 0–1 Position of the peak weight, 0 at the oldest bar and 1 at the newest",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://ta-lib.org/functions/alma.html",
+            "逐語": "optInOffset real 0.85 0–1 Position of the peak weight, 0 at the oldest bar and 1 at the newest",
+            "出どころの順位": 3
+          },
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/alma.html",
+            "逐語": "distribution_offset (float): Value to offset the distribution min 0 (smoother), max 1 (more responsive). Default 0.85",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "sigma",
+        "既定": [
+          {
+            "値": 6,
+            "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+            "逐語": "The default is set to 6 and it is not recommended to change the setting.",
+            "出どころの順位": 2
+          },
+          {
+            "値": 6,
+            "URL": "https://ta-lib.org/functions/alma.html",
+            "逐語": "optInSigma real 6 ≥ 0.01 Divides the period to give the Gaussian's width in bars",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs FWMA%",
+    "元の指標": "FWMA（Fibonacci Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/fwma.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs HILO%",
+    "元の指標": "Gann HiLo Activator（Robert Krausz）",
+    "パラメータ": [
+      {
+        "名前": "high_length（高値の平均の本数）",
+        "既定": [
+          {
+            "値": 13,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+            "逐語": "high_length (int): It's period. Default: 13",
+            "出どころの順位": 3
+          },
+          {
+            "値": 3,
+            "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+            "逐語": "Robert Krausz's original uses n = 3 with simple averages of the prior bars' highs and lows.",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "low_length（安値の平均の本数）",
+        "既定": [
+          {
+            "値": 21,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+            "逐語": "low_length (int): It's period. Default: 21",
+            "出どころの順位": 3
+          },
+          {
+            "値": 3,
+            "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+            "逐語": "Robert Krausz's original uses n = 3 with simple averages of the prior bars' highs and lows.",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+        "逐語": "It is a moving average based trend indicator consisting of two different simple moving averages.",
+        "出どころの順位": 3
+      },
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+        "逐語": "a line below the bars is the smoothed low series, meaning the state is up and the line is trailing support; a line above the bars is the smoothed high series, meaning the state is down.",
+        "出どころの順位": 4
+      }
+    ]
+  },
+  {
+    "種類": "close vs HT_TRENDLINE%",
+    "元の指標": "HT_TRENDLINE（Ehlers の Hilbert Transform Instantaneous Trendline）",
+    "パラメータ": [],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs HWMA%",
+    "元の指標": "HWMA（Holt-Winters Moving Average）",
+    "パラメータ": [
+      {
+        "名前": "na（平滑の係数）",
+        "既定": [
+          {
+            "値": 0.2,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+            "逐語": "na (float): Smoothed series parameter (from 0 to 1). Default: 0.2",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://www.mql5.com/en/code/20856",
+            "逐語": "parameter of the equation that describes a smoothed series (from 0 to 1)",
+            "出どころの順位": 1
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "nb（傾きの係数）",
+        "既定": [
+          {
+            "値": 0.1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+            "逐語": "nb (float): Trend parameter (from 0 to 1). Default: 0.1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://www.mql5.com/en/code/20856",
+            "逐語": "parameter of the equation to assess the trend (from 0 to 1)",
+            "出どころの順位": 1
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "nc（季節の係数）",
+        "既定": [
+          {
+            "値": 0.1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+            "逐語": "nc (float): Seasonality parameter (from 0 to 1). Default: 0.1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://www.mql5.com/en/code/20856",
+            "逐語": "parameter of the equation to assess seasonality (from 0 to 1)",
+            "出どころの順位": 1
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs LINREG%",
+    "元の指標": "線形回帰の線（Linear Regression Curve／Least Squares Moving Average・TA-Lib の LINEARREG）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 25,
+            "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+            "逐語": "length = input(title=\"Length\", defval=25)",
+            "出どころの順位": 2
+          },
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "出どころの順位": 3
+          },
+          {
+            "値": 14,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/linreg.html",
+            "逐語": "length = int(length) if length and length > 0 else 14",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+        "逐語": "The Least Squares Moving Average can be used as a trend indicator and reversal indicator.",
+        "出どころの順位": 2
+      }
+    ]
+  },
+  {
+    "種類": "close vs LRb%",
+    "元の指標": "線形回帰の切片（Linear Regression Intercept・TA-Lib の LINEARREG_INTERCEPT）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs MAMA%",
+    "元の指標": "MAMA（Ehlers の MESA Adaptive Moving Average）",
+    "パラメータ": [
+      {
+        "名前": "FastLimit",
+        "既定": [
+          {
+            "値": 0.5,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0.01,
+            "上限": 0.99,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "SlowLimit",
+        "既定": [
+          {
+            "値": 0.05,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0.01,
+            "上限": 0.99,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs FAMA%",
+    "元の指標": "FAMA（MAMA の追従線・Ehlers。MAMA と同じ計算から出る2本目）",
+    "パラメータ": [
+      {
+        "名前": "FastLimit",
+        "既定": [
+          {
+            "値": 0.5,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0.01,
+            "上限": 0.99,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "SlowLimit",
+        "既定": [
+          {
+            "値": 0.05,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0.01,
+            "上限": 0.99,
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "逐語": "optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs MCGD%",
+    "元の指標": "McGinley Dynamic（John McGinley）",
+    "パラメータ": [
+      {
+        "名前": "N（本数）",
+        "既定": [
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/mcgd.html",
+            "逐語": "length (int): Indicator's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "c（分母の係数）",
+        "既定": [
+          {
+            "値": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/mcgd.html",
+            "逐語": "c (float): Multiplier for the denominator, sometimes set to 0.6. Default: 1",
+            "出どころの順位": 3
+          },
+          {
+            "値": 0.6,
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "逐語": "McGinley suggests a period of about 60% of the simple moving average being emulated: a Dynamic of 12 to follow a 20-bar average.",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs MIDPOINT%",
+    "元の指標": "MIDPOINT（n 本の終値の最高と最安の中央・TA-Lib の MIDPOINT）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "出どころの順位": 3
+          },
+          {
+            "値": 2,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/midpoint.html",
+            "逐語": "length = int(length) if length and length > 0 else 2",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs MIDPRICE%",
+    "元の指標": "MIDPRICE（n 本の高値の最高と安値の最安の中央・TA-Lib の MIDPRICE）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "出どころの順位": 3
+          },
+          {
+            "値": 2,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/midprice.html",
+            "逐語": "length = int(length) if length and length > 0 else 2",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs MMAR%",
+    "元の指標": "MMAR（Madrid Moving Average Ribbon・EMA の帯）",
+    "パラメータ": [
+      {
+        "名前": "length（帯の1本の EMA の本数）",
+        "既定": "無い",
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://my.tradingview.com/script/1JKqmEKy-Madrid-Moving-Average-Ribbon/",
+        "逐語": "This plots a moving average ribbon, either exponential or standard. It provides an easy and fast way to determine the trend direction and possible reversals.",
+        "出どころの順位": 1
+      }
+    ]
+  },
+  {
+    "種類": "close vs PWMA%",
+    "元の指標": "PWMA（Pascal's Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/pwma.html",
+            "逐語": "length (int): It's period.  Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs RAINBOW%",
+    "元の指標": "Rainbow Charts（Mel Widner・Stocks & Commodities 1997年7月）",
+    "パラメータ": [
+      {
+        "名前": "L（1回あたりの SMA の本数）",
+        "既定": [
+          {
+            "値": 2,
+            "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+            "逐語": "The core of the Rainbow Charts is a 2-period Simple Moving Average to which recursive smoothing is applied.",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "k（何回 重ねがけするか）",
+        "既定": "無い",
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 10,
+            "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+            "逐語": "The core of the Rainbow Charts is a 2-period Simple Moving Average to which recursive smoothing is applied. In this way, nine other moving averages are created, each new one based on the previous average.",
+            "出どころの順位": 4
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+        "逐語": "Developed by Mel Widner and first described in the July 1997 issue of Technical Analysis of Stocks and Commodities magazine, the Rainbow Charts indicator is a trend-following tool.",
+        "出どころの順位": 4
+      }
+    ]
+  },
+  {
+    "種類": "close vs RMA%",
+    "元の指標": "RMA（Wilder の平滑移動平均・SMMA）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 30,
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor",
+            "出どころの順位": 3
+          },
+          {
+            "値": 14,
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "逐語": "Wilder's own writing uses a period of 14, and pandas-ta defaults to 10.",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/rma.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/rma.html",
+        "逐語": "Read it as a slow trend line — direction and slope matter, individual crossings much less than on a faster average.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs SINWMA%",
+    "元の指標": "SINWMA（Sine Weighted Moving Average・ライブラリの出典は TradingView の Everget のスクリプト）",
+    "パラメータ": [
+      {
+        "名前": "length（本数）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/sinwma.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs SSF%",
+    "元の指標": "SSF（Ehlers の SuperSmoother フィルター）",
+    "パラメータ": [
+      {
+        "名前": "length（臨界周期の本数）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+            "逐語": "I have compared a 10 bar Exponential Moving Average (EMA) with my SuperSmoother  filter  set to  a  critical  period  of  10  bars  for  an  apples-to-apples comparison in Figure 2.",
+            "出どころの順位": 1
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": [
+          {
+            "値": 10,
+            "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+            "逐語": "It is also worthy of note that Aliasing noise scales with the sampling frequency, and so it is a good rule of thumb that Aliasing noise intercepts the signal amplitude at about a 10 bar cycle period regardless of the time frame you are trading.",
+            "出どころの順位": 1
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 10,
+            "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+            "逐語": "It is also worthy of note that Aliasing noise scales with the sampling frequency, and so it is a good rule of thumb that Aliasing noise intercepts the signal amplitude at about a 10 bar cycle period regardless of the time frame you are trading.",
+            "出どころの順位": 1
+          }
+        ]
+      },
+      {
+        "名前": "poles",
+        "既定": [
+          {
+            "値": 2,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+            "逐語": "poles (int): The number of poles to use, either 2 or 3. Default: 2",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 3,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+            "逐語": "poles (int): The number of poles to use, either 2 or 3. Default: 2",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs SWMA%",
+    "元の指標": "SWMA（Symmetric Weighted Moving Average・対称三角の重みの移動平均。TradingView の swma 関数がもと）",
+    "パラメータ": [
+      {
+        "名前": "length",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/swma.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          },
+          {
+            "値": 4,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/swma.html",
+            "逐語": "This moving average has variable length in contrast to TradingView's fixed length of 4.",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs T3%",
+    "元の指標": "T3（Tim Tillson の T3 移動平均。原典＝Tillson, Technical Analysis of Stocks & Commodities 1998年1月号）",
+    "パラメータ": [
+      {
+        "名前": "length",
+        "既定": [
+          {
+            "値": 5,
+            "URL": "https://ta-lib.org/functions/t3.html",
+            "逐語": "optInTimePeriod integer 5 1–100000 EMA period for each of the six stages",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/t3.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/t3.html",
+            "逐語": "optInTimePeriod integer 5 1–100000 EMA period for each of the six stages",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "vfactor（a）",
+        "既定": [
+          {
+            "値": 0.7,
+            "URL": "https://ta-lib.org/functions/t3.html",
+            "逐語": "optInVFactor real 0.7 0–1 Volume factor weighting the coefficients (0 = plain triple EMA, higher = more DEMA-like sharpening)",
+            "出どころの順位": 3
+          },
+          {
+            "値": 0.7,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/t3.html",
+            "逐語": "a (float): 0 < a < 1. Default: 0.7",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://ta-lib.org/functions/t3.html",
+            "逐語": "optInVFactor real 0.7 0–1 Volume factor weighting the coefficients (0 = plain triple EMA, higher = more DEMA-like sharpening)",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs VIDYA%",
+    "元の指標": "VIDYA（Tushar Chande の Variable Index Dynamic Average。1992年は標準偏差の比、1995年に CMO を使う形に変えた）",
+    "パラメータ": [
+      {
+        "名前": "length（EMA の長さ）",
+        "既定": [
+          {
+            "値": 12,
+            "URL": "https://ta-lib.org/functions/vidya.html",
+            "逐語": "optInTimePeriod integer 12 1–100000 The EMA length whose alpha the CMO scales",
+            "出どころの順位": 3
+          },
+          {
+            "値": 14,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/vidya.html",
+            "逐語": "length (int): It's period. Default: 14",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/vidya.html",
+            "逐語": "optInTimePeriod integer 12 1–100000 The EMA length whose alpha the CMO scales",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "CMO の期間",
+        "既定": [
+          {
+            "値": 9,
+            "URL": "https://ta-lib.org/functions/vidya.html",
+            "逐語": "optInCMOPeriod integer 9 2–100000 Number of trailing price changes in the CMO",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/vidya.html",
+            "逐語": "optInCMOPeriod integer 9 2–100000 Number of trailing price changes in the CMO",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/vidya.html",
+        "逐語": "It is often used as moving average or trend identifier.",
+        "出どころの順位": 3
+      },
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/vidya.html",
+        "逐語": "It follows the price like an EMA in a one-way move and stops moving when up and down moves balance, so it flattens out in consolidations.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs ZLMA%",
+    "元の指標": "ZLEMA（遅れを減らした EMA。名前は Ehlers と Way の『Zero Lag (Well, Almost)』に由来するが、TA-Lib はその論文は別の計算だと注記している）",
+    "パラメータ": [
+      {
+        "名前": "length",
+        "既定": [
+          {
+            "値": 30,
+            "URL": "https://ta-lib.org/functions/zlema.html",
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the exponential average; the de-lag distance derives from it",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/zlma.html",
+            "逐語": "length (int): It's period. Default: 10",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/zlema.html",
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the exponential average; the de-lag distance derives from it",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "mamode（中の平均の種類）",
+        "既定": [
+          {
+            "値": null,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/zlma.html",
+            "逐語": "mamode (str): Options: 'ema', 'hma', 'sma', 'wma'. Default: 'ema'",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/zlema.html",
+        "逐語": "It tracks a trend far more closely than an EMA of the same length, at the cost of overshooting sharp reversals — the extrapolation keeps pushing in the old direction for a bar or two.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs CKSPl%",
+    "元の指標": "Chande Kroll Stop（買い側の線）",
+    "パラメータ": [
+      {
+        "名前": "p（ATR と高値・安値の窓）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInTimePeriod integer 10 2–100000 Window of the highest high and lowest low, and smoothing period of the Average True Range",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "p (int): ATR and first stop period. Default: 10 in both modes",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInTimePeriod integer 10 2–100000 Window of the highest high and lowest low, and smoothing period of the Average True Range",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "x（ATR の倍率）",
+        "既定": [
+          {
+            "値": 1,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInMultiplier real 1 ≥ 0 Multiplier applied to the Average True Range to offset the first stops",
+            "出どころの順位": 3
+          },
+          {
+            "値": 3,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "The book's own settings are reported as a multiplier of 3 and a stop period of 20; the defaults here are the ones charting platforms ship.",
+            "出どころの順位": 3
+          },
+          {
+            "値": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "x (float): ATR scalar. Default: 1 in TV mode, 3 otherwise",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "q（逆指値の窓）",
+        "既定": [
+          {
+            "値": 9,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInStopPeriod integer 9 1–100000 Window over which each first stop takes its extreme",
+            "出どころの順位": 3
+          },
+          {
+            "値": 20,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "The book's own settings are reported as a multiplier of 3 and a stop period of 20; the defaults here are the ones charting platforms ship.",
+            "出どころの順位": 3
+          },
+          {
+            "値": 9,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "q (int): Second stop period. Default: 9 in TV mode, 20 otherwise",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInStopPeriod integer 9 1–100000 Window over which each first stop takes its extreme",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.tradingview.com/support/solutions/43000589105-chande-kroll-stop/",
+        "逐語": "Established as a trend-following indicator, the Chande Kroll Stop identifies a trader's stop by calculating the average true range of the market trend",
+        "出どころの順位": 2
+      },
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/cksp.html",
+        "逐語": "Price above both lines reads as an uptrend and price below both as a downtrend.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs CKSPs%",
+    "元の指標": "Chande Kroll Stop（売り側の線）",
+    "パラメータ": [
+      {
+        "名前": "p（ATR と高値・安値の窓）",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInTimePeriod integer 10 2–100000 Window of the highest high and lowest low, and smoothing period of the Average True Range",
+            "出どころの順位": 3
+          },
+          {
+            "値": 10,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "p (int): ATR and first stop period. Default: 10 in both modes",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInTimePeriod integer 10 2–100000 Window of the highest high and lowest low, and smoothing period of the Average True Range",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "x（ATR の倍率）",
+        "既定": [
+          {
+            "値": 1,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInMultiplier real 1 ≥ 0 Multiplier applied to the Average True Range to offset the first stops",
+            "出どころの順位": 3
+          },
+          {
+            "値": 3,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "The book's own settings are reported as a multiplier of 3 and a stop period of 20; the defaults here are the ones charting platforms ship.",
+            "出どころの順位": 3
+          },
+          {
+            "値": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "x (float): ATR scalar. Default: 1 in TV mode, 3 otherwise",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "q（逆指値の窓）",
+        "既定": [
+          {
+            "値": 9,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInStopPeriod integer 9 1–100000 Window over which each first stop takes its extreme",
+            "出どころの順位": 3
+          },
+          {
+            "値": 20,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "The book's own settings are reported as a multiplier of 3 and a stop period of 20; the defaults here are the ones charting platforms ship.",
+            "出どころの順位": 3
+          },
+          {
+            "値": 9,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+            "逐語": "q (int): Second stop period. Default: 9 in TV mode, 20 otherwise",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 1,
+            "上限": 100000,
+            "URL": "https://ta-lib.org/functions/cksp.html",
+            "逐語": "optInStopPeriod integer 9 1–100000 Window over which each first stop takes its extreme",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.tradingview.com/support/solutions/43000589105-chande-kroll-stop/",
+        "逐語": "Established as a trend-following indicator, the Chande Kroll Stop identifies a trader's stop by calculating the average true range of the market trend",
+        "出どころの順位": 2
+      },
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/cksp.html",
+        "逐語": "Price above both lines reads as an uptrend and price below both as a downtrend.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs PMAX%",
+    "元の指標": "PMax（Profit Maximizer。KivancOzbilgic が 2020 年に TradingView で公開。MOST と SuperTrend を合わせたもの）",
+    "パラメータ": [
+      {
+        "名前": "ATR Length",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+            "逐語": "input atrLength = 10;          # \"ATR Length\"",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "ATR Multiplier",
+        "既定": [
+          {
+            "値": 3.0,
+            "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+            "逐語": "input atrMultiplier = 3.0;     # \"ATR Multiplier\"",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "Moving Average Length",
+        "既定": [
+          {
+            "値": 10,
+            "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+            "逐語": "input movAvgLength = 10;       # \"Moving Average Length\"",
+            "出どころの順位": 4
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "Moving Average Type",
+        "既定": [
+          {
+            "値": null,
+            "URL": "https://www.tradingview.com/script/sU9molfV/",
+            "逐語": "Built in Moving Average type defaultly set as EMA but users can choose from 8 different Moving Average types like:",
+            "出どころの順位": 1
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://www.tradingview.com/script/sU9molfV/",
+        "逐語": "PMax will be much sensitive to trend movements if Moving Average Length is smaller. And vice versa, will be less sensitive when it is longer.",
+        "出どころの順位": 1
+      }
+    ]
+  },
+  {
+    "種類": "close vs SAREXT%",
+    "元の指標": "SAREXT（TA-Lib の拡張パラボリック SAR。買いと売りで加速因数を別に持てる）",
+    "パラメータ": [
+      {
+        "名前": "startvalue",
+        "既定": [
+          {
+            "値": 0,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInStartValue real 0 any real Initial SAR/direction: 0 auto, >0 start long at value, <0 start short at -value",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": -3E+37,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>Start Value</Name> <ShortDescription>Start value and direction. 0 for Auto, &gt;0 for Long, &lt;0 for Short</ShortDescription> <Minimum>-3.000000e+37</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>0.000000e+0</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "offsetonreverse",
+        "既定": [
+          {
+            "値": 0,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInOffsetOnReverse real 0 ≥ 0 Fractional offset applied to the stop on each reversal",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>Offset on Reverse</Name> <ShortDescription>Percent offset added/removed to initial stop on short/long reversal</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>0.000000e+0</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationinitlong",
+        "既定": [
+          {
+            "値": 0.02,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationInitLong real 0.02 ≥ 0 Initial acceleration factor when long",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Init Long</Name> <ShortDescription>Acceleration Factor initial value for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationlong",
+        "既定": [
+          {
+            "値": 0.02,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationLong real 0.02 ≥ 0 AF increment per new long extreme",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Long</Name> <ShortDescription>Acceleration Factor for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationmaxlong",
+        "既定": [
+          {
+            "値": 0.2,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationMaxLong real 0.2 ≥ 0 Cap on the long acceleration factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Max Long</Name> <ShortDescription>Acceleration Factor maximum value for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-1</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationinitshort",
+        "既定": [
+          {
+            "値": 0.02,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationInitShort real 0.02 ≥ 0 Initial acceleration factor when short",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Init Short</Name> <ShortDescription>Acceleration Factor initial value for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationshort",
+        "既定": [
+          {
+            "値": 0.02,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationShort real 0.02 ≥ 0 AF increment per new short extreme",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Short</Name> <ShortDescription>Acceleration Factor for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "accelerationmaxshort",
+        "既定": [
+          {
+            "値": 0.2,
+            "URL": "https://ta-lib.org/functions/sarext.html",
+            "逐語": "optInAccelerationMaxShort real 0.2 ≥ 0 Cap on the short acceleration factor",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 3E+37,
+            "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+            "逐語": "<Name>AF Max Short</Name> <ShortDescription>Acceleration Factor maximum value for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-1</DefaultValue>",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "向き",
+        "URL": "https://ta-lib.org/functions/sarext.html",
+        "逐語": "Sign flip of the output marks a trend reversal (positive=long stop, negative=short stop).",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "close vs MEDIAN%",
+    "元の指標": "直近 n 本の終値の中央値（Rolling Median）",
+    "パラメータ": [
+      {
+        "名前": "length",
+        "既定": [
+          {
+            "値": 30,
+            "URL": "https://ta-lib.org/functions/median.html",
+            "逐語": "optInTimePeriod integer 30 2–10000 Number of trailing values in the window",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 2,
+            "上限": 10000,
+            "URL": "https://ta-lib.org/functions/median.html",
+            "逐語": "optInTimePeriod integer 30 2–10000 Number of trailing values in the window",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": "無い"
+  },
+  {
+    "種類": "close vs ABER_ZG%",
+    "元の指標": "Aberration（pandas-ta の aberration。中心線＝高値・安値・終値の平均の単純移動平均、帯＝ATR）",
+    "パラメータ": [
+      {
+        "名前": "length（中心線の期間）",
+        "既定": [
+          {
+            "値": 5,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+            "逐語": "length (int): The short period. Default: 5",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "atr_length（ATR の期間）",
+        "既定": [
+          {
+            "値": 15,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+            "逐語": "atr_length (int): The short period. Default: 15",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "値動きの幅",
+        "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+        "逐語": "A volatility indicator similar to Keltner Channels.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "ABER位置",
+    "元の指標": "Aberration（pandas-ta の aberration。帯＝中心線 ± ATR）",
+    "パラメータ": [
+      {
+        "名前": "length（中心線の期間）",
+        "既定": [
+          {
+            "値": 5,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+            "逐語": "length (int): The short period. Default: 5",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "atr_length（ATR の期間）",
+        "既定": [
+          {
+            "値": 15,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+            "逐語": "atr_length (int): The short period. Default: 15",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "値動きの幅",
+        "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+        "逐語": "A volatility indicator similar to Keltner Channels.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "HWC位置",
+    "元の指標": "HWC（Holt-Winters Channel。ホルト・ウィンターズ法の3つの係数の移動平均 HWMA に、帯を足したもの。MQL5 に公開されたもの）",
+    "パラメータ": [
+      {
+        "名前": "na",
+        "既定": [
+          {
+            "値": 0.2,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "na = float(na) if na and na > 0 else 0.2",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "na - parameter of the equation that describes a smoothed series (from 0 to 1)",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "nb",
+        "既定": [
+          {
+            "値": 0.1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nb = float(nb) if nb and nb > 0 else 0.1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nb - parameter of the equation to assess the trend (from 0 to 1)",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "nc",
+        "既定": [
+          {
+            "値": 0.1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nc = float(nc) if nc and nc > 0 else 0.1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nc - parameter of the equation to assess seasonality (from 0 to 1)",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "nd",
+        "既定": [
+          {
+            "値": 0.1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nd = float(nd) if nd and nd > 0 else 0.1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": [
+          {
+            "下限": 0,
+            "上限": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "nd - parameter of the channel equation (from 0 to 1)",
+            "出どころの順位": 3
+          }
+        ],
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      },
+      {
+        "名前": "scalar（帯の倍率）",
+        "既定": [
+          {
+            "値": 1,
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+            "逐語": "scalar = float(scalar) if scalar and scalar > 0 else 1",
+            "出どころの順位": 3
+          }
+        ],
+        "範囲": "無い",
+        "スキャル": "無い",
+        "デイトレ": "無い"
+      }
+    ],
+    "閾値": {
+      "既定": "無い",
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "位置",
+        "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+        "逐語": "This version has been implemented for Pandas TA by rengel8 based on a publication for MetaTrader 5 extended by width and percentage price position against width of channel.",
+        "出どころの順位": 3
+      }
+    ]
+  },
+  {
+    "種類": "HT_DCPHASE",
+    "元の指標": "HT_DCPHASE（John Ehlers のヒルベルト変換で測る支配的なサイクルの位相）",
+    "パラメータ": [],
+    "閾値": {
+      "既定": [
+        {
+          "値": [
+            90,
+            270
+          ],
+          "意味": "90° is the modeled cycle's high, 270° its low",
+          "URL": "https://ta-lib.org/functions/ht_dcphase.html",
+          "逐語": "DCPhase is a rotating angle: it locates the current bar within the dominant price cycle the Hilbert-transform model has locked onto. 90° is the modeled cycle's high, 270° its low, and 0°/180° are the midpoints where the cycle is moving fastest.",
+          "出どころの順位": 3
+        }
+      ],
+      "スキャル": "無い",
+      "デイトレ": "無い"
+    },
+    "役割": [
+      {
+        "何を見るか": "その他",
+        "URL": "https://ta-lib.org/functions/ht_dcphase.html",
+        "逐語": "Hilbert Transform Dominant Cycle Phase: the instantaneous phase (in degrees) of the dominant market cycle, derived from a homodyne discriminator on a Hilbert-transformed, smoothed price.",
+        "出どころの順位": 3
+      }
+    ]
+  }
+]

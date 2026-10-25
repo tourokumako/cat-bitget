@@ -1,0 +1,1116 @@
+[
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   null,
+   null,
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   null,
+   null,
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   null,
+   null,
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/atr.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   null,
+   null,
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/volatility/atr.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   null,
+   null,
+   "5〜10"
+  ],
+  "URL": "https://atrindicator.com/best-atr-settings/",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   null,
+   null,
+   "5〜10（10 が中心）"
+  ],
+  "URL": "https://atrindicator.com/atr-settings-5-minute-chart/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   null,
+   null,
+   "5〜14"
+  ],
+  "URL": "https://tradingbrokers.com/atr-scalping-strategy/",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   null,
+   null,
+   "10〜14"
+  ],
+  "URL": "https://atrindicator.com/best-atr-settings/",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "8（Wilder がよく使った期間）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/atr.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "SMC_SWEEP",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   15,
+   1.5
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/momentum/smc_sweep.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   9,
+   0.85,
+   6
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   9,
+   0.85,
+   6
+  ],
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   9,
+   0.85,
+   6
+  ],
+  "URL": "https://www.prorealcode.com/prorealtime-indicators/alma-arnaud-legoux-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   10,
+   0.85,
+   6.0
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/alma.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "7〜9",
+   0.9,
+   5
+  ],
+  "URL": "https://pineify.app/resources/blog/arnaud-legoux-moving-average-alma-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "14〜21",
+   0.85,
+   6
+  ],
+  "URL": "https://pineify.app/resources/blog/arnaud-legoux-moving-average-alma-indicator-tradingview-pine-script",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   18,
+   0.86,
+   6
+  ],
+  "URL": "https://syntiumalgo.com/best-alma-indicator-settings/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   9,
+   0.85,
+   6
+  ],
+  "URL": "https://www.tradingsim.com/blog/5-strategies-day-trading-arnaud-legoux-moving-average",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "offset 0〜1・sigma 0.01 以上（ライブラリが受け付ける値）",
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/double-exponential-moving-average-dema",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/dema.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/dema.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   9
+  ],
+  "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "速い 5・遅い 13"
+  ],
+  "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "速い 9・遅い 21"
+  ],
+  "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "5・9・21"
+  ],
+  "URL": "https://chartmini.com/blog/double-exponential-moving-average-dema-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "5・15・100 を例に挙げる",
+  "URL": "https://www.tradingview.com/support/solutions/43000589132-double-exponential-moving-average-ema/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs DEMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/dema.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/fwma.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs HILO%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   3,
+   3
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/gann-hilo-activator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   3,
+   3
+  ],
+  "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   13,
+   21
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hilo.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20
+  ],
+  "URL": "https://alanhull.com/hull-moving-average",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20
+  ],
+  "URL": "https://ta-lib.org/functions/hma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/hull-ma",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hma.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "9 か 16"
+  ],
+  "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "9 か 16"
+  ],
+  "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜200",
+  "URL": "https://alanhull.com/hull-moving-average",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "長い期間の例 200",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.2,
+   0.1,
+   0.1
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3つとも 0〜1",
+  "URL": "https://www.mql5.com/en/code/20856",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs JMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   null,
+   0
+  ],
+  "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs JMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   7,
+   0
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/jma.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs JMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "length 3〜80",
+  "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs JMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "phase -100〜+100",
+  "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs JMA%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "短い 7・中くらい 35・長い 175（比べるときの3つの長さ）",
+  "URL": "http://jurikres.com/faq1/faq_ama.htm",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   30
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30,
+   2,
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/kama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   2,
+   30
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/kama.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "5〜7",
+   2,
+   30
+  ],
+  "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "7〜10",
+   2,
+   30
+  ],
+  "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "7〜10",
+   null,
+   null
+  ],
+  "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "length 7〜10・fast 2・slow 20〜30",
+  "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs KAMA%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "length は増やさず減らす・fast を上げて滑らかにする（例 KAMA(10,5,30)）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/linearreg.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-forecast",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   25
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linreg.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/linearreg.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-intercept",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linregintercept.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14,
+   null
+  ],
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14,
+   null
+  ],
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-the-mcginley-dynamic-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14,
+   null
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   10,
+   1
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mcgd.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "まねる移動平均の本数の約 60%（例 20 本の平均に 12）",
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "まねる移動平均の本数の 60%",
+  "URL": "https://sacredtraders.com/the-mcginley-dynamic-by-brian-twomey/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/midpoint.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   2
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midpoint.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/midpoint.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/midprice.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   2
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midprice.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/midprice.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "既定",
+  "番号": 0,
+  "値": "5・10・15 … 90 の EMA 18本 と 100 の EMA",
+  "URL": "https://www.prorealcode.com/topic/conversion-of-madrid-moving-average-ribbon-from-tradingview/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "既定",
+  "番号": 1,
+  "値": "最初 10・間隔 5・6本（10・15・20・25・30・35）",
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mmar.py",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "既定",
+  "番号": 2,
+  "値": "SMA 10本・間隔 5・20〜65（Madrid に限らない一般の移動平均の帯）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "6〜8本・例 10・20・30・40・50・60（一般の移動平均の帯）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/pwma.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   2,
+   10
+  ],
+  "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   2,
+   10
+  ],
+  "URL": "https://docs.motivewave.com/studies/q-r#rainbow-c",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   2,
+   10
+  ],
+  "URL": "https://www.luxalgo.com/library/concept/rainbow-ma-stack/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   2,
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rainbow.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rma.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SINWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs SINWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py",
+  "判定": "取れない"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://toslc.thinkorswim.com/center/reference/Tech-Indicators/studies-library/E-F/EhlersSuperSmootherFilter",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   2
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/ssf.py",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10本より長い滑らかにする窓は要らない（Ehlers の考え）",
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "poles 2 か 3",
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/ssf.py",
+  "判定": "一致"
+ }
+]

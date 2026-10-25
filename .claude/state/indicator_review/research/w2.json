@@ -1,0 +1,659 @@
+[
+  {
+    "種類": "VAH",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "パラメータの名前": [
+      "Value Area の割合",
+      "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+      "行の数（Row Size）"
+    ],
+    "今のパラメータの組": [
+      [
+        288
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "VAL",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "パラメータの名前": [
+      "Value Area の割合",
+      "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+      "行の数（Row Size）"
+    ],
+    "今のパラメータの組": [
+      [
+        288
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "S-Rタッチ数",
+    "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+    "パラメータの名前": [
+      "n（過去の本数）",
+      "許容幅（割合）"
+    ],
+    "今のパラメータの組": [
+      [
+        144,
+        0.0015
+      ],
+      [
+        144,
+        0.003
+      ],
+      [
+        144,
+        0.006
+      ],
+      [
+        288,
+        0.0015
+      ],
+      [
+        288,
+        0.003
+      ],
+      [
+        288,
+        0.006
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "SMC_SWEEP",
+    "元の指標": "流動性の刈り取り（Smart Money Concept / ICT の liquidity sweep）",
+    "パラメータの名前": [
+      "length（直前の高値・安値を見る本数）",
+      "wick_mult（ひげと実体の比の倍率）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs ALMA%",
+    "元の指標": "ALMA（Arnaud Legoux Moving Average）",
+    "パラメータの名前": [
+      "window（本数）",
+      "offset",
+      "sigma"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs FWMA%",
+    "元の指標": "FWMA（Fibonacci Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs HILO%",
+    "元の指標": "Gann HiLo Activator（Robert Krausz）",
+    "パラメータの名前": [
+      "high_length（高値の平均の本数）",
+      "low_length（安値の平均の本数）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs HT_TRENDLINE%",
+    "元の指標": "HT_TRENDLINE（Ehlers の Hilbert Transform Instantaneous Trendline）",
+    "パラメータの名前": [],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs HWMA%",
+    "元の指標": "HWMA（Holt-Winters Moving Average）",
+    "パラメータの名前": [
+      "na（平滑の係数）",
+      "nb（傾きの係数）",
+      "nc（季節の係数）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs LINREG%",
+    "元の指標": "線形回帰の線（Linear Regression Curve／Least Squares Moving Average・TA-Lib の LINEARREG）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs LRb%",
+    "元の指標": "線形回帰の切片（Linear Regression Intercept・TA-Lib の LINEARREG_INTERCEPT）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MAMA%",
+    "元の指標": "MAMA（Ehlers の MESA Adaptive Moving Average）",
+    "パラメータの名前": [
+      "FastLimit",
+      "SlowLimit"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs FAMA%",
+    "元の指標": "FAMA（MAMA の追従線・Ehlers。MAMA と同じ計算から出る2本目）",
+    "パラメータの名前": [
+      "FastLimit",
+      "SlowLimit"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MCGD%",
+    "元の指標": "McGinley Dynamic（John McGinley）",
+    "パラメータの名前": [
+      "N（本数）",
+      "c（分母の係数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MIDPOINT%",
+    "元の指標": "MIDPOINT（n 本の終値の最高と最安の中央・TA-Lib の MIDPOINT）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MIDPRICE%",
+    "元の指標": "MIDPRICE（n 本の高値の最高と安値の最安の中央・TA-Lib の MIDPRICE）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MMAR%",
+    "元の指標": "MMAR（Madrid Moving Average Ribbon・EMA の帯）",
+    "パラメータの名前": [
+      "length（帯の1本の EMA の本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        10
+      ],
+      [
+        15
+      ],
+      [
+        25
+      ],
+      [
+        30
+      ],
+      [
+        35
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs PWMA%",
+    "元の指標": "PWMA（Pascal's Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs RAINBOW%",
+    "元の指標": "Rainbow Charts（Mel Widner・Stocks & Commodities 1997年7月）",
+    "パラメータの名前": [
+      "L（1回あたりの SMA の本数）",
+      "k（何回 重ねがけするか）"
+    ],
+    "今のパラメータの組": [
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs RMA%",
+    "元の指標": "RMA（Wilder の平滑移動平均・SMMA）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs SINWMA%",
+    "元の指標": "SINWMA（Sine Weighted Moving Average・ライブラリの出典は TradingView の Everget のスクリプト）",
+    "パラメータの名前": [
+      "length（本数）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs SSF%",
+    "元の指標": "SSF（Ehlers の SuperSmoother フィルター）",
+    "パラメータの名前": [
+      "length（臨界周期の本数）",
+      "poles"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs SWMA%",
+    "元の指標": "SWMA（Symmetric Weighted Moving Average・対称三角の重みの移動平均。TradingView の swma 関数がもと）",
+    "パラメータの名前": [
+      "length"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs T3%",
+    "元の指標": "T3（Tim Tillson の T3 移動平均。原典＝Tillson, Technical Analysis of Stocks & Commodities 1998年1月号）",
+    "パラメータの名前": [
+      "length",
+      "vfactor（a）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs VIDYA%",
+    "元の指標": "VIDYA（Tushar Chande の Variable Index Dynamic Average。1992年は標準偏差の比、1995年に CMO を使う形に変えた）",
+    "パラメータの名前": [
+      "length（EMA の長さ）",
+      "CMO の期間"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs ZLMA%",
+    "元の指標": "ZLEMA（遅れを減らした EMA。名前は Ehlers と Way の『Zero Lag (Well, Almost)』に由来するが、TA-Lib はその論文は別の計算だと注記している）",
+    "パラメータの名前": [
+      "length",
+      "mamode（中の平均の種類）"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs CKSPl%",
+    "元の指標": "Chande Kroll Stop（買い側の線）",
+    "パラメータの名前": [
+      "p（ATR と高値・安値の窓）",
+      "x（ATR の倍率）",
+      "q（逆指値の窓）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs CKSPs%",
+    "元の指標": "Chande Kroll Stop（売り側の線）",
+    "パラメータの名前": [
+      "p（ATR と高値・安値の窓）",
+      "x（ATR の倍率）",
+      "q（逆指値の窓）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs PMAX%",
+    "元の指標": "PMax（Profit Maximizer。KivancOzbilgic が 2020 年に TradingView で公開。MOST と SuperTrend を合わせたもの）",
+    "パラメータの名前": [
+      "ATR Length",
+      "ATR Multiplier",
+      "Moving Average Length",
+      "Moving Average Type"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs SAREXT%",
+    "元の指標": "SAREXT（TA-Lib の拡張パラボリック SAR。買いと売りで加速因数を別に持てる）",
+    "パラメータの名前": [
+      "startvalue",
+      "offsetonreverse",
+      "accelerationinitlong",
+      "accelerationlong",
+      "accelerationmaxlong",
+      "accelerationinitshort",
+      "accelerationshort",
+      "accelerationmaxshort"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs MEDIAN%",
+    "元の指標": "直近 n 本の終値の中央値（Rolling Median）",
+    "パラメータの名前": [
+      "length"
+    ],
+    "今のパラメータの組": [
+      [
+        20
+      ],
+      [
+        50
+      ],
+      [
+        200
+      ]
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "close vs ABER_ZG%",
+    "元の指標": "Aberration（pandas-ta の aberration。中心線＝高値・安値・終値の平均の単純移動平均、帯＝ATR）",
+    "パラメータの名前": [
+      "length（中心線の期間）",
+      "atr_length（ATR の期間）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "ABER位置",
+    "元の指標": "Aberration（pandas-ta の aberration。帯＝中心線 ± ATR）",
+    "パラメータの名前": [
+      "length（中心線の期間）",
+      "atr_length（ATR の期間）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "HWC位置",
+    "元の指標": "HWC（Holt-Winters Channel。ホルト・ウィンターズ法の3つの係数の移動平均 HWMA に、帯を足したもの。MQL5 に公開されたもの）",
+    "パラメータの名前": [
+      "na",
+      "nb",
+      "nc",
+      "nd",
+      "scalar（帯の倍率）"
+    ],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  },
+  {
+    "種類": "HT_DCPHASE",
+    "元の指標": "HT_DCPHASE（John Ehlers のヒルベルト変換で測る支配的なサイクルの位相）",
+    "パラメータの名前": [],
+    "今のパラメータの組": [
+      []
+    ],
+    "系統": "構造・位置",
+    "足りないもの": []
+  }
+]

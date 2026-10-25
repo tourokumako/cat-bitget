@@ -1,0 +1,823 @@
+[
+ {
+  "種類": "ATR%",
+  "元の指標": "ATR（Wilder の Average True Range）を終値で割った%＝ATRP／NATR",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+    "逐語": "Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+    "逐語": "By default, the indicator is calculated using 14 periods.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（ATRP＝ATR を終値で割った%）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+    "逐語": "The time period to be used in calculating the Average True Range. 14 days is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+    "逐語": "The look back period to use for the ATR is at the trader's discretion however 14 days is the most common.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volatility_indicators.html",
+    "逐語": "real = NATR(high, low, close, timeperiod=14)",
+    "出どころの質": "ライブラリ（TA-Lib の Python 版の説明）（NATR＝ATR を終値で割った%）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/atr.py",
+    "逐語": "length (int): The period. Default: ```14```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py",
+    "逐語": "length (int): The period. Default: ```20```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）。★同じファイルのコードは length = v_pos_default(length, 14)＝説明文の20とコードの14が食い違う"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     5,
+     7
+    ],
+    "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+    "逐語": "Optimization for Scalpers: Settings 5 to 7  Scalpers operate on the shortest timeframes, such as the 1-minute or 5-minute charts.",
+    "出どころの質": "証券会社・ブログ（marketclutch.com）"
+   },
+   {
+    "値": [
+     7
+    ],
+    "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+    "逐語": "Standard Scalp (Period 7)  Primary Use: General intraday price action on 5-minute charts.",
+    "出どころの質": "証券会社・ブログ（marketclutch.com）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+    "逐語": "For most day traders targeting 15-minute to 1-hour timeframes, the 14-period setting offers the best trade-off between smoothing and reactivity.",
+    "出どころの質": "証券会社・ブログ（marketclutch.com）"
+   },
+   {
+    "値": [
+     20,
+     22
+    ],
+    "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+    "逐語": "Using a 20 or 22-period setting (roughly the number of trading days in a month, adapted to the intraday timeframe) provides a very smooth volatility line.",
+    "出どころの質": "証券会社・ブログ（marketclutch.com・見出しは「Smoothing for Trend Trading: Periods 20 to 22」＝その日の中の大きな一方向の動きを狙う場合）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "5〜21（スキャル 5・7／トレンド狙い 20・21）",
+    "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+    "逐語": "Scalpers require the rapid response of a 5 or 7-period setting, while trend traders benefit from the smoothing of a 20 or 21-period lookback.",
+    "出どころの質": "証券会社・ブログ（marketclutch.com）"
+   }
+  ],
+  "メモ": "今の組 7・14・21 のうち 14 は既定と同じで、7 はスキャル向けとして書かれた値、21 はトレンド狙いとして書かれた 20〜22 の範囲に入る。"
+ },
+ {
+  "種類": "BB幅",
+  "元の指標": "Bollinger BandWidth（ボリンジャーバンド）",
+  "パラメータの名前": [
+   "period",
+   "stdev_mult"
+  ],
+  "既定": [
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+    "逐語": "The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.",
+    "出どころの質": "開発者の原典（John Bollinger の公式サイト）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://www.bollingerbands.com/bollinger-bands",
+    "逐語": "The defaults today are the same as they were 35 years ago, 20 periods for the moving average with the bands set at plus and minus two standard deviations of the same data used for the average.",
+    "出どころの質": "開発者の原典（John Bollinger の公式サイト）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+    "逐語": "The default parameters (20,2) are based on the default parameters for Bollinger Bands.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+    "逐語": "The time period to be used in calculating the SMA which creates the base for the Upper and Lower Bands. 20 days is the default.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）（倍率は同じページ＝「The number of Standard Deviations away from the SMA that the Upper and Lower Bands should be. 2 is the default.」）"
+   },
+   {
+    "値": [
+     20,
+     2
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+    "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)",
+    "出どころの質": "ライブラリ（TA-Lib の Python 版の説明）"
+   },
+   {
+    "値": [
+     5,
+     2.0
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+    "逐語": "length (int): The period. Default: ```5```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（倍率は同じファイル＝lower_std・upper_std とも Default: ```2.0```）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     "10〜14",
+     "1.5〜2"
+    ],
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+    "逐語": "For scalping on short time frames, you can reduce the period to 10–14, with a multiplier of 1.5–2.",
+    "出どころの質": "証券会社・ブログ（LiteFinance＝FX ブローカーのブログ）"
+   },
+   {
+    "値": [
+     "10〜14",
+     "1.5〜2"
+    ],
+    "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+    "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+    "出どころの質": "証券会社・ブログ（OpoFinance＝FX ブローカーのブログ）"
+   },
+   {
+    "値": [
+     null,
+     2.2
+    ],
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Shorter timeframes like the 5-minute chart require a slightly wider band (2.2 SD) to account for faster price movements.",
+    "出どころの質": "証券会社・ブログ（Pocket Option＝バイナリーオプション業者のブログ）。★上の2件（1.5〜2＝狭める）と向きが逆（2.2＝広げる）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     "20〜21",
+     null
+    ],
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Adjust the Period Length to your preferred setting (usually 20-21 for day trading).",
+    "出どころの質": "証券会社・ブログ（Pocket Option）"
+   },
+   {
+    "値": [
+     null,
+     "2.1（15分足）・2.0（1時間足）"
+    ],
+    "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+    "逐語": "Timeframe   Optimal Band Width   Signal Strength   5-minute   2.2 SD   Moderate   15-minute   2.1 SD   Strong   1-hour   2.0 SD   Very Strong",
+    "出どころの質": "証券会社・ブログ（Pocket Option・表の行を文字だけにしたもの）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "(10,1.9)〜(50,2.1)",
+    "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+    "逐語": "For consistent price containment: If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.",
+    "出どころの質": "開発者の原典（John Bollinger の公式サイト）"
+   },
+   {
+    "値": "(10,1.9)〜(50,2.1)",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+    "逐語": "A Bollinger Band overlay can be set at (50,2.1) for a longer timeframe or at (10,1.9) for a shorter timeframe.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": "期間 50・倍率 2.5（スイング・長期）",
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+    "逐語": "For swing or long-term trading, the period can be increased—for example, to 50—and the multiplier to 2.5.",
+    "出どころの質": "証券会社・ブログ（LiteFinance）"
+   }
+  ],
+  "メモ": "今の組 (20,2.0) は既定と同じで、(50,2.0) は Bollinger が 50 期間では倍率を 2.1 にすると書いている組と倍率が違う。"
+ },
+ {
+  "種類": "realized_vol",
+  "元の指標": "Historical Volatility（対数リターンの標準偏差）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://www.luxalgo.com/library/indicator/historical-volatility/",
+    "逐語": "Length (default 10): the lookback for the standard deviation of close-to-close log returns.",
+    "出どころの質": "定番の教育サイト・指標ライブラリ（LuxAlgo）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "10・20・30・60・90・120・150・180 日",
+    "URL": "https://www.ivolatility.com/education/historical-volatility/",
+    "逐語": "We calculate standard deviation for the eight most popular terms: n=10, 20, 30, 60, 90, 120, 150, 180 days on a daily basis.",
+    "出どころの質": "オプションのデータ業者の教育ページ（ivolatility.com）"
+   },
+   {
+    "値": "10〜252 日（ふだん 21・63・252、10 より短くしない）",
+    "URL": "https://www.macroption.com/historical-volatility-excel/",
+    "逐語": "If you have no idea, I recommend those I often use myself: 21 trading days = 1 calendar month 63 days = 3 months 252 days = 1 year Occasionally I might also look at 10-day historical volatility if something interesting is happening in the market, but I wouldn't go lower than that.",
+    "出どころの質": "証券会社・ブログ（Macroption・箇条書きの3行と次の文を空白でつないだ）"
+   }
+  ],
+  "メモ": "今の組 20・50 のうち 20 は ivolatility の「よく使う期間」に入り、既定として書かれた値は 10（LuxAlgo）で、出どころはどれも日足の日数で書いている。"
+ },
+ {
+  "種類": "Donchian幅",
+  "元の指標": "Donchian Channels（Price Channels）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+    "逐語": "The time period to be used in calculating the Donchian Channels (20 is the Default).",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "The formula above is based on a daily chart and a 20-period Price Channel, which is the default setting in SharpCharts.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（StockCharts の名前は Price Channels）"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/donchian.py",
+    "逐語": "lower_length (int): Lower period. Default: ```20```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（upper_length も Default: ```20```）"
+   },
+   {
+    "値": [
+     50
+    ],
+    "URL": "https://www.daytrading.com/donchian-channels",
+    "逐語": "It takes the highest high and lowest low of the previous X periods (X is user-defined, but generally set at a default of 50).",
+    "出どころの質": "教育サイト（DayTrading.com）。★ほかの出どころの 20 と食い違う"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+    "逐語": "The most common period is 20.",
+    "出どころの質": "証券会社・ブログ（LiteFinance）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     "10〜15"
+    ],
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+    "逐語": "For scalping, use a short period of 10–15 candlesticks.",
+    "出どころの質": "証券会社・ブログ（LiteFinance）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     "10〜20"
+    ],
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+    "逐語": "Short-term period (10–20 candlesticks): Suitable for scalping or intraday trading.",
+    "出どころの質": "証券会社・ブログ（LiteFinance・スキャルとデイトレを一緒に書いている）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "10〜50 以上（短期 10–20／中期 20–50／長期 50 以上）",
+    "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/donchian-channel/",
+    "逐語": "The choice of channel period (e.g., 20, 10, or 50 candlesticks) affects the indicator's sensitivity: lower periods better suit scalping, while higher periods are optimal for long-term trading.",
+    "出どころの質": "証券会社・ブログ（LiteFinance）"
+   },
+   {
+    "値": "10（短く）〜20（既定）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "Shorter look-back periods, such as 10 days, produce tighter channel lines.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   }
+  ],
+  "メモ": "今の組 20・48 のうち 20 は既定（TradingView・StockCharts）と同じで、48 は出どころに書かれた値には無い（DayTrading.com の既定は 50）。"
+ },
+ {
+  "種類": "MMI",
+  "元の指標": "Market Meanness Index（Financial Hacker の jcl が作った指標）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": [
+     200,
+     300,
+     400,
+     500
+    ],
+    "URL": "https://financial-hacker.com/boosting-systems-by-trade-filtering/",
+    "逐語": "BarPeriod = 15; ／ while(algo(loop(\"MM15\",\"MH1\",\"MH4\"))) ／ int MMIPeriod = optimize(0,200,500,100);",
+    "出どころの質": "開発者の原典（Financial Hacker＝MMI を作った jcl の記事。同じ記事のスクリプトの3行を「／」でつないだ）。★文中に「デイトレ」の語は無い。15分足・1時間足・4時間足で同じ範囲を試した記録"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "200〜500 本（200・300・400・500）",
+    "URL": "https://financial-hacker.com/boosting-systems-by-trade-filtering/",
+    "逐語": "The length of the MMI range is varied between 200, 300, 400, and 500 bars. As most parameters in a strategy, the MMI range is a compromise: It should be no less than 200 bars for getting any accuracy, but it should not be too long for preventing that different market regimes fall in the same MMI range.",
+    "出どころの質": "開発者の原典（Financial Hacker・jcl）"
+   }
+  ],
+  "メモ": "今の組 200・300・400・500 は、開発者の記事が15分足・1時間足・4時間足で試した範囲と同じ4つの値である（開発者の関数には既定の期間が無く、呼ぶ側が必ず指定する）。"
+ },
+ {
+  "種類": "ER",
+  "元の指標": "Kaufman の Efficiency Ratio（KAMA の部品）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+    "逐語": "Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30). * 10 is the number of periods for the Efficiency Ratio (ER).",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（開発者 Kaufman の推奨として紹介）"
+   },
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/er.py",
+    "逐語": "length = v_pos_default(length, 10)",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）。★同じファイルの説明文は「length (int): The period. Default: ```1```」＝説明文の1とコードの10が食い違う"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 7・9・14・21 には既定の 10 が入っていない（WH SelfInvest は、Kaufman ER の戦略をデイトレでは15分足以上で使い、それより短い足は Kaufman が勧めていないと書くが、期間の数は書いていない）。"
+ },
+ {
+  "種類": "SQZ_ON",
+  "元の指標": "TTM Squeeze（John Carter・ボリンジャーバンドがケルトナーチャネルの内側か）",
+  "パラメータの名前": [
+   "bb_length",
+   "bb_stdev_mult",
+   "kc_length",
+   "kc_atr_mult"
+  ],
+  "既定": [
+   {
+    "値": [
+     20,
+     2,
+     20,
+     1.5
+    ],
+    "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+    "逐語": "Length–Number of bars used in the indicator calculation; default is 20. nK–Sets the offset of the Keltner Channel; default is 1.5. nBB–Sets standard deviation of the Bollinger Bands; default is 2.",
+    "出どころの質": "開発者の原典（Simpler Trading＝John Carter の会社）"
+   },
+   {
+    "値": [
+     20,
+     2,
+     20,
+     1.5
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+    "逐語": "By default, the indicator uses standard Bollinger Band (20,2.0) and original Keltner Channel (20,1.5,20) settings, as well as a 20-period momentum histogram, but the number of periods and other settings can be adjusted to meet your technical analysis needs.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     20,
+     2,
+     20,
+     1.5
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py",
+    "逐語": "bb_length (int): BB period. Default: ```20``` bb_std (float): BB Std. Dev. Default: ```2``` kc_length (int): KC period. Default: ```20``` kc_scalar (float): KC scalar. Default: ```1.5```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（4行を空白でつないだ）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     10,
+     1.5,
+     10,
+     1.0
+    ],
+    "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+    "逐語": "Short-period settings (10, 1.5, 1.0): Faster response for scalping and 1-5 minute chart trading.",
+    "出どころの質": "証券会社・ブログ（Volatility Box＝相場分析サービスの記事。並びは期間・BB倍率・KC倍率）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     20,
+     2.0,
+     20,
+     2.0
+    ],
+    "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+    "逐語": "Looser settings (20, 2.0, 2.0): The wider Keltner multiplier makes it easier for the Bollinger Bands to contract inside the Keltner Channels. This produces more frequent squeezes, including shallower compressions. Suitable for intraday traders on 5-minute or 15-minute charts who need more signals per session.",
+    "出どころの質": "証券会社・ブログ（Volatility Box）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+    "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+    "逐語": "Tighter settings (20, 2.0, 1.0): The narrower Keltner multiplier makes it harder for the Bollinger Bands to contract inside the Keltner Channels.",
+    "出どころの質": "証券会社・ブログ（Volatility Box・広い側は上のデイトレの行の 2.0）"
+   }
+  ],
+  "メモ": "今のパラメータの組は空で、入力の定義にも期間と倍率が書かれていないため、既定の (20,2,20,1.5) と同じかどうかはこの入力からは分からない。"
+ },
+ {
+  "種類": "CHOP",
+  "元の指標": "Choppiness Index（E.W. Dreiss）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+    "逐語": "The time period to be used in calculating CHOP (14 is the Default).",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/chop.py",
+    "逐語": "length (int): The period. Default: ```14```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+    "逐語": "The 14-period default is standard and reasonable for most timeframes.",
+    "出どころの質": "定番の教育サイト・指標ライブラリ（LuxAlgo）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://www.tradingsim.com/blog/choppiness-index-indicator",
+    "逐語": "The input length for the lookback period is 14.",
+    "出どころの質": "証券会社・ブログ（TradingSim）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://choppinessindex.com/choppiness-index-tradingview-setup/",
+    "逐語": "Length: 14 (default, good for general use)",
+    "出どころの質": "証券会社・ブログ（choppinessindex.com）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 7・14・21 のうち 14 が既定と同じで、7 と 21 を書いた出どころは見つからなかった。"
+ },
+ {
+  "種類": "VHF",
+  "元の指標": "Vertical Horizontal Filter（Adam White）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     28
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+    "逐語": "The default Vertical Horizontal Filter window is 28 days.",
+    "出どころの質": "教育サイト（Incredible Charts）"
+   },
+   {
+    "値": [
+     18
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+    "逐語": "White originally recommended 28 days but now prefers an 18-day window smoothed with a 6-day moving average.",
+    "出どころの質": "教育サイト（Incredible Charts）が開発者 Adam White の推奨として紹介"
+   },
+   {
+    "値": [
+     28
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/vhf.py",
+    "逐語": "length (int): The period. Default: ```28```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   },
+   {
+    "値": [
+     28
+    ],
+    "URL": "https://theindicatorlab.com/reviews/vertical-horizontal-filter/",
+    "逐語": "The default period is 28.",
+    "出どころの質": "証券会社・ブログ（The Indicator Lab）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 7・14・21 には既定の 28 も開発者が後に勧めた 18 も入っていない（The Indicator Lab はデイトレでは既定より短く、スキャルでは使わないと書くが、数は書いていない）。"
+ },
+ {
+  "種類": "MAD比",
+  "元の指標": "Mean Absolute Deviation（平均絶対偏差・統計の関数）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     30
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/mad.py",
+    "逐語": "length (int): The period. Default: ```30```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 20・50 には、見つかった唯一の既定（pandas-ta の 30）が入っていない。"
+ },
+ {
+  "種類": "stdev%",
+  "元の指標": "Standard Deviation（標準偏差）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     10
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/standard-deviation-volatility",
+    "逐語": "The standard deviation is available as an indicator in SharpCharts with a default parameter of 10.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     5
+    ],
+    "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/statistic_functions.html",
+    "逐語": "real = STDDEV(close, timeperiod=5, nbdev=1)",
+    "出どころの質": "ライブラリ（TA-Lib の Python 版の説明）。★ほかの出どころと食い違う"
+   },
+   {
+    "値": [
+     30
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/stdev.py",
+    "逐語": "length (int): The period. Default: ```30```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）。★ほかの出どころと食い違う"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 50 は、既定として書かれた 10（StockCharts）・5（TA-Lib）・30（pandas-ta）のどれとも違う。"
+ },
+ {
+  "種類": "HWC幅%",
+  "元の指標": "Holt-Winters Channel（MQL5 の HWC・pandas-ta の hwc）",
+  "パラメータの名前": [
+   "na",
+   "nb",
+   "nc",
+   "nd",
+   "scalar"
+  ],
+  "既定": [
+   {
+    "値": [
+     0.2,
+     0.1,
+     0.1,
+     0.1,
+     1
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+    "逐語": "na (float): Smoothed series in range ```[0, 1]```. Default: ```0.2``` nb (float): Trend value in range ```[0, 1]```. Default: ```0.1``` nc (float): Seasonality value in range ```[0, 1]```. Default: ```0.1``` nd (float): Channel value in range ```[0, 1]```. Default: ```0.1``` scalar (float): Channel scalar. Default: ```1```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（5行を空白でつないだ）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "na・nb・nc・nd とも 0〜1",
+    "URL": "https://www.mql5.com/en/code/20857",
+    "逐語": "nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); nD - parameter of the channel equation (from 0 to 1);",
+    "出どころの質": "ライブラリ（MQL5 Code Base の HWC。pandas-ta が出どころとして挙げている元の実装。4行を空白でつないだ）"
+   }
+  ],
+  "メモ": "今のパラメータの組は空で、入力の定義にも na〜nd と倍率が書かれていないため、既定の (0.2,0.1,0.1,0.1,1) と同じかどうかはこの入力からは分からない。"
+ },
+ {
+  "種類": "MASSI",
+  "元の指標": "Mass Index（Donald Dorsey）",
+  "パラメータの名前": [
+   "ema_period",
+   "sum_period"
+  ],
+  "既定": [
+   {
+    "値": [
+     9,
+     25
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+    "逐語": "Single EMA = 9-period exponential moving average (EMA) of the high-low differential ／ Mass Index = 25-period sum of the EMA Ratio",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（計算式の2行を「／」でつないだ。開発者は Donald Dorsey と同じページに記載）"
+   },
+   {
+    "値": [
+     25
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+    "逐語": "Once the indicator is chosen from the dropdown menu, a Mass Index indicator is added to the chart with the default setting of 25 summation periods.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     9,
+     25
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000589169-mass-index/",
+    "逐語": "Begin by calculating the nine-day Exponential Moving Average (EMA) of the difference between high and low stock prices for a specific period of time. This is usually determined as 25 days.",
+    "出どころの質": "定番の教育サイト（TradingView のヘルプ）"
+   },
+   {
+    "値": [
+     9,
+     25
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+    "逐語": "fast (int): Fast period. Default: ```9``` slow (int): Slow period. Default: ```25```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（2行を空白でつないだ）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今のパラメータの組は空だが、入力の定義に書かれた 9本 EMA と 25本 合計は既定 (9,25) と同じである。"
+ },
+ {
+  "種類": "THERMO%",
+  "元の指標": "Elder の Market Thermometer",
+  "パラメータの名前": [
+   "ema_period"
+  ],
+  "既定": [
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+    "逐語": "//period = user defined, default is 20",
+    "出どころの質": "チャートソフトの説明（MotiveWave）。この期間は温度計の値を平らにする EMA の期間"
+   },
+   {
+    "値": [
+     22
+    ],
+    "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+    "逐語": "You can configure the \"Explosive Move threshold\" (default: 3), \"Idle Market Threshold\" (default: 7) and \"Thermometer EMA length\" (default: 22) via Options page.",
+    "出どころの質": "TradingView の公開スクリプト（LazyBear）。★MotiveWave・pandas-ta の 20 と食い違う"
+   },
+   {
+    "値": [
+     20
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+    "逐語": "length (int): The period. Default: ```20```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今のパラメータの組は空で入力の定義も平らにする EMA を含まない生の値であり、出どころの既定 20 または 22 はその EMA の期間である。"
+ },
+ {
+  "種類": "TR%",
+  "元の指標": "True Range（Wilder）",
+  "パラメータの名前": [],
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "出どころ（TA-Lib の「real = TRANGE(high, low, close)」）でも期間のパラメータは無く、今のパラメータの組が空なのと同じである。"
+ },
+ {
+  "種類": "UI",
+  "元の指標": "Ulcer Index（Peter Martin・Byron McCann）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ulcer-index",
+    "逐語": "Using a default setting of 14 periods, the Ulcer Index reflects the expected percentage drawdown over this period.",
+    "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"
+   },
+   {
+    "値": [
+     14
+    ],
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/ui.py",
+    "逐語": "length (int): The period. Default: ```14```",
+    "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の組 7・14・21 のうち 14 が既定と同じで、開発者 Martin のサイトは期間の数を決めず「Weekly price data is a robust choice, but daily data can be used as well.」と週足を勧めている。"
+ }
+]

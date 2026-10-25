@@ -1,0 +1,473 @@
+[
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12
+  ],
+  "URL": "https://api.anychart.com/anychart.core.stock.indicators.RCI",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   9
+  ],
+  "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   5,
+   10,
+   15
+  ],
+  "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   10,
+   30,
+   50
+  ],
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "既定",
+  "番号": 6,
+  "値": [
+   10
+  ],
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   14,
+   26
+  ],
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   5
+  ],
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   9
+  ],
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   9
+  ],
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "スキャル",
+  "番号": 5,
+  "値": [
+   9
+  ],
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   10,
+   30,
+   50
+  ],
+  "URL": "https://www.mql5.com/en/market/product/177426",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "Short=5-7, Medium=15-21, Long=30-42（デイトレーダー向け。時間足の指定なし）",
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   9
+  ],
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   26,
+   52
+  ],
+  "URL": "https://blog.wikibit.com/?p=3008",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 4,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://zai.diamond.jp/articles/-/37691",
+  "判定": "不一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 5,
+  "値": [
+   5
+  ],
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "デイトレ",
+  "番号": 6,
+  "値": [
+   9
+  ],
+  "URL": "https://www.ebc.com/jp/forex/296767.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3-100（短期の線）",
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "10-200（中期の線）",
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "20-500（長期の線）",
+  "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "5-20（よく使う値 5・10・14）",
+  "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "RCI",
+  "欄": "範囲",
+  "番号": 4,
+  "値": "小さくすると細かい動きに敏感・大きくすると滑らか（数の範囲は書いていない）",
+  "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "既定",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "既定",
+  "番号": 1,
+  "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "既定",
+  "番号": 2,
+  "値": "日足のチャートは前の月",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotPP",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": "1W（前週）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "既定",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "既定",
+  "番号": 1,
+  "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "日足のチャートは前の月",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotR1",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": "1W（前週）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "既定",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "既定",
+  "番号": 1,
+  "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "日足のチャートは前の月",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週の高値・安値・終値",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "1D（前日）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "前期間pivotS1",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": "1W（前週）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ }
+]

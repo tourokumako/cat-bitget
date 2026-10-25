@@ -1,0 +1,1755 @@
+[
+ {
+  "種類": "swing高値距離",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.tradingsim.com/blog/swing-high",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "既定",
+  "番号": 2,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "逐語が短すぎる"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "5〜7",
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜3（短い保有）／それより大きい値（スイング）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "3 または 5（上位の時間足）",
+  "URL": "https://www.tradingsim.com/blog/swing-high",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "15〜20（日足）",
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.tradingsim.com/blog/swing-high",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "既定",
+  "番号": 2,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "逐語が短すぎる"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "5〜7",
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "2〜3（短い保有）／それより大きい値（スイング）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "3 または 5（上位の時間足）",
+  "URL": "https://www.tradingsim.com/blog/swing-high",
+  "判定": "一致"
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "15〜20（日足）",
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "既定",
+  "番号": 0,
+  "値": 25,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "既定",
+  "番号": 1,
+  "値": 25,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "既定",
+  "番号": 2,
+  "値": 14,
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": 14,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 288,
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 25,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "8〜10 より下にしない",
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "調整可（数値の範囲は書いていない）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "既定",
+  "番号": 0,
+  "値": 25,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "既定",
+  "番号": 1,
+  "値": 25,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "既定",
+  "番号": 2,
+  "値": 14,
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": 14,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 288,
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 25,
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "8〜10 より下にしない",
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "調整可（数値の範囲は書いていない）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   "記載なし",
+   "3%以内"
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   "1〜3か月",
+   "記載なし"
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   "中央値 23日（多くは2〜7週）",
+   "0〜4%"
+  ],
+  "URL": "https://thepatternsite.com/eadb.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   "多くは2〜7週",
+   "0〜6%"
+  ],
+  "URL": "https://thepatternsite.com/eedb.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   "中央値 16日",
+   "平均 1%"
+  ],
+  "URL": "https://thepatternsite.com/aadb.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   "平均 約2か月",
+   "記載なし"
+  ],
+  "URL": "https://thepatternsite.com/aedb.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "谷の差 0〜4%（Eve & Adam）／0〜6%（Eve & Eve）",
+  "URL": "https://thepatternsite.com/eedb.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "W字",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "谷の間 数週間〜数か月",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "既定",
+  "番号": 2,
+  "値": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "既定",
+  "番号": 3,
+  "値": 2,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3・4・5",
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "2〜3（短い保有）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "既定",
+  "番号": 2,
+  "値": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "既定",
+  "番号": 3,
+  "値": 2,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3・4・5",
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "2〜3（短い保有）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "既定",
+  "番号": 2,
+  "値": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "既定",
+  "番号": 3,
+  "値": 2,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3・4・5",
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "2〜3（短い保有）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "既定",
+  "番号": 2,
+  "値": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "既定",
+  "番号": 3,
+  "値": 2,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3・4・5",
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "2〜3（短い保有）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "既定",
+  "番号": 0,
+  "値": 2,
+  "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "既定",
+  "番号": 1,
+  "値": 2,
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "既定",
+  "番号": 2,
+  "値": 2,
+  "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "既定",
+  "番号": 3,
+  "値": 2,
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "3・4・5",
+  "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+  "判定": "一致"
+ },
+ {
+  "種類": "構造破断距離%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "2〜3（短い保有）",
+  "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "既定",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   8,
+   21
+  ],
+  "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   5,
+   8,
+   13
+  ],
+  "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": 5,
+  "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 20,
+  "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 20,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   9,
+   20
+  ],
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   9,
+   20
+  ],
+  "URL": "https://www.snappchart.app/blog/technical-indicators/ema-day-trading-strategy",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 4,
+  "値": [
+   5,
+   20
+  ],
+  "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "12・26（短期）／50・200（長期）",
+  "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "5〜20（短期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "20〜60（中期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "100以上（長期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 4,
+  "値": "50・200（よく使われる）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "既定",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingview.com/support/solutions/43000502589-moving-averages/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": 10,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 50,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   50,
+   200
+  ],
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "20未満（短期）／20〜60（中期）／60超（長期）",
+  "URL": "https://www.tradingview.com/support/solutions/43000502589-moving-averages/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "5〜20（短期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "20〜60（中期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "100以上（長期）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "範囲",
+  "番号": 4,
+  "値": "50（中期で人気）・200（長期で最も人気）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Session",
+  "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "既定",
+  "番号": 1,
+  "値": "Session",
+  "URL": "https://www.financialtechwiz.com/post/vwap-tradingview/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "既定",
+  "番号": 2,
+  "値": "1日（寄り付きから引けまで）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "Session, Week, Month, Quarter, Year, Decade, Century, Earnings, Dividends, Splits",
+  "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "1日 または 1週間（rolling の窓）",
+  "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "24時間・7日・N本（rolling の窓の例）",
+  "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VWAP",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "1・5・10・15・30・60分足で使う（日足以上では定義しない）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   10
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20,
+   "記載なし",
+   "記載なし"
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502266-keltner-channels-kc/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   2.5,
+   20
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   "10日 SMA（典型価格）",
+   1,
+   "10日 高安幅の平均"
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜14",
+   "1.0〜1.5",
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   15,
+   "1.5〜2.0",
+   10
+  ],
+  "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "倍率 1〜3（2→1 で幅が半分、2→3 で幅が50%増）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "ATR の期間 10〜100",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   10
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   20,
+   "記載なし",
+   "記載なし"
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502266-keltner-channels-kc/",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   2.5,
+   20
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   "10日 SMA（典型価格）",
+   1,
+   "10日 高安幅の平均"
+  ],
+  "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜14",
+   "1.0〜1.5",
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   15,
+   "1.5〜2.0",
+   10
+  ],
+  "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "倍率 1〜3（2→1 で幅が半分、2→3 で幅が50%増）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "ATR の期間 10〜100",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "既定",
+  "番号": 0,
+  "値": 20,
+  "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "既定",
+  "番号": 1,
+  "値": 20,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   55
+  ],
+  "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "10〜20",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   50
+  ],
+  "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "10〜20",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10〜20（短期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "20〜50（中期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "50〜100以上（長期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本高値",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "10 など短く／長く",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "既定",
+  "番号": 0,
+  "値": 20,
+  "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "既定",
+  "番号": 1,
+  "値": 20,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   55
+  ],
+  "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "10〜20",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   50
+  ],
+  "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "10〜20",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10〜20（短期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "20〜50（中期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "50〜100以上（長期）",
+  "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+  "判定": "一致"
+ },
+ {
+  "種類": "n本安値",
+  "欄": "範囲",
+  "番号": 3,
+  "値": "10 など短く／長く",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Auto（チャートの時間足で決まる）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "既定",
+  "番号": 1,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日（1D）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "前日（1D）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日（15分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週（30・60分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "前週（15分より長く1日未満の足）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "前日・前週・前月・前年（時間足ごと）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Auto（チャートの時間足で決まる）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "既定",
+  "番号": 1,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日（1D）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "前日（1D）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日（15分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週（30・60分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "前週（15分より長く1日未満の足）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "前日・前週・前月・前年（時間足ごと）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Auto（チャートの時間足で決まる）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "既定",
+  "番号": 1,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "前日（1D）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "前日（1D）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "前日（15分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "前週（30・60分足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "前週（15分より長く1日未満の足）",
+  "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+  "判定": "一致"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "前日・前週・前月・前年（時間足ごと）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "一致"
+ },
+ {
+  "種類": "fib位置",
+  "欄": "既定",
+  "番号": 0,
+  "値": "比率 23.6%・38.2%・50%・61.8%（期間の既定は無い）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-annotation-tools/fibonacci-retracements",
+  "判定": "一致"
+ },
+ {
+  "種類": "fib位置",
+  "欄": "既定",
+  "番号": 1,
+  "値": "14（同じ計算の形の Williams %R の既定）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r",
+  "判定": "一致"
+ },
+ {
+  "種類": "fib位置",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "短く／長く（数値は書いていない・Williams %R）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Value Area 70%",
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "既定",
+  "番号": 1,
+  "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "既定",
+  "番号": 2,
+  "値": "Value Area 70%",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "Visible Range の短い範囲（直近数時間）",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5分足の Fixed Range（執行用）",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "当日と前日の Session／Fixed Range",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "Session（毎日リセット）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "15分足のプロファイルの POC",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "行の数 200〜400",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "行の数 100〜200（日中足 200・日足以上 100）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "POC",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "70% は慣習で必須ではない",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Value Area 70%",
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "既定",
+  "番号": 1,
+  "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "既定",
+  "番号": 2,
+  "値": "Value Area 70%",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "Visible Range の短い範囲（直近数時間）",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5分足の Fixed Range（執行用）",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "当日と前日の Session／Fixed Range",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "Session（毎日リセット）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "15分足のプロファイルの POC",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "行の数 200〜400",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "行の数 100〜200（日中足 200・日足以上 100）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "70% は慣習で必須ではない",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "既定",
+  "番号": 0,
+  "値": "Value Area 70%",
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "既定",
+  "番号": 1,
+  "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "既定",
+  "番号": 2,
+  "値": "Value Area 70%",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "Visible Range の短い範囲（直近数時間）",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5分足の Fixed Range（執行用）",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "当日と前日の Session／Fixed Range",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "Session（毎日リセット）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "15分足のプロファイルの POC",
+  "URL": "https://npfinancials.com.au/volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "行の数 200〜400",
+  "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "行の数 100〜200（日中足 200・日足以上 100）",
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "70% は慣習で必須ではない",
+  "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+  "判定": "一致"
+ }
+]

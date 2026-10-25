@@ -1,0 +1,1532 @@
+[
+ {
+  "種類": "VAH",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAH",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "パラメータ",
+  "名前": "Value Area の割合",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "パラメータ",
+  "名前": "行の数（Row Size）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VAL",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-indicators-basic-concepts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ数",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+  "判定": "一致"
+ },
+ {
+  "種類": "S-Rタッチ数",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+  "判定": "一致"
+ },
+ {
+  "種類": "SMC_SWEEP",
+  "区分": "パラメータ",
+  "名前": "length（直前の高値・安値を見る本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://github.com/joshyattridge/smart-money-concepts/blob/master/README.md",
+  "判定": "不一致"
+ },
+ {
+  "種類": "SMC_SWEEP",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://github.com/joshyattridge/smart-money-concepts/blob/master/README.md",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "window（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "window（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "window（本数）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "window（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "offset",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "offset",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "offset",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "offset",
+  "欄": "範囲",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "sigma",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000594683-arnaud-legoux-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ALMA%",
+  "区分": "パラメータ",
+  "名前": "sigma",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/alma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FWMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/fwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "パラメータ",
+  "名前": "high_length（高値の平均の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "パラメータ",
+  "名前": "high_length（高値の平均の本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "パラメータ",
+  "名前": "low_length（安値の平均の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "パラメータ",
+  "名前": "low_length（安値の平均の本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hilo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HILO%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://www.luxalgo.com/library/concept/gann-hilo-activator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "na（平滑の係数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "na（平滑の係数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20856",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "nb（傾きの係数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "nb（傾きの係数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20856",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "nc（季節の係数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/hwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "区分": "パラメータ",
+  "名前": "nc（季節の係数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.mql5.com/en/code/20856",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/linearreg.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/linreg.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/linearreg.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs LRb%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "区分": "パラメータ",
+  "名前": "FastLimit",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "区分": "パラメータ",
+  "名前": "FastLimit",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "区分": "パラメータ",
+  "名前": "SlowLimit",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "区分": "パラメータ",
+  "名前": "SlowLimit",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "区分": "パラメータ",
+  "名前": "FastLimit",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "区分": "パラメータ",
+  "名前": "FastLimit",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "区分": "パラメータ",
+  "名前": "SlowLimit",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "区分": "パラメータ",
+  "名前": "SlowLimit",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "区分": "パラメータ",
+  "名前": "N（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "区分": "パラメータ",
+  "名前": "N（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "区分": "パラメータ",
+  "名前": "N（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "区分": "パラメータ",
+  "名前": "c（分母の係数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MCGD%",
+  "区分": "パラメータ",
+  "名前": "c（分母の係数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/mcgd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/midpoint.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/midpoint.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/midpoint.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/midprice.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/midprice.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs MIDPRICE%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/midprice.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://my.tradingview.com/script/1JKqmEKy-Madrid-Moving-Average-Ribbon/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PWMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/pwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "区分": "パラメータ",
+  "名前": "L（1回あたりの SMA の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "区分": "パラメータ",
+  "名前": "k（何回 重ねがけするか）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs RMA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/rma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SINWMA%",
+  "区分": "パラメータ",
+  "名前": "length（本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/sinwma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "length（臨界周期の本数）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "length（臨界周期の本数）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "length（臨界周期の本数）",
+  "欄": "スキャル",
+  "番号": 0,
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "length（臨界周期の本数）",
+  "欄": "デイトレ",
+  "番号": 0,
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "poles",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SSF%",
+  "区分": "パラメータ",
+  "名前": "poles",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/ssf.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/swma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/swma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "vfactor（a）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "vfactor（a）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs T3%",
+  "区分": "パラメータ",
+  "名前": "vfactor（a）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "パラメータ",
+  "名前": "length（EMA の長さ）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "パラメータ",
+  "名前": "length（EMA の長さ）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "パラメータ",
+  "名前": "length（EMA の長さ）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "パラメータ",
+  "名前": "CMO の期間",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "パラメータ",
+  "名前": "CMO の期間",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/zlema.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/zlma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/zlema.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "区分": "パラメータ",
+  "名前": "mamode（中の平均の種類）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/overlap/zlma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/zlema.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000589105-chande-kroll-stop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "p（ATR と高値・安値の窓）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "x（ATR の倍率）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "既定",
+  "番号": 2,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/trend/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "パラメータ",
+  "名前": "q（逆指値の窓）",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/support/solutions/43000589105-chande-kroll-stop/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 1,
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "区分": "パラメータ",
+  "名前": "ATR Length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "区分": "パラメータ",
+  "名前": "ATR Multiplier",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "区分": "パラメータ",
+  "名前": "Moving Average Length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "区分": "パラメータ",
+  "名前": "Moving Average Type",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/script/sU9molfV/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://www.tradingview.com/script/sU9molfV/",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "startvalue",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "startvalue",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "offsetonreverse",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "offsetonreverse",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationinitlong",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationinitlong",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationlong",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationlong",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationmaxlong",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationmaxlong",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationinitshort",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationinitshort",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationshort",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationshort",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationmaxshort",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "パラメータ",
+  "名前": "accelerationmaxshort",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
+  "判定": "不一致"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/median.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "区分": "パラメータ",
+  "名前": "length",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/median.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "区分": "パラメータ",
+  "名前": "length（中心線の期間）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "区分": "パラメータ",
+  "名前": "atr_length（ATR の期間）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "ABER位置",
+  "区分": "パラメータ",
+  "名前": "length（中心線の期間）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "ABER位置",
+  "区分": "パラメータ",
+  "名前": "atr_length（ATR の期間）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "ABER位置",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/aberration.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "na",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "na",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nb",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nb",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nc",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nc",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nd",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "nd",
+  "欄": "範囲",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "パラメータ",
+  "名前": "scalar（帯の倍率）",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "HWC位置",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volatility/hwc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HT_DCPHASE",
+  "区分": "閾値",
+  "名前": "",
+  "欄": "既定",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ht_dcphase.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "HT_DCPHASE",
+  "区分": "役割",
+  "名前": "",
+  "欄": "役割",
+  "番号": 0,
+  "URL": "https://ta-lib.org/functions/ht_dcphase.html",
+  "判定": "一致"
+ }
+]

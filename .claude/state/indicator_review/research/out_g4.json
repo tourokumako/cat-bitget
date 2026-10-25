@@ -1,0 +1,1733 @@
+[
+ {
+  "種類": "swing高値距離",
+  "元の指標": "スイングハイ・スイングロー（ピボットの高値・安値。前後 N 本より高い／安い足）",
+  "パラメータの名前": [
+   "左右の本数 N（strength / left・right bars / pivot period）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.tradingsim.com/blog/swing-high",
+    "逐語": "The standard definition uses 2 bars on each side (a 5-bar swing). Stricter traders use 3 or 5 bars on each side for higher-timeframe charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "A Williams Fractal is a swing high or low with the strength fixed at two bars per side, the specific case Bill Williams popularized.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 10,
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "（TradingView の Swing Points ツールの Pivot Period の既定値として）\"10\"",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "5〜7",
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": 10,
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "2〜3（短い保有）／それより大きい値（スイング）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "3 または 5（上位の時間足）",
+    "URL": "https://www.tradingsim.com/blog/swing-high",
+    "逐語": "The standard definition uses 2 bars on each side (a 5-bar swing). Stricter traders use 3 or 5 bars on each side for higher-timeframe charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "15〜20（日足）",
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "入力に今のパラメータの組が無い（カタログに列が無い）ので、出どころの値（既定2・スキャル5〜7・デイトレ10）と比べる相手が無い。"
+ },
+ {
+  "種類": "swing安値距離",
+  "元の指標": "スイングハイ・スイングロー（ピボットの高値・安値。前後 N 本より高い／安い足）",
+  "パラメータの名前": [
+   "左右の本数 N（strength / left・right bars / pivot period）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.tradingsim.com/blog/swing-high",
+    "逐語": "The standard definition uses 2 bars on each side (a 5-bar swing). Stricter traders use 3 or 5 bars on each side for higher-timeframe charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "A Williams Fractal is a swing high or low with the strength fixed at two bars per side, the specific case Bill Williams popularized.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 10,
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "（TradingView の Swing Points ツールの Pivot Period の既定値として）\"10\"",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "5〜7",
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": 10,
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "2〜3（短い保有）／それより大きい値（スイング）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "3 または 5（上位の時間足）",
+    "URL": "https://www.tradingsim.com/blog/swing-high",
+    "逐語": "The standard definition uses 2 bars on each side (a 5-bar swing). Stricter traders use 3 or 5 bars on each side for higher-timeframe charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "15〜20（日足）",
+    "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+    "逐語": "10 for intraday futures on 5- or 15-minute charts. 15-20 for daily charts. 5-7 for tick charts or 1-minute scalping.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "入力に今のパラメータの組が無い（カタログに列が無い）ので、出どころの値（既定2・スキャル5〜7・デイトレ10）と比べる相手が無い。"
+ },
+ {
+  "種類": "高値からの経過バー",
+  "元の指標": "Aroon（Tushar Chande）。Aroon-Up／Down は n 期間の最高値／最安値から何期間たったかを測る",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 25,
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+    "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": 25,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 14,
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": 9,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 14,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": 288,
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 25,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "8〜10 より下にしない",
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "調整可（数値の範囲は書いていない）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+    "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の n は 24・48・96 で、出どころの既定（25 または 14）・スキャル（9・14）・デイトレ（288・25）のうち一致するのは無い（25 と 24 が近い）。"
+ },
+ {
+  "種類": "安値からの経過バー",
+  "元の指標": "Aroon（Tushar Chande）。Aroon-Up／Down は n 期間の最高値／最安値から何期間たったかを測る",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 25,
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+    "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": 25,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 14,
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": 9,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 14,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": 288,
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 25,
+    "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+    "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "8〜10 より下にしない",
+    "URL": "https://www.daytrading.com/aroon",
+    "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "調整可（数値の範囲は書いていない）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+    "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の n は 24・48・96 で、出どころの既定（25 または 14）・スキャル（9・14）・デイトレ（288・25）のうち一致するのは無い（25 と 24 が近い）。"
+ },
+ {
+  "種類": "形スコア",
+  "元の指標": "特定できない（V字=+2・M字=−2 の形の点数に当たる教科書の指標は見つからなかった）",
+  "パラメータの名前": [
+   "n（窓の本数）"
+  ],
+  "既定": "無い",
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": "無い",
+  "メモ": "今の n は 24・48・96。対応する教科書の指標が見つからないので、比べる出どころの値が無い。"
+ },
+ {
+  "種類": "W字",
+  "元の指標": "ダブルボトム（W字）のチャートパターン（Bulkowski の Encyclopedia of Chart Patterns の分類つき）",
+  "パラメータの名前": [
+   "n（窓の本数＝2つの谷の間の時間）",
+   "tol（2つの谷の値の差の許容）"
+  ],
+  "既定": [
+   {
+    "値": [
+     "記載なし",
+     "3%以内"
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+    "逐語": "typically, a trough within 3% of its predecessor is considered valid",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     "1〜3か月",
+     "記載なし"
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+    "逐語": "The time between troughs can vary from a few weeks to many months, with the norm being one to three months.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     "中央値 23日（多くは2〜7週）",
+     "0〜4%"
+    ],
+    "URL": "https://thepatternsite.com/eadb.html",
+    "逐語": "The price variation between bottoms is small, usually between 0% and 4%. / The twin valleys are several weeks apart with most falling in the 2 to 7 week range (the median is 23 days).",
+    "出どころの質": "開発者の原典（パターン研究者 Bulkowski 本人のサイト）"
+   },
+   {
+    "値": [
+     "多くは2〜7週",
+     "0〜6%"
+    ],
+    "URL": "https://thepatternsite.com/eedb.html",
+    "逐語": "The price variation between bottoms is small, usually between 0% and 6%. / The twin valleys are several weeks apart with most falling in the 2 to 7 week range.",
+    "出どころの質": "開発者の原典（パターン研究者 Bulkowski 本人のサイト）"
+   },
+   {
+    "値": [
+     "中央値 16日",
+     "平均 1%"
+    ],
+    "URL": "https://thepatternsite.com/aadb.html",
+    "逐語": "The price variation between bottoms is small (the average is 1%, but allow variations). / The twin valleys are usually several weeks apart (16 days is the median).",
+    "出どころの質": "開発者の原典（パターン研究者 Bulkowski 本人のサイト）"
+   },
+   {
+    "値": [
+     "平均 約2か月",
+     "記載なし"
+    ],
+    "URL": "https://thepatternsite.com/aedb.html",
+    "逐語": "The average separation between bottoms is almost two months. / The double bottom confirms as a true double bottom once price closes above the peak between the two valleys.",
+    "出どころの質": "開発者の原典（パターン研究者 Bulkowski 本人のサイト）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "谷の差 0〜4%（Eve & Adam）／0〜6%（Eve & Eve）",
+    "URL": "https://thepatternsite.com/eedb.html",
+    "逐語": "The price variation between bottoms is small, usually between 0% and 6%.",
+    "出どころの質": "開発者の原典（パターン研究者 Bulkowski 本人のサイト）"
+   },
+   {
+    "値": "谷の間 数週間〜数か月",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-patterns/double-bottom-reversal",
+    "逐語": "The time between troughs can vary from a few weeks to many months, with the norm being one to three months.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の tol は 0.3%（0.003）で出どころの谷の差（3%以内・0〜4%・0〜6%・平均1%）より狭く、今の n（24・48・96本＝5分足で2〜8時間）は出どころの谷の間（数週間〜数か月・日足の話）と時間足が違う。"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータの名前": [
+   "k（左右の本数・Periods）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+    "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "3・4・5",
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "2〜3（短い保有）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の k は 2 と 5 で、2 は出どころの既定と同じ、5 は出どころの範囲（3・4・5）の上の端と同じ。"
+ },
+ {
+  "種類": "fractal安値距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータの名前": [
+   "k（左右の本数・Periods）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+    "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "3・4・5",
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "2〜3（短い保有）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の k は 2 と 5 で、2 は出どころの既定と同じ、5 は出どころの範囲（3・4・5）の上の端と同じ。"
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータの名前": [
+   "k（左右の本数・Periods）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+    "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "3・4・5",
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "2〜3（短い保有）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の k は 2 と 5 で、2 は出どころの既定と同じ、5 は出どころの範囲（3・4・5）の上の端と同じ。"
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータの名前": [
+   "k（左右の本数・Periods）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+    "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "3・4・5",
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "2〜3（短い保有）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の k は 2 と 5 で、2 は出どころの既定と同じ、5 は出どころの範囲（3・4・5）の上の端と同じ。"
+ },
+ {
+  "種類": "構造破断距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータの名前": [
+   "k（左右の本数・Periods）"
+  ],
+  "既定": [
+   {
+    "値": 2,
+    "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+    "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 2,
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "3・4・5",
+    "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+    "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "2〜3（短い保有）",
+    "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+    "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の k は 2 と 5 で、2 は出どころの既定と同じ、5 は出どころの範囲（3・4・5）の上の端と同じ。"
+ },
+ {
+  "種類": "close vs EMA",
+  "元の指標": "EMA（指数移動平均）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 9,
+    "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+    "逐語": "9 days is the default.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": 9,
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "（表の行）\"9 EMA\" … \"Fast momentum entries, scalping trigger\" … \"1-min, 5-min\"",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     8,
+     21
+    ],
+    "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart",
+    "逐語": "The 8/21 pair is nearly interchangeable with 9/20 and you will see scalpers favor it.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     5,
+     8,
+     13
+    ],
+    "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart",
+    "逐語": "When you want to scalp small, quick moves, add a third line and run the 5, 8, and 13 EMA together.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 5,
+    "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+    "逐語": "For traders with a more aggressive approach, particularly scalpers aiming to profit from very short-term price fluctuations, the 5 EMA can be a powerful tool.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": 20,
+    "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+    "逐語": "The 20 EMA frequently emerges as a highly recommended setting for the 15-minute chart",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 20,
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "（表の行）\"20 EMA\" … \"Short-term trend, pullback entries\" … \"5-min, 15-min\"",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     9,
+     20
+    ],
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "The 9 EMA and 20 EMA on a 5-minute chart are the most widely used moving averages among active day traders, combined with the 50 SMA and 200 SMA as higher-timeframe trend filters.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     9,
+     20
+    ],
+    "URL": "https://www.snappchart.app/blog/technical-indicators/ema-day-trading-strategy",
+    "逐語": "Put the 9 and 20 on a 5-minute chart and keep the 200 on the daily for bias.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     5,
+     20
+    ],
+    "URL": "https://blog.opofinance.com/en/best-ema-settings-for-15-minute-chart/",
+    "逐語": "The combination of the 5 EMA and the 20 EMA is a popular and effective strategy employed by many traders on the 15-minute chart.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "12・26（短期）／50・200（長期）",
+    "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+    "逐語": "It is most common for traders to quote and utilize 12- and 26-day EMAs in the short-term. Similarly, the 50- and 200-day moving averages are most common for analyzing long-term trends.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "5〜20（短期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Shorter moving averages (5-20 periods) are suitable for short-term trends and trading.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "20〜60（中期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Medium-term trends can be analyzed using longer moving averages (20-60 periods).",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "100以上（長期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Long-term investors often use moving averages with 100 or more periods.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "50・200（よく使われる）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Many chartists use the 50-day and 200-day moving averages together.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の期間 9・20・50・200 は、9 が TradingView の既定とスキャル（9 EMA）、20 がデイトレ（20 EMA）、50・200 が出どころのよく使われる長さと同じで、スキャルの 5・8・13・21 は今の組に無い。"
+ },
+ {
+  "種類": "close vs SMA",
+  "元の指標": "SMA（単純移動平均）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 9,
+    "URL": "https://www.tradingview.com/support/solutions/43000502589-moving-averages/",
+    "逐語": "9 days is the default.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": [
+   {
+    "値": 10,
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "For day trading breakouts in the morning, the best moving average is the 10-period simple moving average.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": 50,
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "（表の行）\"50 SMA\" … \"Session trend filter\" … \"5-min, 15-min\"",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     50,
+     200
+    ],
+    "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+    "逐語": "The 9 EMA and 20 EMA on a 5-minute chart are the most widely used moving averages among active day traders, combined with the 50 SMA and 200 SMA as higher-timeframe trend filters.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "20未満（短期）／20〜60（中期）／60超（長期）",
+    "URL": "https://www.tradingview.com/support/solutions/43000502589-moving-averages/",
+    "逐語": "Typically any period under 20 days would be considered short term, anything between 20 and 60 would be medium term and of course anything longer than 60 days would be viewed as long term.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "5〜20（短期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Shorter moving averages (5-20 periods) are suitable for short-term trends and trading.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "20〜60（中期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Medium-term trends can be analyzed using longer moving averages (20-60 periods).",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "100以上（長期）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "Long-term investors often use moving averages with 100 or more periods.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "50（中期で人気）・200（長期で最も人気）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+    "逐語": "The 200-day moving average is perhaps the most popular",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の期間 20・50・200 は、50・200 が出どころのデイトレの上位足の向きを見る SMA と同じで、TradingView の既定 9 とデイトレの 10 は今の組に無い。"
+ },
+ {
+  "種類": "close vs VWAP",
+  "元の指標": "VWAP（出来高加重平均価格）。原典の形はセッションの始まりから積み上げてリセット。窓をずらす形は rolling VWAP",
+  "パラメータの名前": [
+   "Anchor Period（リセットの周期）／rolling の窓の長さ"
+  ],
+  "既定": [
+   {
+    "値": "Session",
+    "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+    "逐語": "This is useful with the 'Session' Anchor Period, because VWAP makes sense only when the Anchor Period is higher than the chart timeframe.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "Session",
+    "URL": "https://www.financialtechwiz.com/post/vwap-tradingview/",
+    "逐語": "Anchor: Session by default.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "1日（寄り付きから引けまで）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+    "逐語": "VWAP overlay is calculated using intraday data from a single market day, starting when trading opens and ending when it closes.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "Session, Week, Month, Quarter, Year, Decade, Century, Earnings, Dividends, Splits",
+    "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+    "逐語": "Possible values: Session, Week, Month, Quarter, Year, Decade, Century, Earnings (reset on earnings), Dividends (reset on dividends), Splits (reset on splits).",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "1日 または 1週間（rolling の窓）",
+    "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+    "逐語": "Common choices wrap one trading day or one week of activity, matching the holding horizon the trader cares about. Treat the window like any moving-average length: a memory parameter to test on your market and timeframe",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "24時間・7日・N本（rolling の窓の例）",
+    "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+    "逐語": "A rolling VWAP is a volume-weighted average price computed over a sliding window of fixed length, such as the last 24 hours, the last 7 days, or the last N bars",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "1・5・10・15・30・60分足で使う（日足以上では定義しない）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+    "逐語": "VWAP is not defined for daily, weekly, or monthly periods due to the nature of the calculation.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今は 288本（5分足で24時間）の rolling VWAP で、出どころの既定（Session でリセット）とは計算の形が違い、rolling の窓の例（24時間）とは同じ長さ。"
+ },
+ {
+  "種類": "Keltner上",
+  "元の指標": "Keltner Channels（原典 Chester Keltner 1960・現在の形は Linda Raschke の EMA＋ATR 版）",
+  "パラメータの名前": [
+   "EMA の期間",
+   "ATR の倍率",
+   "ATR の期間"
+  ],
+  "既定": [
+   {
+    "値": [
+     20,
+     2.0,
+     10
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "Upon selecting the indicator from the dropdown box, the default setting will appear in the parameters window (20,2.0,10). The first number (20) sets the periods for the exponential moving average. The second number (2.0) is the ATR multiplier. The third number (10) is the number of periods for Average True Range (ATR).",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     20,
+     "記載なし",
+     "記載なし"
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502266-keltner-channels-kc/",
+    "逐語": "The time period to be used in calculating the MA which creates the base for the Upper and Lower Envelopes (20 is the default).",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": [
+     20,
+     2.5,
+     20
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+    "逐語": "a 20-day exponential moving average of Closing Price and a multiple of 2.5 times 20-day Average True Range",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     "10日 SMA（典型価格）",
+     1,
+     "10日 高安幅の平均"
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+    "逐語": "a 10-day simple moving average of Typical Price and 10-day average daily range (high - low) with a multiple of 1",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     "10〜14",
+     "1.0〜1.5",
+     "記載なし"
+    ],
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "Scalping (short timeframes like 1-minute charts): Use a shorter EMA period (10 to 14) and a lower ATR multiplier (1.0 to 1.5).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     15,
+     "1.5〜2.0",
+     10
+    ],
+    "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+    "逐語": "EMA Period: 15 / ATR Period: 10 / Multiplier: 1.5 to 2.0（Best Timeframes: 1-minute / 3-minute / 5-minute / 15-minute）",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     20,
+     2.0,
+     "記載なし"
+    ],
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "Day or swing trading (daily charts): Stick to the standard 20-period EMA and 2.0 ATR multiplier.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "倍率 1〜3（2→1 で幅が半分、2→3 で幅が50%増）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "The multiplier has the most effect on the channel width. Simply changing from 2 to 1 will cut channel width in half. Increasing from 2 to 3 will increase channel width by 50%.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "ATR の期間 10〜100",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "Short timeframes, such as 10, produce a more volatile ATR that fluctuates as 10-period volatility ebbs and flows. Longer timeframes, such as 100, smooth these fluctuations to produce a more constant ATR reading.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "（表の行）Position Trading | 50 | 2.0–2.5",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組は EMA20・倍率2.0・ATR14 で、StockCharts の既定（20・2.0・10）とは ATR の期間だけが違い、スキャル（EMA10〜15・倍率1.0〜2.0）より EMA が長い。"
+ },
+ {
+  "種類": "Keltner下",
+  "元の指標": "Keltner Channels（原典 Chester Keltner 1960・現在の形は Linda Raschke の EMA＋ATR 版）",
+  "パラメータの名前": [
+   "EMA の期間",
+   "ATR の倍率",
+   "ATR の期間"
+  ],
+  "既定": [
+   {
+    "値": [
+     20,
+     2.0,
+     10
+    ],
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "Upon selecting the indicator from the dropdown box, the default setting will appear in the parameters window (20,2.0,10). The first number (20) sets the periods for the exponential moving average. The second number (2.0) is the ATR multiplier. The third number (10) is the number of periods for Average True Range (ATR).",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     20,
+     "記載なし",
+     "記載なし"
+    ],
+    "URL": "https://www.tradingview.com/support/solutions/43000502266-keltner-channels-kc/",
+    "逐語": "The time period to be used in calculating the MA which creates the base for the Upper and Lower Envelopes (20 is the default).",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": [
+     20,
+     2.5,
+     20
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+    "逐語": "a 20-day exponential moving average of Closing Price and a multiple of 2.5 times 20-day Average True Range",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     "10日 SMA（典型価格）",
+     1,
+     "10日 高安幅の平均"
+    ],
+    "URL": "https://www.incrediblecharts.com/indicators/keltner_channels.php",
+    "逐語": "a 10-day simple moving average of Typical Price and 10-day average daily range (high - low) with a multiple of 1",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": [
+     "10〜14",
+     "1.0〜1.5",
+     "記載なし"
+    ],
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "Scalping (short timeframes like 1-minute charts): Use a shorter EMA period (10 to 14) and a lower ATR multiplier (1.0 to 1.5).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": [
+     15,
+     "1.5〜2.0",
+     10
+    ],
+    "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+    "逐語": "EMA Period: 15 / ATR Period: 10 / Multiplier: 1.5 to 2.0（Best Timeframes: 1-minute / 3-minute / 5-minute / 15-minute）",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     20,
+     2.0,
+     "記載なし"
+    ],
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "Day or swing trading (daily charts): Stick to the standard 20-period EMA and 2.0 ATR multiplier.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "倍率 1〜3（2→1 で幅が半分、2→3 で幅が50%増）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "The multiplier has the most effect on the channel width. Simply changing from 2 to 1 will cut channel width in half. Increasing from 2 to 3 will increase channel width by 50%.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "ATR の期間 10〜100",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/keltner-channels",
+    "逐語": "Short timeframes, such as 10, produce a more volatile ATR that fluctuates as 10-period volatility ebbs and flows. Longer timeframes, such as 100, smooth these fluctuations to produce a more constant ATR reading.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+    "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+    "逐語": "（表の行）Position Trading | 50 | 2.0–2.5",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今の組は EMA20・倍率2.0・ATR14 で、StockCharts の既定（20・2.0・10）とは ATR の期間だけが違い、スキャル（EMA10〜15・倍率1.0〜2.0）より EMA が長い。"
+ },
+ {
+  "種類": "n本高値",
+  "元の指標": "Donchian Channels（Price Channels。n 期間の最高値・最安値）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 20,
+    "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+    "逐語": "The time period to be used in calculating the Donchian Channels (20 is the Default).",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 20,
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "the default parameter setting is 20",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     20,
+     55
+    ],
+    "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+    "逐語": "Classic Turtle settings: 20 and 55.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "10〜20",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "Shorter periods, 10–20, work on lower timeframes such as 5-min and 15-min for intraday momentum.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     20,
+     50
+    ],
+    "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+    "逐語": "For day trading on 5-minute charts, try 20 bars for swing breakouts and 50 for session-range extremes.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "10〜20",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "Shorter periods, 10–20, work on lower timeframes such as 5-min and 15-min for intraday momentum.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "10〜20（短期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "10–20 bars gives better responsiveness to price action and, hence, is ideal for short-term traders",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "20〜50（中期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "(20–50 bars) provide a balance between sensitivity and reliability",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "50〜100以上（長期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "50–100+ bars, which smooth out the short-term noise and allow trend followers and position traders",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "10 など短く／長く",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "Shorter look-back periods, such as 10 days, produce tighter channel lines. Longer look-back periods produce wider channels.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の n は 24・48・96 で、出どころの既定 20・タートルの 20・55・デイトレ（5分足）の 20・50 とは一致しない（24 と 20、48 と 50 が近い）。"
+ },
+ {
+  "種類": "n本安値",
+  "元の指標": "Donchian Channels（Price Channels。n 期間の最高値・最安値）",
+  "パラメータの名前": [
+   "period"
+  ],
+  "既定": [
+   {
+    "値": 20,
+    "URL": "https://www.tradingview.com/support/solutions/43000502253-donchian-channels-dc/",
+    "逐語": "The time period to be used in calculating the Donchian Channels (20 is the Default).",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": 20,
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "the default parameter setting is 20",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": [
+     20,
+     55
+    ],
+    "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+    "逐語": "Classic Turtle settings: 20 and 55.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "10〜20",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "Shorter periods, 10–20, work on lower timeframes such as 5-min and 15-min for intraday momentum.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": [
+     20,
+     50
+    ],
+    "URL": "https://crosstrade.io/learn/technical-indicators/donchian-channels",
+    "逐語": "For day trading on 5-minute charts, try 20 bars for swing breakouts and 50 for session-range extremes.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "10〜20",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "Shorter periods, 10–20, work on lower timeframes such as 5-min and 15-min for intraday momentum.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "10〜20（短期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "10–20 bars gives better responsiveness to price action and, hence, is ideal for short-term traders",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "20〜50（中期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "(20–50 bars) provide a balance between sensitivity and reliability",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "50〜100以上（長期）",
+    "URL": "https://trendspider.com/learning-center/donchian-channel-trading-strategies/",
+    "逐語": "50–100+ bars, which smooth out the short-term noise and allow trend followers and position traders",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "10 など短く／長く",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/price-channels",
+    "逐語": "Shorter look-back periods, such as 10 days, produce tighter channel lines. Longer look-back periods produce wider channels.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の n は 24・48・96 で、出どころの既定 20・タートルの 20・55・デイトレ（5分足）の 20・50 とは一致しない（24 と 20、48 と 50 が近い）。"
+ },
+ {
+  "種類": "pivotPP",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータの名前": [
+   "基準にする前の期間（Pivots Timeframe）"
+  ],
+  "既定": [
+   {
+    "値": "Auto（チャートの時間足で決まる）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min / 1W for chart resolutions greater than 15 min and less than 1 day / 1M for chart resolutions from 1 day and above",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "P = (prevHigh + prevLow + prevClose) / 3 / R1 = P * 2 - prevLow / S1 = P * 2 - prevHigh",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日（1D）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前日（1D）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日（15分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（30・60分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（15分より長く1日未満の足）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "前日・前週・前月・前年（時間足ごと）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data. / Pivot Points for weekly and monthly charts use the prior year's data.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今は直近 288本（5分足で24時間）をずらしながら使い前バーの終値を足す形で、出どころの「前日（暦の1日）の高値・安値・終値」で1日1回だけ変わる形とは、期間の区切り方と終値の取り方が違う。"
+ },
+ {
+  "種類": "pivotR1",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータの名前": [
+   "基準にする前の期間（Pivots Timeframe）"
+  ],
+  "既定": [
+   {
+    "値": "Auto（チャートの時間足で決まる）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min / 1W for chart resolutions greater than 15 min and less than 1 day / 1M for chart resolutions from 1 day and above",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "P = (prevHigh + prevLow + prevClose) / 3 / R1 = P * 2 - prevLow / S1 = P * 2 - prevHigh",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日（1D）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前日（1D）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日（15分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（30・60分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（15分より長く1日未満の足）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "前日・前週・前月・前年（時間足ごと）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data. / Pivot Points for weekly and monthly charts use the prior year's data.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今は直近 288本（5分足で24時間）をずらしながら使う形で、出どころの「前日（暦の1日）の高値・安値・終値」で1日1回だけ変わる形とは、期間の区切り方が違う。"
+ },
+ {
+  "種類": "pivotS1",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータの名前": [
+   "基準にする前の期間（Pivots Timeframe）"
+  ],
+  "既定": [
+   {
+    "値": "Auto（チャートの時間足で決まる）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min / 1W for chart resolutions greater than 15 min and less than 1 day / 1M for chart resolutions from 1 day and above",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "P = (prevHigh + prevLow + prevClose) / 3 / R1 = P * 2 - prevLow / S1 = P * 2 - prevHigh",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "前日（1D）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前日（1D）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1D for chart resolutions up to and including 15 min",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "前日（15分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（30・60分足）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "前週（15分より長く1日未満の足）",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "前日・前週・前月・前年（時間足ごと）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points for daily charts use the prior month's data. / Pivot Points for weekly and monthly charts use the prior year's data.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今は直近 288本（5分足で24時間）をずらしながら使う形で、出どころの「前日（暦の1日）の高値・安値・終値」で1日1回だけ変わる形とは、期間の区切り方が違う。"
+ },
+ {
+  "種類": "fib位置",
+  "元の指標": "Fibonacci Retracements（n 本の高安レンジの中の位置。計算の形は Williams %R・Stochastic %K と同じ）",
+  "パラメータの名前": [
+   "n（高安レンジの本数）"
+  ],
+  "既定": [
+   {
+    "値": "比率 23.6%・38.2%・50%・61.8%（期間の既定は無い）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/chart-annotation-tools/fibonacci-retracements",
+    "逐語": "The Fibonacci Retracements Tool at StockCharts shows four common retracements: 23.6%, 38.2%, 50%, and 61.8%.",
+    "出どころの質": "定番の教育サイト"
+   },
+   {
+    "値": "14（同じ計算の形の Williams %R の既定）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r",
+    "逐語": "The default setting for Williams %R is 14 periods, which can be days, weeks, months or an intraday timeframe.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "スキャル": "無い",
+  "デイトレ": "無い",
+  "範囲": [
+   {
+    "値": "短く／長く（数値は書いていない・Williams %R）",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/williams-r",
+    "逐語": "Chartists can adjust the look-back period to suit their analysis objectives. A longer timeframe makes the indicator less sensitive.",
+    "出どころの質": "定番の教育サイト"
+   }
+  ],
+  "メモ": "今の n は 20・96 で、Fibonacci の出どころには期間の既定が無く、同じ計算の形の Williams %R の既定 14 とは一致しない。"
+ },
+ {
+  "種類": "POC",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータの名前": [
+   "Value Area の割合",
+   "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+   "行の数（Row Size）"
+  ],
+  "既定": [
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+    "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "Visible Range の短い範囲（直近数時間）",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "5分足の Fixed Range（執行用）",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "当日と前日の Session／Fixed Range",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Session（毎日リセット）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "15分足のプロファイルの POC",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "行の数 200〜400",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "行の数 100〜200（日中足 200・日足以上 100）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "70% は慣習で必須ではない",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "Seventy percent is a common convention; it is not mandatory.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今は 288本（5分足で24時間）をずらす窓で、出どころの Session（毎日リセット）や当日・前日のプロファイルとは期間の区切り方が違い、行の数の設定は入力に無い。"
+ },
+ {
+  "種類": "VAH",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータの名前": [
+   "Value Area の割合",
+   "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+   "行の数（Row Size）"
+  ],
+  "既定": [
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+    "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "Visible Range の短い範囲（直近数時間）",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "5分足の Fixed Range（執行用）",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "当日と前日の Session／Fixed Range",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Session（毎日リセット）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "15分足のプロファイルの POC",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "行の数 200〜400",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "行の数 100〜200（日中足 200・日足以上 100）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "70% は慣習で必須ではない",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "Seventy percent is a common convention; it is not mandatory.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今は 288本の窓・上位70%帯で、70% は出どころの既定と同じ、期間の区切り方（ずらす窓 と Session）は違う。"
+ },
+ {
+  "種類": "VAL",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータの名前": [
+   "Value Area の割合",
+   "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+   "行の数（Row Size）"
+  ],
+  "既定": [
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+    "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+    "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）"
+   },
+   {
+    "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Value Area 70%",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "スキャル": [
+   {
+    "値": "Visible Range の短い範囲（直近数時間）",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "5分足の Fixed Range（執行用）",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "デイトレ": [
+   {
+    "値": "当日と前日の Session／Fixed Range",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "Session（毎日リセット）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "15分足のプロファイルの POC",
+    "URL": "https://npfinancials.com.au/volume-profile/",
+    "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "範囲": [
+   {
+    "値": "行の数 200〜400",
+    "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+    "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "行の数 100〜200（日中足 200・日足以上 100）",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+    "出どころの質": "証券会社・ブログ"
+   },
+   {
+    "値": "70% は慣習で必須ではない",
+    "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+    "逐語": "Seventy percent is a common convention; it is not mandatory.",
+    "出どころの質": "証券会社・ブログ"
+   }
+  ],
+  "メモ": "今は 288本の窓・上位70%帯で、70% は出どころの既定と同じ、期間の区切り方（ずらす窓 と Session）は違う。"
+ }
+]

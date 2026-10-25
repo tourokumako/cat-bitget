@@ -1,0 +1,1898 @@
+[
+ {
+  "種類": "ADX",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/adx.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "7〜14",
+  "URL": "https://regimelab.io/blog/best-adx-settings",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "7〜14",
+  "URL": "https://regimelab.io/blog/best-adx-settings",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "10〜14",
+  "URL": "https://regimelab.io/blog/best-adx-settings",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": "10〜12",
+  "URL": "https://regimelab.io/blog/best-adx-settings",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "デイトレ",
+  "番号": 4,
+  "値": "7〜10",
+  "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+  "判定": "一致"
+ },
+ {
+  "種類": "ADX",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "7〜21",
+  "URL": "https://regimelab.io/blog/best-adx-settings",
+  "判定": "一致"
+ },
+ {
+  "種類": "DI差",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "DI差",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/adx.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "DI差",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://ta-lib.org/functions/macd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13 または 8,17",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17 または 12,26",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   3,
+   10
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   6,
+   13
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 5,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   5,
+   13
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/macd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   8
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13,8 または 8,17,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17,9 または 12,26,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   3,
+   10,
+   1
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   6,
+   13,
+   5
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 5,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   5,
+   13,
+   1
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/macd.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   8
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13,8 または 8,17,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17,9 または 12,26,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 3,
+  "値": [
+   3,
+   10,
+   1
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 4,
+  "値": [
+   6,
+   13,
+   5
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 5,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   5,
+   13,
+   1
+  ],
+  "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 3,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/macd",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   26
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   12,
+   24,
+   120
+  ],
+  "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+  "判定": "一致"
+ },
+ {
+  "種類": "転換線",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   26
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   26
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   12,
+   24,
+   120
+  ],
+  "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   9,
+   26,
+   52
+  ],
+  "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+  "判定": "一致"
+ },
+ {
+  "種類": "基準線",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   26
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+  "判定": "一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "既定",
+  "番号": 0,
+  "値": "EMA の期間 9（k は無い）",
+  "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+  "判定": "一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "既定",
+  "番号": 1,
+  "値": "EMA の期間 30（k は無い）",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": "EMA 9 と 21 の2本",
+  "URL": "https://fxnx.com/en/blog/ema-crossover-scalping-fast-trading-playbook",
+  "判定": "一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "EMA 9 と 20、8 と 21、5・8・13、トレンドの向きを見る 50 と 200",
+  "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart",
+  "判定": "一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "EMA 20 と 50 の2本",
+  "URL": "https://fxnx.com/en/blog/ema-crossover-scalping-fast-trading-playbook",
+  "判定": "一致"
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "短期 5〜20／中期 20〜60／長期 100 以上",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential",
+  "判定": "一致"
+ },
+ {
+  "種類": "AO%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   34
+  ],
+  "URL": "https://ta-lib.org/functions/ao.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "AO%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   34
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000501826-awesome-oscillator-ao/",
+  "判定": "一致"
+ },
+ {
+  "種類": "AO%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   5,
+   34
+  ],
+  "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/awesome",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/kst.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "既定",
+  "番号": 3,
+  "値": "シグナルは 10（開発者の日足の表）",
+  "URL": "https://ta-lib.org/functions/kst.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "ROC 5,10,15,20／シグナル 6",
+  "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/know-sure-thing-kst-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KST",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "各要素 8〜26（週足の文脈）",
+  "URL": "https://capital.com/en-int/learn/technical-analysis/know-sure-thing-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "欄": "既定",
+  "番号": 2,
+  "値": "シグナルは 10（開発者の日足の表）",
+  "URL": "https://ta-lib.org/functions/kst.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "シグナル 6（ROC 5,10,15,20）",
+  "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "KSTシグナル",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "シグナル 6 または 7",
+  "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPO",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://ta-lib.org/functions/ppo.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOシグナル",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "PPOヒスト",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   23,
+   50,
+   10
+  ],
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   23,
+   50,
+   10
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/schaff-trend-cycle/",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   23,
+   50,
+   10
+  ],
+  "URL": "https://www.tradingpedia.com/forex-trading-indicators/schaff-trend-cycle/",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "欄": "既定",
+  "番号": 3,
+  "値": "23, 50, 10, 3（4つ目はならしの値）",
+  "URL": "https://trendsandbreakouts.com/schaff-trend-cycle",
+  "判定": "一致"
+ },
+ {
+  "種類": "STC",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   23,
+   50,
+   100
+  ],
+  "URL": "https://www.stockgro.club/blogs/stock-market-101/schaff-trend-cycle/",
+  "判定": "一致"
+ },
+ {
+  "種類": "STCstoch",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   23,
+   50,
+   10
+  ],
+  "URL": "https://ta-lib.org/functions/stc.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   15,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "既定",
+  "番号": 1,
+  "値": "期間 18（シグナルは書かれていない）",
+  "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "既定",
+  "番号": 2,
+  "値": "期間 30（シグナルは出力に無い）",
+  "URL": "https://ta-lib.org/functions/trix.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   15,
+   9
+  ],
+  "URL": "https://www.luxalgo.com/blog/trix-triple-exponential-moving-average-guide/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "8〜12",
+  "URL": "https://howtotrade.com/indicators/trix-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIX",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "敏感にするなら 5、鈍くするなら 45（既定 15 との比較）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIXシグナル",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   15,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIXシグナル",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   15,
+   9
+  ],
+  "URL": "https://howtotrade.com/indicators/trix-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIXヒスト",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   15,
+   9
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIXヒスト",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "期間 8〜12",
+  "URL": "https://howtotrade.com/indicators/trix-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TRIXヒスト",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "敏感にするなら 5、鈍くするなら 45",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "既定",
+  "番号": 0,
+  "値": "25, 13（シグナルは書かれていない）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "既定",
+  "番号": 1,
+  "値": "25, 13（シグナルは出力に無い）",
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "既定",
+  "番号": 2,
+  "値": "25, 13, シグナル 7 または 13",
+  "URL": "https://www.tradingsim.com/blog/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   25,
+   13,
+   7
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "既定",
+  "番号": 4,
+  "値": "13 と 25（SMA と書いている）",
+  "URL": "https://howtotrade.com/indicators/true-strength-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   7,
+   4,
+   2
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5",
+  "URL": "https://www.mql5.com/en/market/product/145132",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   13,
+   7,
+   4
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   13,
+   8,
+   5
+  ],
+  "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": "FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7",
+  "URL": "https://www.mql5.com/en/market/product/145132",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSI",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "シグナル 7〜12",
+  "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "既定",
+  "番号": 0,
+  "値": "シグナル 7 または 13",
+  "URL": "https://www.tradingsim.com/blog/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   25,
+   13,
+   7
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "既定",
+  "番号": 2,
+  "値": "決まった値は無い",
+  "URL": "https://ta-lib.org/functions/tsi.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   7,
+   4,
+   2
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   13,
+   7,
+   4
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   13,
+   8,
+   5
+  ],
+  "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIシグナル",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "シグナル 7〜12",
+  "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   25,
+   13,
+   7
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "既定",
+  "番号": 1,
+  "値": "25, 13, シグナル 7 または 13",
+  "URL": "https://www.tradingsim.com/blog/true-strength-index",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   7,
+   4,
+   2
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   13,
+   7,
+   4
+  ],
+  "URL": "https://indicator.trading/en/indicator/tsi",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   13,
+   8,
+   5
+  ],
+  "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/",
+  "判定": "一致"
+ },
+ {
+  "種類": "TSIヒスト",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "シグナル 7〜12",
+  "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   30
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "既定",
+  "番号": 1,
+  "値": "効率比の期間 30",
+  "URL": "https://ta-lib.org/functions/kama.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14,
+   2,
+   30
+  ],
+  "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   20
+  ],
+  "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview",
+  "判定": "一部"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   20
+  ],
+  "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview",
+  "判定": "一部"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "効率比の期間 7〜10",
+  "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "効率比の期間 7〜10、slow 20〜30",
+  "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+  "判定": "一致"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "効率比の期間は増やさず減らす／fast を 5 にすると滑らか",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "一致"
+ },
+ {
+  "種類": "WMA傾き%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/wma.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   25
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/aroon.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14
+  ],
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   25
+  ],
+  "URL": "https://www.liberatedstocktrader.com/aroon-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "9〜14",
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   25
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   288
+  ],
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "短くても 8〜10 を下回らない",
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONU",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "短期は 25 以下、2〜4か月の動きは 75（日足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/aroon.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": [
+   25
+  ],
+  "URL": "https://www.liberatedstocktrader.com/aroon-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "9〜14",
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   25
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROOND",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "短くても 8〜10 を下回らない",
+  "URL": "https://www.daytrading.com/aroon",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": "9〜14",
+  "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "短期は 25 以下、2〜4か月の動きは 75（日足）",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+  "判定": "不一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sar.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   0.01,
+   0.1
+  ],
+  "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "step 0.022",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "step 0.021（2本目は 0.04 刻み）",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": "step 0.021",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "step 0.018〜0.021・maximum 0.018〜0.021（原文の数字のまま）",
+  "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXP",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/vortex.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXP",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXP",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://realtrading.com/trading-blog/vortex-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXP",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "14〜30",
+  "URL": "https://www.tradingview.com/support/solutions/43000591352-vortex-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXP",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "速くするなら 7〜10、上位の向きを見るなら 34〜55",
+  "URL": "https://trendsandbreakouts.com/vortex-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXM",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/vortex.html",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXM",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXM",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "14〜30",
+  "URL": "https://www.tradingview.com/support/solutions/43000591352-vortex-indicator/",
+  "判定": "一致"
+ },
+ {
+  "種類": "VTXM",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "速くするなら 7〜10、上位の向きを見るなら 34〜55",
+  "URL": "https://trendsandbreakouts.com/vortex-indicator",
+  "判定": "一致"
+ }
+]

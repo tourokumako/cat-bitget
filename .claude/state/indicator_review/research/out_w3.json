@@ -1,0 +1,599 @@
+[
+ {
+  "種類": "RCI",
+  "元の指標": "RCI（Rank Correlation Index・順位相関指数。考案者は見つけた出どころに書いていない）",
+  "パラメータ": [
+   {
+    "名前": "n",
+    "既定": [
+     {
+      "値": 12,
+      "URL": "https://api.anychart.com/anychart.core.stock.indicators.RCI",
+      "逐語": "period number 12 Period.",
+      "出どころの順位": 3
+     },
+     {
+      "値": 9,
+      "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+      "逐語": "RCIの期間設定に決まりはありませんが、一般的には9日間とする場合が多いようです。『外貨ネクストネオ』リッチアプリ版でも、RCI（中期）のデフォルトの設定値は9日間となっています。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "RCIを算出するための期間を指定します。3本まで可能で、デフォルトは9、26、52です。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "RCIを算出するための期間を指定します。3本まで可能で、デフォルトは9、26、52です。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 52,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "RCIを算出するための期間を指定します。3本まで可能で、デフォルトは9、26、52です。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Standard Japanese Setup: ShortPeriod=9, MediumPeriod=26, LongPeriod=52 (traditional Japanese technical analysis ratios)",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Standard Japanese Setup: ShortPeriod=9, MediumPeriod=26, LongPeriod=52 (traditional Japanese technical analysis ratios)",
+      "出どころの順位": 4
+     },
+     {
+      "値": 52,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Standard Japanese Setup: ShortPeriod=9, MediumPeriod=26, LongPeriod=52 (traditional Japanese technical analysis ratios)",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+      "逐語": "期間1…5、期間2…10、期間3…15",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+      "逐語": "期間1…5、期間2…10、期間3…15",
+      "出どころの順位": 4
+     },
+     {
+      "値": 15,
+      "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+      "逐語": "期間1…5、期間2…10、期間3…15",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Short Period 10 Period for the fast RCI line Middle Period 30 Period for the medium RCI line Long Period 50 Period for the slow RCI line",
+      "出どころの順位": 4
+     },
+     {
+      "値": 30,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Short Period 10 Period for the fast RCI line Middle Period 30 Period for the medium RCI line Long Period 50 Period for the slow RCI line",
+      "出どころの順位": 4
+     },
+     {
+      "値": 50,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Short Period 10 Period for the fast RCI line Middle Period 30 Period for the medium RCI line Long Period 50 Period for the slow RCI line",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+      "逐語": "The default 10-period setting uses the last 10 bars to rank prices and compute the correlation coefficient.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 3,
+      "上限": 100,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "ShortPeriod (Default: 9) – Controls the fast RCI line for capturing immediate momentum shifts. Range: 3-100.",
+      "出どころの順位": 4
+     },
+     {
+      "下限": 10,
+      "上限": 200,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "MediumPeriod (Default: 26) – Sets the intermediate RCI line for identifying developing trends. Range: 10-200.",
+      "出どころの順位": 4
+     },
+     {
+      "下限": 20,
+      "上限": 500,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "LongPeriod (Default: 52) – Defines the slow RCI line for confirming major trend direction. Range: 20-500.",
+      "出どころの順位": 4
+     },
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+      "逐語": "5-20 (most common: 5, 10, 14)",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 5,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Scalping (M1-M5) 5 14 26",
+      "出どころの順位": 4
+     },
+     {
+      "値": 14,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Scalping (M1-M5) 5 14 26",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Scalping (M1-M5) 5 14 26",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+      "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://blog.wikibit.com/?p=3008",
+      "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://blog.wikibit.com/?p=3008",
+      "逐語": "Setup A (scalp): RCI-9 on a 5-minute chart.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "次のチャートはユーロドルの5分足のチャートに期間9、26、52のRCIを同時に表示させたものです。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "次のチャートはユーロドルの5分足のチャートに期間9、26、52のRCIを同時に表示させたものです。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 52,
+      "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+      "逐語": "次のチャートはユーロドルの5分足のチャートに期間9、26、52のRCIを同時に表示させたものです。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://www.ebc.com/jp/forex/296767.html",
+      "逐語": "まず、短期RCIとしてよく使われるのが「9期間」です。これは価格の変化に対して敏感に反応するため、エントリーや決済のタイミングを素早く捉えるのに適しています。デイトレードやスキャルピングなど、短期売買を行う場合に有効です。",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 10,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Day Trading (M15-H1) 10 30 50",
+      "出どころの順位": 4
+     },
+     {
+      "値": 30,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Day Trading (M15-H1) 10 30 50",
+      "出どころの順位": 4
+     },
+     {
+      "値": 50,
+      "URL": "https://www.mql5.com/en/market/product/177426",
+      "逐語": "Day Trading (M15-H1) 10 30 50",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 7,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 15,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 21,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 30,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 42,
+      "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+      "逐語": "Day traders should focus on shorter periods (Short=5-7, Medium=15-21, Long=30-42) while position traders benefit from extended periods.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://blog.wikibit.com/?p=3008",
+      "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://blog.wikibit.com/?p=3008",
+      "逐語": "Want trend confirmation → use RCI-26 or RCI-52 on 1H+ charts and filter by price above/below a 50-period MA.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 52,
+      "URL": "https://blog.wikibit.com/?p=3008",
+      "逐語": "Want trend confirmation → use RCI-26 or RCI-52 on 1H+ charts and filter by price above/below a 50-period MA.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://zai.diamond.jp/articles/-/37691",
+      "逐語": "そして、ＲＣＩの線の組み合わせは、９、２６、５２という期間の３線としている。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 26,
+      "URL": "https://zai.diamond.jp/articles/-/37691",
+      "逐語": "そして、ＲＣＩの線の組み合わせは、９、２６、５２という期間の３線としている。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 52,
+      "URL": "https://zai.diamond.jp/articles/-/37691",
+      "逐語": "そして、ＲＣＩの線の組み合わせは、９、２６、５２という期間の３線としている。",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+      "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 9,
+      "URL": "https://www.ebc.com/jp/forex/296767.html",
+      "逐語": "まず、短期RCIとしてよく使われるのが「9期間」です。これは価格の変化に対して敏感に反応するため、エントリーや決済のタイミングを素早く捉えるのに適しています。デイトレードやスキャルピングなど、短期売買を行う場合に有効です。",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      -80,
+      0,
+      80
+     ],
+     "意味": "-80・0・+80 に水平線。範囲の外は期間を通した強い上げ・下げの一貫性",
+     "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+     "逐語": "The indicator plots the RCI as a blue line, and it displays horizontal lines at the levels -80, 0, and +80. Values outside this range suggest strong upward or downward consistency across the period.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      -80,
+      0,
+      80
+     ],
+     "意味": "-80・0・+80 の水準に水平線",
+     "URL": "https://jp.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+     "逐語": "このインジケーターではRCIの値が青線でプロットされ、-80、0、+80の水準に水平線が表示されます。",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      80,
+      -80
+     ],
+     "意味": "+80%以上は買われすぎ・-80%以下は売られすぎ",
+     "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+     "逐語": "RCIは+100%から-100%の数値の中にラインを表示し、どの割合にいるかで相場の過熱度を分析します。ラインが+80%以上であれば「買われすぎ」、ラインが-80%以下であれば「売られすぎ」と判断するのが一般的です。",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      0,
+      80,
+      -80
+     ],
+     "意味": "0より上は上昇基調・下は下落基調、80超は買いの過熱・-80割れは売りの過熱",
+     "URL": "https://www.oanda.jp/lab-education/blog_column/rci/",
+     "逐語": "一般的には0より大きな数値の場合は上昇基調、0より少ない数値の場合は下落基調と判断されるほか、80を超えると買いに過熱感あり、-80を下回ると売りに過熱感ありと判断されます。",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80,
+      -80
+     ],
+     "意味": "+80以上は買われすぎ・-80以下は売られすぎ",
+     "URL": "https://www.ebc.com/jp/forex/296767.html",
+     "逐語": "一般的に+80以上は「買われすぎ」とされ、上昇が行き過ぎている可能性があります。一方で、-80以下は「売られすぎ」とされ、下落が行き過ぎている状態を示します。",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      0,
+      80,
+      -80
+     ],
+     "意味": "0が中心、＋80以上は買われすぎ・－80以下は売られすぎ",
+     "URL": "https://www.rakuten-sec.co.jp/MarketSpeedFX/onLineHelp/info/chart/rci.html",
+     "逐語": "0を中心にして、＋80以上を買われすぎ⇒売り、－80以下を売られすぎ⇒買いと判断します。",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80,
+      100,
+      -80,
+      -100
+     ],
+     "意味": "+80〜+100 は買われすぎ・-80〜-100 は売られすぎ",
+     "URL": "https://strategyquant.com/ja/codebase/rci3lines/",
+     "逐語": "The oscillator range of -100 to +100 provides clear overbought (+80 to +100) and oversold (-80 to -100) zones, though these levels should be used contextually rather than mechanically.",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80,
+      -80
+     ],
+     "意味": "Upper Band +80（買われすぎ）・Lower Band -80（売られすぎ）",
+     "URL": "https://www.mql5.com/en/market/product/177426",
+     "逐語": "Upper Band +80 Overbought level Lower Band -80 Oversold level",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80,
+      -80
+     ],
+     "意味": "+80より上は強い上げの並び（買われすぎ）・-80より下は強い下げの並び（売られすぎ）",
+     "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+     "逐語": "Readings above +80 flag strong uptrend alignment (overbought). Readings below -80 flag strong downtrend alignment (oversold).",
+     "出どころの順位": 4
+    }
+   ],
+   "スキャル": [
+    {
+     "値": [
+      85,
+      -75
+     ],
+     "意味": "1時間足より下の足では +85/-75 に広げる",
+     "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+     "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80
+     ],
+     "意味": "5分足〜15分足の RCI-9 で ±80",
+     "URL": "https://blog.wikibit.com/?p=3008",
+     "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+     "出どころの順位": 4
+    }
+   ],
+   "デイトレ": [
+    {
+     "値": [
+      85,
+      -75
+     ],
+     "意味": "1時間足より下の足では +85/-75 に広げる",
+     "URL": "https://pineify.app/pine-script/indicators/rank-correlation-index",
+     "逐語": "On anything below 1H, shorten the period to 5 and widen the thresholds to +85/-75.",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      80
+     ],
+     "意味": "5分足〜15分足の RCI-9 で ±80",
+     "URL": "https://blog.wikibit.com/?p=3008",
+     "逐語": "Want fast entries → use RCI-9 on a 5–15 minute chart with ±80 thresholds and a 3-bar confirmation.",
+     "出どころの順位": 4
+    }
+   ]
+  },
+  "役割": [
+   {
+    "何を見るか": "向き",
+    "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+    "逐語": "The Rank Correlation Index (RCI) is an oscillator that helps traders gauge the directional consistency of price movements.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://www.tradingview.com/support/solutions/43000765570-rank-correlation-index-rci/",
+    "逐語": "Traders often use the RCI to identify potential turning points, analyze price momentum, and assess the persistence of trends.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "テクニカル分析のインジケーター「ピボットポイント・スタンダード (Pivots)」を使うと、サポートやレジスタンスになる可能性をもつ価格水準が表示されます。",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "行き過ぎ",
+    "URL": "https://www.gaitame.com/beginner/market/technical/rci.html",
+    "逐語": "RCIは+100%から-100%の数値の中にラインを表示し、どの割合にいるかで相場の過熱度を分析します。",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.ebc.com/jp/forex/296767.html",
+    "逐語": "一定期間内の価格に順位をつけ、その順位と時間の順序との相関を計算することで、トレンドの強さや方向性を把握します。",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "向き",
+    "URL": "https://www.ebc.com/jp/forex/296767.html",
+    "逐語": "一定期間内の価格に順位をつけ、その順位と時間の順序との相関を計算することで、トレンドの強さや方向性を把握します。",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "前期間pivotPP",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータ": [],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "テクニカル分析のインジケーター「ピボットポイント・スタンダード (Pivots)」を使うと、サポートやレジスタンスになる可能性をもつ価格水準が表示されます。",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "向き",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Price direction is determined by looking at the current period's price action relative to the pivot point: starting above or below the pivot point or crossing it in either direction during trading.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "前期間pivotR1",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータ": [],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "テクニカル分析のインジケーター「ピボットポイント・スタンダード (Pivots)」を使うと、サポートやレジスタンスになる可能性をもつ価格水準が表示されます。",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Support and resistance levels based on Pivot Points can be used like traditional support and resistance levels.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "A move above the Pivot Point suggests strength with a target to the first resistance.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "前期間pivotS1",
+  "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+  "パラメータ": [],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://jp.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "テクニカル分析のインジケーター「ピボットポイント・スタンダード (Pivots)」を使うと、サポートやレジスタンスになる可能性をもつ価格水準が表示されます。",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Support and resistance levels based on Pivot Points can be used like traditional support and resistance levels.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "A move below the Pivot Point suggests weakness with a target to the first support level.",
+    "出どころの順位": 2
+   }
+  ]
+ }
+]

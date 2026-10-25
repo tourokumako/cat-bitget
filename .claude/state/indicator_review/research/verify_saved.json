@@ -1,0 +1,2431 @@
+[
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13 または 8,17",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9."
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17 または 12,26",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings."
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower"
+ },
+ {
+  "種類": "MACD線%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose."
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   8
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13,8 または 8,17,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9."
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17,9 または 12,26,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings."
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower"
+ },
+ {
+  "種類": "MACDヒスト%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose."
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   5,
+   13,
+   8
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": "5,13,8 または 8,17,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9."
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "8,17,9 または 12,26,9",
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings."
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   12,
+   26,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower"
+ },
+ {
+  "種類": "MACDシグナル線%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   8,
+   17,
+   9
+  ],
+  "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth",
+  "判定": "取れない",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose."
+ },
+ {
+  "種類": "EMA傾き",
+  "欄": "既定",
+  "番号": 1,
+  "値": "EMA の期間 30（k は無い）",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+  "判定": "不一致",
+  "組": "verify_out_g1.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt"
+  ],
+  "逐語": "real = EMA(close, timeperiod=30)"
+ },
+ {
+  "種類": "KST",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   15,
+   20,
+   30,
+   10,
+   10,
+   10,
+   15,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/kst.html",
+  "判定": "不一致",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInROC1Period integer 10 … optInROC2Period integer 15 … optInROC3Period integer 20 … optInROC4Period integer 30 … optInSMA1Period integer 10 … optInSMA2Period integer 10 … optInSMA3Period integer 10"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   20
+  ],
+  "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview",
+  "判定": "一部",
+  "組": "verify_out_g1.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "g1_pages/pin_ama.txt"
+  ],
+  "逐語": "Trading Style Length Fast Length Slow Length Best Timeframe / Day Trading / Scalping | 10 | 2 | 20 | 5m to 1h |"
+ },
+ {
+  "種類": "KAMA傾き%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   10,
+   2,
+   20
+  ],
+  "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview",
+  "判定": "一部",
+  "組": "verify_out_g1.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "g1_pages/pin_ama.txt"
+  ],
+  "逐語": "Trading Style Length Fast Length Slow Length Best Timeframe / Day Trading / Scalping | 10 | 2 | 20 | 5m to 1h |"
+ },
+ {
+  "種類": "AROONOSC",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g1.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt"
+  ],
+  "逐語": "real = AROONOSC(high, low, timeperiod=14)"
+ },
+ {
+  "種類": "PSAR加速",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+  "判定": "不一致",
+  "組": "verify_out_g1.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "The starting value for the Acceleration Factor (.02 is the Default). The increment in which the Acceleration Factor will move (.02 is Default). The maximum value of the Acceleration Factor (.20 is the"
+ },
+ {
+  "種類": "RSI",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = RSI(close, timeperiod=14)"
+ },
+ {
+  "種類": "ROC",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = ROC(close, timeperiod=10)"
+ },
+ {
+  "種類": "Stoch%K",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   5,
+   3,
+   3
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "slowk, slowd = STOCH(high, low, close, fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)"
+ },
+ {
+  "種類": "Stoch%K",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   [
+    9,
+    3,
+    3
+   ],
+   [
+    12,
+    3,
+    3
+   ]
+  ],
+  "URL": "https://blog.opofinance.com/en/stochastic-settings-for-15-minutes-chart/",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "pages/build_g2.py"
+  ],
+  "逐語": "Day Traders, who typically hold positions for several hours within a single trading day, might find settings like (9, 3, 3) or (12, 3, 3) to be a good balance between sensitivity and reliability."
+ },
+ {
+  "種類": "Stoch%D",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   5,
+   3,
+   3
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "slowk, slowd = STOCH(high, low, close, fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)"
+ },
+ {
+  "種類": "Stoch%D",
+  "欄": "デイトレ",
+  "番号": 2,
+  "値": [
+   [
+    9,
+    3,
+    3
+   ],
+   [
+    12,
+    3,
+    3
+   ]
+  ],
+  "URL": "https://blog.opofinance.com/en/stochastic-settings-for-15-minutes-chart/",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "pages/build_g2.py"
+  ],
+  "逐語": "Day Traders, who typically hold positions for several hours within a single trading day, might find settings like (9, 3, 3) or (12, 3, 3) to be a good balance between sensitivity and reliability."
+ },
+ {
+  "種類": "MFI",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = MFI(high, low, close, volume, timeperiod=14)"
+ },
+ {
+  "種類": "OBV傾き",
+  "欄": "既定",
+  "番号": 1,
+  "値": "パラメータ無し",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volume_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = OBV(close, volume)"
+ },
+ {
+  "種類": "BB%b",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)"
+ },
+ {
+  "種類": "CCI",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = CCI(high, low, close, timeperiod=14)"
+ },
+ {
+  "種類": "StochRSI%K",
+  "欄": "既定",
+  "番号": 3,
+  "値": "RSI 14・%K 5・%D 3",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)"
+ },
+ {
+  "種類": "StochRSI%D",
+  "欄": "既定",
+  "番号": 3,
+  "値": "RSI 14・%K 5・%D 3",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)"
+ },
+ {
+  "種類": "UO",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   7,
+   14,
+   28
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g2.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "real = ULTOSC(high, low, close, timeperiod1=7, timeperiod2=14, timeperiod3=28)"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volatility_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "real = NATR(high, low, close, timeperiod=14)"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/atr.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/cci.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/eri.py"
+  ],
+  "逐語": "length (int): The period. Default: ```14```"
+ },
+ {
+  "種類": "ATR%",
+  "欄": "既定",
+  "番号": 6,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/cycle/reflex.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/inertia.py"
+  ],
+  "逐語": "length (int): The period. Default: ```20```"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 4,
+  "値": [
+   20,
+   2
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "pages/build_g2.py"
+  ],
+  "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)"
+ },
+ {
+  "種類": "BB幅",
+  "欄": "既定",
+  "番号": 5,
+  "値": [
+   5,
+   2.0
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/volatility/aberration.py"
+  ],
+  "逐語": "length (int): The period. Default: ```5```"
+ },
+ {
+  "種類": "Donchian幅",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/donchian.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/volatility/donchian.py",
+   "pages/pta/pandas_ta/volatility/donchian.py"
+  ],
+  "逐語": "lower_length (int): Lower period. Default: ```20```"
+ },
+ {
+  "種類": "MMI",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   200,
+   300,
+   400,
+   500
+  ],
+  "URL": "https://financial-hacker.com/boosting-systems-by-trade-filtering/",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "BarPeriod = 15; ／ while(algo(loop(\"MM15\",\"MH1\",\"MH4\"))) ／ int MMIPeriod = optimize(0,200,500,100);"
+ },
+ {
+  "種類": "ER",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g1_pages/all.txt",
+   "g1_pages/sc_kaufmans-adaptive-moving-average-kama.md"
+  ],
+  "逐語": "Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30). * 10 is the number of periods for the Efficiency Ratio (ER)."
+ },
+ {
+  "種類": "ER",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/er.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/cg.py"
+  ],
+  "逐語": "length = v_pos_default(length, 10)"
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   2,
+   20,
+   1.5
+  ],
+  "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Length–Number of bars used in the indicator calculation; default is 20. nK–Sets the offset of the Keltner Channel; default is 1.5. nBB–Sets standard deviation of the Bollinger Bands; default is 2."
+ },
+ {
+  "種類": "SQZ_ON",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   2,
+   20,
+   1.5
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/squeeze.py",
+   "pages/pta/pandas_ta/momentum/squeeze.py"
+  ],
+  "逐語": "bb_length (int): BB period. Default: ```20``` bb_std (float): BB Std. Dev. Default: ```2``` kc_length (int): KC period. Default: ```20``` kc_scalar (float): KC scalar. Default: ```1.5```"
+ },
+ {
+  "種類": "CHOP",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/chop.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/cci.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/eri.py"
+  ],
+  "逐語": "length (int): The period. Default: ```14```"
+ },
+ {
+  "種類": "VHF",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   28
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/trend/vhf.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/trend/vhf.py",
+   "pages/pta/pandas_ta/trend/vhf.py"
+  ],
+  "逐語": "length (int): The period. Default: ```28```"
+ },
+ {
+  "種類": "MAD比",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/mad.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/statistics/kurtosis.py"
+  ],
+  "逐語": "length (int): The period. Default: ```30```"
+ },
+ {
+  "種類": "stdev%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5
+  ],
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/statistic_functions.html",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "real = STDDEV(close, timeperiod=5, nbdev=1)"
+ },
+ {
+  "種類": "stdev%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/stdev.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/statistics/kurtosis.py"
+  ],
+  "逐語": "length (int): The period. Default: ```30```"
+ },
+ {
+  "種類": "HWC幅%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.2,
+   0.1,
+   0.1,
+   0.1,
+   1
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "na (float): Smoothed series in range ```[0, 1]```. Default: ```0.2``` nb (float): Trend value in range ```[0, 1]```. Default: ```0.1``` nc (float): Seasonality value in range ```[0, 1]```. Default: ``"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   9,
+   25
+  ],
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Single EMA = 9-period exponential moving average (EMA) of the high-low differential ／ Mass Index = 25-period sum of the EMA Ratio"
+ },
+ {
+  "種類": "MASSI",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   9,
+   25
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/volatility/massi.py",
+   "pages/pta/pandas_ta/volatility/massi.py"
+  ],
+  "逐語": "fast (int): Fast period. Default: ```9``` slow (int): Slow period. Default: ```25```"
+ },
+ {
+  "種類": "THERMO%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/cycle/reflex.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/inertia.py"
+  ],
+  "逐語": "length (int): The period. Default: ```20```"
+ },
+ {
+  "種類": "UI",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   14
+  ],
+  "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/ui.py",
+  "判定": "不一致",
+  "組": "verify_out_g3.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/cci.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/eri.py"
+  ],
+  "逐語": "length (int): The period. Default: ```14```"
+ },
+ {
+  "種類": "swing高値距離",
+  "欄": "既定",
+  "番号": 2,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "逐語が短すぎる",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（TradingView の Swing Points ツールの Pivot Period の既定値として）\"10\""
+ },
+ {
+  "種類": "swing安値距離",
+  "欄": "既定",
+  "番号": 2,
+  "値": 10,
+  "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+  "判定": "逐語が短すぎる",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（TradingView の Swing Points ツールの Pivot Period の既定値として）\"10\""
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": 9,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（表の行）\"9 EMA\" … \"Fast momentum entries, scalping trigger\" … \"1-min, 5-min\""
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 20,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（表の行）\"20 EMA\" … \"Short-term trend, pullback entries\" … \"5-min, 15-min\""
+ },
+ {
+  "種類": "close vs EMA",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "12・26（短期）／50・200（長期）",
+  "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "It is most common for traders to quote and utilize 12- and 26-day EMAs in the short-term. Similarly, the 50- and 200-day moving averages are most common for analyzing long-term trends."
+ },
+ {
+  "種類": "close vs SMA",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": 50,
+  "URL": "https://www.tradingsim.com/blog/best-moving-average-for-day-trading",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（表の行）\"50 SMA\" … \"Session trend filter\" … \"5-min, 15-min\""
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜14",
+   "1.0〜1.5",
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Scalping (short timeframes like 1-minute charts): Use a shorter EMA period (10 to 14) and a lower ATR multiplier (1.0 to 1.5)."
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   15,
+   "1.5〜2.0",
+   10
+  ],
+  "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "EMA Period: 15 / ATR Period: 10 / Multiplier: 1.5 to 2.0（Best Timeframes: 1-minute / 3-minute / 5-minute / 15-minute）"
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Day or swing trading (daily charts): Stick to the standard 20-period EMA and 2.0 ATR multiplier."
+ },
+ {
+  "種類": "Keltner上",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（表の行）Position Trading | 50 | 2.0–2.5"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "10〜14",
+   "1.0〜1.5",
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Scalping (short timeframes like 1-minute charts): Use a shorter EMA period (10 to 14) and a lower ATR multiplier (1.0 to 1.5)."
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   15,
+   "1.5〜2.0",
+   10
+  ],
+  "URL": "https://keltnerchannel.com/how-to-use-the-keltner-channel-for-scalping-profits/",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "EMA Period: 15 / ATR Period: 10 / Multiplier: 1.5 to 2.0（Best Timeframes: 1-minute / 3-minute / 5-minute / 15-minute）"
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   2.0,
+   "記載なし"
+  ],
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Day or swing trading (daily charts): Stick to the standard 20-period EMA and 2.0 ATR multiplier."
+ },
+ {
+  "種類": "Keltner下",
+  "欄": "範囲",
+  "番号": 2,
+  "値": "EMA 50・倍率 2.0〜2.5（ポジショントレード）",
+  "URL": "https://www.quantvps.com/blog/keltner-channel-trading-strategy",
+  "判定": "取れない",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "（表の行）Position Trading | 50 | 2.0–2.5"
+ },
+ {
+  "種類": "pivotPP",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High"
+ },
+ {
+  "種類": "pivotR1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High"
+ },
+ {
+  "種類": "pivotS1",
+  "欄": "既定",
+  "番号": 2,
+  "値": "PP=(H+L+C)/3・R1=2PP−L・S1=2PP−H",
+  "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+  "判定": "不一致",
+  "組": "verify_out_g4.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Pivot Point (P): (High + Low + Close)/3 / Resistance 1 (R1): (P x 2) - Low / Support 1 (S1): (P x 2) - High"
+ },
+ {
+  "種類": "S-Rタッチ1時間ATR",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   null,
+   null,
+   "5〜10（10 が中心）"
+  ],
+  "URL": "https://atrindicator.com/atr-settings-5-minute-chart/",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "ATR(10): Balanced setting for most scalping systems"
+ },
+ {
+  "種類": "close vs FWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/fwma.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/dema.py",
+   "g5_pages/ptc/fwma.py"
+  ],
+  "逐語": "length (int): It's period. Default: 10"
+ },
+ {
+  "種類": "close vs HILO%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   13,
+   21
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hilo.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/hilo.py",
+   "g5_pages/ts_hilo.html"
+  ],
+  "逐語": "high_length (int): It's period. Default: 13\n    low_length (int): It's period. Default: 21"
+ },
+ {
+  "種類": "close vs HWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.2,
+   0.1,
+   0.1
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/hwma.py",
+   "g5_pages/ts_hwma.html"
+  ],
+  "逐語": "na (float): Smoothed series parameter (from 0 to 1). Default: 0.2\n    nb (float): Trend parameter (from 0 to 1). Default: 0.1\n    nc (float): Seasonality parameter (from 0 to 1). Default: 0.1"
+ },
+ {
+  "種類": "close vs LINREG%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linreg.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/atr.py",
+   "g5_pages/ptc/linreg.py"
+  ],
+  "逐語": "length (int): It's period.  Default: 14"
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ehlers_mama.txt"
+  ],
+  "逐語": "The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05."
+ },
+ {
+  "種類": "close vs MAMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/mama.py"
+  ],
+  "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05"
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ehlers_mama.txt"
+  ],
+  "逐語": "The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05."
+ },
+ {
+  "種類": "close vs FAMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.5,
+   0.05
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/mama.py"
+  ],
+  "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05"
+ },
+ {
+  "種類": "close vs MIDPOINT%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   2
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midpoint.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/midpoint.py",
+   "g5_pages/ptc/midprice.py"
+  ],
+  "逐語": "length (int): Its period. Default: 2"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "既定",
+  "番号": 0,
+  "値": "5・10・15 … 90 の EMA 18本 と 100 の EMA",
+  "URL": "https://www.prorealcode.com/topic/conversion-of-madrid-moving-average-ribbon-from-tradingview/",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "study(title=\"Madrid Moving Average Ribbon\", shorttitle=\"MMAR\", overlay=true) exponential = input(true, title=\"Exponential MA\") src = close ma05 = exponential ? ema(src, 05) : sma(src, 05) ma10 = expon"
+ },
+ {
+  "種類": "close vs MMAR%",
+  "欄": "既定",
+  "番号": 1,
+  "値": "最初 10・間隔 5・6本（10・15・20・25・30・35）",
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mmar.py",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "length (int): Initial EMA period. Default: 10\n    step (int): Period increment between ribbons. Default: 5\n    num_ribbons (int): Number of EMA ribbons. Default: 6"
+ },
+ {
+  "種類": "close vs PWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/pwma.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/dema.py",
+   "g5_pages/ptc/fwma.py"
+  ],
+  "逐語": "length (int): It's period.  Default: 10"
+ },
+ {
+  "種類": "close vs RAINBOW%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   2,
+   10
+  ],
+  "URL": "https://docs.motivewave.com/studies/q-r#rainbow-c",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Rainbow C was authored by Mel Widner in the Stocks and Commodities Magazine 07/1997. It is a colorful display of ten smoothed moving averages. Calculation //input = price, user defined, default is clo"
+ },
+ {
+  "種類": "close vs SINWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/atr.py",
+   "g5_pages/ptc/linreg.py"
+  ],
+  "逐語": "length (int): It's period. Default: 14"
+ },
+ {
+  "種類": "close vs SINWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/sinwma.py",
+  "判定": "取れない",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ptc/dema.py",
+   "g5_pages/ptc/fwma.py"
+  ],
+  "逐語": "Default Inputs:\n        length=10"
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   null
+  ],
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ehlers_predictive.txt"
+  ],
+  "逐語": "I have compared a 10 bar Exponential Moving Average (EMA) with my SuperSmoother filter set to a critical period of 10 bars for an apples-to-apples comparison in Figure 2."
+ },
+ {
+  "種類": "close vs SSF%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "10本より長い滑らかにする窓は要らない（Ehlers の考え）",
+  "URL": "https://c.mql5.com/forextsd/forum/118/predictiveindicators.pdf",
+  "判定": "不一致",
+  "組": "verify_out_g5.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g5_pages/ehlers_predictive.txt"
+  ],
+  "逐語": "If we just want to eliminate Aliasing noise, we do not need a smoothing filter longer than a 10 bar cycle period. In fact, using a smoothing filter longer than 10 bars attenuates the data we are tryin"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/swma.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs SWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/overlap/help/pandas_ta.overlap.swma.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "Default Inputs:length=10"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   0.7
+  ],
+  "URL": "https://ta-lib.org/functions/t3.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 5 | 1–100000 | EMA period for each of the six stages\noptInVFactor | real | 0.7 | 0–1 | Volume factor weighting the coefficients (0 = plain triple EMA, higher = more DEMA-li"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   0.7
+  ],
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_t.c",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "static const TA_OptInputParameterInfo *TA_T3_OptInputs[] =\n{ &TA_DEF_UI_TimePeriod_5,\n  &TA_DEF_UI_D_T3_VFactor, …\n（TA_DEF_UI_D_T3_VFactor の既定の行）   0.7,"
+ },
+ {
+  "種類": "close vs T3%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   0.7
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/t3.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/overlap/t3.py",
+   "pages/pta/pandas_ta/overlap/t3.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```\n        a (float): The a factor, 0 < a < 1. Default: ```0.7```"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/tema.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 30 | 1–100000 | EMA period used for all three passes\nPatrick G. Mulloy, Smoothing Data with Faster Moving Averages, Technical Analysis of Stocks & Commodities, V.12:1 (Janu"
+ },
+ {
+  "種類": "close vs TEMA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/tema.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/trima.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 30 | 1–100000 | Number of bars in the averaging window"
+ },
+ {
+  "種類": "close vs TRIMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/trima.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs TSF%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   14
+  ],
+  "URL": "https://ta-lib.org/functions/tsf.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 14 | 2–100000 | Number of bars in the regression window"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   12,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/vidya.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 12 | 1–100000 | The EMA length whose alpha the CMO scales\noptInCMOPeriod | integer | 9 | 2–100000 | Number of trailing price changes in the CMO\nTushar S. Chande, \"Identifyi"
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   12,
+   9
+  ],
+  "URL": "https://www.luxalgo.com/library/indicator/vidya/",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "VIDYA Length (default 12): EMA-equivalent base length the scaler rescales bar by bar.\nScaler Lookback (default 9): the CMO period, or the short standard-deviation window in volatility mode."
+ },
+ {
+  "種類": "close vs VIDYA%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   14,
+   "CMO も同じ length"
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/vidya.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/cci.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/momentum/eri.py"
+  ],
+  "逐語": "length (int): The period. Default: ```14```"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/vwma.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 30 | 1–100000 | Number of bars in the weighting window"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volume/vwma.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs VWMA%",
+  "欄": "スキャル",
+  "番号": 2,
+  "値": "10〜20",
+  "URL": "https://pineify.app/resources/blog/vwma-strategy-guide-master-volume-weighted-moving-average-for-trading-success",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Scalpers and Day Traders | 1-minute to 15-minute | 10 to 20 | Catching quick intraday moves"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/wma.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 30 | 1–100000 | Number of bars in the weighting window"
+ },
+ {
+  "種類": "close vs WMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/wma.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   "ema"
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/overlap/zlma.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/candle/cdl_doji.py"
+  ],
+  "逐語": "length (int): The period. Default: ```10```"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/zlema.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 30 | 1–100000 | Number of bars in the exponential average; the de-lag distance derives from it"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   9
+  ],
+  "URL": "https://www.tmgm.com/en-in/academy/trading-academy/zero-lag-exponential-moving-average",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Scalping and fast intraday | 1 to 15 minute | 9 | Fastest reaction and most false signals"
+ },
+ {
+  "種類": "close vs ZLMA%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   20,
+   21
+  ],
+  "URL": "https://www.tmgm.com/en-in/academy/trading-academy/zero-lag-exponential-moving-average",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Day trading and swing baseline | 15 minute to 4 hour | 20 or 21 | Balance of speed and smoothness"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 10 | 2–100000 | Window of the highest high and lowest low, and smoothing period of the Average True Range\noptInMultiplier | real | 1 | ≥ 0 | Multiplier applied to the Avera"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/cksp.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/trend/cksp.py",
+   "pages/pta/pandas_ta/trend/cksp.py"
+  ],
+  "逐語": "Note: Book vs TradingView Defaults\n        * Book: ```p=10, x=3, q=20, ma=\"sma\"```\n        * Trading View: ```p=10, x=1, q=9,  ma=\"rma\"```"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Intraday (5–30 min) | 7–10 | 0.7–1.0 | Use tighter multiplier to reduce lag"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Intraday (5–30 min) | 7–10 | 0.7–1.0 | Use tighter multiplier to reduce lag"
+ },
+ {
+  "種類": "close vs CKSPl%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "P 10〜21、X 1.0〜1.5（日足のスイング）",
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Daily swing | 10–21 | 1.0–1.5 | Default settings typically perform well"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://ta-lib.org/functions/cksp.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInTimePeriod | integer | 10 | 2–100000 | Window of the highest high and lowest low, and smoothing period of the Average True Range\noptInMultiplier | real | 1 | ≥ 0 | Multiplier applied to the Avera"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   10,
+   1,
+   9
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/cksp.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/trend/cksp.py",
+   "pages/pta/pandas_ta/trend/cksp.py"
+  ],
+  "逐語": "Note: Book vs TradingView Defaults\n        * Book: ```p=10, x=3, q=20, ma=\"sma\"```\n        * Trading View: ```p=10, x=1, q=9,  ma=\"rma\"```"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Intraday (5–30 min) | 7–10 | 0.7–1.0 | Use tighter multiplier to reduce lag"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "デイトレ",
+  "番号": 0,
+  "値": [
+   "P 7〜10",
+   "X 0.7〜1.0"
+  ],
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Intraday (5–30 min) | 7–10 | 0.7–1.0 | Use tighter multiplier to reduce lag"
+ },
+ {
+  "種類": "close vs CKSPs%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "P 10〜21、X 1.0〜1.5（日足のスイング）",
+  "URL": "https://www.ebc.com/forex/chande-kroll-stop-indicator-best-settings-uses-and-strategies",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Daily swing | 10–21 | 1.0–1.5 | Default settings typically perform well"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   10,
+   3.0,
+   10,
+   "EMA"
+  ],
+  "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pmax_2.html"
+  ],
+  "逐語": "Periods = input(title=\"ATR Length\", type=input.integer, defval=10)\nMultiplier = input(title=\"ATR Multiplier\", type=input.float, step=0.1, defval=3.0)\nmav = input(title=\"Moving Average Type\", defval=\"E"
+ },
+ {
+  "種類": "close vs PMAX%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "ATR Length 1〜100、ATR Multiplier 0.1〜100、Moving Average Length 1〜100（画面で選べる範囲）",
+  "URL": "https://forum.amibroker.com/t/pmax-indicator-in-amibroker/30028",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Periods = Param(\"ATR Length\",10,1,100,1);\nMultiplier = Param(\"ATR Multiplier\",3,0.1,100,0.1);\nlength = Param(\"Moving Average Length\",10,1,100,1);"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sar.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInAcceleration | real | 0.02 | ≥ 0 | Step added to the acceleration factor on each new extreme point\noptInMaximum | real | 0.2 | ≥ 0 | Ceiling on the acceleration factor"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/trend/psar.py",
+   "pages/pta/pandas_ta/trend/psar.py"
+  ],
+  "逐語": "af0 (float): Initial Acceleration Factor. Default: ```0.02```\n        af (float): Acceleration Factor. Default: ```0.02```\n        max_af (float): Maximum Acceleration Factor. Default: ```0.2```"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "AF 0.03〜0.04",
+   "max 0.25〜0.30"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "4. Scalping (Short Timeframes)\nSettings: AF = 0.03–0.04, max AF = 0.25–0.30.\nWhy: Higher settings make the SAR more responsive to rapid price changes on 1-minute or 5-minute charts.\nExample: On a 5-mi"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "AF 0.01",
+   "max 0.08"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "3. Cryptocurrency Trading\nSettings: AF = 0.01, max AF = 0.08–0.10.\nWhy: Crypto markets like Bitcoin are highly volatile, so lower settings keep the SAR farther from the price, reducing whipsaws.\nExamp"
+ },
+ {
+  "種類": "close vs PSAR%",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "static const TA_RealRange TA_DEF_SAR_Acceleration =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.01,\n   0.2,\n   0.01\n};\n…\nstatic const TA_RealRange TA_DEF_SAR_Maximum =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.2,"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sar.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInAcceleration | real | 0.02 | ≥ 0 | Step added to the acceleration factor on each new extreme point\noptInMaximum | real | 0.2 | ≥ 0 | Ceiling on the acceleration factor"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/trend/psar.py",
+   "pages/pta/pandas_ta/trend/psar.py"
+  ],
+  "逐語": "af0 (float): Initial Acceleration Factor. Default: ```0.02```\n        af (float): Acceleration Factor. Default: ```0.02```\n        max_af (float): Maximum Acceleration Factor. Default: ```0.2```"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   "AF 0.03〜0.04",
+   "max 0.25〜0.30"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "4. Scalping (Short Timeframes)\nSettings: AF = 0.03–0.04, max AF = 0.25–0.30.\nWhy: Higher settings make the SAR more responsive to rapid price changes on 1-minute or 5-minute charts.\nExample: On a 5-mi"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "デイトレ",
+  "番号": 1,
+  "値": [
+   "AF 0.01",
+   "max 0.08"
+  ],
+  "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "3. Cryptocurrency Trading\nSettings: AF = 0.01, max AF = 0.08–0.10.\nWhy: Crypto markets like Bitcoin are highly volatile, so lower settings keep the SAR farther from the price, reducing whipsaws.\nExamp"
+ },
+ {
+  "種類": "PSAR反転",
+  "欄": "範囲",
+  "番号": 1,
+  "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "static const TA_RealRange TA_DEF_SAR_Acceleration =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.01,\n   0.2,\n   0.01\n};\n…\nstatic const TA_RealRange TA_DEF_SAR_Maximum =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.2,"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   0,
+   0,
+   0.02,
+   0.02,
+   0.2,
+   0.02,
+   0.02,
+   0.2
+  ],
+  "URL": "https://ta-lib.org/functions/sarext.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "optInStartValue | real | 0 | any real | Initial SAR/direction: 0 auto, >0 start long at value, <0 start short at -value\noptInOffsetOnReverse | real | 0 | ≥ 0 | Fractional offset applied to the stop on"
+ },
+ {
+  "種類": "close vs SAREXT%",
+  "欄": "範囲",
+  "番号": 0,
+  "値": "OffsetOnReverse 0.01〜0.15、AF Init 0.01〜0.19、AF 0.01〜0.2、AF Max 0.2〜0.4（どれも刻み0.01）※推奨範囲（買い側・売り側とも同じ）",
+  "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "static const TA_RealRange TA_DEF_SAREXT_OffsetOnReverse =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.01,\n   0.15,\n   0.01\n};\n…\nstatic const TA_RealRange TA_DEF_SAREXT_AccelerationInitLong =\n{\n   0.0,\n   TA_"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   30
+  ],
+  "URL": "https://ta-lib.org/functions/median.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "optInTimePeriod | integer | 30 | 2–10000 | Number of trailing values in the window"
+ },
+ {
+  "種類": "close vs MEDIAN%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   30
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/statistics/median.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py",
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/statistics/kurtosis.py"
+  ],
+  "逐語": "length (int): The period. Default: ```30```"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/aberration.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/volatility/aberration.py",
+   "pages/pta/pandas_ta/volatility/aberration.py"
+  ],
+  "逐語": "length (int): The period. Default: ```5```\n        atr_length (int): ATR period. Default: ```15```"
+ },
+ {
+  "種類": "close vs ABER_ZG%",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/volatility/help/pandas_ta.volatility.aberration.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Sources:Few internet resources on definitive definition.\nDefault Inputs:length=5, atr_length=15"
+ },
+ {
+  "種類": "ABER位置",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/aberration.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/pta071/pandas_ta-0.4.71b0/src/pandas_ta/volatility/aberration.py",
+   "pages/pta/pandas_ta/volatility/aberration.py"
+  ],
+  "逐語": "length (int): The period. Default: ```5```\n        atr_length (int): ATR period. Default: ```15```"
+ },
+ {
+  "種類": "ABER位置",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   5,
+   15
+  ],
+  "URL": "https://tradingstrategy.ai/docs/api/technical-analysis/volatility/help/pandas_ta.volatility.aberration.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Sources:Few internet resources on definitive definition.\nDefault Inputs:length=5, atr_length=15"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   "2×(H−L)/((H+L)/2)＝4×(H−L)/(H+L)"
+  ],
+  "URL": "https://www.bigtrends.com/education/inside-bigtrends-acceleration-bands-indicator/",
+  "判定": "一部",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Upper band = ( High * ( 1 + 2 * (((( High - Low )/(( High + Low ) / 2 )) * 1000 ) * 0.001 )))\nLower band = ( Low * ( 1 - 2 * (((( High - Low )/(( High + Low ) / 2 )) * 1000 ) * 0.001)))\n…\nAlso note th"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://ta-lib.org/functions/accbands.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "factor = 4*(H-L)/(H+L) upperRaw = H*(1+factor), lowerRaw = L*(1-factor) Upper = SMA(upperRaw, N), Middle = SMA(Close, N), Lower = SMA(lowerRaw, N)\noptInTimePeriod | integer | 20 | 2–100000 | SMA smoot"
+ },
+ {
+  "種類": "close vs ACCBL%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/accbands.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "length = v_pos_default(length, 20)\n…\n    c = v_pos_default(c, 4)"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 0,
+  "値": [
+   20,
+   "2×(H−L)/((H+L)/2)＝4×(H−L)/(H+L)"
+  ],
+  "URL": "https://www.bigtrends.com/education/inside-bigtrends-acceleration-bands-indicator/",
+  "判定": "一部",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "Upper band = ( High * ( 1 + 2 * (((( High - Low )/(( High + Low ) / 2 )) * 1000 ) * 0.001 )))\nLower band = ( Low * ( 1 - 2 * (((( High - Low )/(( High + Low ) / 2 )) * 1000 ) * 0.001)))\n…\nAlso note th"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 2,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://ta-lib.org/functions/accbands.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "factor = 4*(H-L)/(H+L) upperRaw = H*(1+factor), lowerRaw = L*(1-factor) Upper = SMA(upperRaw, N), Middle = SMA(Close, N), Lower = SMA(lowerRaw, N)\noptInTimePeriod | integer | 20 | 2–100000 | SMA smoot"
+ },
+ {
+  "種類": "close vs ACCBU%",
+  "欄": "既定",
+  "番号": 3,
+  "値": [
+   20,
+   4
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/accbands.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "length = v_pos_default(length, 20)\n…\n    c = v_pos_default(c, 4)"
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   14,
+   "4.0〜5.0"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "Scalping (1-minute chart): 14-period ATR, 4.0–5.0× multiplier. Very tight timeframes require even wider multipliers because each bar's ATR is tiny relative to bid-ask spread and microstructure noise."
+ },
+ {
+  "種類": "close vs CE_L%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14,
+   "3.5〜4.5"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "Day trading (5-minute chart): 14-period ATR, 3.5–4.5× multiplier. The wider multiplier compensates for the higher noise-to-signal ratio on intraday charts. On a 5-minute chart, 14 periods covers rough"
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "スキャル",
+  "番号": 0,
+  "値": [
+   14,
+   "4.0〜5.0"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "Scalping (1-minute chart): 14-period ATR, 4.0–5.0× multiplier. Very tight timeframes require even wider multipliers because each bar's ATR is tiny relative to bid-ask spread and microstructure noise."
+ },
+ {
+  "種類": "close vs CE_S%",
+  "欄": "スキャル",
+  "番号": 1,
+  "値": [
+   14,
+   "3.5〜4.5"
+  ],
+  "URL": "https://www.tradewink.com/learn/chandelier-exit-atr-trailing-stop-guide",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "控えでだけ一致",
+  "控え": [
+   "g6_pages/build_g6.py"
+  ],
+  "逐語": "Day trading (5-minute chart): 14-period ATR, 3.5–4.5× multiplier. The wider multiplier compensates for the higher noise-to-signal ratio on intraday charts. On a 5-minute chart, 14 periods covers rough"
+ },
+ {
+  "種類": "HWC位置",
+  "欄": "既定",
+  "番号": 1,
+  "値": [
+   0.2,
+   0.1,
+   0.1,
+   0.1,
+   1
+  ],
+  "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/volatility/hwc.py）",
+  "判定": "取れない",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "scalar (float): Channel scalar. Default: ```1```\n…\n        na (float): Smoothed series in range ```[0, 1]```. Default: ```0.2```\n        nb (float): Trend value in range ```[0, 1]```. Default: ```0.1`"
+ },
+ {
+  "種類": "HT_DCPHASE",
+  "欄": "既定",
+  "番号": 0,
+  "値": "パラメータなし",
+  "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/cycle_indicators.html",
+  "判定": "不一致",
+  "組": "verify_out_g6.json",
+  "控えの判定": "確かめられない",
+  "控え": [],
+  "逐語": "HT_DCPHASE - Hilbert Transform - Dominant Cycle Phase\nNOTE: The HT_DCPHASE function has an unstable period.\nreal = HT_DCPHASE(close)"
+ }
+]

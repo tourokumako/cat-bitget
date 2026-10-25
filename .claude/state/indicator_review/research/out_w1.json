@@ -1,0 +1,3591 @@
+[
+ {
+  "種類": "KST",
+  "元の指標": "Know Sure Thing（Martin Pring）",
+  "パラメータ": [
+   {
+    "名前": "roc1",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC1 Length 10 Shortest ROC lookback period (weight 1x) 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc2",
+    "既定": [
+     {
+      "値": 15,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 15,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 7,
+      "上限": 25,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC2 Length 15 Second ROC lookback period (weight 2x) 7-25",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc3",
+    "既定": [
+     {
+      "値": 20,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 20,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 10,
+      "上限": 35,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC3 Length 20 Third ROC lookback period (weight 3x) 10-35",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc4",
+    "既定": [
+     {
+      "値": 30,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 30,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 15,
+      "上限": 50,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC4 Length 30 Longest ROC lookback period (weight 4x) 15-50",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 15,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 15,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma1",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA1 Length 10 SMA smoothing for the first ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma2",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA2 Length 10 SMA smoothing for the second ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma3",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA3 Length 10 SMA smoothing for the third ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma4",
+    "既定": [
+     {
+      "値": 15,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 15,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 30,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA4 Length 15 SMA smoothing for the fourth ROC 5-30",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The final number (9) is the SMA length to be used in calculating the signal line.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 3,
+      "上限": 21,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Signal Length 9 SMA period of the KST signal line 3-21",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      0
+     ],
+     "意味": "zero line より上（positive）は bulls・下（negative）は bears",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+     "逐語": "KST fluctuates above/below the zero line. At its most basic, momentum favors the bulls when KST is positive and favors the bears when KST is negative.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      0
+     ],
+     "意味": "Zero Line の上下（正なら momentum is up・負なら down）",
+     "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+     "逐語": "KST then calculates a final value that fluctuates between positive and negative values above and below a Zero Line.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+    "逐語": "Developed by Martin Pring, Know Sure Thing (KST) is a momentum oscillator based on the smoothed rate-of-change for four different timeframes.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+    "逐語": "Essentially, the Know Sure Thing Indicator measures the momentum of four separate price cycles.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "KSTシグナル",
+  "元の指標": "Know Sure Thing（Martin Pring）のシグナル線",
+  "パラメータ": [
+   {
+    "名前": "roc1",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC1 Length 10 Shortest ROC lookback period (weight 1x) 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc2",
+    "既定": [
+     {
+      "値": 15,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 15,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 7,
+      "上限": 25,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC2 Length 15 Second ROC lookback period (weight 2x) 7-25",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc3",
+    "既定": [
+     {
+      "値": 20,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 20,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 10,
+      "上限": 35,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC3 Length 20 Third ROC lookback period (weight 3x) 10-35",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "roc4",
+    "既定": [
+     {
+      "値": 30,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 30,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The first four numbers (10,15,20,30) represent the ROC lengths to be used.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 15,
+      "上限": 50,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "ROC4 Length 30 Longest ROC lookback period (weight 4x) 15-50",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 15,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     },
+     {
+      "値": 15,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Use shortened ROC periods (5, 7, 10, 15) for 1H futures charts.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma1",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA1 Length 10 SMA smoothing for the first ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma2",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA2 Length 10 SMA smoothing for the second ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma3",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA3 Length 10 SMA smoothing for the third ROC 5-20",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 5,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "sma4",
+    "既定": [
+     {
+      "値": 15,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 15,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The second four numbers (10,10,10,15) are the SMA lengths to be applied to their corresponding ROC lengths.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 30,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "SMA4 Length 15 SMA smoothing for the fourth ROC 5-30",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 7,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Scenario ROC Lengths SMA Lengths Use Case Scalping 5 / 7 / 10 / 15 5 / 5 / 5 / 7 15M crypto pairs",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+      "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+      "逐語": "The final number (9) is the SMA length to be used in calculating the signal line.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 3,
+      "上限": 21,
+      "URL": "https://pineify.app/pine-script/indicators/kst",
+      "逐語": "Signal Length 9 SMA period of the KST signal line 3-21",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/",
+    "逐語": "There is also a signal line which is an SMA of the KST line itself.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst",
+    "逐語": "KST generally rises when above its signal line and falls when below its signal line.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "PPO",
+  "元の指標": "Percentage Price Oscillator（MACD を長期の平均で割った版）",
+  "パラメータ": [
+   {
+    "名前": "fast",
+    "既定": [
+     {
+      "値": 12,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 12,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "slow",
+    "既定": [
+     {
+      "値": 26,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 26,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://www.luxalgo.com/library/concept/ppo/",
+      "逐語": "A signal line, normally a 9-period EMA of the PPO, and a histogram of the gap between the two complete the standard display.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      0
+     ],
+     "意味": "正＝短い平均が長い平均の上・上向きの勢い（centerline）",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+     "逐語": "PPO is positive when the shorter moving average is above the longer one, indicating strong upside momentum.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+    "逐語": "The Percentage Price Oscillator (PPO) is a momentum oscillator that measures the difference between two moving averages as a percentage of the larger moving average.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "PPOシグナル",
+  "元の指標": "Percentage Price Oscillator のシグナル線",
+  "パラメータ": [
+   {
+    "名前": "fast",
+    "既定": [
+     {
+      "値": 12,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 12,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "slow",
+    "既定": [
+     {
+      "値": 26,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 26,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://www.luxalgo.com/library/concept/ppo/",
+      "逐語": "A signal line, normally a 9-period EMA of the PPO, and a histogram of the gap between the two complete the standard display.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://arongroups.co/technical-analyze/ppo-indicator/",
+    "逐語": "Signal Line (Orange): A 9-period EMA of the PPO line, used to confirm buy and sell signals.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "PPOヒスト",
+  "元の指標": "Percentage Price Oscillator のヒストグラム",
+  "パラメータ": [
+   {
+    "名前": "fast",
+    "既定": [
+     {
+      "値": 12,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 12,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "slow",
+    "既定": [
+     {
+      "値": 26,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 26,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/ppo.html",
+      "逐語": "optInSlowPeriod integer 26 2–100000 Period of the slow MA",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+      "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://www.luxalgo.com/library/concept/ppo/",
+      "逐語": "A signal line, normally a 9-period EMA of the PPO, and a histogram of the gap between the two complete the standard display.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      0
+     ],
+     "意味": "正＝PPO がシグナル線の上・負＝下",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo",
+     "逐語": "The histogram is positive when PPO is above its 9-day EMA and negative when PPO is below its 9-day EMA.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://www.luxalgo.com/library/concept/ppo/",
+    "逐語": "4 Plot PPO minus signal as a histogram: growing bars mean the spread between the averages is widening; shrinking bars mean it is narrowing.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://arongroups.co/technical-analyze/ppo-indicator/",
+    "逐語": "Histogram (Green and Red Bars): Represents the gap between the PPO line and the signal line, helping visualize the strength and acceleration of the trend.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "STC",
+  "元の指標": "Schaff Trend Cycle（Doug Schaff）",
+  "パラメータ": [
+   {
+    "名前": "fast",
+    "既定": [
+     {
+      "値": 23,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 23,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 12,
+      "上限": 50,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "fast_length 23 The period for the fast EMA in the underlying MACD calculation. A shorter fast EMA makes STC react more quickly to recent price changes but increases noise in the MACD difference. 12–50",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 12,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 12,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "slow",
+    "既定": [
+     {
+      "値": 50,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 50,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 26,
+      "上限": 100,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "slow_length 50 The period for the slow EMA in the underlying MACD calculation. A longer slow EMA produces a smoother MACD difference, reducing noise but increasing the lag before STC detects a cycle shift. 26–100",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 25,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 25,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "cycle",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 5,
+      "上限": 21,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "length 10 The stochastic lookback period for both passes of the cycle calculation. Controls how many bars are used to identify the high and low of each cycle phase. Smaller values detect faster cycles; larger values capture broader trend phases. 5–21",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 6,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 6,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      25,
+      75
+     ],
+     "意味": "25 の下から上へ向けば bullish・75 の上から下へ向けば bearish",
+     "URL": "https://ta-lib.org/functions/stc.html",
+     "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+     "出どころの順位": 3
+    },
+    {
+     "値": [
+      25,
+      75
+     ],
+     "意味": "25 を上へ＝buy・75 を下へ＝sell",
+     "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-schaff-trend-cycle.html",
+     "逐語": "Buy and sell points are typically set at 25 levels upward (buy) and 75 levels downward (sell).",
+     "出どころの順位": 4
+    }
+   ],
+   "スキャル": [
+    {
+     "値": [
+      25,
+      75
+     ],
+     "意味": "Scalping（5M crypto）の Signal Levels 25/75",
+     "URL": "https://pineify.app/pine-script/indicators/stc",
+     "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+     "出どころの順位": 4
+    }
+   ],
+   "デイトレ": [
+    {
+     "値": [
+      25
+     ],
+     "意味": "15分足で 25 が cycle bottom",
+     "URL": "https://pineify.app/pine-script/indicators/stc",
+     "逐語": "On 15-minute crypto charts, STC's 25 level provides reliable intraday cycle bottom detection.",
+     "出どころの順位": 4
+    }
+   ]
+  },
+  "役割": [
+   {
+    "何を見るか": "向き",
+    "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-schaff-trend-cycle.html",
+    "逐語": "The Schaff Trend Cycle (STC) indicator is an oscillator that provides buy and sell signals for trading and identifies market trends.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "STCstoch",
+  "元の指標": "Schaff Trend Cycle の内部の1回目のストキャスティクス（ならした値）",
+  "パラメータ": [
+   {
+    "名前": "fast",
+    "既定": [
+     {
+      "値": 23,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 23,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 12,
+      "上限": 50,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "fast_length 23 The period for the fast EMA in the underlying MACD calculation. A shorter fast EMA makes STC react more quickly to recent price changes but increases noise in the MACD difference. 12–50",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 12,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 12,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "slow",
+    "既定": [
+     {
+      "値": 50,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 50,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 26,
+      "上限": 100,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "slow_length 50 The period for the slow EMA in the underlying MACD calculation. A longer slow EMA produces a smoother MACD difference, reducing noise but increasing the lag before STC detects a cycle shift. 26–100",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 25,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 25,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "cycle",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "The default STC settings are length 10, fast_length 23, and slow_length 50 — values Doug Schaff selected when he developed the indicator in the early 2000s.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "逐語": "Inputs inReal — Input series (typically close) Outputs outReal — Schaff Trend Cycle, from 0 to 100 Parameters Parameter Type Default Accepted values Description optInFastPeriod integer 23 2–100000 Period of the fast EMA optInSlowPeriod integer 50 2–100000 Period of the slow EMA optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+      "出どころの順位": 3
+     },
+     {
+      "下限": 5,
+      "上限": 21,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "length 10 The stochastic lookback period for both passes of the cycle calculation. Controls how many bars are used to identify the high and low of each cycle phase. Smaller values detect faster cycles; larger values capture broader trend phases. 5–21",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 6,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "Trading Style Parameters (length, fast, slow) Signal Levels Typical Use Case Scalping 6, 12, 25 25/75 5M crypto",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 6,
+      "URL": "https://pineify.app/pine-script/indicators/stc",
+      "逐語": "After months of trial and error on different timeframes, I settled on the 6/12/25 setting for intraday crypto trades — the faster cycle detection cuts through the noise on 1H charts much better than the default 10/23/50.",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://pineify.app/pine-script/indicators/stc",
+    "逐語": "The first MACD difference (M) is normalized by its cycle high/low range, smoothed with a 0.5 factor, then normalized and smoothed again.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://ta-lib.org/functions/stc.html",
+    "逐語": "Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half.",
+    "出どころの順位": 3
+   }
+  ]
+ },
+ {
+  "種類": "TSIヒスト",
+  "元の指標": "True Strength Index とシグナル線の差",
+  "パラメータ": [
+   {
+    "名前": "first",
+    "既定": [
+     {
+      "値": 25,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+      "逐語": "Second, calculate a 25-period EMA of this price change.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 25,
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "second",
+    "既定": [
+     {
+      "値": 13,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+      "逐語": "Third, calculate a 13-period EMA of this 25-period EMA to create a double smoothing.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 13,
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "signal",
+    "既定": [
+     {
+      "値": 13,
+      "URL": "https://tikitrade.com/momentum/true-strength-index-tsi",
+      "逐語": "Show Average (default true) – Adds signal line, 13-period EMA of TSI, for crossover alerts.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "勢い",
+    "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+    "逐語": "The True Strength Index indicator is a momentum oscillator designed to detect, confirm or visualize the strength of a trend.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "勢い",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+    "逐語": "As with MACD, a signal line can be applied to identify upturns and downturns.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "WMA傾き%",
+  "元の指標": "WMA（加重移動平均）。傾きの 5本前は教科書の指標のパラメータではない",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 30,
+      "URL": "https://ta-lib.org/functions/wma.html",
+      "逐語": "Inputs inReal — Source price/data series Outputs outReal — Weighted moving average series Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 30 1–100000 Number of bars in the weighting window",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 1,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/wma.html",
+      "逐語": "Inputs inReal — Source price/data series Outputs outReal — Weighted moving average series Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 30 1–100000 Number of bars in the weighting window",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "向き",
+    "URL": "https://alchemymarkets.com/education/indicators/weighted-moving-average/",
+    "逐語": "Determine Trend Direction You can use the WMA to identify whether a market is moving up, down, or sideways.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "向き",
+    "URL": "https://alchemymarkets.com/education/indicators/weighted-moving-average/",
+    "逐語": "The WMA can also help traders identify potential trade entry and exit points and determine trend direction and strength.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "StochRSI%K",
+  "元の指標": "StochRSI（Chande と Kroll）",
+  "パラメータ": [
+   {
+    "名前": "n（RSI の本数とストキャスの本数）",
+    "既定": [
+     {
+      "値": 14,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "Calculation In this example, a very common 14 Period Stoch RSI is used.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 14,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 5,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 14,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "%K の平滑",
+    "既定": [
+     {
+      "値": 3,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "Inputs K The time period to be used in calculating the %K. 3 is the default.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "%D（%K の移動平均の本数）",
+    "既定": [
+     {
+      "値": 3,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 3,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 1,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": ".80 を上回ると overbought・.20 を下回ると oversold",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+     "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "overbought .80・oversold .20",
+     "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+     "逐語": "While RSI overbought and oversold conditions are traditionally set at 70 for overbought and 30 for oversold, Stoch RSI are typically .80 and .20 respectively.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      0.5
+     ],
+     "意味": "centerline .50（上で uptrend・下で downtrend）",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+     "逐語": "As a bound oscillator, the centerline is at .50.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": [
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "5-Minute：0.8/0.2 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    }
+   ],
+   "デイトレ": [
+    {
+     "値": [
+      0.7,
+      0.3
+     ],
+     "意味": "15-Minute：0.7/0.3 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "1-Hour：0.8/0.2 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    }
+   ]
+  },
+  "役割": [
+   {
+    "何を見るか": "行き過ぎ",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "This indicator is primarily used for identifying overbought and oversold conditions.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "行き過ぎ",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+    "逐語": "First, it can be used to identify overbought or oversold conditions.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "StochRSI%D",
+  "元の指標": "StochRSI（Chande と Kroll）",
+  "パラメータ": [
+   {
+    "名前": "n（RSI の本数とストキャスの本数）",
+    "既定": [
+     {
+      "値": 14,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "Calculation In this example, a very common 14 Period Stoch RSI is used.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 14,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 5,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 14,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "%K の平滑",
+    "既定": [
+     {
+      "値": 3,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "Inputs K The time period to be used in calculating the %K. 3 is the default.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "%D（%K の移動平均の本数）",
+    "既定": [
+     {
+      "値": 3,
+      "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+      "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 3,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 1,
+      "上限": 100000,
+      "URL": "https://ta-lib.org/functions/stochrsi.html",
+      "逐語": "Parameters Parameter Type Default Accepted values Description optInTimePeriod integer 14 2–100000 RSI period optInFastK_Period integer 5 1–100000 Lookback window for the RSI min/max stochastic optInFastD_Period integer 3 1–100000 Smoothing period for %D",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 3,
+      "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+      "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": ".80 を上回ると overbought・.20 を下回ると oversold",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+     "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "overbought .80・oversold .20",
+     "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+     "逐語": "While RSI overbought and oversold conditions are traditionally set at 70 for overbought and 30 for oversold, Stoch RSI are typically .80 and .20 respectively.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      0.5
+     ],
+     "意味": "centerline .50（上で uptrend・下で downtrend）",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+     "逐語": "As a bound oscillator, the centerline is at .50.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": [
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "5-Minute：0.8/0.2 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    }
+   ],
+   "デイトレ": [
+    {
+     "値": [
+      0.7,
+      0.3
+     ],
+     "意味": "15-Minute：0.7/0.3 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      0.8,
+      0.2
+     ],
+     "意味": "1-Hour：0.8/0.2 levels",
+     "URL": "https://wundertrading.com/journal/en/learn/article/rsi-vs-stochastic-rsi-crypto-trading",
+     "逐語": "5-Minute 5-period, 80/20 levels 5/3/3, 0.8/0.2 levels Quick scalps, breakout confirmation 15-Minute 9-period, 75/25 levels 14/3/3, 0.7/0.3 levels Short-term swings, intraday trends 1-Hour 14-period, 70/30 levels 14/3/3, 0.8/0.2 levels Day trading setups, trend confirmation",
+     "出どころの順位": 4
+    }
+   ]
+  },
+  "役割": [
+   {
+    "何を見るか": "行き過ぎ",
+    "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+    "逐語": "This indicator is primarily used for identifying overbought and oversold conditions.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "行き過ぎ",
+    "URL": "https://ta-lib.org/functions/stochrsi.html",
+    "逐語": "outFastD — %K smoothed over FastD_Period (signal line)",
+    "出どころの順位": 3
+   }
+  ]
+ },
+ {
+  "種類": "PVT傾き",
+  "元の指標": "PVT（Price Volume Trend）",
+  "パラメータ": [
+   {
+    "名前": "n（PVT の増分を見る本数。教科書の PVT は積み上げで期間が無い）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "出来高",
+    "URL": "https://www.tradingview.com/support/solutions/43000502345-price-volume-trend-pvt/",
+    "逐語": "Summary Price Volume Trend (PVT) is a good technical analysis tool for measuring buying and selling pressure.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "出来高",
+    "URL": "https://www.tradingview.com/support/solutions/43000502345-price-volume-trend-pvt/",
+    "逐語": "PVT is similar to another technical analysis tool; On Balance Volume (OBV) in that it is an accumulation of volume.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "realized_vol",
+  "元の指標": "Historical Volatility（対数リターンの標準偏差）",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://www.luxalgo.com/library/indicator/historical-volatility/",
+      "逐語": "Historical Volatility Settings Length (default 10): the lookback for the standard deviation of close-to-close log returns.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 21,
+      "URL": "https://www.macroption.com/historical-volatility-excel/",
+      "逐語": "If you have no idea, I recommend those I often use myself: 21 trading days = 1 calendar month 63 days = 3 months 252 days = 1 year Occasionally I might also look at 10-day historical volatility if something interesting is happening in the market, but I wouldn't go lower than that.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.tradingview.com/support/solutions/43000589145-historical-volatility/",
+    "逐語": "Historical Volatility Definition Historical volatility is a statistical measure used to analyze the general dispersion of security or market index returns for a specified period of time.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.tradingview.com/support/solutions/43000589145-historical-volatility/",
+    "逐語": "Takeaways Historical volatility is mainly used to measure the distance a security’s price moves in relation to it’s mean value.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "ER",
+  "元の指標": "Kaufman の Efficiency Ratio（KAMA の部品）",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+      "逐語": "Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30).",
+      "出どころの順位": 2
+     },
+     {
+      "値": 10,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+      "逐語": "10 is the number of periods for the Efficiency Ratio (ER).",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      30,
+      -30
+     ],
+     "意味": "100 倍した目盛りで、30 より上は uptrend・-30 より下は downtrend",
+     "URL": "https://help.tc2000.com/m/69404/l/749623-kaufman-efficiency-ratio",
+     "逐語": "Readings above 30 typically provide a good indication of an uptrend while readings below -30 indicate a downtrend.",
+     "出どころの順位": 4
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": [
+    {
+     "値": [
+      0.6,
+      -0.6
+     ],
+     "意味": "+0,6 を上抜けで buy・-0,6 を下抜けで short sell（同じページ：The Kaufman ER strategy can be used in a 15-minute time frame or higher for day trading.）",
+     "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+     "逐語": "A buy signal is generated after the indicator crosses above +0,6. A long position is bought at the market price. A short sell signal is generated after the indicator crosses below -0,6.",
+     "出どころの順位": 4
+    }
+   ]
+  },
+  "役割": [
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+    "逐語": "Kaufman, using his ER, shows if a market is trending or not.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.whselfinvest.com/en/trading_strategies_33_Kaufman_Efficiency_Ratio.php",
+    "逐語": "The more efficient the ratio, the clearer the trend.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "SQZ_ON",
+  "元の指標": "TTM Squeeze（John Carter・ボリンジャーバンドがケルトナーチャネルの内側か）",
+  "パラメータ": [
+   {
+    "名前": "bb_length",
+    "既定": [
+     {
+      "値": 20,
+      "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+      "逐語": "Length –Number of bars used in the indicator calculation; default is 20.",
+      "出どころの順位": 1
+     },
+     {
+      "値": 20,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "逐語": "Carter uses the standard Bollinger Band settings of 20 periods and 2 standard deviations, but these parameters can be adjusted to meet your trading needs.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "bb_stdev_mult",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+      "逐語": "nBB –Sets standard deviation of the Bollinger Bands; default is 2.",
+      "出どころの順位": 1
+     },
+     {
+      "値": 2,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "逐語": "Carter uses the standard Bollinger Band settings of 20 periods and 2 standard deviations, but these parameters can be adjusted to meet your trading needs.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "kc_length",
+    "既定": [
+     {
+      "値": 20,
+      "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+      "逐語": "Length –Number of bars used in the indicator calculation; default is 20.",
+      "出どころの順位": 1
+     },
+     {
+      "値": 20,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "逐語": "Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier, but these parameters can be adjusted as well.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "kc_atr_mult",
+    "既定": [
+     {
+      "値": 1.5,
+      "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+      "逐語": "nK –Sets the offset of the Keltner Channel; default is 1.5.",
+      "出どころの順位": 1
+     },
+     {
+      "値": 1.5,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "逐語": "Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier, but these parameters can be adjusted as well.",
+      "出どころの順位": 2
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+    "逐語": "The volatility component of the TTM Squeeze indicator measures price compression using Bollinger Bands and Keltner Channels .",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+    "逐語": "During periods of low volatility, Bollinger bands narrow and trade inside Keltner channels.",
+    "出どころの順位": 1
+   }
+  ]
+ },
+ {
+  "種類": "CHOP",
+  "元の指標": "Choppiness Index（E.W. Dreiss）",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 14,
+      "URL": "https://www.tradingsim.com/blog/choppiness-index-indicator",
+      "逐語": "Inputs for the Choppiness Index Indicator The input length for the lookback period is 14.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 14,
+      "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+      "逐語": "The 14-period default is standard and reasonable for most timeframes.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      61.8,
+      38.2
+     ],
+     "意味": "61.8 が上の閾値（choppiness territory）・38.2 が下の閾値（trending territory）",
+     "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+     "逐語": "Common threshold values are popular Fibonacci Retracements. 61.8 for the high threshold and 38.2 for the lower threshold.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
+    "逐語": "CHOP is not meant to predict future market direction, it is a metric to be used to for defining the market's trendiness only.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.luxalgo.com/blog/choppiness-index-quantifying-consolidation/",
+    "逐語": "CHOP is deliberately non-directional: it says whether a trend exists, never which way it points, which places it among trend/range classifiers rather than signal generators.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "VHF",
+  "元の指標": "Vertical Horizontal Filter（Adam White）",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 28,
+      "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+      "逐語": "The default Vertical Horizontal Filter window is 28 days.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 28,
+      "URL": "https://theindicatorlab.com/reviews/vertical-horizontal-filter/",
+      "逐語": "Settings and How to Tune Them The default period is 28.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 18,
+      "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+      "逐語": "White originally recommended 28 days but now prefers an 18-day window smoothed with a 6-day moving average.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "強さ",
+    "URL": "https://www.incrediblecharts.com/indicators/vertical_horizontal_filter.php",
+    "逐語": "VHF measures the level of trend activity, similar to ADX in the Directional Movement System .",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "強さ",
+    "URL": "https://library.tradingtechnologies.com/trade/chrt-ti-vertical-horizontal-filter.html",
+    "逐語": "The higher the Vertical Horizontal Filter value, the more a particular contract is trending.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "MAD比",
+  "元の指標": "Mean Absolute Deviation（平均絶対偏差・統計の関数）",
+  "パラメータ": [
+   {
+    "名前": "period",
+    "既定": [
+     {
+      "値": 30,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/statistics/mad.py",
+      "逐語": "length = v_pos_default(length, 30)",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.tradingview.com/script/C892NmWm-MAD-Volatility-Percentile/",
+    "逐語": "Mean Absolute Deviation (MAD) is a statistical measure that tells you how spread out or variable a set of data points is.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.tradingview.com/script/C892NmWm-MAD-Volatility-Percentile/",
+    "逐語": "Indicator Overview: This indicator measures market volatility using Mean Absolute Deviation of returns.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "HWC幅%",
+  "元の指標": "Holt-Winters Channel（MQL5 の HWC・pandas-ta の hwc）",
+  "パラメータ": [
+   {
+    "名前": "na",
+    "既定": [
+     {
+      "値": 0.2,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "na (float): Smoothed series in range ```[0, 1]```. Default: ```0.2```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://www.mql5.com/en/code/20857",
+      "逐語": "It has six input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); nD - parameter of the channel equation (from 0 to 1); Multiplier - multiplier for the width of the channel calculated; Applied price - price used for calculations.",
+      "出どころの順位": 1
+     },
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "na (float): Smoothed series in range ```[0, 1]```. Default: ```0.2```",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "nb",
+    "既定": [
+     {
+      "値": 0.1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nb (float): Trend value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://www.mql5.com/en/code/20857",
+      "逐語": "It has six input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); nD - parameter of the channel equation (from 0 to 1); Multiplier - multiplier for the width of the channel calculated; Applied price - price used for calculations.",
+      "出どころの順位": 1
+     },
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nb (float): Trend value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "nc",
+    "既定": [
+     {
+      "値": 0.1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nc (float): Seasonality value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://www.mql5.com/en/code/20857",
+      "逐語": "It has six input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); nD - parameter of the channel equation (from 0 to 1); Multiplier - multiplier for the width of the channel calculated; Applied price - price used for calculations.",
+      "出どころの順位": 1
+     },
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nc (float): Seasonality value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "nd",
+    "既定": [
+     {
+      "値": 0.1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nd (float): Channel value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://www.mql5.com/en/code/20857",
+      "逐語": "It has six input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); nD - parameter of the channel equation (from 0 to 1); Multiplier - multiplier for the width of the channel calculated; Applied price - price used for calculations.",
+      "出どころの順位": 1
+     },
+     {
+      "下限": 0,
+      "上限": 1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "nd (float): Channel value in range ```[0, 1]```. Default: ```0.1```",
+      "出どころの順位": 3
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "scalar",
+    "既定": [
+     {
+      "値": 1,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+      "逐語": "scalar (float): Channel scalar. Default: ```1```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.mql5.com/en/code/20857",
+    "逐語": "Calculations: Top = HWMA + Multiplier * StDt Bottom = HWMA - Multiplier * StDt where: HWMA - Holt-Winter Moving Average StDt[i] = Sqrt(Var[i-1])",
+    "出どころの順位": 1
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/hwc.py",
+    "逐語": "channels (bool): Return width and percentage columns.",
+    "出どころの順位": 3
+   }
+  ]
+ },
+ {
+  "種類": "MASSI",
+  "元の指標": "Mass Index（Donald Dorsey）",
+  "パラメータ": [
+   {
+    "名前": "ema_period",
+    "既定": [
+     {
+      "値": 9,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+      "逐語": "Single EMA = 9-period exponential moving average (EMA) of the high-low differential Double EMA = 9-period EMA of the 9-period EMA of the high-low differential EMA Ratio = Single EMA divided by Double EMA Mass Index = 25-period sum of the EMA Ratio",
+      "出どころの順位": 2
+     },
+     {
+      "値": 9,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+      "逐語": "fast (int): Fast period. Default: ```9```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "sum_period",
+    "既定": [
+     {
+      "値": 25,
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+      "逐語": "Single EMA = 9-period exponential moving average (EMA) of the high-low differential Double EMA = 9-period EMA of the 9-period EMA of the high-low differential EMA Ratio = Single EMA divided by Double EMA Mass Index = 25-period sum of the EMA Ratio",
+      "出どころの順位": 2
+     },
+     {
+      "値": 25,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/massi.py",
+      "逐語": "slow (int): Slow period. Default: ```25```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      27
+     ],
+     "意味": "27 を上回ると bulge",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+     "逐語": "According to Dorsey, a bulge occurs when the Mass Index moves above 27.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      26.5
+     ],
+     "意味": "bulge のあと 26.50 を下回って reversal bulge が完成",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+     "逐語": "Dorsey waited for this bulge to reverse with a move back below 26.50.",
+     "出どころの順位": 2
+    },
+    {
+     "値": [
+      27,
+      26.5
+     ],
+     "意味": "27 を上回り 26.5 へ下がると方向が変わる用意",
+     "URL": "https://www.tradingview.com/support/solutions/43000589169-mass-index/",
+     "逐語": "Dorsey initially thought that when the calculation resulted in a figure above 27 and then dropped a point and a half below (to 26.5), the stock would be ready to change direction.",
+     "出どころの順位": 2
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+    "逐語": "Overall, the Mass Index rises as the high-low range widens and falls as the high-low range narrows.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/mass-index",
+    "逐語": "Developed by Donald Dorsey, the Mass Index uses the high-low range to identify trend reversals based on range expansions.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "THERMO%",
+  "元の指標": "Elder の Market Thermometer",
+  "パラメータ": [
+   {
+    "名前": "ema_period",
+    "既定": [
+     {
+      "値": 22,
+      "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+      "逐語": "You can configure the \"Explosive Move threshold\" (default: 3), \"Idle Market Threshold\" (default: 7) and \"Thermometer EMA length\" (default: 22) via Options page.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 20,
+      "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+      "逐語": "Calculation //method = moving average (ma), user defined, default is EMA //period = user defined, default is 20 //buy factor = buyFac, user defined, default is 2 //sell factor = sellFac, user defined, default is .5",
+      "出どころの順位": 4
+     },
+     {
+      "値": 20,
+      "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+      "逐語": "length (int): The period. Default: ```20```",
+      "出どころの順位": 3
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": [
+    {
+     "値": [
+      3
+     ],
+     "意味": "Explosive Move threshold（Thermometer がその EMA の何倍か）の既定 3",
+     "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+     "逐語": "You can configure the \"Explosive Move threshold\" (default: 3), \"Idle Market Threshold\" (default: 7) and \"Thermometer EMA length\" (default: 22) via Options page.",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      2,
+      0.5
+     ],
+     "意味": "buy factor 2・sell factor .5（THER と MA×factor を比べる。If the THER is more than MA times sellFac a sell signal is generated.）",
+     "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+     "逐語": "Calculation //method = moving average (ma), user defined, default is EMA //period = user defined, default is 20 //buy factor = buyFac, user defined, default is 2 //sell factor = sellFac, user defined, default is .5",
+     "出どころの順位": 4
+    },
+    {
+     "値": [
+      2
+     ],
+     "意味": "Buy factor の既定 2",
+     "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+     "逐語": "long (int): Buy factor. Default: ```2```",
+     "出どころの順位": 3
+    },
+    {
+     "値": [
+      0.5
+     ],
+     "意味": "Sell factor の既定 0.5",
+     "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+     "逐語": "short (float): Sell factor. Default: ```0.5```",
+     "出どころの順位": 3
+    }
+   ],
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+    "逐語": "This indicator, by Dr Alexander Elder, attempts to quantify volatility.",
+    "出どころの順位": 3
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+    "逐語": "Market temperature, introduced by Dr.Alexander Elder, helps differentiate between sleepy, quiet and hot market periods.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "TR%",
+  "元の指標": "True Range（Wilder）",
+  "パラメータ": [],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-range",
+    "逐語": "The True Range (TR) indicator measures the daily price range plus any gap from the prior day’s closing price.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "値動きの幅",
+    "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/true_range.py",
+    "逐語": "This indicator attempts to quantify a High-Low range including potential gap scenarios.",
+    "出どころの順位": 3
+   }
+  ]
+ },
+ {
+  "種類": "swing高値距離",
+  "元の指標": "スイングハイ・スイングロー（ピボットの高値・安値。前後 N 本より高い／安い足）",
+  "パラメータ": [
+   {
+    "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "The default of 10 across all parameters is a fine starting point.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "Input Default What it does Pivot Period 10 Bars on each side required to confirm a pivot",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 30,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "Trading Style Timeframe Left/Right Length What You Get Scalping / Day trading 1m - 15m 5 - 10 Catches short-term swings, more frequent markers Swing trading 1h - 4h 10 - 15 Balances signal count and significance Position trading Daily+ 20 - 30 Only the major turning points",
+      "出どころの順位": 4
+     },
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "A higher value (15–20) catches only the major pivots — cleaner chart, fewer levels. A lower value (5–7) catches micro-structure — busier chart, more granular levels.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 5,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "5-7 for tick charts or 1-minute scalping.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 7,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "5-7 for tick charts or 1-minute scalping.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "For 5-minute to 15-minute charts, try 5-10.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "For 5-minute to 15-minute charts, try 5-10.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "10 is a sensible default for intraday futures on 5-minute and 15-minute charts.",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 8,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "On EURUSD 15-minute charts, the 8-bar setting catches most meaningful intraday swings without cluttering the chart.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "10 is a sensible default for intraday futures on 5-minute and 15-minute charts.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 12,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "I prefer 12 on 1-hour charts for swing trading — it keeps the chart clean while still catching meaningful structure.",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+    "逐語": "The Pivot Points High Low indicator is a TradingView tool that automatically detects local highs and lows by scanning bars to the left and right of each turning point.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "swing安値距離",
+  "元の指標": "スイングハイ・スイングロー（ピボットの高値・安値。前後 N 本より高い／安い足）",
+  "パラメータ": [
+   {
+    "名前": "左右の本数 N（strength / left・right bars / pivot period）",
+    "既定": [
+     {
+      "値": 10,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "The default of 10 across all parameters is a fine starting point.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "Input Default What it does Pivot Period 10 Bars on each side required to confirm a pivot",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 5,
+      "上限": 30,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "Trading Style Timeframe Left/Right Length What You Get Scalping / Day trading 1m - 15m 5 - 10 Catches short-term swings, more frequent markers Swing trading 1h - 4h 10 - 15 Balances signal count and significance Position trading Daily+ 20 - 30 Only the major turning points",
+      "出どころの順位": 4
+     },
+     {
+      "下限": 5,
+      "上限": 20,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "A higher value (15–20) catches only the major pivots — cleaner chart, fewer levels. A lower value (5–7) catches micro-structure — busier chart, more granular levels.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 5,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "5-7 for tick charts or 1-minute scalping.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 7,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "5-7 for tick charts or 1-minute scalping.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 5,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "For 5-minute to 15-minute charts, try 5-10.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "For 5-minute to 15-minute charts, try 5-10.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "10 is a sensible default for intraday futures on 5-minute and 15-minute charts.",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 8,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "On EURUSD 15-minute charts, the 8-bar setting catches most meaningful intraday swings without cluttering the chart.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 10,
+      "URL": "https://crosstrade.io/learn/tradingview-tools/swing-points",
+      "逐語": "10 is a sensible default for intraday futures on 5-minute and 15-minute charts.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 12,
+      "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+      "逐語": "I prefer 12 on 1-hour charts for swing trading — it keeps the chart clean while still catching meaningful structure.",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://pineify.app/resources/blog/pivot-points-high-low-indicator-tradingview-pine-script",
+    "逐語": "The Pivot Points High Low indicator is a TradingView tool that automatically detects local highs and lows by scanning bars to the left and right of each turning point.",
+    "出どころの順位": 4
+   }
+  ]
+ },
+ {
+  "種類": "形スコア",
+  "元の指標": "特定できない（V字=+2・M字=−2 の形の点数に当たる教科書の指標は見つからなかった）",
+  "パラメータ": [
+   {
+    "名前": "n（窓の本数）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": "無い"
+ },
+ {
+  "種類": "fractal高値距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータ": [
+   {
+    "名前": "k（左右の本数・Periods）",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+      "逐語": "Williams Fractal Settings Periods (default 2): bars required on each side of the candidate extreme.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+      "逐語": "Technical definition of the upwards fractal is a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 5,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2. This represents two candles on either side. You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "A Fractal is one of five indicators of Bill Williams’ trading system, which allows to detect the bottom or the top.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "Generally, the indicator is formed by five candlesticks or bars on the price chart and it’s shown with an up or down arrow to signal its high or low status.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "fractal安値距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータ": [
+   {
+    "名前": "k（左右の本数・Periods）",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+      "逐語": "Williams Fractal Settings Periods (default 2): bars required on each side of the candidate extreme.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+      "逐語": "Technical definition of the upwards fractal is a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 5,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2. This represents two candles on either side. You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "A Fractal is one of five indicators of Bill Williams’ trading system, which allows to detect the bottom or the top.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "Generally, the indicator is formed by five candlesticks or bars on the price chart and it’s shown with an up or down arrow to signal its high or low status.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "高値切り上げ幅%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータ": [
+   {
+    "名前": "k（左右の本数・Periods）",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+      "逐語": "Williams Fractal Settings Periods (default 2): bars required on each side of the candidate extreme.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+      "逐語": "Technical definition of the upwards fractal is a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 5,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2. This represents two candles on either side. You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "A Fractal is one of five indicators of Bill Williams’ trading system, which allows to detect the bottom or the top.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "Generally, the indicator is formed by five candlesticks or bars on the price chart and it’s shown with an up or down arrow to signal its high or low status.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "安値切り上げ幅%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータ": [
+   {
+    "名前": "k（左右の本数・Periods）",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+      "逐語": "Williams Fractal Settings Periods (default 2): bars required on each side of the candidate extreme.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+      "逐語": "Technical definition of the upwards fractal is a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 5,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2. This represents two candles on either side. You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "A Fractal is one of five indicators of Bill Williams’ trading system, which allows to detect the bottom or the top.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "Generally, the indicator is formed by five candlesticks or bars on the price chart and it’s shown with an up or down arrow to signal its high or low status.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "構造破断距離%",
+  "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+  "パラメータ": [
+   {
+    "名前": "k（左右の本数・Periods）",
+    "既定": [
+     {
+      "値": 2,
+      "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+      "逐語": "Williams Fractal Settings Periods (default 2): bars required on each side of the candidate extreme.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2.",
+      "出どころの順位": 4
+     },
+     {
+      "値": 2,
+      "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+      "逐語": "Technical definition of the upwards fractal is a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": [
+     {
+      "下限": 2,
+      "上限": 5,
+      "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+      "逐語": "The Williams Fractal’s period defaults to 2. This represents two candles on either side. You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+    "逐語": "A Fractal is one of five indicators of Bill Williams’ trading system, which allows to detect the bottom or the top.",
+    "出どころの順位": 4
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+    "逐語": "Generally, the indicator is formed by five candlesticks or bars on the price chart and it’s shown with an up or down arrow to signal its high or low status.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "close vs VWAP",
+  "元の指標": "VWAP（出来高加重平均価格）。原典の形はセッションの始まりから積み上げてリセット。窓をずらす形は rolling VWAP",
+  "パラメータ": [
+   {
+    "名前": "Anchor Period（リセットの周期）／rolling の窓の長さ",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "向き",
+    "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+    "逐語": "VWAP is typically used with intraday charts as a way to determine the general direction of intraday prices.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+    "逐語": "Chartists can assess the position of price relative to the VWAP line in order to determine the intraday trend, or to set favorable entry and exit points for trades.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "pivotPP",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータ": [
+   {
+    "名前": "基準にする前の期間（Pivots Timeframe）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": [
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 1,
+      "単位": "日（15分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（30分〜120分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（15分より長く1日より短い足）",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "Pivot Points Standard The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "pivotR1",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータ": [
+   {
+    "名前": "基準にする前の期間（Pivots Timeframe）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": [
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 1,
+      "単位": "日（15分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（30分〜120分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（15分より長く1日より短い足）",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "Pivot Points Standard The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "pivotS1",
+  "元の指標": "Pivot Points（Standard / Traditional・floor pivots）。前の期間の高値・安値・終値から PP・R1・S1 を計算",
+  "パラメータ": [
+   {
+    "名前": "基準にする前の期間（Pivots Timeframe）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": [
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "日",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 1,
+      "単位": "日（15分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Timeframes for Pivot Points Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（30分〜120分足）",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 1,
+      "単位": "週（15分より長く1日より短い足）",
+      "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+      "逐語": "The “Auto” setting selects the following pivot timeframes: 1D for chart resolutions up to and including 15 min 1W for chart resolutions greater than 15 min and less than 1 day 1M for chart resolutions from 1 day and above",
+      "出どころの順位": 2
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+    "逐語": "Pivot Points Standard The Pivot Points Standard technical indicator displays levels at which price might meet support or resistance.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+    "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+    "出どころの順位": 2
+   }
+  ]
+ },
+ {
+  "種類": "POC",
+  "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+  "パラメータ": [
+   {
+    "名前": "Value Area の割合",
+    "既定": [
+     {
+      "値": 70,
+      "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+      "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader’s discretion.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 70,
+      "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+      "逐語": "Multiply the total volume by the chosen percentage (default 70%) to determine the target volume for the value area.",
+      "出どころの順位": 2
+     },
+     {
+      "値": 70,
+      "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+      "逐語": "Value Area Percentage : Set the percentage of volume to be included in the Value Area (default is 70%).",
+      "出どころの順位": 4
+     }
+    ],
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": "無い"
+   },
+   {
+    "名前": "プロファイルの期間（Session／Fixed Range／Visible Range など）",
+    "既定": "無い",
+    "範囲": "無い",
+    "スキャル": "無い",
+    "デイトレ": [
+     {
+      "値": 1,
+      "単位": "日（Session volume profile）",
+      "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+      "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+      "出どころの順位": 4
+     }
+    ]
+   },
+   {
+    "名前": "行の数（Row Size）",
+    "既定": "無い",
+    "範囲": [
+     {
+      "下限": 100,
+      "上限": 200,
+      "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+      "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher) so each bar represents a tight enough price band to be meaningful.",
+      "出どころの順位": 4
+     }
+    ],
+    "スキャル": [
+     {
+      "値": 200,
+      "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+      "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher) so each bar represents a tight enough price band to be meaningful.",
+      "出どころの順位": 4
+     }
+    ],
+    "デイトレ": [
+     {
+      "値": 200,
+      "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+      "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher) so each bar represents a tight enough price band to be meaningful.",
+      "出どころの順位": 4
+     }
+    ]
+   }
+  ],
+  "閾値": {
+   "既定": "無い",
+   "スキャル": "無い",
+   "デイトレ": "無い"
+  },
+  "役割": [
+   {
+    "何を見るか": "出来高",
+    "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+    "逐語": "Typical levels of significance Point of control (POC): The price level for the time period with the highest traded volume.",
+    "出どころの順位": 2
+   },
+   {
+    "何を見るか": "位置",
+    "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+    "逐語": "The upper edge is the Value Area High (VAH) and the lower edge is the Value Area Low (VAL).",
+    "出どころの順位": 4
+   }
+  ]
+ }
+]

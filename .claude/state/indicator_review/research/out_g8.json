@@ -1,0 +1,87 @@
+[
+  {
+    "種類": "LeeMykland",
+    "元の指標": "Lee-Mykland の jump の検定統計 L(i)（Suzanne S. Lee と Per A. Mykland・\"Jumps in Financial Markets: A New Nonparametric Test and Jump Dynamics\"・Review of Financial Studies 2008 v21 n6）",
+    "パラメータの名前": [
+      "K（窓の本数）"
+    ],
+    "既定": [
+      {
+        "値": "K=pmin(floor(sqrt(252*n)), n)",
+        "URL": "https://search.r-project.org/CRAN/refmans/yuima/html/lm.jumptest.html",
+        "逐語": "The default value is K=pmin(floor(sqrt(252*n)), n) with n=length(yuima)-1, following Lee and Mykland (2008) as well as Dumitru and Urga (2012).",
+        "出どころの質": "ライブラリの説明（R の yuima パッケージの lm.jumptest の説明。数ではなく、データの本数 n から K を決める式）"
+      }
+    ],
+    "スキャル": [
+      {
+        "値": [
+          270
+        ],
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+        "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・5分足）"
+      },
+      {
+        "値": [
+          270
+        ],
+        "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+        "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+        "出どころの質": "その他（TradingView のコミュニティのスクリプト・Loxx の Barndorff-Nielsen and Shephard Jump Statistic・5分足）・まこさんが 2026-10-21 に見つけた"
+      }
+    ],
+    "デイトレ": [
+      {
+        "値": [
+          156
+        ],
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+        "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・15分足）"
+      },
+      {
+        "値": [
+          110
+        ],
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+        "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・30分足）"
+      },
+      {
+        "値": [
+          78
+        ],
+        "URL": "https://galton.uchicago.edu/~mykland/paperlinks/LeeMykland-2535.pdf",
+        "逐語": "We suggest the smallest integer K that satisﬁes the necessary condition as an optimal choice for K . Our speciﬁc recommen- dation of optimal window sizes for one-week, one-day, one-hour, 30-minute, 15-minute, and 5-minute data are 7, 16, 78, 110, 156, and 270, respectively.",
+        "出どころの質": "開発者の原典（Lee-Mykland 2008・論文の 1.3 節・1時間足）"
+      },
+      {
+        "値": [
+          156
+        ],
+        "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+        "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+        "出どころの質": "その他（同じページ・15分足）・まこさんが見つけた"
+      },
+      {
+        "値": [
+          110
+        ],
+        "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+        "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+        "出どころの質": "その他（同じページ・30分足）・まこさんが見つけた"
+      },
+      {
+        "値": [
+          78
+        ],
+        "URL": "https://www.tradingview.com/script/UfCrjo2N-Barndorff-Nielsen-and-Shephard-Jump-Statistic-Loxx/",
+        "逐語": "It is recommended to use window sizes of 7, 16, 78, 110, 156, and 270 returns for sampling intervals of 1 week, 1 day, 1 hour, 30 minutes, 15 minutes, and 5 minutes, respectively.",
+        "出どころの質": "その他（同じページ・1時間足）・まこさんが見つけた"
+      }
+    ],
+    "範囲": "無い",
+    "メモ": "今の組の 78・110・156・270 は、論文の1時間足・30分足・15分足・5分足の推奨値と同じで、今の組の 16 は論文の1日足（日足）の推奨値です。論文の週足の推奨値は 7 で、今の組には入っていません。論文は K の候補を1日の本数 nobs から「√(252×nobs) と 252×nobs の間の整数」と書き、数で範囲を書いているのは日足（15.87 から 252 の間の整数）だけなので、範囲は「無い」にしました。論文の図1と本文の例は K＝10（5分足の例）を使っていますが、推奨値ではないので入れていません。逐語は PDF から取り出した文字のままで、行の終わりの改行だけを空白1つに替えました（そのため「recommen- dation」と「satisﬁes」「speciﬁc」の合字 ﬁ が残っています）。"
+  }
+]

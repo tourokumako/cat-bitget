@@ -1,0 +1,509 @@
+[
+{"種類": "ADX", "元の指標": "DMI/ADX（Wilder の Directional Movement System）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx", "逐語": "The calculation example below is based on a 14-period indicator setting, as recommended by Wilder.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。開発者 Wilder の推奨として引用"},
+  {"値": [14], "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/", "逐語": "The time period to be used in calculating the ADX which has a smoothing component (14 is the Default).", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": [14], "URL": "https://ta-lib.org/functions/adx.html", "逐語": "optInTimePeriod integer 14 2–100000 Smoothing/averaging period for DM, TR, and ADX", "出どころの質": "ライブラリの説明（TA-Lib 公式）。引数の表の行"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": "7〜14", "原文の足": "15分足〜1時間足", "URL": "https://regimelab.io/blog/best-adx-settings", "逐語": "For day trading on 15-minute to 1-hour charts, periods of 7 to 14 are most common.", "出どころの質": "ブログ（RegimeLab）"},
+  {"値": "7〜14", "原文の足": "15分足", "URL": "https://regimelab.io/blog/best-adx-settings", "逐語": "15-minute charts: 7 to 14. At 14 periods, 15-minute ADX covers 3.5 hours of price data. Shorter periods (7 to 10) are common at this resolution because the full-cycle logic breaks down for intraday timeframes.", "出どころの質": "ブログ（RegimeLab）"},
+  {"値": "10〜14", "原文の足": "1時間足", "URL": "https://regimelab.io/blog/best-adx-settings", "逐語": "1-hour charts: 10 to 14. At 14 periods, 1H ADX covers only 14 hours of data.", "出どころの質": "ブログ（RegimeLab）"},
+  {"値": "10〜12", "原文の足": "暗号資産の1時間足・15分足", "URL": "https://regimelab.io/blog/best-adx-settings", "逐語": "For intraday crypto on 1-hour and 15-minute charts, test shorter periods (10 to 12) because the 14-period lookback covers a short window at those resolutions.", "出どころの質": "ブログ（RegimeLab）"},
+  {"値": "7〜10", "原文の足": "指定なし（day traders）", "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips", "逐語": "The typical 14-period ADX is effective for most traders, and day traders might shorten it to 7–10 periods for quicker signals.", "出どころの質": "証券会社（EBC Financial Group）の解説"}
+ ],
+ "範囲": [
+  {"値": "7〜21", "URL": "https://regimelab.io/blog/best-adx-settings", "逐語": "The practical range for most systematic traders is 7 to 21, with 14 as the default starting point.", "出どころの質": "ブログ（RegimeLab）"}
+ ],
+ "メモ": "このプロジェクトの今の値は 7・14・21 の3つで、既定の 14 と、RegimeLab が書く範囲（7〜21）の両端を含む。"},
+
+{"種類": "DI差", "元の指標": "DMI/ADX（+DI と −DI）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [14], "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/", "逐語": "The time period to be used in calculating the DI (14 is Default).", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": [14], "URL": "https://ta-lib.org/functions/adx.html", "逐語": "optInTimePeriod integer 14 2–100000 Smoothing/averaging period for DM, TR, and ADX", "出どころの質": "ライブラリの説明（TA-Lib 公式）。PLUS_DI・MINUS_DI も timeperiod=14（https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html の 'real = PLUS_DI(high, low, close, timeperiod=14)'）"},
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx", "逐語": "The calculation example below is based on a 14-period indicator setting, as recommended by Wilder.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。開発者 Wilder の推奨として引用"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "DI の期間だけを名指しでスタイル別に書いた出どころは見つからなかった（ADX の行のデイトレ・範囲の値は ADX の期間として書かれたもの）。今の値は 7・14・21。"},
+
+{"種類": "MACD線%", "元の指標": "MACD（Gerald Appel）", "パラメータの名前": ["fast", "slow"],
+ "既定": [
+  {"値": [12, 26], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "The standard setting for MACD is the difference between the 12- and 26-period EMAs.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [12, 26], "URL": "https://ta-lib.org/functions/macd.html", "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast EMA / optInSlowPeriod integer 26 2–100000 Period of the slow EMA", "出どころの質": "ライブラリの説明（TA-Lib 公式）。引数の表の2行"},
+  {"値": [12, 26], "URL": "https://www.tradingsim.com/blog/macd", "逐語": "Standard settings: 12, 26, 9. These are the defaults on almost every charting platform and the numbers Gerald Appel used when he popularized the indicator in the late 1970s.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "スキャル": [
+  {"値": [5, 13], "原文の足": "指定なし（scalping）", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries.", "出どころの質": "証券会社（Admiral Markets）。curl が拒否されたため WebFetch（要約モデル経由）で取り出した文"},
+  {"値": "5,13 または 8,17", "原文の足": "1分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": "8,17 または 12,26", "原文の足": "5分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [3, 10], "原文の足": "5分足（aggressive scalping）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [6, 13], "原文の足": "1分足・2分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts. For faster intraday decisions, some traders use 6-13-5 on a 1-minute or 2-minute chart.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [12, 26], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "デイトレ": [
+  {"値": [12, 26], "原文の足": "15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower settings like 12,26,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [8, 17], "原文の足": "5分足〜15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [5, 13], "原文の足": "5分足（原文の呼び名は intraday trading）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [12, 26], "原文の足": "15分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "範囲": "無い",
+ "その他の値": [
+  {"値": [5, 35], "条件": "週足（より敏感）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "MACD(5,35,5) is more sensitive than MACD(12,26,9) and might be better suited for weekly charts.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [19, 39], "条件": "日足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The standard 12,26,9 MACD setting is commonly used for daily chart, though some traders may also go for a slightly slower EMAs like 19,39,9", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"}
+ ],
+ "メモ": "今の値は [12,26] の1組だけで、教科書の既定と同じ。出どころがスキャルやデイトレに挙げる 3,10／5,13／6,13／8,17 は入っていない。"},
+
+{"種類": "MACDヒスト%", "元の指標": "MACD（Gerald Appel）", "パラメータの名前": ["fast", "slow", "signal"],
+ "既定": [
+  {"値": [12, 26, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "Once the indicator is chosen from the drop-down menu, the default parameter setting appears: (12,26,9). These parameters can be adjusted to increase or decrease sensitivity.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [12, 26, 9], "URL": "https://ta-lib.org/functions/macd.html", "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast EMA / optInSlowPeriod integer 26 2–100000 Period of the slow EMA / optInSignalPeriod integer 9 1–100000 Smoothing period of the signal line", "出どころの質": "ライブラリの説明（TA-Lib 公式）。引数の表の3行"},
+  {"値": [12, 26, 9], "URL": "https://www.tradingsim.com/blog/macd", "逐語": "MACD's default settings are 12-26-9 : the MACD line is the 12-period EMA minus the 26-period EMA, and the signal line is a 9-period EMA of the MACD line.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "スキャル": [
+  {"値": [5, 13, 8], "原文の足": "指定なし（scalping）", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries.", "出どころの質": "証券会社（Admiral Markets）。curl が拒否されたため WebFetch（要約モデル経由）で取り出した文"},
+  {"値": "5,13,8 または 8,17,9", "原文の足": "1分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": "8,17,9 または 12,26,9", "原文の足": "5分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [3, 10, 1], "原文の足": "5分足（aggressive scalping）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [6, 13, 5], "原文の足": "1分足・2分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts. For faster intraday decisions, some traders use 6-13-5 on a 1-minute or 2-minute chart.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [12, 26, 9], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "デイトレ": [
+  {"値": [12, 26, 9], "原文の足": "15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower settings like 12,26,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [8, 17, 9], "原文の足": "5分足〜15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [5, 13, 1], "原文の足": "5分足（原文の呼び名は intraday trading）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [12, 26, 9], "原文の足": "15分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "範囲": "無い",
+ "その他の値": [
+  {"値": [5, 35, 5], "条件": "週足（より敏感）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "MACD(5,35,5) is more sensitive than MACD(12,26,9) and might be better suited for weekly charts.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [6, 20, 10], "条件": "日足の例（シグナルを増やす）", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "As you can see from the revised AMZN chart below, the number of trade signals increased when we lower the moving average period from 12,26,9 to 6,20,10.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "メモ": "今の値は [12,26,9] の1組だけで、教科書の既定と同じ。出どころがスキャルに挙げる 3,10,1／5,13,8／6,13,5／8,17,9 とデイトレに挙げる 5,13,1／8,17,9 は入っていない。"},
+
+{"種類": "MACDシグナル線%", "元の指標": "MACD（Gerald Appel）", "パラメータの名前": ["fast", "slow", "signal"],
+ "既定": [
+  {"値": [12, 26, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "Once the indicator is chosen from the drop-down menu, the default parameter setting appears: (12,26,9). These parameters can be adjusted to increase or decrease sensitivity.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [12, 26, 9], "URL": "https://ta-lib.org/functions/macd.html", "逐語": "optInFastPeriod integer 12 2–100000 Period of the fast EMA / optInSlowPeriod integer 26 2–100000 Period of the slow EMA / optInSignalPeriod integer 9 1–100000 Smoothing period of the signal line", "出どころの質": "ライブラリの説明（TA-Lib 公式）。引数の表の3行"},
+  {"値": [12, 26, 9], "URL": "https://www.tradingsim.com/blog/macd", "逐語": "MACD's default settings are 12-26-9 : the MACD line is the 12-period EMA minus the 26-period EMA, and the signal line is a 9-period EMA of the MACD line.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "スキャル": [
+  {"値": [5, 13, 8], "原文の足": "指定なし（scalping）", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For scalping, settings such as 5,13,8 are sometimes used by traders aiming to capture quicker fluctuations. However, they tend to generate more frequent false signals and may lead to premature entries.", "出どころの質": "証券会社（Admiral Markets）。curl が拒否されたため WebFetch（要約モデル経由）で取り出した文"},
+  {"値": "5,13,8 または 8,17,9", "原文の足": "1分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 1-min chart is often used by some scalpers with the aim to closely study and capture potential price changes in a short span. So, they tend to prefer faster MACD settings such as 5,13,8 or 8,17,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": "8,17,9 または 12,26,9", "原文の足": "5分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "In a 5-minute timeframe, traders seek moderately fast settings and a bit of a signal reliability, so they may use 8,17,9 or even the standard 12,26,9 MACD settings.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [3, 10, 1], "原文の足": "5分足（aggressive scalping）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [6, 13, 5], "原文の足": "1分足・2分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts. For faster intraday decisions, some traders use 6-13-5 on a 1-minute or 2-minute chart.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [12, 26, 9], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "デイトレ": [
+  {"値": [12, 26, 9], "原文の足": "15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "The 15-minute chart is often used by intraday traders who prefer holding positions for a few hours rather than just for seconds or minutes. Here, traders typically go for standard or moderately slower settings like 12,26,9.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [8, 17, 9], "原文の足": "5分足〜15分足", "URL": "https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth", "逐語": "For traders who prefer shorter timeframes such as 5-minute to 15-minute charts, they often require faster responsiveness and 8,17,9 MACD settings are sometimes preferred by traders for this purpose.", "出どころの質": "証券会社（Admiral Markets）。WebFetch 経由"},
+  {"値": [5, 13, 1], "原文の足": "5分足（原文の呼び名は intraday trading）", "URL": "https://www.smctradeonline.com/blog/technical-analysis/macd-settings-for-five-minute-chart", "逐語": "Default 12-26-9 settings lag on 5-minute charts. Use 5-13-1 for most intraday trading and 3-10-1 for aggressive scalping.", "出どころの質": "証券会社（SMC Global Securities）のブログ"},
+  {"値": [12, 26, 9], "原文の足": "15分足", "URL": "https://www.tradingsim.com/blog/macd", "逐語": "The default 12-26-9 settings work well on 5-minute and 15-minute charts.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "範囲": "無い",
+ "その他の値": [
+  {"値": [5, 35, 5], "条件": "週足（より敏感）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-moving-average-convergence-divergence-oscillator", "逐語": "MACD(5,35,5) is more sensitive than MACD(12,26,9) and might be better suited for weekly charts.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は [12,26,9] の1組だけで、教科書の既定と同じ。出どころがスキャルやデイトレに挙げる組は入っていない。"},
+
+{"種類": "転換線", "元の指標": "一目均衡表（細田悟一）", "パラメータの名前": ["転換線の期間", "基準線の期間", "先行スパンBの期間"],
+ "既定": [
+  {"値": [9, 26, 52], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud", "逐語": "The default setting for the Conversion Line is 9 periods and can be adjusted. On a daily chart, this line is the midpoint of the 9-day high-low range, which is almost 2 weeks.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [9, 26, 52], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud", "逐語": "Default settings are 9 for the Conversion Line, 26 for the Base Line and 52 for the Leading Span B.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": [
+  {"値": [5, 13, 26], "原文の足": "15分足または5分足（原文の呼び名は Scalping）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/", "逐語": "Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": [12, 24, 120], "原文の足": "1分足（scalping）", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "The best Ichimoku settings for scalping and 1-minute chart are 12-24-120, where 12 is for the Conversion Line ( Tenkan-sen), 24 for the Base Line (Kyun-sen ), and 120 for the Leading Span B (Senkou Span B).", "出どころの質": "ブログ（forex.in.rs）"},
+  {"値": [9, 26, 52], "原文の足": "5分足", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52, where nine is for the Conversion Line ( Tenkan-sen), 26 for the Base Line (Kyun-sen ), and 52 for the Leading Span B (Senkou Span B).", "出どころの質": "ブログ（forex.in.rs）"}
+ ],
+ "デイトレ": [
+  {"値": [5, 13, 26], "原文の足": "15分足（day trading）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/", "逐語": "Is the Ichimoku 15-minute strategy good for day trading? Yes, the Ichimoku 15-min strategy can work for day trading, but it calls for caution. Market noise leads to more false signals on lower time frames. Use faster settings (5, 13, 26) and confirm entries with the Chikou Span and trading volume.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "範囲": "無い",
+ "その他の値": [
+  {"値": [10, 30, 60], "条件": "暗号資産", "URL": "https://changelly.com/blog/ichimoku-cloud-for-crypto-trading/", "逐語": "In crypto, some adapt to crypto-adjusted parameters like 10-30-60 because the market never sleeps. Still, most pros recommend learning the classic 9-26-52 first.", "出どころの質": "暗号資産交換業者のブログ（Changelly）"},
+  {"値": "7-22-44／9-30-60／12-24-120", "条件": "週5日の市場・トレンド相場", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "Of course, Ichimoku settings can be adjusted to suit a 5-day week at 7-22-44, then 9-30-60, or 12-24-120 for trending markets.", "出どころの質": "ブログ（forex.in.rs）"},
+  {"値": [9, 26, 52], "条件": "スイング（1時間足・4時間足）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/", "逐語": "Swing trading. The standard 9, 26, 52 settings are ideal for hourly and 4-hour charts.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "メモ": "今の値は転換線の期間 9 の1つだけで、既定と同じ。出どころがスキャル・デイトレに挙げる 5 や 12 は入っていない。"},
+
+{"種類": "基準線", "元の指標": "一目均衡表（細田悟一）", "パラメータの名前": ["転換線の期間", "基準線の期間", "先行スパンBの期間"],
+ "既定": [
+  {"値": [9, 26, 52], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud", "逐語": "The default setting for the Base Line is 26 periods and can be adjusted. On a daily chart, this line is the midpoint of the 26-day high-low range, which is almost one month.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [9, 26, 52], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud", "逐語": "Default settings are 9 for the Conversion Line, 26 for the Base Line and 52 for the Leading Span B.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": [
+  {"値": [5, 13, 26], "原文の足": "15分足または5分足（原文の呼び名は Scalping）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/", "逐語": "Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": [12, 24, 120], "原文の足": "1分足（scalping）", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "The best Ichimoku settings for scalping and 1-minute chart are 12-24-120, where 12 is for the Conversion Line ( Tenkan-sen), 24 for the Base Line (Kyun-sen ), and 120 for the Leading Span B (Senkou Span B).", "出どころの質": "ブログ（forex.in.rs）"},
+  {"値": [9, 26, 52], "原文の足": "5分足", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52, where nine is for the Conversion Line ( Tenkan-sen), 26 for the Base Line (Kyun-sen ), and 52 for the Leading Span B (Senkou Span B).", "出どころの質": "ブログ（forex.in.rs）"}
+ ],
+ "デイトレ": [
+  {"値": [5, 13, 26], "原文の足": "15分足（day trading）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/", "逐語": "Is the Ichimoku 15-minute strategy good for day trading? Yes, the Ichimoku 15-min strategy can work for day trading, but it calls for caution. Market noise leads to more false signals on lower time frames. Use faster settings (5, 13, 26) and confirm entries with the Chikou Span and trading volume.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "範囲": "無い",
+ "その他の値": [
+  {"値": [10, 30, 60], "条件": "暗号資産", "URL": "https://changelly.com/blog/ichimoku-cloud-for-crypto-trading/", "逐語": "In crypto, some adapt to crypto-adjusted parameters like 10-30-60 because the market never sleeps. Still, most pros recommend learning the classic 9-26-52 first.", "出どころの質": "暗号資産交換業者のブログ（Changelly）"},
+  {"値": "7-22-44／9-30-60／12-24-120", "条件": "週5日の市場・トレンド相場", "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/", "逐語": "Of course, Ichimoku settings can be adjusted to suit a 5-day week at 7-22-44, then 9-30-60, or 12-24-120 for trending markets.", "出どころの質": "ブログ（forex.in.rs）"}
+ ],
+ "メモ": "今の値は基準線の期間 26 の1つだけで、既定と同じ。出どころがスキャル・デイトレに挙げる 13 や 24 は入っていない。"},
+
+{"種類": "EMA傾き", "元の指標": "EMA（指数平滑移動平均）。傾きを測る k 本前は教科書の指標のパラメータではない", "パラメータの名前": ["ema_period", "slope_lookback_k"],
+ "既定": [
+  {"値": "EMA の期間 9（k は無い）", "URL": "https://www.tradingview.com/support/solutions/43000592270-exponential-moving-average/", "逐語": "The time period to be used in calculating the Exponential Moving Average. 9 days is the default.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": "EMA の期間 30（k は無い）", "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html", "逐語": "real = EMA(close, timeperiod=30)", "出どころの質": "ライブラリの説明（TA-Lib の Python 版の関数一覧）"}
+ ],
+ "スキャル": [
+  {"値": "EMA 9 と 21 の2本", "原文の足": "1分足・5分足", "URL": "https://fxnx.com/en/blog/ema-crossover-scalping-fast-trading-playbook", "逐語": "For Scalping (1m, 5m charts): A popular and responsive combination is the 9-period EMA and the 21-period EMA . The 9 EMA provides very early signals, while the 21 EMA acts as a dynamic support and resistance level.", "出どころの質": "証券会社（FXNX）のブログ"},
+  {"値": "EMA 9 と 20、8 と 21、5・8・13、トレンドの向きを見る 50 と 200", "原文の足": "5分足", "URL": "https://chartread.ai/blog/best-ema-settings-5-minute-chart", "逐語": "QUICK REFERENCE: 5-MINUTE EMA SETTINGS Standard pair 9 EMA + 20 EMA Faster scalp pair 8 EMA + 21 EMA Ribbon (scalping) 5 / 8 / 13 EMA Trend filter 50 EMA + 200 EMA", "出どころの質": "ブログ（chartread.ai）"}
+ ],
+ "デイトレ": [
+  {"値": "EMA 20 と 50 の2本", "原文の足": "15分足・30分足・1時間足", "URL": "https://fxnx.com/en/blog/ema-crossover-scalping-fast-trading-playbook", "逐語": "For Day Trading (15m, 30m, 1H charts): A smoother combination like the 20-period EMA and the 50-period EMA is often preferred.", "出どころの質": "証券会社（FXNX）のブログ"}
+ ],
+ "範囲": [
+  {"値": "短期 5〜20／中期 20〜60／長期 100 以上", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-averages-simple-and-exponential", "逐語": "Shorter moving averages (5-20 periods) are suitable for short-term trends and trading. Medium-term trends can be analyzed using longer moving averages (20-60 periods). Long-term investors often use moving averages with 100 or more periods.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の EMA の期間は 9・20・50・200 で、出どころが5分足に挙げる 9・20・50・200 と同じ数が並ぶが、傾きを測る k=5 本の値は、どの出どころにも書かれていない。"},
+
+{"種類": "AO%", "元の指標": "Awesome Oscillator（Bill Williams）", "パラメータの名前": ["fast", "slow"],
+ "既定": [
+  {"値": [5, 34], "URL": "https://ta-lib.org/functions/ao.html", "逐語": "Bill Williams, New Trading Dimensions , Wiley, 1998, and Trading Chaos , define the Awesome Oscillator as the 5-period less the 34-period simple moving average of the median price.", "出どころの質": "ライブラリの説明（TA-Lib 公式）。開発者の原典（Williams の著書）を引いている"},
+  {"値": [5, 34], "URL": "https://www.tradingview.com/support/solutions/43000501826-awesome-oscillator-ao/", "逐語": "lengthAO1=input(5, minval=1) //5 periods lengthAO2=input(34, minval=1) //34 periods AO = sma((high+low)/2, lengthAO1) - sma((high+low)/2, lengthAO2)", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": [5, 34], "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/awesome", "逐語": "AO = SMA (MEDIAN PRICE, 5) - SMA (MEDIAN PRICE, 34)", "出どころの質": "取引プラットフォームの公式ヘルプ（MetaTrader 5）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今の値は [12,26] と [5,34] の2組で、[5,34] は既定と同じ、[12,26] は AO の出どころには無い組（MACD の既定の数）。"},
+
+{"種類": "KST", "元の指標": "Know Sure Thing（Martin Pring）", "パラメータの名前": ["roc1", "roc2", "roc3", "roc4", "sma1", "sma2", "sma3", "sma4", "signal"],
+ "既定": [
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst", "逐語": "The default parameters are as follows: KST(10,15,20,30,10,10,10,15,9). The first four numbers represent the rate-of-change settings, the second four represent the moving averages for these rate-of-change indicators, and the last number is the signal line moving average.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/", "逐語": "This calculation is using the default parameters in Tradingview of 10,15,20,30,10,10,10,15,9.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "URL": "https://ta-lib.org/functions/kst.html", "逐語": "optInROC1Period integer 10 … optInROC2Period integer 15 … optInROC3Period integer 20 … optInROC4Period integer 30 … optInSMA1Period integer 10 … optInSMA2Period integer 10 … optInSMA3Period integer 10 … optInSMA4Period integer 15 … optInSignalPeriod integer 9 1–100000 Simple-moving-average period of the signal line", "出どころの質": "ライブラリの説明（TA-Lib 公式）。引数の表の9行（…は各行の範囲と説明を省いた所）"},
+  {"値": "シグナルは 10（開発者の日足の表）", "URL": "https://ta-lib.org/functions/kst.html", "逐語": "Pring's daily page uses a 10-day signal. The default signal period follows the charting platforms instead.", "出どころの質": "ライブラリの説明（TA-Lib 公式）。開発者 Pring の原典はシグナル 10、各プラットフォームは 9 と食い違うと書いている"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": "ROC 5,10,15,20／シグナル 6", "原文の足": "指定なし（day traders）", "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator", "逐語": "Day traders should shorten everything - ROC periods of 5, 10, 15, 20 with a signal line of 6. The trade-off is more noise, but you need the speed.", "出どころの質": "ブログ（Pineify）"},
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "原文の足": "1時間足（intraday）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/know-sure-thing-kst-indicator/", "逐語": "The default KST settings are suitable for intraday trading. For example, on the H1 timeframe, the indicator captures market momentum over the last 24 hours, accounting for different trading sessions (Asia, the US, Europe, Australia), as well as short-term momentum over the last 10 candlesticks.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "範囲": [
+  {"値": "各要素 8〜26（週足の文脈）", "URL": "https://capital.com/en-int/learn/technical-analysis/know-sure-thing-indicator", "逐語": "A common weekly configuration uses ROC periods of 10, 13, 14 and 15 with SMA periods of 9, 9, 9 and 9, though many practitioners experiment with periods in the 8–26 range for each component.", "出どころの質": "証券会社（Capital.com）の解説"}
+ ],
+ "その他の値": [
+  {"値": "短期（日足）10,15,20,30,10,10,10,15,9／中期（週足）10,13,15,20,10,13,15,20,9／長期（月足）9,12,18,24,6,6,6,9,9", "条件": "日足・週足・月足（Pring の時間軸別）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst", "逐語": "* Short-term Daily = KST(10,15,20,30,10,10,10,15,9) * Medium-term Weekly = KST(10,13,15,20,10,13,15,20,9) * Long-term Monthly = KST(9,12,18,24,6,6,6,9,9)", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。開発者 Pring の記事の設定として引用"},
+  {"値": "スキャルには向かない（値なし）", "条件": "5分足〜15分足", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/know-sure-thing-kst-indicator/", "逐語": "Statistics on false signals after testing the indicator with various settings on a three-year history showed that the KST generates more errors on M5–M15 time frames. Therefore, the indicator is not suitable for scalping.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "メモ": "今のパラメータの組は空（[]）で、値が入っていない。"},
+
+{"種類": "KSTシグナル", "元の指標": "Know Sure Thing（Martin Pring）のシグナル線", "パラメータの名前": ["roc1", "roc2", "roc3", "roc4", "sma1", "sma2", "sma3", "sma4", "signal"],
+ "既定": [
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/prings-know-sure-thing-kst", "逐語": "Signal Line = 9-period SMA of KST", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [10, 15, 20, 30, 10, 10, 10, 15, 9], "URL": "https://www.tradingview.com/support/solutions/43000502329-know-sure-thing-kst/", "逐語": "This calculation is using the default parameters in Tradingview of 10,15,20,30,10,10,10,15,9.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": "シグナルは 10（開発者の日足の表）", "URL": "https://ta-lib.org/functions/kst.html", "逐語": "Pring's daily page uses a 10-day signal. The default signal period follows the charting platforms instead.", "出どころの質": "ライブラリの説明（TA-Lib 公式）。開発者 Pring の原典はシグナル 10、各プラットフォームは 9 と食い違うと書いている"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": "シグナル 6（ROC 5,10,15,20）", "原文の足": "指定なし（day traders）", "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator", "逐語": "Day traders should shorten everything - ROC periods of 5, 10, 15, 20 with a signal line of 6. The trade-off is more noise, but you need the speed.", "出どころの質": "ブログ（Pineify）"},
+  {"値": "シグナル 6 または 7", "原文の足": "指定なし（day trading）", "URL": "https://pineify.app/resources/blog/what-is-know-sure-thing-indicator", "逐語": "Yes, but shorten the defaults. Try ROC periods of 5, 10, 15, 20, reduce the signal line to 6 or 7 periods, and use less smoothing.", "出どころの質": "ブログ（Pineify）"}
+ ],
+ "範囲": "無い",
+ "メモ": "今の値はシグナルの期間 9 の1つだけで、プラットフォームの既定と同じ（Pring の日足の表は 10）。"},
+
+{"種類": "PPO", "元の指標": "Percentage Price Oscillator（MACD を長期の平均で割った版）", "パラメータの名前": ["fast", "slow", "signal"],
+ "既定": [
+  {"値": [12, 26, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo", "逐語": "The PPO can be set as an indicator above, below or behind a security's price plot. Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [12, 26], "URL": "https://ta-lib.org/functions/ppo.html", "逐語": "The standard form is exponential with periods 12 and 26 — ((12-day EMA - 26-day EMA) / 26-day EMA) * 100, i.e. the MACD oscillator expressed as a percentage.", "出どころの質": "ライブラリの説明（TA-Lib 公式）。シグナル線は出力に無い"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今の値は [12,26,9] の1組だけで、既定と同じ。PPO の名でスタイル別の値を書いた出どころは見つからなかった（MACD の値は PPO の値として書かれていないので写していない）。"},
+
+{"種類": "PPOシグナル", "元の指標": "Percentage Price Oscillator のシグナル線", "パラメータの名前": ["fast", "slow", "signal"],
+ "既定": [
+  {"値": [12, 26, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo", "逐語": "The PPO can be set as an indicator above, below or behind a security's price plot. Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今の値は [12,26,9] の1組だけで、既定と同じ。"},
+
+{"種類": "PPOヒスト", "元の指標": "Percentage Price Oscillator のヒストグラム", "パラメータの名前": ["fast", "slow", "signal"],
+ "既定": [
+  {"値": [12, 26, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/percentage-price-oscillator-ppo", "逐語": "The PPO can be set as an indicator above, below or behind a security's price plot. Once the indicator is chosen from the dropdown list, the default parameter setting appears (12,26,9).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今の値は [12,26,9] の1組だけで、既定と同じ。"},
+
+{"種類": "STC", "元の指標": "Schaff Trend Cycle（Doug Schaff）", "パラメータの名前": ["fast", "slow", "cycle"],
+ "既定": [
+  {"値": [23, 50, 10], "URL": "https://ta-lib.org/functions/stc.html", "逐語": "optInFastPeriod integer 23 2–100000 Period of the fast EMA / optInSlowPeriod integer 50 2–100000 Period of the slow EMA / optInCyclePeriod integer 10 2–100000 Window of both stochastic stages", "出どころの質": "ライブラリの説明（TA-Lib 公式）。開発者側の原典を出典に挙げる＝'\"Releasing the Code to the Schaff Trend Cycle\" , FX-Strategy.com, published on FXStreet.com, February 15, 2008. The EasyLanguage source, and the 23/50/10 defaults.'"},
+  {"値": [23, 50, 10], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/schaff-trend-cycle/", "逐語": "What are the typical STC settings? The default settings include EMA periods of 23 and 50, as well as a stochastic indicator with a period of 10.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": [23, 50, 10], "URL": "https://www.tradingpedia.com/forex-trading-indicators/schaff-trend-cycle/", "逐語": "– Sh: short-term Exponential Moving Average with a default period of 23 – Lg: long-term Exponential Moving Average with a default period of 50 – Cycle: set at half the cycle length with a default value of 10.", "出どころの質": "ブログ（Tradingpedia）"},
+  {"値": "23, 50, 10, 3（4つ目はならしの値）", "URL": "https://trendsandbreakouts.com/schaff-trend-cycle", "逐語": "A widely used default is often described as 23, 50, 10, 3, which corresponds to fast EMA, slow EMA, cycle length L, and smoothing A.", "出どころの質": "ブログ（trendsandbreakouts.com）"},
+  {"値": [23, 50, 100], "URL": "https://www.stockgro.club/blogs/stock-market-101/schaff-trend-cycle/", "逐語": "The typical settings involve cycles of 23, 50 and 100, although these can be customised.", "出どころの質": "ブログ（StockGro）。ほかの出どころ（3つ目＝10）と食い違う"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "その他の値": [
+  {"値": "株 50,100,15／暗号資産 10,21,5", "条件": "市場別", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/schaff-trend-cycle/", "逐語": "In the stock market, where trends evolve more gradually, it is generally advisable to employ EMAs with periods of 50 and 100, along with a stochastic period of 15. This setup reduces the indicator's sensitivity, thereby minimizing the likelihood of false signals. In the realm of cryptocurrency trading, high market volatility often requires \"faster\" settings, such as EMA periods of 10 and 21 and a stochastic period of 5.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "メモ": "今のパラメータの組は空（[]）で、値が入っていない。"},
+
+{"種類": "STCstoch", "元の指標": "Schaff Trend Cycle の内部の1回目のストキャスティクス（ならした値）", "パラメータの名前": ["fast", "slow", "cycle"],
+ "既定": [
+  {"値": [23, 50, 10], "URL": "https://ta-lib.org/functions/stc.html", "逐語": "optInFastPeriod integer 23 2–100000 Period of the fast EMA / optInSlowPeriod integer 50 2–100000 Period of the slow EMA / optInCyclePeriod integer 10 2–100000 Window of both stochastic stages", "出どころの質": "ライブラリの説明（TA-Lib 公式）。ならしは 'Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half.' と書いている"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今のパラメータの組は空（[]）で、値が入っていない。内部の値だけを名指しで書いた出どころは無い。"},
+
+{"種類": "TRIX", "元の指標": "TRIX（Jack Hutson）", "パラメータの名前": ["period", "signal"],
+ "既定": [
+  {"値": [15, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix", "逐語": "The standard setting for TRIX is 15 for the triple smoothed EMA and 9 for the signal line.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": "期間 18（シグナルは書かれていない）", "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/", "逐語": "1. Single Smoothed EMA = 18 Period EMA of Closing Price.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）の計算例。StockCharts の 15 と食い違う"},
+  {"値": "期間 30（シグナルは出力に無い）", "URL": "https://ta-lib.org/functions/trix.html", "逐語": "optInTimePeriod integer 30 1–100000 EMA period used at each of the three smoothing passes", "出どころの質": "ライブラリの説明（TA-Lib 公式）。StockCharts の 15 と食い違う"},
+  {"値": [15, 9], "URL": "https://www.luxalgo.com/blog/trix-triple-exponential-moving-average-guide/", "逐語": "The common published defaults are a 15-period length for all three smoothing passes and a 9-period EMA of the TRIX line as the signal.", "出どころの質": "ブログ（LuxAlgo）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": "8〜12", "原文の足": "指定なし（day trading）", "URL": "https://howtotrade.com/indicators/trix-indicator/", "逐語": "If you want something more sensitive to price movements for day trading, you can drop to the 8-12 period range.", "出どころの質": "ブログ（howtotrade.com）"}
+ ],
+ "範囲": [
+  {"値": "敏感にするなら 5、鈍くするなら 45（既定 15 との比較）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix", "逐語": "Chartists looking for more sensitivity should try a shorter timeframe (5 versus 15). This will make the indicator more volatile and better suited for centerline crossovers. Chartists looking for less sensitivity should try a longer timeframe (45 versus 15).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は期間 7・9・14・21（シグナル 9）で、既定の 15 は入っておらず、デイトレに挙がる 8〜12 の中には 9 だけが入る。"},
+
+{"種類": "TRIXシグナル", "元の指標": "TRIX のシグナル線", "パラメータの名前": ["period", "signal"],
+ "既定": [
+  {"値": [15, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix", "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (15,9). These parameters can be adjusted to increase or decrease sensitivity. The signal line default is 9, which can also be adjusted.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [15, 9], "URL": "https://howtotrade.com/indicators/trix-indicator/", "逐語": "The indicator settings can be adjusted to suit individual preferences and trading styles , but traders commonly use the default settings of 15 for the triple-smoothed EMA and 9 for the TRIX signal line.", "出どころの質": "ブログ（howtotrade.com）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今のシグナルの値は 9 で既定と同じ（定義はシグナルを単純移動平均としているが、StockCharts の行と LuxAlgo は EMA と書く）。"},
+
+{"種類": "TRIXヒスト", "元の指標": "TRIX とシグナル線の差", "パラメータの名前": ["period", "signal"],
+ "既定": [
+  {"値": [15, 9], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix", "逐語": "The standard setting for TRIX is 15 for the triple smoothed EMA and 9 for the signal line.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": [
+  {"値": "期間 8〜12", "原文の足": "指定なし（day trading）", "URL": "https://howtotrade.com/indicators/trix-indicator/", "逐語": "If you want something more sensitive to price movements for day trading, you can drop to the 8-12 period range.", "出どころの質": "ブログ（howtotrade.com）"}
+ ],
+ "範囲": [
+  {"値": "敏感にするなら 5、鈍くするなら 45", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix", "逐語": "Chartists looking for more sensitivity should try a shorter timeframe (5 versus 15). This will make the indicator more volatile and better suited for centerline crossovers. Chartists looking for less sensitivity should try a longer timeframe (45 versus 15).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は期間 7・9・14・21（シグナル 9）で、既定の 15 は入っていない。"},
+
+{"種類": "TSI", "元の指標": "True Strength Index（William Blau）", "パラメータの名前": ["first（長い方・先にならす）", "second（短い方・後にならす）", "signal"],
+ "既定": [
+  {"値": "25, 13（シグナルは書かれていない）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index", "逐語": "Second, calculate a 25-period EMA of this price change. Third, calculate a 13-period EMA of this 25-period EMA to create a double smoothing.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。計算の説明の値"},
+  {"値": "25, 13（シグナルは出力に無い）", "URL": "https://ta-lib.org/functions/tsi.html", "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum / optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first", "出どころの質": "ライブラリの説明（TA-Lib 公式）。シグナルについては 'A signal line is not part of the output; apply EMA to outReal to obtain one, since no source agrees on its period.' と書く"},
+  {"値": "25, 13, シグナル 7 または 13", "URL": "https://www.tradingsim.com/blog/true-strength-index", "逐語": "The classic settings are 25 for the long (first) smoothing, 13 for the short (second) smoothing, and a 7- or 13-period signal line.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25, 13, 7], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/", "逐語": "Standard settings for the TSI include smoothing periods of 25, 13, and 7.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": "13 と 25（SMA と書いている）", "URL": "https://howtotrade.com/indicators/true-strength-index/", "逐語": "1. Launch your True Strength Index indicator below the price chart. The default settings are the 13-period and 25-period SMAs.", "出どころの質": "ブログ（howtotrade.com）。ほかの出どころ（EMA）と平均の種類が食い違う"}
+ ],
+ "スキャル": [
+  {"値": [7, 4, 2], "原文の足": "1分足〜5分足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "Scalping on 1-minute to 5-minute charts requires even faster settings, but TSI's strength lies in longer-term analysis. Consider 7/4/2 for scalping, though you might prefer faster indicators like stochastic for very short-term trading.", "出どころの質": "ブログ（indicator.trading）"},
+  {"値": "FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5", "原文の足": "指定なし（Scalping）", "URL": "https://www.mql5.com/en/market/product/145132", "逐語": "Scalping: FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5", "出どころの質": "MQL5 マーケットの製品の説明（低）。'FastEMAPeriod' は 'Length of the first (fast) EMA for smoothing MTM' と書かれ、順番の意味が Blau の 25/13 と逆"}
+ ],
+ "デイトレ": [
+  {"値": [13, 7, 4], "原文の足": "15分足〜1時間足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "For day trading on 15-minute to 1-hour charts, consider faster settings like 13/7/4 . This reduces lag while maintaining TSI's noise-filtering benefits.", "出どころの質": "ブログ（indicator.trading）"},
+  {"値": [13, 8, 5], "原文の足": "外国為替の15分足〜1時間足（原文の呼び名は Scalping & intraday）", "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/", "逐語": "Forex 15min–1H 13, 8, 5 Scalping & intraday", "出どころの質": "証券会社（Aron Groups）の解説の表の1行"},
+  {"値": "FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7", "原文の足": "指定なし（Day Trading）", "URL": "https://www.mql5.com/en/market/product/145132", "逐語": "Day Trading: FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7", "出どころの質": "MQL5 マーケットの製品の説明（低）"}
+ ],
+ "範囲": [
+  {"値": "シグナル 7〜12", "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/", "逐語": "The True Strength Index indicator uses a single line, usually with a 7-12 ranged period EMA of the single line.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"}
+ ],
+ "その他の値": [
+  {"値": "40,20,7 と 13,7,7", "条件": "日足の例（遅い設定と敏感な設定の比較）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index", "逐語": "The upper indicator window shows TSI (40,20,7) fluctuating between -20 and +44 with 20/-20 marking overbought/oversold. The lower window shows TSI (13,7,7) fluctuating between +78 and -69 with 50/-50 marking overbought/oversold.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は [12,26,9] の1組で、先にならす方が 12・後にならす方が 26 なら、教科書の 25→13 と長短の順番も数も違う。"},
+
+{"種類": "TSIシグナル", "元の指標": "True Strength Index のシグナル線", "パラメータの名前": ["first", "second", "signal"],
+ "既定": [
+  {"値": "シグナル 7 または 13", "URL": "https://www.tradingsim.com/blog/true-strength-index", "逐語": "The classic settings are 25 for the long (first) smoothing, 13 for the short (second) smoothing, and a 7- or 13-period signal line.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25, 13, 7], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/", "逐語": "Standard settings for the TSI include smoothing periods of 25, 13, and 7.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": "決まった値は無い", "URL": "https://ta-lib.org/functions/tsi.html", "逐語": "A signal line is not part of the output; apply EMA to outReal to obtain one, since no source agrees on its period.", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "スキャル": [
+  {"値": [7, 4, 2], "原文の足": "1分足〜5分足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "Consider 7/4/2 for scalping, though you might prefer faster indicators like stochastic for very short-term trading.", "出どころの質": "ブログ（indicator.trading）"}
+ ],
+ "デイトレ": [
+  {"値": [13, 7, 4], "原文の足": "15分足〜1時間足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "For day trading on 15-minute to 1-hour charts, consider faster settings like 13/7/4 .", "出どころの質": "ブログ（indicator.trading）"},
+  {"値": [13, 8, 5], "原文の足": "外国為替の15分足〜1時間足（原文の呼び名は Scalping & intraday）", "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/", "逐語": "Forex 15min–1H 13, 8, 5 Scalping & intraday", "出どころの質": "証券会社（Aron Groups）の解説の表の1行"}
+ ],
+ "範囲": [
+  {"値": "シグナル 7〜12", "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/", "逐語": "The True Strength Index indicator uses a single line, usually with a 7-12 ranged period EMA of the single line.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"}
+ ],
+ "メモ": "今のシグナルの値は 9 で、TradingView が書く 7〜12 の中にあるが、既定として挙がる 7 や 13 とは違う。"},
+
+{"種類": "TSIヒスト", "元の指標": "True Strength Index とシグナル線の差", "パラメータの名前": ["first", "second", "signal"],
+ "既定": [
+  {"値": [25, 13, 7], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/", "逐語": "Standard settings for the TSI include smoothing periods of 25, 13, and 7.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": "25, 13, シグナル 7 または 13", "URL": "https://www.tradingsim.com/blog/true-strength-index", "逐語": "The classic settings are 25 for the long (first) smoothing, 13 for the short (second) smoothing, and a 7- or 13-period signal line.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "スキャル": [
+  {"値": [7, 4, 2], "原文の足": "1分足〜5分足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "Consider 7/4/2 for scalping, though you might prefer faster indicators like stochastic for very short-term trading.", "出どころの質": "ブログ（indicator.trading）"}
+ ],
+ "デイトレ": [
+  {"値": [13, 7, 4], "原文の足": "15分足〜1時間足", "URL": "https://indicator.trading/en/indicator/tsi", "逐語": "For day trading on 15-minute to 1-hour charts, consider faster settings like 13/7/4 .", "出どころの質": "ブログ（indicator.trading）"},
+  {"値": [13, 8, 5], "原文の足": "外国為替の15分足〜1時間足（原文の呼び名は Scalping & intraday）", "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/", "逐語": "Forex 15min–1H 13, 8, 5 Scalping & intraday", "出どころの質": "証券会社（Aron Groups）の解説の表の1行"}
+ ],
+ "範囲": [
+  {"値": "シグナル 7〜12", "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/", "逐語": "The True Strength Index indicator uses a single line, usually with a 7-12 ranged period EMA of the single line.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"}
+ ],
+ "メモ": "今の値は [12,26,9] の1組で、教科書の 25,13 と順番も数も違う。"},
+
+{"種類": "KAMA傾き%", "元の指標": "KAMA（Perry Kaufman の適応型移動平均）。傾きの 5本前は教科書の指標のパラメータではない", "パラメータの名前": ["er_period", "fast_sc", "slow_sc"],
+ "既定": [
+  {"値": [10, 2, 30], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama", "逐語": "There are several steps required to calculate Kaufman's Adaptive Moving Average. Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。開発者 Kaufman の推奨として引用"},
+  {"値": "効率比の期間 30", "URL": "https://ta-lib.org/functions/kama.html", "逐語": "optInTimePeriod integer 30 1–100000 Lookback window for the efficiency ratio", "出どころの質": "ライブラリの説明（TA-Lib 公式）。効率比の期間が StockCharts の 10 と食い違う（fast 2・slow 30 は式 'SC = (ER*(2/3 - 2/31) + 2/31)^2' に固定で入っている）"},
+  {"値": [14, 2, 30], "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview", "逐語": "Add it to your workspace—the default settings appear (Length: 14, Fast: 2, Slow: 30)", "出どころの質": "ブログ（Pineify）。TradingView の AMA の既定として書いている。StockCharts の 10 と食い違う"}
+ ],
+ "スキャル": [
+  {"値": [10, 2, 20], "原文の足": "5分足〜1時間足（原文の呼び名は Day Trading / Scalping）", "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview", "逐語": "Trading Style Length Fast Length Slow Length Best Timeframe / Day Trading / Scalping | 10 | 2 | 20 | 5m to 1h |", "出どころの質": "ブログ（Pineify）の表の見出しと1行"}
+ ],
+ "デイトレ": [
+  {"値": [10, 2, 20], "原文の足": "5分足〜1時間足（原文の呼び名は Day Trading / Scalping）", "URL": "https://pineify.app/resources/blog/adaptive-moving-average-indicator-tradingview", "逐語": "Trading Style Length Fast Length Slow Length Best Timeframe / Day Trading / Scalping | 10 | 2 | 20 | 5m to 1h |", "出どころの質": "ブログ（Pineify）の表の見出しと1行"},
+  {"値": "効率比の期間 7〜10", "原文の足": "5分足または1時間足", "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance", "逐語": "KAMA works on any timeframe. For day trading, try a shorter setting of 7 to 10 on 5-minute or hourly charts.", "出どころの質": "ブログ（Pineify）"}
+ ],
+ "範囲": [
+  {"値": "効率比の期間 7〜10、slow 20〜30", "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance", "逐語": "The Length controls the indicator's memory. Seven to ten periods is a solid range. The Fastest EMA stays at 2 in most setups. It controls how fast KAMA can react to strong trends. The Slowest EMA (20-30) filters minor noise.", "出どころの質": "ブログ（Pineify）"},
+  {"値": "効率比の期間は増やさず減らす／fast を 5 にすると滑らか", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama", "逐語": "The first parameter is for the Efficiency Ratio and chartists should refrain from increasing this number. Instead, chartists can decrease it to increase sensitivity. Chartists looking to smooth KAMA for longer-term trend analysis can increase the middle parameter incrementally. Even though the difference is just 3, KAMA(10,5,30) is significantly smoother than KAMA(10,2,30).", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は 20・50・200 の1つずつで、これが効率比の期間なら、Kaufman の 10 より長く、StockCharts の『効率比の期間は増やさない』という文とも向きが違う（傾きの 5本前の値はどの出どころにも無い）。"},
+
+{"種類": "WMA傾き%", "元の指標": "WMA（加重移動平均）。傾きの 5本前は教科書の指標のパラメータではない", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [30], "URL": "https://ta-lib.org/functions/wma.html", "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the weighting window", "出どころの質": "ライブラリの説明（TA-Lib 公式）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": "無い",
+ "メモ": "今の値は 20・50・200 の1つずつで、TA-Lib の既定 30 は入っていない（WMA の名でスタイル別の値を書いた出どころは開けた中に無かった）。"},
+
+{"種類": "AROONU", "元の指標": "Aroon（Tushar Chande）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [25], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon", "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [25], "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.", "出どころの質": "教育ブログ（TradingSim）。開発者 Chande の日足の値として書く"},
+  {"値": [14], "URL": "https://ta-lib.org/functions/aroon.html", "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length", "出どころの質": "ライブラリの説明（TA-Lib 公式）。StockCharts の 25 と食い違う"},
+  {"値": [14], "URL": "https://www.daytrading.com/aroon", "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:", "出どころの質": "教育サイト（DayTrading.com）"}
+ ],
+ "スキャル": [
+  {"値": [9], "原文の足": "1分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [14], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25], "原文の足": "5分足（検証の結果として）", "URL": "https://www.liberatedstocktrader.com/aroon-indicator/", "逐語": "Our testing shows that the best setting for Aroon is 25 on an OHLC 5-minute chart which yields a 47% win rate.", "出どころの質": "ブログ（Liberated Stock Trader）。株式での自前の検証"}
+ ],
+ "デイトレ": [
+  {"値": "9〜14", "原文の足": "指定なし（intraday day trading）", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25], "原文の足": "30分足または日足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [288], "原文の足": "5分足（過去1日のトレンドを見るため）", "URL": "https://www.daytrading.com/aroon", "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.", "出どころの質": "教育サイト（DayTrading.com）"}
+ ],
+ "範囲": [
+  {"値": "短くても 8〜10 を下回らない", "URL": "https://www.daytrading.com/aroon", "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).", "出どころの質": "教育サイト（DayTrading.com）"},
+  {"値": "短期は 25 以下、2〜4か月の動きは 75（日足）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator", "逐語": "Short-term traders would clearly opt for a 25-day Aroon or shorter, while position traders looking for 2-4 month moves would opt for 75-day Aroon.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は 7・14・21 で、StockCharts の既定 25 は入っておらず、7 は DayTrading.com が書く『8〜10 を下回らない』より短い。"},
+
+{"種類": "AROOND", "元の指標": "Aroon（Tushar Chande）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [25], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon", "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [14], "URL": "https://ta-lib.org/functions/aroon.html", "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length", "出どころの質": "ライブラリの説明（TA-Lib 公式）。StockCharts の 25 と食い違う"}
+ ],
+ "スキャル": [
+  {"値": [9], "原文の足": "1分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [14], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25], "原文の足": "5分足（検証の結果として）", "URL": "https://www.liberatedstocktrader.com/aroon-indicator/", "逐語": "Our testing shows that the best setting for Aroon is 25 on an OHLC 5-minute chart which yields a 47% win rate.", "出どころの質": "ブログ（Liberated Stock Trader）。株式での自前の検証"}
+ ],
+ "デイトレ": [
+  {"値": "9〜14", "原文の足": "指定なし（intraday day trading）", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.", "出どころの質": "教育ブログ（TradingSim）"},
+  {"値": [25], "原文の足": "30分足または日足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.", "出どころの質": "教育ブログ（TradingSim）"}
+ ],
+ "範囲": [
+  {"値": "短くても 8〜10 を下回らない", "URL": "https://www.daytrading.com/aroon", "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).", "出どころの質": "教育サイト（DayTrading.com）"}
+ ],
+ "メモ": "今の値は 7・14・21 で、StockCharts の既定 25 は入っておらず、7 は DayTrading.com が書く『8〜10 を下回らない』より短い。"},
+
+{"種類": "AROONOSC", "元の指標": "Aroon Oscillator（Tushar Chande）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [25], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator", "逐語": "The Aroon Oscillator is Aroon-Up less Aroon-Down. The SharpCharts default parameter is 25, and the example below is based on the 25-day Aroon Oscillator.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [14], "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html", "逐語": "real = AROONOSC(high, low, timeperiod=14)", "出どころの質": "ライブラリの説明（TA-Lib の Python 版の関数一覧）。StockCharts の 25 と食い違う"}
+ ],
+ "スキャル": [
+  {"値": [9], "原文の足": "1分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.", "出どころの質": "教育ブログ（TradingSim）。Aroon（上昇・下降）の期間として書かれたもの"},
+  {"値": [14], "原文の足": "5分足", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.", "出どころの質": "教育ブログ（TradingSim）。Aroon（上昇・下降）の期間として書かれたもの"}
+ ],
+ "デイトレ": [
+  {"値": "9〜14", "原文の足": "指定なし（intraday day trading）", "URL": "https://www.tradingsim.com/blog/aroon-indicator", "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.", "出どころの質": "教育ブログ（TradingSim）。Aroon（上昇・下降）の期間として書かれたもの"}
+ ],
+ "範囲": [
+  {"値": "短期は 25 以下、2〜4か月の動きは 75（日足）", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon-oscillator", "逐語": "Short-term traders would clearly opt for a 25-day Aroon or shorter, while position traders looking for 2-4 month moves would opt for 75-day Aroon.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今の値は 7・14・21 で、StockCharts の既定 25 は入っていない。"},
+
+{"種類": "PSAR加速", "元の指標": "Parabolic SAR（Wilder）", "パラメータの名前": ["step（開始値と増やす幅）", "maximum"],
+ "既定": [
+  {"値": [0.02, 0.2], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar", "逐語": "The default parameters are 0.02 for the Starting Step and 0.2 for the Maximum Step.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": [0.02, 0.2], "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/", "逐語": "The starting value for the Acceleration Factor (.02 is the Default). The increment in which the Acceleration Factor will move (.02 is Default). The maximum value of the Acceleration Factor (.20 is the Default)", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": [0.02, 0.2], "URL": "https://ta-lib.org/functions/sar.html", "逐語": "optInAcceleration real 0.02 ≥ 0 Step added to the acceleration factor on each new extreme point / optInMaximum real 0.2 ≥ 0 Ceiling on the acceleration factor", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [0.02, 0.2], "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "The initial factor is 0.02, the price step is also 0.02, and the maximum AF is 0.2. Most traders use these settings for the Parabolic. Wilder also used them.", "出どころの質": "証券会社（LiteFinance）の解説。開発者 Wilder の値として書く"}
+ ],
+ "スキャル": [
+  {"値": [0.01, 0.1], "原文の足": "1分足・3分足・5分足（scalping）", "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/", "逐語": "Adjust the settings to a Step of 0.01 and Maximum of 0.1 to optimize for scalping.", "出どころの質": "証券会社（Opofinance）のブログ"},
+  {"値": "step 0.022", "原文の足": "分足（scalping）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "Scalping in the classic version, especially when it comes to trading on minute timeframes, requires the settings that are most sensitive to price changes. So it is best to set the largest value recommended by Wilder at 0.022.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": "step 0.021（2本目は 0.04 刻み）", "原文の足": "5分足", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "For the M5 timeframe, I would stick to Wilder’s classic teachings and also use the Parabolic SAR setting with a step of 0.021 as the lowest price for the step. It is quite sensitive to fluctuations in five-minute charts. But the strategy using two Parabolics in a five-minute chart suggests adjusting one of the indicators in 0.04 increments.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "デイトレ": [
+  {"値": [0.02, 0.2], "原文の足": "指定なし（classic intraday trading）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "The standard Parabolic SAR settings are quite applicable for classic intraday trading. In rare cases, when it comes to the timeframes M5 and M15 and the indicator needs higher sensitivity, the acceleration factor starts with a 0.021 step.", "出どころの質": "証券会社（LiteFinance）の解説"},
+  {"値": "step 0.021", "原文の足": "5分足・15分足（感度を上げたいとき）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "In rare cases, when it comes to the timeframes M5 and M15 and the indicator needs higher sensitivity, the acceleration factor starts with a 0.021 step.", "出どころの質": "証券会社（LiteFinance）の解説"}
+ ],
+ "範囲": [
+  {"値": "step 0.018〜0.021・maximum 0.018〜0.021（原文の数字のまま）", "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/", "逐語": "In practice, traders often adjust these parameters in the range from 0.018 to 0.021 for the step and from 0.018 to 0.021 for the maximum acceleration factor.", "出どころの質": "証券会社（LiteFinance）の解説。maximum の範囲が既定 0.2 と桁が合わず、原文の誤りの可能性がある"}
+ ],
+ "その他の値": [
+  {"値": "step 0.01／0.03、maximum 0.10／0.20（感度の比較の例）", "条件": "日足の例", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar", "逐語": "Chart 6 shows IBM with SAR (0.01, 0.20). The step is 0.01 and the Maximum Step is 0.20. Chart 7 shows IBM with a higher Step (0.03). SAR is more sensitive in chart 7 because there are more reversals.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"}
+ ],
+ "メモ": "今のパラメータの組は空（[]）で、定義に書かれた 0.02 ずつ・0.2 で頭打ちは教科書の既定と同じ。"},
+
+{"種類": "VTXP", "元の指標": "Vortex Indicator（Etienne Botes・Douglas Siepman, TASC 2010年1月）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/vortex.html", "逐語": "optInTimePeriod integer 14 1–100000 Number of bars in the rolling sums", "出どころの質": "ライブラリの説明（TA-Lib 公式）。出どころの違いを 'the only cross-source difference is the suggested period (14 vs Wikipedia's worked 21).' と書く"},
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator", "逐語": "+VM14 = 14-period Sum of +VM", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。計算の説明の値"},
+  {"値": [14], "URL": "https://realtrading.com/trading-blog/vortex-indicator/", "逐語": "Most platforms provide this default at 14 and many traders prefer to leave it like that.", "出どころの質": "ブログ（RealTrading）"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": [
+  {"値": "14〜30", "URL": "https://www.tradingview.com/support/solutions/43000591352-vortex-indicator/", "逐語": "Parameter length (n) is a result of trader preference. Traders commonly select parameters between 14 and 30 days.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": "速くするなら 7〜10、上位の向きを見るなら 34〜55", "URL": "https://trendsandbreakouts.com/vortex-indicator", "逐語": "Short periods like 7 to 10 are sometimes used for faster rotation, but they usually require stricter trade management because the lines can cross frequently in ranges. Longer periods like 34 to 55 are less common but can work as a higher timeframe regime filter, where you care more about staying aligned with the dominant direction than catching early turns.", "出どころの質": "ブログ（trendsandbreakouts.com）"}
+ ],
+ "その他の値": [
+  {"値": "23 と 14 の比較（日足）", "条件": "日足の例", "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator", "逐語": "Decreasing the look-back period will increase sensitivity and result in more threshold crosses. For example, a daily chart with a 14-period VTX will be much more sensitive (volatile) than the 23-period version.", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）"},
+  {"値": "スキャルは短く（値なし）", "条件": "スタイル別だが値が無い", "URL": "https://fxopen.com/blog/en/how-to-use-the-vortex-indicator-in-trading/", "逐語": "For instance, a shorter period may be preferable for scalping, while a longer one can be better suited for position trading.", "出どころの質": "証券会社（FXOpen）のブログ"}
+ ],
+ "メモ": "今の値は 7・14・21 で、既定の 14 を含み、7 は TradingView の書く 14〜30 より短く trendsandbreakouts の書く 7〜10 に入る。"},
+
+{"種類": "VTXM", "元の指標": "Vortex Indicator（Etienne Botes・Douglas Siepman, TASC 2010年1月）", "パラメータの名前": ["period"],
+ "既定": [
+  {"値": [14], "URL": "https://ta-lib.org/functions/vortex.html", "逐語": "optInTimePeriod integer 14 1–100000 Number of bars in the rolling sums", "出どころの質": "ライブラリの説明（TA-Lib 公式）"},
+  {"値": [14], "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/vortex-indicator", "逐語": "-VM14 = 14-period Sum of -VM", "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。計算の説明の値"}
+ ],
+ "スキャル": "無い",
+ "デイトレ": "無い",
+ "範囲": [
+  {"値": "14〜30", "URL": "https://www.tradingview.com/support/solutions/43000591352-vortex-indicator/", "逐語": "Parameter length (n) is a result of trader preference. Traders commonly select parameters between 14 and 30 days.", "出どころの質": "定番の教育サイト（TradingView ヘルプ）"},
+  {"値": "速くするなら 7〜10、上位の向きを見るなら 34〜55", "URL": "https://trendsandbreakouts.com/vortex-indicator", "逐語": "Short periods like 7 to 10 are sometimes used for faster rotation, but they usually require stricter trade management because the lines can cross frequently in ranges. Longer periods like 34 to 55 are less common but can work as a higher timeframe regime filter, where you care more about staying aligned with the dominant direction than catching early turns.", "出どころの質": "ブログ（trendsandbreakouts.com）"}
+ ],
+ "メモ": "今の値は 7・14・21 で、既定の 14 を含み、7 は TradingView の書く 14〜30 より短い。"}
+]
