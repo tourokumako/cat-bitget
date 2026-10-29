@@ -552,7 +552,8 @@ PLAN_REQ_KEY = "★**結ぶ要件の項目**："
 HEAD_FIVE = "検査やプログラムを直す工事で書く5つ"       # 案の新しい見出し（項目の正本の 4-22）
 HEAD_NUMS = "新しく入る数字と式の一覧"                 # 同（項目の正本の 4-21）
 HEAD_UNVERIFIED = "確かめていないこと"                 # 同（設計書の 6-5）
-DECL_HEADS = ("宣言", "作業内容", "目的", "経緯", "ゴール")   # ★2026-10-24（3-2 の10件目・まこさん「ok」）＝ToDo の宣言の見出し。案の見出しではない
+DECL_HEADS = ("宣言", "作業内容", "目的", "経緯", "ゴール",   # ★2026-10-24（3-2 の10件目・まこさん「ok」）＝ToDo の宣言の見出し。案の見出しではない
+              "受け取り方")   # ★2026-10-25（まこさん「直して良い」）＝返信の1行目の見出し（permanent_rules §0 の1）。工事のフォルダに保管した CC の返信（cc_problems_20261025.txt）を案と読まない
 # 工事の種類を決める語。直すファイルの一覧（TARGET・NEW_FILE）のパスに1つでも在れば、種類①
 KIND1_WORDS = ("scripts/priority_rebuild", "engine_tuner", "regime_laws", "indicator_switch", "signal_families",
                "material_ranking", "search_limits", "observe_config", "indicator_params", "indicator_roles",

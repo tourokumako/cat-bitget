@@ -53,7 +53,7 @@ def selftest_arg(name: str) -> str:
       直す前＝engine_tuner_gen.py を書き替えている間は、全体の自己テスト（--selftest）を走らせていた。全体の自己テストは
         M2-E-8 で直すまで終了コード 1 のまま（T6・T29・T10・T12・T13）なので、必ず1件 落ちた。約9分 使って、新しい情報は出なかった。
       直した後＝A12 と同じ口（engine_tuner_gen.py は --selftest-extra-gate）を走らせる。落ちを許すかも A12 の許し
-        （a12_fail_allowed＝gen_materials.py の T6 だけ）を呼ぶ＝判定は2か所に書き写さない。
+        （a12_fail_allowed＝gen_materials.py の T6 と、F6 の「壊す前から差し込みが古い」だけ・F6 は 2026-10-29 に足した）を呼ぶ＝判定は2か所に書き写さない。
       限り（正直に）＝engine_tuner_gen.py の全体の自己テストは、ここでは走らない（監査に出す前のチェック pre_audit_check.py は
         今までどおり走らせる）。A12 の一覧に無い .py は、今までどおり --selftest。"""
     for n, arg in _rd().A12_SELFTESTS:

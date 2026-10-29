@@ -709,10 +709,13 @@ def a12_fail_allowed(name, rc, out):
     ★2026-10-08（160回目・まこさん OK の案 1b）＝写しで確かめる道具（.claude/state/indicator_review の *_draft_build.py）も
       この関数と A12_SELFTESTS を import して同じ判定を使う。159回目は写しの道具が許しを手で書き写し、B3・B4 まで許す形に
       直してから走らせ、A12（T6 だけ許す）と食い違って長い確かめを走らせ直した（教訓 L-671）。
-    許すのは、gen_materials.py の落ちが T6（素の状態で --verify が鳴っている）だけのとき（下の _a12_trial_locked の説明）。"""
+    許すのは、gen_materials.py の落ちが T6（素の状態で --verify が鳴っている）だけのとき（下の _a12_trial_locked の説明）。
+    ★2026-10-29（217回目・まこさん「１，よい」）＝F6 の「壊す前から差し込みが古い」も許す。組の一覧と探す範囲を書き替えると、
+      差し込みの表の数（gen_materials.py:2738）が表を作り直すまで必ず古くなる＝T6 と同じ性質（worklog 20261026 §5-4 の1）。
+      F6 のほかの落ち（印が無い・改変検出が鳴らない・後始末ができていない）は、これまでどおり止める。"""
     fails = [l.strip() for l in (out or "").splitlines() if l.strip().startswith("❌ ") and not re.match(r"❌ \d+ 件", l.strip())]
     return bool(rc != 0 and name == "gen_materials.py" and fails
-                and all(l.startswith("❌ T6: 素の状態で --verify が鳴っている") for l in fails))
+                and all(l.startswith(("❌ T6: 素の状態で --verify が鳴っている", "❌ F6: 壊す前から差し込みが古い")) for l in fails))
 
 
 def _a12_restore():
@@ -968,7 +971,7 @@ def _a12_trial_locked(acc):
                 r6 = subprocess.run(cmd6, capture_output=True, text=True, timeout=600, cwd=SDK)
                 # ★2026-10-06（157回目・まこさん「なおしてよい」）＝材料の名前が変わる工事は、材料の文書（materials.md）を
                 #   作り直す（G-1・承認の後）まで、gen_materials.py の T6（素の状態で --verify が鳴っている）が必ず落ちる。
-                #   仮当てでは表を作り直さないので、落ちた番人が T6 だけのときは止めない（表を作り直した後は、
+                #   仮当てでは表を作り直さないので、落ちた番人が T6 だけ（2026-10-29 から F6 の「壊す前から差し込みが古い」も）のときは止めない（表を作り直した後は、
                 #   監査に出す前のチェック pre_audit_check.py が gen_materials.py --selftest と --verify を必ずかける）。
                 # ★2026-10-07（監査 CP63 の修正3・Major-1）＝「❌ T」で始まる行だけを集めると、T で始まらない落ち
                 #   （F4・R1・S1 ほか）と T6 が一緒に出たときに見逃す。件数の行（「❌ N 件」）を除く ❌ の行を全部 集める。

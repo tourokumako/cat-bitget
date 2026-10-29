@@ -30,6 +30,21 @@ CASES = [
     ("R7 何も無い → お願いでない", "次の1本へ進みます。", False),
 ]
 
+# ★2026-10-29（217回目・まこさん「１，よい」）＝仮当て A12 の許し（a12_fail_allowed）の見本。
+#   許す＝gen_materials.py の T6 と、F6 の「壊す前から差し込みが古い」だけ。ほかの落ちが1つでも混ざれば止める。
+T6 = "❌ T6: 素の状態で --verify が鳴っている（先に --write で直す）"
+F6_OLD = "❌ F6: 壊す前から差し込みが古い＝先に --write が要る（engine_tuner_milestones.md）"
+F6_DEAD = "❌ F6: 差し込みを書き換えても --verify が鳴らない（改変検出が死んでいる）"
+A_CASES = [
+    ("A1 T6 だけ → 許す", "gen_materials.py", 1, f"{T6}\n❌ 1 件", True),
+    ("A2 F6 の差し込みが古い だけ → 許す", "gen_materials.py", 1, f"{F6_OLD}\n❌ 1 件", True),
+    ("A3 T6 と F6 の差し込みが古い → 許す", "gen_materials.py", 1, f"{T6}\n{F6_OLD}\n❌ 2 件", True),
+    ("A4 F6 の改変検出が死んでいる → 止める", "gen_materials.py", 1, f"{F6_DEAD}\n❌ 1 件", False),
+    ("A5 F6 の差し込みが古い と別の落ち → 止める", "gen_materials.py", 1, f"{F6_OLD}\n❌ R1: 何か\n❌ 2 件", False),
+    ("A6 ほかの道具の F6 の文 → 止める", "observe_diag.py", 1, f"{F6_OLD}\n❌ 1 件", False),
+    ("A7 落ちの行が無い → 止める", "gen_materials.py", 1, "Traceback (most recent call last):", False),
+]
+
 
 def main() -> int:
     bad = 0
@@ -38,7 +53,13 @@ def main() -> int:
         ok = got == want
         bad += 0 if ok else 1
         print(f"{'✅' if ok else '❌'} {name}（結果 {got}・期待 {want}）")
-    print(f"[selftest] {len(CASES) - bad}/{len(CASES)}")
+    for name, prog, rc, out, want in A_CASES:
+        got = bool(mod.a12_fail_allowed(prog, rc, out))
+        ok = got == want
+        bad += 0 if ok else 1
+        print(f"{'✅' if ok else '❌'} {name}（結果 {got}・期待 {want}）")
+    n = len(CASES) + len(A_CASES)
+    print(f"[selftest] {n - bad}/{n}")
     return 0 if bad == 0 else 1
 
 

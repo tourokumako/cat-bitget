@@ -1731,8 +1731,10 @@ def _design_five_questions(d: dict, md: str, src_label: str, okd: str, engine: b
        "2つ目に、6-5 の1件ずつについて、確かめないまま実装に進んでよいかを、結果の6節（自己申告への答え）で答えてください。"],
       ["7-6", "goal", "確かめていないこと"])
     # ── 5. 書き方と捨てた案 ──
-    hand_rows = [r for r in assign if r["手書き／自動"].strip() == "手書き"]
-    auto_rows = [r for r in assign if r["手書き／自動"].strip() != "手書き"]
+    # ★2026-10-29（217回目・まこさん「直す」）＝「手書き（この表の手書きの項目）」のような注記つきの欄も手書きに数える。
+    #   直す前は文字の完全一致で数え、依頼書 CP91 が手書き9件を7件、自動21件を23件と書いた。
+    hand_rows = [r for r in assign if r["手書き／自動"].strip().startswith("手書き")]
+    auto_rows = [r for r in assign if not r["手書き／自動"].strip().startswith("手書き")]
     q("Q5", "根拠の無い文や、決めた作り方と違う文や、理由なく捨てた案が在ると、監査も まこさんも、設計書が正しいかを確かめられない",
       "設計書の書き方は正しいか",
       ["次の4つを確かめてください。",
@@ -2074,7 +2076,7 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     #   ★2026-10-21（同日・まこさん「その書き方で良い」）＝文は、まこさんが OK した W01 の例の書き方（1つの文に主語・目的語・述語を1つずつ）。
     wn = 0
     for key in (("手書き", "自動") if (only_table and not new_form) else ()):   # ★新しい形は F12 に1問でまとめる（2026-10-21）
-        rows_w = [r for r in assign if (r["手書き／自動"].strip() == "手書き") == (key == "手書き")]
+        rows_w = [r for r in assign if r["手書き／自動"].strip().startswith("手書き") == (key == "手書き")]
         if not rows_w:
             continue
         wn += 1
