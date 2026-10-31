@@ -2018,13 +2018,19 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     add("")
     if only_table:
         add("<!-- 項目: 事実データ 名前=監査に出す前のチェック（pre_audit_check.json） -->")
-        dmt = os.path.getmtime(design_path or DESIGN)
+        # ★2026-10-31（229回目・まこさん「替えてよい」）＝記録が古いかを、ファイルの時刻でなく、チェックの照らしの口（--verify）で決める。
+        #   直す前は、記録と設計書のファイルの時刻だけで比べていた。チェックの記録の指紋は、コードと設定と資料の表だけで作り、設計書を含まない
+        #   （pre_audit_check.py の FINGERPRINT_FILES）。そのため、設計書を作り直しただけで、見る行の結果が変わらないのに、約11分〜49分の走らせ直しを求めていた。
+        #   いまは、作る前の照らし（inputs_gate の PRE_AUDIT_CHECK）と同じ旗で --verify を呼ぶ。指紋・照らした設計書・終了コードのどれかが違えば、走らせ直しを求める。
+        pv = (subprocess.run([sys.executable, PRE_AUDIT_CHECK, "--verify"] + (["--design", show_path] if show_path else [])
+                             + (["--before-impl"] if kind == "design" else []), capture_output=True, text=True)
+              if engine and os.path.isfile(PRE_JSON) and os.path.isfile(PRE_AUDIT_CHECK) else None)
         if not engine:
             add("この工事には当たりません。pre_audit_check.json は、売買のロジックの道具の検査です。この工事は、売買のロジックに触りません。")
         elif not os.path.isfile(PRE_JSON):
             add("pre_audit_check.json がありません。")
-        elif os.path.getmtime(PRE_JSON) <= dmt:
-            add("pre_audit_check.json は、設計書より前に走らせた物です。そのため、この設計書の検査ではないので、道具は載せません。"
+        elif pv is None or pv.returncode != 0:
+            add("pre_audit_check.json は、いまのコードか、この設計書の検査ではありません（pre_audit_check.py --verify が通らない）。そのため、道具は載せません。"
                 "CC は、チェックを走らせ直してから、依頼書を作り直します。")
         else:
             pj = json.load(open(PRE_JSON, encoding="utf-8"))
