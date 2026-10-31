@@ -385,8 +385,8 @@ def src_from_work(work: str) -> dict:
     d["何を作るか"] = _text(hand.get("§1 概要") or [])
     d["なぜ作るか"] = _md_table(hand.get("2-1 何を測るか") or [], ("何を測ったか", "コマンド", "読み方"), "2-1", bad) if "2-1 何を測るか" in hand else []
     d["やらないこと"] = _md_table(hand.get("3-1 やらないこと") or [], ("中身", "理由", "出どころ"), "3-1", bad) if "3-1 やらないこと" in hand else []
-    # ★ひな型の「★向きを見る所。」の行は、中身に数えない（その下に「無し」と書いても止まらないようにする＝設計書の監査 CP77）
-    _kk = [ln for ln in (hand.get("3-2 決めてほしいこと") or []) if not ln.strip().startswith("★向きを見る所")]
+    # ★ひな型の目印の行（HAND_MARKS）は、中身に数えない（その下に「無し」と書いても止まらないようにする＝設計書の監査 CP77）
+    _kk = [ln for ln in (hand.get("3-2 決めてほしいこと") or []) if not ln.strip().startswith(HAND_MARKS)]
     d["決めてほしいこと"] = [] if _text(_kk) in ("", "無し") else _md_table(_kk, ("中身", "私の案", "出どころ"), "3-2", bad)
     d["設計の中身"]["4-19"] = [ln for ln in (hand.get("4-19 通しの例") or []) if ln.strip()]
     if new_form:
@@ -549,6 +549,8 @@ PLAN = STATE / "design_read_plan.md"                # 読むもの宣言（requi
 PLAN_COPY = "読むもの宣言の写し.md"                   # 工事のフォルダに置く写し（宣言が次の工事の物に替わった後も、作り直せるように）
 PLAN_NUM_KEY = "★**やることの番号**："
 PLAN_REQ_KEY = "★**結ぶ要件の項目**："
+# ★2026-10-31（ToDo の199番・まこさん「修正していいよ」）＝ひな型の目印の文を替えた。古い工事の表（10本）は古い文のまま残すので、両方を中身に数えない。
+HAND_MARKS = ("★向きを見る所", "★この見出しの中身は、案を書く前に、まこさんに確認していただきます")
 HEAD_FIVE = "検査やプログラムを直す工事で書く5つ"       # 案の新しい見出し（項目の正本の 4-22）
 HEAD_NUMS = "新しく入る数字と式の一覧"                 # 同（項目の正本の 4-21）
 HEAD_UNVERIFIED = "確かめていないこと"                 # 同（設計書の 6-5）
@@ -586,8 +588,8 @@ def work_kind(d: dict) -> int:
 
 
 def _para(lines: list) -> str:
-    """手書きの文を、段落の間の空行を残して1つの文字列にする（ひな型の「★向きを見る所」の行と、前後の空行は落とす）。"""
-    keep = [ln.rstrip() for ln in lines if not ln.strip().startswith("★向きを見る所")]
+    """手書きの文を、段落の間の空行を残して1つの文字列にする（ひな型の目印の行 HAND_MARKS と、前後の空行は落とす）。"""
+    keep = [ln.rstrip() for ln in lines if not ln.strip().startswith(HAND_MARKS)]
     return re.sub(r"\n{3,}", "\n\n", "\n".join(keep)).strip()
 
 
@@ -639,7 +641,7 @@ def _check_todo_rows(rows: list, bad: list) -> None:
 def _read_design_hand(d: dict, hand: dict, k: str, no: str, cols: tuple, bad: list) -> None:
     """やることの表の手書きの設計の表（4-4・4-5・4-8・4-13）を読み、設計の中身へ入れる。空の欄は止める。
     非該当にしてよいのは 4-8（作る物が無い工事）だけ。"""
-    lines = [ln for ln in (hand.get(k) or []) if not ln.strip().startswith("★向きを見る所")]
+    lines = [ln for ln in (hand.get(k) or []) if not ln.strip().startswith(HAND_MARKS)]
     first = _text(lines)
     if first.startswith("非該当"):
         if no != "4-8":
@@ -693,7 +695,7 @@ def _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: 
             bad.append(f"一覧の番号 {r['番号']} が、「### 4-19 通しの例」の表に無い（実物の1件で、一覧の全部の番号を通す）")
     # ★2026-10-24（ToDo の178番）＝完成の条件は やることの表の「### 7-6 完成の条件」から読む。条件の文の頭に修正の番号を付けて、
     #   いまの完成の条件の欄（承認のプログラム・壊すプログラムが読む7つ）のまま持つ。行が無い番号の理由の行もここから読む。
-    acc_lines = [ln for ln in (hand.get(HAND_ACCEPT) or []) if not ln.strip().startswith("★向きを見る所")]
+    acc_lines = [ln for ln in (hand.get(HAND_ACCEPT) or []) if not ln.strip().startswith(HAND_MARKS)]
     acc_rows = _md_table(acc_lines, ACCEPT_COLS, f"### {HAND_ACCEPT}", bad)
     for r in acc_rows:
         for c in ("修正の番号", "条件", "コマンド"):
@@ -2799,7 +2801,7 @@ def _sample_work(base: Path, new: bool = False) -> str:
                 "| ① | どの要件のためか | 見本 |", "| ② | 何が出来るようになるか | 見本 |", "| ③ | net までのつながり | 見本のつながり |",
                 "| ④ | 無駄だったと分かる物 | 見本の物 |", "| ⑤ | 済んだ直後に、②を何で確かめるか | 見本 |",
                 "| ⑥ | この工事が損なう恐れのある要件 | 見本の要件 |", "",
-                "### 3-2 決めてほしいこと", "", "★向きを見る所。", "無し", "",
+                "### 3-2 決めてほしいこと", "", "★この見出しの中身は、案を書く前に、まこさんに確認していただきます。", "無し", "",
                 "### 4-4 処理の流れ", "", "| 順 | 読む物 | すること | 書く先 |", "|---|---|---|---|", "| 1 | 見本の読む物 | 見本のすること | 見本の書く先 |", "",
                 "### 4-5 止まる条件", "", "| 条件 | 止める所 | 画面に出す文 |", "|---|---|---|", "| 見本の条件 | 見本の所 | 見本の文 |", "",
                 "### 4-8 作る物の形", "", "非該当＝見本は作る物が無い", "",
