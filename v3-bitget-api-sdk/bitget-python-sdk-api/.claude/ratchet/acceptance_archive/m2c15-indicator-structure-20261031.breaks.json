@@ -6,20 +6,20 @@
   {
    "no": "1",
    "script": "b213_place_missing.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b213_place_missing.sh",
-   "expect": null,
-   "means": "",
-   "match": false
+   "code": 1,
+   "note": "false",
+   "expect": 1,
+   "means": "要素の定義表の要素のうち、置く記録が「法則の記録」の行を全部消すと、置く記録が4つちょうどでなくなり、完成の条件1が落ちる",
+   "match": true
   },
   {
    "no": "2",
    "script": "b211_structure_need_missing.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b211_structure_need_missing.sh",
-   "expect": null,
-   "means": "",
-   "match": false
+   "code": 1,
+   "note": "false",
+   "expect": 1,
+   "means": "要素の定義表の要素「出力」（②-3）の根拠から構造に要ること16を消すと、構造に要ること1〜30 のうち16の受け先が無くなり、完成の条件2が落ちる",
+   "match": true
   },
   {
    "no": "3",
@@ -30,17 +30,20 @@
   {
    "no": "4",
    "script": "b212_records_changed.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b212_records_changed.sh",
-   "expect": null,
-   "means": "",
-   "match": false
+   "code": 1,
+   "note": "      \"^RSI(\\\\d+)$\"",
+   "expect": 1,
+   "means": "記録 RSI の名前の行だけを（ファイルの書き方を変えずに）書き替えると、git diff が「要素の定義表」の1行のほかの違いを出し、完成の条件4が落ちる",
+   "match": true
   },
   {
    "no": "5",
-   "script": null,
+   "script": "b214_choice_name_missing.sh",
    "code": null,
-   "note": "壊すプログラムが無い＝この行は済にできない"
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b214_choice_name_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
   }
  ]
 }

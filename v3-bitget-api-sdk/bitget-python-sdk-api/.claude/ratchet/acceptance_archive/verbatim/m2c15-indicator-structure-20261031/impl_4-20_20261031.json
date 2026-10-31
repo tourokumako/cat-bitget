@@ -38,5 +38,15 @@
     "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 要素の定義表の要素のうち、置く記録が「法則の記録」の行を全部消すと、置く記録が4つちょうどでなくなり、完成の条件1が落ちる\n# EXPECT_MSG: false\n# b213_place_missing — 置く記録（指標の記録・使い方の記録・部品の記録・法則の記録）のどれかの行が無くなると、完成の条件1が落ちる（工事 m2c15-indicator-structure-20261031・監査 CP92 の修正18・2026-10-31）\n#   守っているもの＝7-6 の F-1 の条件1（測るコマンドは、条件1のコマンドと同じ）\n#   ★壊す対象（置く記録が法則の記録の行）が1行も無ければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$PR/indicators/indicators.json\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport json, sys\np = sys.argv[1]\no = json.load(open(p, encoding='utf-8'))\nrows = o[\"要素の定義表\"][\"要素\"]\nhit = [e for e in rows if e[\"置く記録\"] == \"法則の記録\"]\nif not hit:\n    raise SystemExit(\"[b213_place_missing] 壊す対象（置く記録が法則の記録の行）が1行も無い\")\no[\"要素の定義表\"][\"要素\"] = [e for e in rows if e[\"置く記録\"] != \"法則の記録\"]\njson.dump(o, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)\nPYEOF\n\nmeasure jq -e '([\"使い方の記録\",\"指標の記録\",\"法則の記録\",\"部品の記録\"] - [.[\"要素の定義表\"][\"要素\"][][\"置く記録\"]]) == [] and ([.[\"要素の定義表\"][\"要素\"][][\"置く記録\"]] - [\"使い方の記録\",\"指標の記録\",\"法則の記録\",\"部品の記録\"]) == []' \"$F\"\nfinish\n",
     "根拠の抜き書き": "やることの表 7-6 の F-1 の条件1 の行「置く記録が、使い方の記録・指標の記録・法則の記録・部品の記録の4つちょうどで、どれも1行以上在る（成り立たなければ終わりのコード 1）」",
     "状態": "確定"
+  },
+  {
+    "番号": "5",
+    "対象のファイル": ".claude/breaks/b214_choice_name_missing.sh",
+    "直す箇所": "壊すプログラム b214（7-6 の F-1 の条件5・監査 CP93 の修正6）＝要素 ②-7 の選べる値の名前を「役割の区分2」に書き替えると、完成の条件5が落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 要素 ②-7 の「選べる値の名前」を「役割の区分2」に書き替えると、選べる値に無い名前を指す要素ができ、完成の条件5が落ちる\n# EXPECT_MSG: false\n# b214_choice_name_missing — 要素が指す選べる値の名前が選べる値に無いと、完成の条件5が落ちる（工事 m2c15-indicator-structure-20261031・監査 CP93 の修正6）\n#   守っているもの＝7-6 の F-1 の条件5（測るコマンドは、監査 CP93 の修正3 を当てた条件5のコマンドと同じ）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$PR/indicators/indicators.json\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport json, sys\np = sys.argv[1]\no = json.load(open(p, encoding='utf-8'))\nhit = [e for e in o[\"要素の定義表\"][\"要素\"] if e[\"番号\"] == \"②-7\" and e[\"形の決まり\"][\"選べる値の名前\"] == \"役割の区分\"]\nif len(hit) != 1:\n    raise SystemExit(\"[b214_choice_name_missing] 壊す対象（②-7 の選べる値の名前）が1か所でない\")\nhit[0][\"形の決まり\"][\"選べる値の名前\"] = \"役割の区分2\"\njson.dump(o, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)\nPYEOF\n\nmeasure jq -e '((([.[\"要素の定義表\"][\"要素\"][][\"形の決まり\"][\"選べる値の名前\"]] - [null]) - (reduce path(.[\"要素の定義表\"][\"選べる値\"][]) as $p ([]; . + [$p[2]]))) == []) and ((reduce (reduce .[\"要素の定義表\"][\"要素\"][][\"番号\"] as $n ([]; if any(.[]; . == $n) then . else . + [$n] end))[] as $x (0; . + 1)) == 40) and ((reduce .[\"要素の定義表\"][\"要素\"][] as $x (0; . + 1)) == 40) and has(\"役割の区分の表\") and has(\"方向から性質への対応の表\")' \"$F\"\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-1 の条件5 の行「要素が指す「選べる値の名前」が全部 選べる値に在り、要素の番号が重複せずに40行で、名前で指す2つの表（役割の区分の表・方向から性質への対応の表）が一番外に在る（1つでも欠ければ終わりのコード 1）」",
+    "状態": "確定"
   }
 ]

@@ -9162,6 +9162,41 @@
    "file": ".claude/breaks/b213_place_missing.sh",
    "at": "2026-10-31T15:14:19",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-31_m2c15_indicator_structure_20261031_impl_cp93_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-indicator-structure-20261031/やることの表.md",
+   "at": "2026-10-31T16:33:53",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-31_m2c15_indicator_structure_20261031_impl_cp93_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-indicator-structure-20261031/やることの表.md",
+   "at": "2026-10-31T16:33:53",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-31_m2c15_indicator_structure_20261031_impl_cp93_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-indicator-structure-20261031/やることの表.md",
+   "at": "2026-10-31T16:33:53",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-31_m2c15_indicator_structure_20261031_impl_cp93_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-indicator-structure-20261031/やることの表.md",
+   "at": "2026-10-31T16:33:53",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-structure-20261031",
+   "num": "5",
+   "file": ".claude/breaks/b214_choice_name_missing.sh",
+   "at": "2026-10-31T17:32:37",
+   "how": "当てた"
   }
  ]
 }
