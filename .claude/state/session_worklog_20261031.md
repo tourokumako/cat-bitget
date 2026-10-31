@@ -315,3 +315,72 @@
 - tidy_next_step.py --todo-from（22行）→ --write（1回目は worklog の §7 がまだ無くて止まった → §7 を書いてから通した）→ L-733 を書いた後の --verify が「教訓の現役 42件」で止めた → --write で L-693 を lessons_archive.md へ移した → --verify 20個 通過（next_step 250行）。
 - 必読の表に acceptance.md を足すと、必読の一覧（must_read_now.txt）が書き替わり、宣言の hook が このセッションの156番の宣言にも acceptance.md の根拠を求めて、書き込む Bash を止めた（必読の一覧がすぐ効くことを、足す前に確かめなかった）。acceptance.md を Read で開き、根拠を足した156番の宣言を、コミットのお願いと一緒に出し直す。
 - コミットは まこさんの OK の後。
+
+## §8 226回目＝192番の続き（監査 CP92 の結果を読み、直す範囲に まこさんの決定）
+
+### 8-1 開いた物
+- 必読12件を Read で開いた。最後の行まで開いていないのは2本＝集約する修正の要件定義書（1〜514行だけ・付録C の 516〜3250行は開いていない）・fix_inventory（1〜170行だけ）。返信で申告した。
+- ToDo を next_step の③の表どおりに書いた（22行・★いまここ＝192番）。156番の行は回の数を226回目に替え、状態を「まだ」にした（225回目の締めはコミット e542c7e6 で済み）。192番の宣言に まこさん「OK」。
+- 監査 CP92 の結果（sdk の .claude/audits/2026-10-31_m2c15_indicator_structure_20261031_design_cp92_audit_report.md・700行）を1行目から最後まで Read で開いた。
+
+### 8-2 監査 CP92 の結論（結果の見出しのまま）
+- 結論＝GO。Critical 0・Major 14（修正1〜14）・Minor 7（修正15〜21）・Process 2（修正22・23）。
+- 状態（監査が書いた）＝確定＝15・16・17・20・22・23／案が複数＝5（案A・案B）／未決＝ほかの16件。
+- 直す相手＝elements_src.json（1・3・4・5・6・10・11・12・13・14・16・21）／やることの表.md（7・8・9・15・18・19・20）／案の写し okd_an_20261031.txt（2・17・22）・okd_an2_20261031.txt（23）。
+- 修正番号の無い記録＝構造に要ること11 は195番で⑤-7 の欄を決めるときに受ける・E を足す工事では条件1 の jq も直す・「掛かる場面」の英語と選べる値「場面」の対応は195番・kb §4 の1・3・6 は195番で判定の型に足す・名前で指す行を選べる値に足すのは足す前に まこさんに見せる・根拠3欄とも空の要素7行（③-10 は H2 に直結）・自己申告10＝ss1_f1〜f8 は161番の前に1本ずつ走らせ 6-5 に残す。
+- 一覧を作るときに気づいた事実＝①修正18 は名前だけで、b213 の本体（実装の指示）は監査に無い ②修正19 の条件5 も壊すプログラムの欄が「—」③elements_src.json を直すと実装の指示1を組み直す ④修正22 の②（道具の直し）は工事の外（インフラ）。
+
+### 8-3 まこさんの決定（逐語 2026-10-31）
+- 「1,全部修正する」「２，案A」＝直す範囲は修正1〜23 の全部。修正5 は案A（③-9 は代表の値だけを持ち、範囲は E の「指標でない数の値」の記録に1か所で持つ）。
+
+### 8-4 直す道の確かめ（読むだけ）
+- 当てる道具 apply_audit_fix.py の --report の道は、状態が確定でない件を --choose（<番号>=確定 か 案の記号）で選んだときだけ当てる（:625〜630）。逐語のファイル（verbatim/ の下の .txt）には当てない＝修正2・17・22・23 は、直す【番号】だけの次の案を出し、まこさんの OK をもらう（:636〜639）。
+- hook 12（enforce_audit_fix.py）は、状態が確定で当てていない修正の対象のファイルへの手書きだけを止める（:100〜121）。当てた記録に在れば止めない。
+- 実装の指示 impl_4-20_20261031.json は3件の並び（欄＝番号・対象のファイル・直す箇所・直す前の文字・種類・中身・根拠の抜き書き・状態）。1件目の中身は、今の1つ目の鍵の行と、元データから組んだ「要素の定義表」の1行。
+- 案の写しのうち、後の案 okd_an2 が置き換えた節は11（要件のまとめ.md:64〜108）。修正2・17 は okd_an の【4-6】、修正22 は okd_an の【6-2】、修正23 は okd_an2 の【7-5】で、どれも今の設計書に写っている節。
+
+### 8-5 直す作業の宣言（6つの手順）に まこさん「OK」→ 1〜5 を行った
+- 控え＝作業場の elements_src.before_cp92.json・yarukoto.before_cp92.md・impl.before_cp92.json・purpose_check.before_cp92.md・elements_src.before_prov.json。
+- 1番＝apply_audit_fix.py --report <CP92> --severity Critical,Major,Minor,Process --choose（未決16件＝確定・5=A）を --dry → 本番。当てた19件（elements_src.json 12件＝1・3・4・5〔案A〕・6・10・11・12・13・14・16・21／やることの表.md 7件＝7・8・9・15・18・19・20）。applied_fixes.json に19件。修正2・17・22・23 は逐語のファイルなので当てない（道具の決まり）。
+- 2番＝impl_4-20_20261031.json を4件に。1件目は元データから jq で組み直した（先に、直す前の元データで組み直すと今の中身と1文字も変わらない＝true を確かめた）。4件目＝b213_place_missing.sh（条件1 を守る・b211 と同じ形・本体は CC の手書き＝作業場の b213_body.txt・bash -n で形を確かめた）。2・3件目は変えていない（diff 0）。
+- 3番＝やることの表.md の目標②⑤・4-4 の3番を条件1〜5 に、4-5 に b213 と条件5 の行。purpose_check.md に b213 と CP92 の決定・日付 14:36。元データの _出どころ を「決まり①〜③（同 §4）・決まり④⑤（CP92 の修正6）」に。試しの設計書を読んで見つけた4つも揃えた＝Y-4 の理由「この3つ」→「この5つ」と出どころ・4-13 の最後の行の出どころ・4-8 の写す元・CP92 で中身が変わった要素9行（②-4・②-9・②-11・③-1・③-5・③-7・③-9・④-5・⑤-7）の出どころに修正番号（jq で書き直し。ほかの欄が変わらないことを jq で確かめた。監査の道具が足した「時間足」が前の行にくっついていた1038行目の形も直った）。
+- 修正23 は 7-5 に1行足すと gen_acceptance.py が止まる（7-5 の答えは群1 の20行と同じ数・:1421〜1424）。H6 と群2 の18行の答えを【4-6】に1行ずつ書き、7-5 の17行目からその節を指した。
+- 4番＝作業場の写し（今の indicators.json＝40a456ac と同じ）に実装1を当て、完成の条件1〜5＝全部 true（条件4 の差0行）。壊し方4つ（b213＝法則の記録の行を消す→条件1・b211＝②-3 の16を消す→条件2・b212＝RSI の名前→条件4・②-7 の選べる値の名前→条件5）＝全部 終わりのコード 1。条件5 の時間＝0.13秒。出どころを足した後の実装1でも条件1〜5 を走らせ直して通った。
+- 実装の指示の sha256＝87d8e4ac407d943b64ca50922af1881168e3b435bb132a8d9f53885f3d798822（途中の 8db4f4f7…・1fbfbee0… は出どころの直しで替わった）。
+- 5番＝案の下書き（作業場の an3_draft.txt・直した節19）を trial_design.py に通した。--fast の1回目＝①7-1 で「読んだ」と書いた7本をこのセッションで開いていない（indicators.json・observe_diag.py・engine_tuner_gen.py・gen_signal_families.py・regime_laws.json・indicator_combination_kb.md・list_banned_words.py を開いた）②見直し表 ③古い語3件。2回目・3回目は見直し表だけ。試しの設計書（1214行）を全部 Read で開き、見直し表を新しい行番号で書き直した（60項目・根拠66件・止める理由0件）。仮当てを含む本番＝A群0件・古い語0件・5分35秒・設計書のハッシュ値 0aa39d5f…。
+- 修正22 の②（gen_audit_docs.py と gen_acceptance.py の数える元をそろえる道具の直し）は、この工事の外のインフラの直し（リスクの行に書いただけ）。
+
+### 8-6 直した19節に まこさん「OK」→ 設計書を作り直した
+- gen_verbatim.py＝okd_an3_20261031（直した19節の案・uuid 3062b8a8・213行）・ok_an3_20261031（「OK」・uuid 87546550）を工事のフォルダへ写した。okd_an3 は作業場の下書きと1文字も違わない（空の行を除く diff 0）。--summary で要件のまとめ.md を作り直した（82行・okd_an3 の19節が「写る」・okd_an と okd_an2 の同じ見出しは「写らない」）。
+- 今の設計書（監査 CP92 を受けた版・70d5074e…）と見直し表を作業場に控えた（acceptance.cp92_audited.md・acceptance.review.cp92_audited.md）。
+- gen_acceptance.py --work m2c15-indicator-structure-20261031 --write＝1214行・ハッシュ値 0aa39d5f…＝試しの設計書と diff 0。書いた直後の検査は A14 だけ → 試しの見直し表を置き場の名前だけ替えて写した（reviews/acceptance.review.md・--check＝止める理由0件・根拠66件）。
+- 設計書を1行目から最後（1214行）まで Read で開いた。
+- require_design_check_before_approval.py --try（仮当てを含む）を裏で走らせた＝A1〜A8・B1・B2 全部通る（不足0件・315.2秒・rc 0）。走らせた後も、本物の indicators.json と .claude/breaks は git status で差が無い。設計書のハッシュ値は 0aa39d5f… のまま。
+- 承認のお願いを出した（往復1回目／上限1回・net に直結しない）。
+
+### 8-7 まこさん「承認した」→ 実装（工事の流れの7）
+- apply_audit_fix.py --design --dry＝4件当たる。本番の前に宣言の hook に止められた＝①承認のプログラムが工事のフォルダを acceptance_archive/verbatim/ へ移し、必読の一覧の やることの表.md・elements_src.json の道が切れた ②前の宣言の根拠 acceptance.md:756 が作り直しで別の行になった。next_step_src.json の必読の表の2本の道を控えの置き場に替え（読む物は減らさない・説明の数を選べる値14・決まり5に）、tidy_next_step.py --selftest 27/27 → --write（検査20個 通過）。途中で block_repeat_kind と block_repeat_failure に止められ、セッションの lessons.md と diagnosis.md に書いた。宣言を出し直して まこさん「OK」。
+- apply_audit_fix.py --design＝4件当てた（indicators.json に鍵1つ・b211・b212・b213 を新しく作った）。applied_fixes.json に4件。
+- SDK の直下で完成の条件1〜5＝全部 true・rc 0（一番外の鍵6つ・要素40行・条件4 の git diff は0行）。
+- run_breaks.py --design は、--measure-only を付けずに2回打って土台ゲートに止められた（記録を <iter>.breaks.json に書く口のため・つなぎ方だけ直して打ち直したのは誤り＝lessons.md に書いた）。前の回の打ち方（20261006:208）に合わせ、try_hooks.py --bash で止める hook 0本を確かめてから --design acceptance.md --measure-only＝3本とも期待どおり rc=1（b213→条件1・b211→条件2・b212→条件4）。走らせた後も条件4 は差0行・RSI_壊した 0件・法則の記録の行10・②-3 の根拠 [16]＝元に戻っている。
+- 打っていないもの＝verify_design_contract.py --diff（触った関数0件の照合）・実装の監査の依頼書（次の宣言で作る）。
+
+### 8-8 実装の監査の依頼書（宣言に まこさん「OK」・チェックの走行にも OK）
+- verify_design_contract.py --diff <設計書>＝齟齬 0件（impl observe_diag.py）。
+- 手書きの元＝控えの置き場の工事のフォルダに「監査依頼の手書き（実装の監査）.md」を書いた（手本＝m2c15-shape-settings-20261009 の同じ文書・HAND_FORM の形）。工事ごとの問い＝Q8（当てた要素の定義表が設計書の実装1と元データのとおりか）・Q9（壊すプログラム3本が 7-6 の壊し方どおりで、直しを外したときだけ落ちるか）。設計の中身（CP92 の修正）を問い直す問いは入れていない（実装の監査は設計書のとおりかだけ＝2026-10-12 の決定）。
+- pre_audit_check.py --run を try_hooks で止める hook 0本を確かめてから裏で走らせた。
+- 結果＝全部 rc=0（終わりのコード 0）。走らせた物＝gen_indicator_switch --write・gen_materials --write・gen_signal_families --verify（71.0秒）・leak_causality_diag（305.3秒）・gen_materials --verify／--selftest（80.2秒）・gen_indicator_switch --verify・gen_exit_families --verify・engine_tuner_exec --selftest・observe_diag --selftest（207.9秒）・engine_tuner_gen --selftest-extra-gate・verify_design_contract --diff・gen_composition_rules --verify・gen_indicator_table --verify。check_indicator_sources は rc=1 だが「既知」（出力が分かっている食い違いと同じ＝material_params 44行・material_param_ranges 10行・next_step の あとで直すこと①・P-6・P-7）。--check-materials は「省略」（読むファイルの指紋が 2026-10-29 10:38:14 の rc 0 と同じ）。⏸ まこさんの承認を待つもの2件＝gen_signal_families --write／--approve・gen_exit_families --write／--approve（この道具は打たない作り）。記録＝.claude/state/pre_audit_check.json（指紋 3173eed6…）。
+- pre_audit_check.py --verify＝「監査に出せます」。
+- gen_audit_docs.py request-design impl を、私が --design <承認の控え> を足して打ち、2つで止められた（①承認の控えが git の版と食い違う＝控えはまだ commit していない・gen_audit_docs.py:444〜448 ②チェックの記録が --design の相手のものではない・同 :456〜461）。宣言で OK をいただいた打ち方は --design を付けない形で、いまの設計書（acceptance.md）は控えと cmp で同じ・承認の印も 0aa39d5f…。番号は依頼書と結果の名前だけで数える（同 :835〜843）ので、打ち直しても cp93 のまま。try_hooks（止める hook 0本）の後、宣言どおりの形で打った＝依頼書 CP93（477行・問い9件＝R0・Q1〜Q6・Q8・Q9・事実データ4件・外部検索2件・自己申告1件）。
+- check-request＝食い違い0件。依頼書を1行目から最後（477行）まで Read で開いた。見直し表（reviews/…_impl_cp93_audit_request.review.md・37項目）を埋め、--check＝止める理由0件・根拠60件。1回目の --check は、根拠を「依頼書:行」と書いたため25件止まった（照らしの道具が読めるファイル名の形に直した）。
+- 見直しで気づいたこと＝設計書の完成の条件5 には壊し方の文が在る（acceptance.md:813・:966「要素 ②-7 の「選べる値の名前」を「役割の区分2」に書き替える」）が、壊すプログラムの欄は「—」。依頼書の Q9 は「条件3 と条件5 には、壊すプログラムがありません。これが設計書のとおりかも見てください」と問うている。
+- 依頼書 CP93 をリンクでお見せした。まこさん「OK 別セッションで監査依頼する」。
+
+## §9 226回目の締め（156番・宣言に まこさん「ok」）
+- まこさん「このセッションは終了でよいね」→ 締めの4つ（next_step・教訓・worklog・コミット）が残ることを答え、まこさん「OK」→ 156番の宣言（必読9本の根拠つき）に まこさん「ok」。
+- ToDo＝192番を「まだ（途中＝監査 CP92 の修正23件を全部入れ、設計書を作り直して承認・実装4件・依頼書 CP93 まで済。監査は まこさんが別のセッションで出す）」、★いまここ を156番へ（Edit で書いた）。
+- 書き替える前の next_step_src.json と next_step.md を作業場に控えた（next_step_src.before_close.json・next_step.before_close.md）。
+- next_step の元データ（next_step_src.json）＝「2」の見出しを227回目に・①（226回目に作った物と決まったこと）・②（最初にやる事＝CP93 の結果を読む → まこさんに直す範囲を決めていただく → indicators.json は当てる道具・breaks は CC・設計書の誤りは やることの表.md → 192・193番を ✅済 → 161番。161番の前に CP92 の自己申告10。修正22 の② はインフラの直しとして残る。やってはいけない事）・必読の表の説明と外す条件（道は変えていない＝必読の一覧は変わらない）・④・3-1 を226回目に。jq empty で形を確かめ、tidy_next_step.py --selftest＝27/27。
+- 途中で、元データの形を python3 -c で見ようとして設計↔実装ゲートに止められ（やり取りの記録を読むときと合わせて2回目）、block_repeat_kind と block_repeat_failure の求めで、セッションの lessons.md と diagnosis.md に書いた。jq empty で確かめた。
+- 教訓＝lessons_active.md に L-734（宣言に無い旗 --design・run_breaks の --measure-only・承認で工事のフォルダが移る・見直し表の根拠の書き方・python3 -c の再演）。
+- コミットは まこさんの OK の後。

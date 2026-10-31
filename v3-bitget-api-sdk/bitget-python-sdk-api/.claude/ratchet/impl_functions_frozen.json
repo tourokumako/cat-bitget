@@ -1,33 +1,5 @@
 {
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
- "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "../../.claude/state/indicator_review/gen_indicators_draft.py": [
-  "jload",
-  "_carry",
-  "module_assign",
-  "plain",
-  "src_text",
-  "called",
-  "defaults",
-  "resolve",
-  "kinds_in",
-  "narrow",
-  "norm",
-  "decide",
-  "nums",
-  "inventory",
-  "row_name",
-  "parsed",
-  "in_selftest",
-  "row_kind",
-  "code_copy",
-  "json_copy",
-  "build",
-  "coverage",
-  "verify",
-  "selftest",
-  "main",
-  "<モジュール直下>"
- ]
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
 }
