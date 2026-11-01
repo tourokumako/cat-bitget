@@ -411,3 +411,131 @@
 - 直す道＝手書きの見出しの修正は やることの表.md へ（apply_audit_fix.py --report が当てる）。案から写した見出しの修正は、CC が案（okd_an_20261101）を直して まこさんの OK → 逐語 → gen_acceptance.py --write → 全部読む → 見直し表 → 承認の前の検査 --try → 承認のお願い。
 - 工事のフォルダ .claude/state/verbatim/m2c15-catalog-redirect-20261101/ に、手書き（監査依頼の手書き（設計書の監査）.md）と ok_hand_design_20261101 を足した。git の対象外。
 - gen_audit_docs.py の直し（§12-4）は、この回の commit に入れる。
+
+## §14 235回目＝161番（161-2 の設計書の監査 CP96 の結果を読み、直す範囲を決めていただいた・宣言に まこさん「OK」）
+
+### 14-1 開いた物と ToDo
+- 必読9件と next_step・採用台帳（sdk の .claude/ratchet/adopted_strategies.md）を Read で開いた。最後の行まで開いていないのは4本＝集約の要件定義書（本文 1〜266行）・fix_inventory（1〜80行）・permanent_rules.md と core_requirements_full.md（Read は先頭だけ・全文は自動で読み込み）。返信で申告した。
+- ToDo を next_step の③の表どおりに書いた（21行・161番に ★いまここ）。
+- CP96 の結果（sdk の .claude/audits/2026-11-01_m2c15_catalog_redirect_20261101_design_cp96_audit_report.md・491行）と、案 okd_an_20261101.txt（272行）を1行目から最後まで開いた。
+
+### 14-2 監査 CP96 の結論（結果の見出しのまま）
+- 結論＝GO。件数の行＝Critical 0・Major 2・Minor 13・Process 1。Minor の見出しの下の修正は14件（3〜15・17）で、件数の行と1件違う（数え直さず、見出しのとおりに並べた）。
+- Major＝G2 の検査済みの記録（g2_pass.json）に indicators.json は入らない（gen_signal_families.py:526 で build_table を見張りの外で先に呼び、読む口は1回だけ読む）。設計書 4-13 の「自動で入る見込み」は事実と違う（修正1＝やることの表:215・修正2＝案:105）。
+- Minor＝b137・b128 の「壊しても止まらない」は逆（修正3〜5）・数の直し（56→54＝修正6・48か所→38行＝修正10・11・121記録→組を持つのは111＝修正17）・「読み込みの輪」→2重の読み込みと帯の床（修正7〜9）・gen_materials.py:112・:1243 を足す（修正11・12）・止める条件2つ（修正13・14＝実装の指示 json の実装1）・sha256 の置き替え（修正15＝未決）。Process＝4-4 の2 に gen_materials --verify と git diff の確かめ（修正16）。
+- apply_audit_fix.py --report CP96 --severity Critical,Major,Minor,Process --dry（try_hooks＝止める hook 0本）＝当たる11件（1・3・4・6・7・10・12・13・14・16・17）・当てない6件（逐語のファイル＝案の 2・5・8・9・11／未決＝15）・実物と合わない件0。
+- 監査の修正に無いが同じ事実を書いている所（grep・恒久72番の2）＝やることの表:36 と案:26 の「オフの121記録の250組」・案:159 の「56ある」・案:173 の「効かなくなる」・やることの表の 4-5 に修正13・14 の止める条件が無い・実装1 の下書き impl_src/e01_after.txt。
+- 修正の指示の無い所見＝Q9（171番で計算の取り方と帯の床の結び付け方を決める）・修正1 の文（G2 の対象に indicators.json を足すのは171番）・4-14 の --selftest-catalog の秒数に読む口の読み込み約3.8秒が入っていない・結ぶ要件の3番と4・5番はこの工事で進まない。171番の ToDo への申し送りは、まこさんのお返事をまだいただいていない。
+
+### 14-3 まこさんの決定（逐語 2026-11-01）
+- 「全部直す」「同じ事実をそろえる」＝直す範囲は修正1〜17 の全部（修正15 は修正13・14 を当てた後の sha256 を CC が書く）と、同じ事実をそろえる5か所。
+
+### 14-4 直す作業（宣言に まこさん「ok」）＝手順1・2 を済ませ、手順3 で止められた
+- 手順1＝控え（作業場 scratchpad/before_cp96/＝やることの表.md・impl_4-20_20261101.json・impl_src/e01_after.txt・acceptance.md・acceptance.review.md）。
+- 手順2＝apply_audit_fix.py --report CP96 --severity Critical,Major,Minor,Process（try_hooks＝止める hook 0本）＝当てた11件（やることの表＝1・3・4・6・7・10・12・16・17／impl_4-20_20261101.json＝13・14）・当てなかった6件（2・5・8・9・11・15）。applied_fixes.json に11件。
+- 手順3（やることの表:36 の Y-5 の「121記録」をそろえる Edit）を、宣言の hook（require_work_declaration）が止めた。宣言の根拠に引いた やることの表.md:36 の文（「読み込みが輪になる」）を、手順2 の修正7 が書き替えたため、根拠の逐語が実物の前後3行に無くなった。直す作業が書き替える行を、宣言の根拠に引いてはいけない。根拠を、直さない行（:49）に替えた宣言を出し直す。
+- まこさんの「ok」は、171番への申し送り2つに答えていない＝申し送りは書かない（恒久 §0 の3番）。
+
+### 14-5 出し直した宣言に まこさん「ok」＝手順3・4 と、試しの速い段
+- 手順3＝やることの表:36（Y-5 の「オフの121記録（組を持つのは111記録）の250組」）・4-5 に止める条件2行（修正13・14）・impl_src/e01_after.txt に修正13・14 と同じ直し（json の実装1 の中身と jq --rawfile で true）。Y-5 の Edit は block_repeat_kind と block_repeat_failure に止められ、sessions/<id>/lessons.md と diagnosis.md を書いてから1回で入った。
+- 手順4＝案の下書き（作業場 an_cp96_draft.txt）＝【4-0】【4-1】【4-12】【4-20】（sha256 202ec59b…＝修正13・14 の後・乱数の語 0件）【5】【6-2】【7-4】。
+- 試しの速い段の1回目＝設計書を組めない2件（4-4 の2・4-13 の G2 の行の欄の数）。修正16・修正1 の文のパイプの記号「|」を、道具が表の欄の区切りと数える（gen_acceptance.py:284 の split("|")・逃がす書き方は無い）。表の中だけ「|」を使わない同じ確かめに書き替えた＝4-13 の G2 の行は grep -o 'indicators/indicators[.a-z]*' .claude/state/g2_pass.json（g2_pass.json の files はリポジトリからの相対パス＝jq）・4-4 の2 は「git diff -U0 の出力の先頭が「-」の行を見る」。【4-12】は表でないので修正2 の文のまま。
+- 速い段の2回目＝A2（このセッションで、直す相手5本と、案に「読んだ」と書いた5本＝indicators.json・cat/indicators.py・strategies/cat_v9_decider.py・materials.md・indicators.py を Read で開いていない）と A14（試しの設計書の見直し表が無い）。10本を Read で開いた（直す範囲と名指しの行）。試しの設計書と前の設計書の diff＝直した所と 6-4（受けた監査＝道具が CP96 を書いた）だけ。試しの設計書を 1〜182行まで開いた。
+- ★見つけた食い違い（監査の修正に無い・直していない）＝2-1 の1行目の awk（'/^def build_catalog/{f=1} /^# ══ 指標の組み立て/{f=0}'）は、終わりの目印（observe_diag.py:2232）が直す前の build_catalog の終わり（:2229）の後なので、直した後は _catalog_from_config の本体を数える。作業場で直した後の写し（:1〜1791＋e01_after.txt＋:1798〜）を組んで走らせると、cfg[ の行は 71（直した後も0にならない）。終わりの目印に /^def _catalog_from_config/{f=0} を足すと、直した後は 0・直す前の本物は 71・column_sets は直した後 1。設計書の 2-1 の読み方「直した後は、ゼロになる」と【4-12】の「awk の数が 0」は、いまのコマンドでは事実と違う。やることの表:147（手書き）の直しは宣言の範囲の外なので、まこさんに伺って止めた。
+
+### 14-6 まこさん「直して良い」（2-1 の awk）→ 試しの設計書
+- やることの表の 2-1 の2行（:147・:148）の awk に /^def _catalog_from_config/{f=0} を足し、1行目の読み方に「写す元の関数の中の cfg[ は数えない」を1文足した（数字は書かない）。同じ awk はほかに無い（grep）。下書きの結論に1行足した。
+- 速い段の3回目＝A14 だけ。試しの設計書（1736行・doc_sha256 b3bc8c29…）を1行目から最後まで Read で開いた（2-1 は直した後の版で開き直した）。見直し表（.claude/state/reviews/_trial_acceptance.review.md・80項目）は前の版の行を引き継いだので、変わった節の行（11・12・17・18・21・22・26・31・32・39・42・65・68・76＝直した）と、行番号がずれた行（41・58・59・64・66・67・70・71・74・77）を書き直した。26番の文に表の区切りの記号をそのまま書いて表を壊しかけ、言葉に直した。gen_review.py --check＝「止める理由 0 件・根拠 130 件」。
+- 速い段の4回目＝A群 0件・古い語 0件。仮当て込みの試しを裏で走らせた（作業場 trial_full.txt・前の実測 約9分・2倍の約18分を超えたら止める）。
+
+### 14-7 試しの結果・案に まこさん「ok」・設計書の作り直し
+- 仮当て込みの試し＝A群 0件・古い語 0件・終わりのコード 0。本物の scripts の下の git status は、前から在る未追跡の4本だけ（変更は残っていない）。
+- 案（下書き an_cp96_draft.txt と1文字も変えない）を返信に出し、まこさん「ok」。gen_verbatim.py --write okd_an2_20261101（uuid 6dd9b33a・60行）・ok_an2_20261101（uuid 93ad2725・1行）→ --verify 2本とも記録と1文字も違わない。okd_an2 は下書きと同じ（空行を除いて diff）。
+- gen_acceptance.py --work m2c15-catalog-redirect-20261101 --write＝設計書 acceptance.md（1736行・sha256 b3bc8c29…）＝試しの設計書と cmp で1文字も違わない（全部読んだ版と同じ）。書いた直後の検査（show_design_check_after_write）＝A14 だけ（見直し表が前の版の物）。
+- 見直し表を設計書の名前で写す Bash を、宣言の hook が止めた。前の宣言の根拠に引いた acceptance.md:1316（6-2 の5行目「効かなくなる」）を、作り直しが書き替えたため（同じ種類の3回目＝セッションの lessons.md に決まりを書き足した）。根拠を作り直した後の版の行に替えた宣言を出し直す。
+
+## §15 235回目＝202番（宣言の hook の直し・宣言と直す行に まこさん「よい」）
+
+### 15-1 経緯
+- まこさんの問い「このミスは過去にも発生してるように思うが、今後発生しないように修正することは可能？」に答えた。記録で数えた同じ形＝6回（worklog 20261025:30・20261030:1287・20261031:21・今回3回）・承認でフォルダが移った形＝2回（20261031:362・20261101 §4-7）。教訓 L-730（10-30）の後も4回。原因＝hook が道具を呼ぶたびに根拠をいまのファイルと照らし直す（require_work_declaration.py の直す前の :87〜95）。
+- まこさん「それで修正して」→ ToDo に202番を足し（末尾）、★いまここを移した（161番は「まだ（途中＝見直し表・承認の前の検査・承認のお願いから。202番の後）」）。宣言に直す行を載せ、まこさん「よい」。
+
+### 15-2 直した物（インフラの直し・設計書と監査は要らない＝2026-10-20 の決定の2・直す行は宣言で見ていただいた＝同じ決定の4）
+- 直す前の自己テスト＝32/32。先に T33〜T35 を足して直す前の hook で走らせた＝35件のうち期待と違う1件（T33＝宣言の後に根拠の行が書き替わると止まる＝今回の不具合）。
+- .claude/hooks/require_work_declaration.py＝check の中（:220〜225）で、宣言の文と必読の一覧の鍵（_evid_key）が記録（セッションの置き場の decl_evidence_ok.json）に在れば照らし直さずに通し、must_problems が合ったら記録に足す（_evid_write）。関数3つ（:111〜:136）と頭の説明の決まり4 に1行。消した行は無い。
+- 直した後＝自己テスト 35/35・py_compile 通る・.sh の bash -n 通る。本物のこのセッションで、202番の宣言の根拠が合ったときに記録（1件）を書いた。
+- 直す前と後の行＝.claude/state/hook_fix_proposals/require_work_declaration_20261101.md（いまの置き場・新しい1本）。
+- 一覧の元データ hook_inventory_src.json:18 に決まり4 と今回の直しの1文（行番号つき）を足し、_hook_inventory.py --write（1分37秒）＝--verify 通過（文書は作ったまま・根拠の行は全部 実在）。表示された「稼働の中の、止める物がまだの行: check_indicator_table_on_save.sh・show_single_source_goal.sh」は、この直しの前から在る行。
+- 防げない物＝承認で工事のフォルダが移り、必読の一覧のパスが切れる件（必読の一覧が変わるので照らし直す）。
+
+## §16 235回目＝161番（見直し表 → 承認の前の検査 → 承認のお願い・宣言に まこさん「よい」）
+- 見直し表＝全部読んだ試しの設計書の表を、文書の名前だけ替えて .claude/state/reviews/acceptance.review.md に写した（sed）。設計書は試しの設計書と cmp で同じ（sha256 b3bc8c29…）。gen_review.py --check＝「止める理由 0 件・根拠 130 件」。
+- 承認の前の検査 require_design_check_before_approval.py --try（仮当てを含む・裏で走らせた・try_hooks＝止める hook 0本）＝「A1〜A8・B1・B2 は全部 通ります（不足0件）」・531.6秒。本物の scripts の下の git status は、前から在る未追跡の4本だけ。
+- まこさんの問い「検査が終わってから承認すればいいの？」に、終わって承認のお願いを出すまで待っていただくよう答えた。
+- 承認のコマンド＝bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh（approve_impl.sh:10〜11）。承認のお願いを出した。
+- まこさん「承認した」＝acceptance.approved と design_approved.json が b3bc8c29…（18:26）で設計書と一致。承認のプログラムが工事のフォルダを sdk の .claude/ratchet/acceptance_archive/verbatim/m2c15-catalog-redirect-20261101 へ移した（控えの置き場に .md・.breaks.json・.dirty.json・.frozen.json）。設計書は承認の後も b3bc8c29…。
+- 必読の表（next_step_src.json:154）のやることの表のパスを、移った先に直した → tidy_next_step.py --write（検査20個 通過・消したセッションのフォルダ 1個）・--selftest 28/28（require_selftest_after_source_edit の求め）。移った先のやることの表を Read で開いた（170〜199行）。外す条件が「161-2 の承認の後」の3行（指標の構造の要件定義書・やることの表・acceptance.md）は、締めで外すかを見る（いまは消さない）。
+
+## §17 235回目＝161番（実装＝4-4 の1〜4・宣言に まこさん「よい」）
+
+### 17-1 4-4 の1（当てる）
+- apply_audit_fix.py --design --dry＝22件とも当たる（承認の印と一致）。本番＝当てた（2分を超えて裏に回った・終わりのコード 0）。画面は tail -30 で前半が切れた（何を当てたかは git status で確かめた）＝直す5本が M・壊すプログラム6本（b222〜b227）が新しい。
+- 当てる道具は、当てた後に G2（g2_pass.json 18:31・対象 39 → 40 本・足されたのは indicators/indicators.py だけ＝CP96 の修正1 のとおり）と H2（h2_pass.json 18:37・指紋 837d606d…・対象 24 → 26 本・indicators.json と indicators.py が入った・打ち切り再現の食い違い0件）まで走らせた。この2つは 4-4 の3（--rewrite）より前なので、--rewrite の後に G2 → H2 を走らせ直す。
+
+### 17-2 4-4 の2（完成の条件の6行と確かめ）
+- observe_diag.py --selftest-catalog＝「❌ 0 件」・rc 0・12.1秒（7-6 の1・2行目）。indicators.py --selftest＝36/36・rc 0（3行目）。gen_indicators_draft.py --selftest＝40/40・rc 0（4行目・「写す: 写す元は _catalog_from_config で、build_catalog を呼ばない」が ✅）。grep -H -c＝「…leak_causality_diag.py:1」・rc 0（5行目）。gen_materials.py --selftest＝全部 pass（該当なし1件 S5）・rc 0・86.3秒（6行目）。
+- gen_materials.py --verify＝「一致（手で書き換えられていない）」・rc 0・7.4秒。git diff -U0 observe_diag.py の消えた行＝1行だけ（:1793 の直す前の説明の1行目）・ほかは足した行（@@ -1793 +1793,33・@@ -1794,0 +1827,3・@@ -7937,0 +7973,21）＝写す元の関数の本体は変わっていない。2-1 の3行＝0・1・1。
+
+### 17-3 4-4 の3（--rewrite）で止まった（直していない）
+- --rewrite＝rc 1・16.5秒「❌ 置き場が見つからない（関数 _v9_part_variants は在るが、一覧の行 5856〜5882 に文が無い＝行がずれた）: observe_diag.py:5856」。indicators.json は書き替わっていない（git status に出ない）。
+- 原因＝写すプログラムは直す相手の一覧（fix_inventory_20261024.md:441＝observe_diag.py:5856-5882）の行番号で置き場を探す（gen_indicators_draft.py:474）。実装で build_catalog の前に35行が足され、_v9_part_variants はいま :5891。一覧の作り直し（gen_fix_inventory.py）は --rewrite の最後に在る（:1511〜1517）が、置き場を探すのはその前。
+- 設計書の 4-4 に「--rewrite の前に一覧を作り直す」段が無い（161-1 は observe_diag.py の行がずれなかったので要らなかった）。CP96 も試しの仮当ても --rewrite を走らせない（承認の後の手順）ので見つからなかった。設計書に無い段なので、まこさんに伺って止めた。
+
+### 17-4 まこさん「足して良い」→ 一覧を作り直したが、一覧が正しくない（--rewrite は走らせていない）
+- gen_fix_inventory.py（try_hooks＝止める hook 0本）＝rc 0・15.0秒・2,776行 → 2,791行（git diff＝676行足し・661行消し）。
+- 作り直した一覧で、①写す の行が 732 → 731、_v9_part_variants の行が 2 → 0。ほかにも、行番号と中身が合わない行が出た（例＝:3388-3400 `_category` の実物の最初の行が `c2 = next(c for c …`）。拾えなかった行 202 → 210。
+- 原因＝一覧を作る道具は、2026-10-24 00:58 の読む係の報告（readers_20261024/merge.md・git の対象外）と振り分けの返信（cc_cls_*.txt）の行番号を、そのままいまのコードの行と照らす（gen_fix_inventory.py:236〜260・:271〜296）。実装で build_catalog の前に35行が足されたので、ずれた所に別のコードの行が入り、照らしが合ったように見えて行が黙って落ちる・入れ替わる。報告が読んだ observe_diag.py は commit aeb04d8a（10-23）の版。
+- この一覧で --rewrite を走らせると、写し漏れの照らし（写す行）が弱まったまま indicators.json を書く＝走らせない。--rewrite は最後に同じ道具で一覧を作り直すので、同じ誤りを書く。まこさんに伺って止めた。
+
+## §18 235回目＝203番（一覧を作る道具の直し・まこさん「良い」→ 宣言に「よい」）
+
+### 18-1 直した物（.claude/state/indicator_review/gen_fix_inventory.py・インフラの直し・設計書と監査は要らない）
+- 読み替えの関数3つを足した＝_line_map（報告の時刻 2026-10-24 00:58 より前の最後のコミットの版を git show で読み、いまのファイルと difflib で行ごとに突き合わせ、古い行番号 → いまの行番号の対応を作る。版が無い・中身が同じファイルは None）・_remap・_remap_cell。git は本物のリポジトリ（_REAL_ROOT）で引く。
+- 読む係の報告の行（:236〜）は、照らす前に c[2] を読み替える（表に出す番号も読み替えた番号）。振り分けの返信の行の範囲（:271〜）も読み替える。消した行は無い。py_compile 通る。
+- 報告が読んだ版＝observe_diag.py は commit aeb04d8a（10-23 11:59）で、その版の _v9_part_variants は :5856＝報告の行番号と一致（読み替えの前提が正しい）。
+
+### 18-2 作り直した一覧（19.2秒・2,761行）
+- 写す行＝732（直す前の HEAD と同じ）。_v9_part_variants＝observe_diag.py:5891-5917 で写す行に入った（md の :230・:430）。古い番号 5856-5882 は md・json とも0件。
+- 拾えなかった行＝202 → 195。減った7行＝gen_acceptance.py の5行（KIND1_WORDS・PARAMS ほか・_table_kinds・indicator_sources_problems・自己テストの見本）と indicator_reference_diag.py の2行（LINEAGE_KINDS・lineage_coverage）。この2本は 10-24 の後に直されて行がずれていたので、直す前の道具では報告の行と一覧の行が重ならず「拾えなかった」に入っていた。読み替えで、一覧に在る同じ行（例＝KIND1_WORDS 523-525 → 560-562 が、一覧の gen_acceptance.py:562「json の名前「materials.json」」と重なる）に当たるようになった＝正しい方向の変化。
+- ほかの違い＝10-24 の後に変わったファイル（leak_causality_diag.py・gen_materials.py・gen_audit_docs.py・indicator_reference_diag.py・gen_acceptance.py・observe_diag.py）の報告の行の番号が、いまの番号に読み替わった。
+- 時間＝19.2秒（見込み15秒・1分の中）。
+
+## §19 235回目＝161番（実装＝4-4 の3〜4・宣言に まこさん「よい」）
+- --rewrite（SDK の直下・97.0秒・rc 0）＝「写す元から作り直した物と違う所＝34 件」。設計書の見込み10か所より多いが、中身を git diff で全部見た＝①要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」（2か所）②部品の記録8件の「作った元」（8か所）③「照らしと出どころ」「オン/オフと出どころ」の中の「置き場」の行番号（observe_diag.py:4983 → 5018 ほか・build_catalog の前に35行 足した分と gen_materials.py:908 → 911 の3行分）。置き場の行番号以外の変更は28行＝①②の10か所そのもの。列を作る組・並び・代表の値・範囲の変更は0件。指標の記録 306・使い方 16・部品 8・要素 47・組 652・軸 431（範囲 366＝253＋1点 113／まだ決めていない 65）・合わない値 オン 29（14種）＝161-1 の後と同じ。
+- 置き場の行番号が「違う所」に数えられたのは、記録が置き場を行番号で持つため（設計書の 4-10「変わるのは…10か所だけ」は、行番号の自動の更新を数えていなかった＝実装の監査の依頼書の自己申告に書く）。
+- --rewrite の最後の一覧の作り直し（直した道具）＝2,761行・写す行 732・拾えなかった 195・_v9_part_variants は 5891-5917。
+- --verify＝「✅ 違い 0 件」（97.6秒・rc 0・照らした①写す の行 762）。
+- G2（gen_signal_families.py --verify・75.1秒・rc 0）＝既知答え13件 期待どおり・表は正本と一致・対象40件・指紋 0697b60b…・入ったのは indicators/indicators.py だけ（CP96 の修正1 のとおり）。
+- H2（leak_causality_diag.py）を裏で走らせた（作業場 h2_161_2.txt）＝rc 0・5分17秒。注記なし未来参照 0件・打ち切り再現の食い違い 0件。h2_pass.json の指紋 a40f4008…・対象26件（indicators.json と indicators.py が入った）。
+- 次＝4-4 の5（列の比べ・約61分）と 4-4 の6（Y-6 のインフラの直し＋監査に出す前のチェック・約12分）は、走らせる前に まこさんの OK をいただく。
+
+## §20 235回目＝161番（実装＝4-4 の5・列の比べ・宣言に まこさん「ok」）
+- まこさん「走らせたあとに失敗が発覚して、再度やり直しにならないようにしてほしい」→ col_snapshot.py を開いて、やり直しの元を3つ潰す走らせ方にした＝①--compare だけだと途中を書かない → --out（区切りごとに書く・続きから計算＝col_snapshot.py:54〜61）を一緒に付ける ②名前の並び・足の本数の違いは先に小さく照らす ③帯の部品の値は帯VA の3本で先に照らす。
+- 小さく走らせた（--out 作業場 after_161_2.json --budget 60・89.3秒・100種で止まる）＝jq で控えと照らした＝名前の並び652本 同じ・足の本数30000 と時刻のハッシュ値 同じ・時間足 同じ・1100列のうち控えに無い列0・値が違う列0。
+- 帯VA の3本（--cols '^帯VA\(' --out 作業場 after_161_2_bandva.json・5.7秒）＝33列のうち控えに無い列0・値が違う列0。
+- jq の鍵に漢字をそのまま書いて1回止まった（英字の鍵に直した・前からの教訓）。
+- 書いた直後の検査の hook（show_design_check_after_write.sh）が、作業場の after_161_2.json を設計書と取り違えて A2〜A14 の不足を出した（設計書ではない＝hook の見分け方の不具合・止めはしない）。
+- 本番＝--out 作業場 after_161_2.json --compare before_20261024.json を、小さく走らせた分の続きから裏で走らせた（作業場 compare_161_2.txt）。
+- 本番の結果＝rc 0・59分03秒（計算の累計 3539.3秒・最初の100種は控えから）。名前 652本 × 時間足 11＝列 7148本・5分足 30000本。「控えに在って今に無い列 0・今にだけ在る列 0・値が違う列 0・名前の並び 同じ」＝155-1（同じパラメータの値で計算した値が、直す前と同じ）が成り立った。
+- 次＝4-4 の6（Y-6＝監査の前の検査の指紋に indicators/ の2本を足すインフラの直し＋監査に出す前のチェック・約12分）。規模を書いた宣言で まこさんの OK をいただく。
+
+## §21 235回目＝161番（実装＝4-4 の6・宣言に まこさん「ok」）
+- Y-6 のインフラの直し＝.claude/tools/pre_audit_check.py の FINGERPRINT_FILES に "indicators/indicators.json"・"indicators/indicators.py" を足し、materials_fingerprint の読むファイルに PR/indicators の2本を足した（説明2行・足した行4行）。py_compile 通る。--selftest＝直す前も後も「NG P7-1（設計書の形の判定を呼んでいない）」の1件だけ＝前から在る件（next_step 4-1 の181・182回目の③）。
+- --run を作業場へのリダイレクトつきで打ち、土台ゲート（require_acceptance_before_impl）に止められた（L-694 の形の再演）→ block_repeat_kind・block_repeat_failure の求めで lessons.md と diagnosis.md を書き、リダイレクトの無い1本で裏で走らせた。
+- --run＝全部 rc=0（20:37 ごろ開始・約44分）。G2 71.1秒・H2 306.5秒・gen_materials --selftest 82.5秒・observe_diag --selftest 212.5秒・verify_design_contract --diff rc 0・check_indicator_sources は「既知」・材料の検査（--check-materials）rc 0・2080.4秒（34分40秒＝指紋が変わったので省略されずに走った）。⏸ 2件（型の表と出口の表の --write／--approve＝この道具は打たない作り・G2 の --verify が通ったので表は正本と一致）。記録 pre_audit_check.json の指紋 3b2257ff…。--verify＝「監査に出せます」。
+- ★見込みの誤り（お詫びした）＝宣言で「約12分」と書いた。前の回（worklog 20261101:157）は材料の検査が「省略」の回だった。今回は指紋が変わるので材料の検査が走り、過去の実測（全体 45分33秒・約49分／材料の検査 34分39秒）どおりになった。宣言の前にこの記録を探さなかった（恒久62番）。「2倍の約24分を超えたら止めて報告する」も守れず、まこさんの問い「時間かかりすぎなのでは？」（41分の時点）で初めて気づいた。
+
+## §22 235回目＝161番（4-4 の7 の走らせ直し・宣言に まこさん「ok」）
+- gen_materials.py --selftest＝全部 pass・--verify＝一致・git diff の消えた行＝1行（前と同じ）。
+- カタログの自己テストほか（observe_diag.py を走らせる Bash）を、設計↔実装ゲート（require_design_contract_before_run.sh → verify_design_contract.py:1083〜1103）が止めた＝「A(双方向) .claude/tools/pre_audit_check.py: 設計書の impl_functions に書いていないファイルを触った」。ほかの5本は全部一致。ゲートは git status で作業中の変更が在る .py を数え、承認の時点で汚れていた物（<iter>.dirty.json）だけを外す。Y-6（設計書のやらないことで「承認の後にインフラの直しで行う」と決めた物）を承認の後に直したので数えられた＝設計書の Y-6 とゲートが食い違う。
+- 作業中の変更が在るインフラのファイル＝.claude/tools/pre_audit_check.py（Y-6）・.claude/hooks/require_work_declaration.py（202番）・.claude/state/hook_inventory.md と hook_inventory_src.json（202番）。hook_fix_proposals と gen_fix_inventory.py（203番）は git の対象外。まこさんに伺って止めた。

@@ -1,0 +1,12 @@
+    except SystemExit as e:
+        t(f"読む口: 写した物を読み込める（{e}）", False)
+    # 5 写す元（161-2 のやることの表 F-4）＝列を作る組と出どころの鍵を作る所（build_old の cols・catalog_sets）は、
+    #   build_catalog でなく写す元の関数 _catalog_from_config を呼ぶ（構文の木で、呼んでいる属性の名前を見る）
+    import ast as _ast5
+    _calls5 = {}
+    for _n5 in _ast5.walk(_ast5.parse(Path(__file__).read_text(encoding="utf-8"))):
+        if isinstance(_n5, _ast5.FunctionDef) and _n5.name in ("build_old", "catalog_sets"):
+            _calls5[_n5.name] = {c.func.attr for c in _ast5.walk(_n5) if isinstance(c, _ast5.Call) and isinstance(c.func, _ast5.Attribute)}
+    t("写す: 写す元は _catalog_from_config で、build_catalog を呼ばない（161-2 の F-4）",
+      len(_calls5) == 2 and all("_catalog_from_config" in v and "build_catalog" not in v for v in _calls5.values()))
+    for name, good in ok:

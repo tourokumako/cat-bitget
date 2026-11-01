@@ -1,0 +1,11 @@
+    for no, add in (("②-9", SRC29_ADD), ("③-5", SRC35_ADD)):         # 監査 CP94 の修正9＝写す元の文を、いまの写し先に合わせる
+        e = next(x for x in t["要素"] if x["番号"] == no)
+        if add not in e["写す元"]:
+            e["写す元"] = e["写す元"] + add
+    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝列を作る組の写す元は _catalog_from_config（162番まで）、
+    #   読むのは build_catalog になった。要素の定義表の ②-12・④-9 の「写す元」と「読むプログラム」を、いまの形に合わせる（2回 呼んでも同じ物）
+    for no in ("②-12", "④-9"):
+        e = next(x for x in t["要素"] if x["番号"] == no)
+        e["写す元"] = e["写す元"].replace("（observe_diag.build_catalog）", "（observe_diag._catalog_from_config＝写す元の関数・162番まで）")
+        if "observe_diag.build_catalog" not in e["読むプログラム"]:
+            e["読むプログラム"] = list(e["読むプログラム"]) + ["observe_diag.build_catalog"]

@@ -1,0 +1,3 @@
+        # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝写す元は、設定から列を作る _catalog_from_config（162番まで）。
+        #   build_catalog は読む口の列を作る組から作るので、写す元にすると indicators.json を indicators.json から作ることになる。
+        for nm, _f, _d in od._catalog_from_config(c):

@@ -253,6 +253,9 @@ WATCHED = [                                              # 指紋の対象＝eng
     # ★2026-08-20（M2-1-9・まこさん OK）＝経路に載っているのに対象に無かった2本を足した（62番の穴）。
     #   engine_tuner_exec.py:1077 が observe_diag.build_features を呼ぶ＝この2本が変われば結果が変わりうる。
     f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",
+    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-5）＝build_catalog が、読む口と1つのデータから列を作るようになったので、
+    #   この2本が変われば材料の列が変わりうる＝印の対象に足す（2026-08-20 に observe_diag.py を足したときと同じ理由）。
+    f"{_PR}/indicators/indicators.json", f"{_PR}/indicators/indicators.py",
     # ★2026-08-23（77番）＝探し方の正本を読む共有モジュール（検査2・検査4 が使う）。
     f"{_PR}/h2_scan.py",
     # ★2026-10-02（M2-F-6d の工事 A・L-8）＝札の部品と設定を印の対象に足す。観察の道具が読み込むのは工事 B（先に足しておけば、読み込んだ時から印が見張る）。

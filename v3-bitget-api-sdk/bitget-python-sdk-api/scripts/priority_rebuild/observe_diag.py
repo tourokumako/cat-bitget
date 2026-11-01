@@ -1790,8 +1790,43 @@ _reg("HA下ヒゲ比", "HA下ヒゲ比", False, lambda d: (lambda a: (a.iloc[:, 
 # ══ 指標カタログ（この道具が正本・呼び出し側は足せない/減らせない）══════
 # (表示名, 計算関数, 方向あり?)  方向あり＝値が大きいほど「価格が上」を意味する
 def build_catalog(cfg: dict) -> list[tuple]:
-    """指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。
+    """指標カタログ＝読む口（indicators/indicators.py）の列を作る組から作る（工事 m2c15-catalog-redirect-20261101・やることの表 F-1）。
 
+    ★2026-11-01（161-2・集約の要件定義書 R6）＝直す前は、設定ファイル observe_config.json の鍵（古い鍵・material_params・drop_columns）を
+      読み、種類ごとの for で組を作っていた（その作り方は下の _catalog_from_config に残す＝写すプログラムの写す元・162番で消す）。
+      いまは、indicators.json の列を作る組（②-12・④-9＝161-1 で、省いた後のいまのカタログの列から写した物）を、並びの順に1つずつ列にする。
+    ★cfg から読むのは、帯の床の倍数 band_fee_mult だけ（_band_fee_floor に cfg を渡す）。設定の鍵は1つも読まない。
+    ★計算は、いまと同じく計算の登録（MATERIAL_FAMILIES）から make_material・_band_material が取る
+      （読む口の calc はオフの指標を返さないので使わない＝やることの表 Y-5）。
+    """
+    _ind_dir = str(pathlib.Path(__file__).resolve().parent / "indicators")
+    if _ind_dir not in sys.path:
+        sys.path.insert(0, _ind_dir)
+    import indicators as _ind                        # 読む口（indicators.json を開くのは、このプログラムだけ＝集約の要件定義書 R5）
+    if not hasattr(_ind, "load"):
+        raise SystemExit(f"[材料カタログ] 読む口でない物が indicators の名前で読み込まれている: {getattr(_ind, '__file__', _ind)}")
+    _load_pta()
+    _bfl = _band_fee_floor(cfg)
+    C = []
+    for cs in _ind.load().column_sets():
+        reg = cs["登録の名前"]
+        if cs["種類"] == "部品の記録":
+            if reg not in _BAND_IMPL:
+                raise SystemExit(f"[材料カタログ] 部品の記録 {cs['記録']} の登録の名前 {reg} が、帯の計算式の表に無い")
+            C.append(_band_material(reg, _bfl, *cs["組"]))
+        else:
+            if reg in _BAND_IMPL:
+                raise SystemExit(f"[材料カタログ] 指標の記録 {cs['記録']} の登録の名前 {reg} が、帯の計算式の表に在る（床を結び付ける部品の記録で作る物）")
+            C.append(make_material(reg, *cs["組"]))
+    return C
+
+
+def _catalog_from_config(cfg: dict) -> list[tuple]:
+    """直す前の指標カタログの作り方（期間・パラメータを observe_config.json から取る）。
+
+    ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-3）＝列を作る所は build_catalog（読む口の列を作る組から作る）に替えた。
+      この関数は、写すプログラム（gen_indicators_draft.py）が列を作る組を作り直すときの写す元としてだけ残す（162番で消す）。
+      呼ぶのは、写すプログラム・カタログの自己テスト（build_catalog と名前の並びを照らす）・gen_materials の鍵を拾う口だけ。
     ★2026-08-13（A-2）＝計算式は上の材料の表（MATERIAL_FAMILIES）に在る。
       この関数がやるのは「設定ファイルの数字を読んで、その組を1つずつ作る」ことだけ。
     """
@@ -7935,6 +7970,27 @@ def selftest_catalog(exit_: bool = True) -> list:
         ng.append("修正1: 範囲の外の数字の列（ROC3）を、段の候補に使えると判定した")
     if not _g14._group_usable_col("ROC12__5m", "ROC", "5m", None, _tb14):
         ng.append("修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した")
+    # ── 工事 m2c15-catalog-redirect-20261101 の番人（2026-11-01・やることの表 F-1）──
+    #  ⑮build_catalog（読む口の列を作る組から作る）の名前の並びが、写す元の関数 _catalog_from_config と1本も違わない
+    _new15 = [nm for nm, _f, _d in build_catalog(cfg)]
+    _old15 = [nm for nm, _f, _d in _catalog_from_config(cfg)]
+    if _new15 != _old15:
+        _i15 = next((i for i, (a, b) in enumerate(zip(_new15, _old15)) if a != b), min(len(_new15), len(_old15)))
+        ng.append(f"[材料カタログ] build_catalog の名前の並びが、写す元の関数と違う（{len(_new15)} 本 ／ {len(_old15)} 本・"
+                  f"最初に違う番号 {_i15}＝{_new15[_i15] if _i15 < len(_new15) else 'なし'} ／ {_old15[_i15] if _i15 < len(_old15) else 'なし'}）")
+    #  ⑯build_catalog の構文の木に、cfg の鍵を読む所（cfg[...]・cfg.get(...)）が無い（集約の要件定義書 R6）
+    import ast as _ast16
+    import inspect as _in16
+    _fn16 = _ast16.parse(_in16.getsource(build_catalog))
+    _keys16 = sorted({n.slice.value for n in _ast16.walk(_fn16)
+                      if isinstance(n, _ast16.Subscript) and isinstance(n.value, _ast16.Name) and n.value.id == "cfg"
+                      and isinstance(n.slice, _ast16.Constant)}
+                     | {n.args[0].value for n in _ast16.walk(_fn16)
+                        if isinstance(n, _ast16.Call) and isinstance(n.func, _ast16.Attribute) and n.func.attr == "get"
+                        and isinstance(n.func.value, _ast16.Name) and n.func.value.id == "cfg"
+                        and n.args and isinstance(n.args[0], _ast16.Constant)})
+    if _keys16:
+        ng.append(f"[材料カタログ] build_catalog が設定の鍵を読んでいる: {_keys16}")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")

@@ -452,7 +452,10 @@ _A1_OD = _HERE / "observe_diag.py"
 
 
 def _catalog_keys(od_src: str | None = None) -> set[str]:
-    """`observe_diag.build_catalog` が読む設定の鍵を、コードから機械で拾う。
+    """`observe_diag._catalog_from_config`（列を作る組の写す元＝設定から列を作る関数・162番まで）が読む設定の鍵を、コードから機械で拾う。
+
+    ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-6）＝build_catalog は読む口の列を作る組から作り、設定の鍵を読まない。
+      設定の鍵（決まった数字の並び）が列を決めるのは、写すプログラムが写す元の関数から列を作る組を作り直すときなので、その関数を数える。
 
     ★なぜ鍵の名前（`*_periods`）で決めないか。実物には `*_periods` でない指標のパラメータが在る
       （`bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol`）。
@@ -462,7 +465,7 @@ def _catalog_keys(od_src: str | None = None) -> set[str]:
     import ast
     src = _A1_OD.read_text(encoding="utf-8") if od_src is None else od_src
     fn = next((n for n in ast.walk(ast.parse(src))
-               if isinstance(n, ast.FunctionDef) and n.name == "build_catalog"), None)
+               if isinstance(n, ast.FunctionDef) and n.name == "_catalog_from_config"), None)
     keys: set[str] = set()
     if fn is None:
         return keys
@@ -2475,8 +2478,8 @@ def selftest() -> int:
         # ★場所1 は「設定に鍵が在る」だけでは数えない（材料カタログを作る関数が読む鍵だけを数える）。
         #   だから番人も、設定の鍵と、それを読む行の両方を足す＝実物と同じ形で1件 増やす。
         _od12 = _A1_OD.read_text(encoding="utf-8")
-        _od12 = _od12.replace("def build_catalog(cfg: dict) -> list[tuple]:\n",
-                              "def build_catalog(cfg: dict) -> list[tuple]:\n"
+        _od12 = _od12.replace("def _catalog_from_config(cfg: dict) -> list[tuple]:\n",
+                              "def _catalog_from_config(cfg: dict) -> list[tuple]:\n"
                               '    _zzz_uso = cfg["zzz_uso_periods"]\n', 1)
         _cases = [("1", dict(cfg=_cfg12, od_src=_od12)), ("2", dict(lim=_lim12)),
                   ("3", dict(gen_src=_src12)), ("4", dict(e38=_e3812))]

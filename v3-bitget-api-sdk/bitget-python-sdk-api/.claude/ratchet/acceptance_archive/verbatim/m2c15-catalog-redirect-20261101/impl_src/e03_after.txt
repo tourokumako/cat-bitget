@@ -1,0 +1,27 @@
+        ★171番まで列を変えないため、決まり⑤の外（オフの指標と、オフの指標を使う部品の列の組も返す）。決まり③は守る＝「列を作る組」の要素が
+          オフなら止まる（監査 CP94 の修正12）。
+        ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-2）＝組ごとに、計算の登録の名前（②-2・④-3 の「登録の名前」）も返す。
+          build_catalog が、その名前で計算の登録から列を作る（記録の名前と登録の名前が違う記録が在る＝例 ALMA傾き% の登録は ALMA傾き）。
+          組を持つのに登録の名前が無ければ止まる。「計算の関数」の要素がオフでも止まる（決まり③）。"""
+        out = []
+        for kind in ("指標の記録", "部品の記録"):
+            el = self._el("列を作る組", kind)
+            if (self.rows[kind][el].get("オン/オフ")) != "オン":
+                _stop(f"オフの要素は返さない: {kind} の「{el}」")
+            ce_el = self._el("計算の関数", kind)
+            if (self.rows[kind][ce_el].get("オン/オフ")) != "オン":
+                _stop(f"オフの要素は返さない: {kind} の「{ce_el}」")
+            for nm, rec in self.records[kind].items():
+                cs = rec.get(el)
+                if not cs:
+                    continue
+                tpls, sets, order = cs.get("名前の型") or [], cs.get("組") or [], cs.get("並び") or []
+                if len(sets) != len(order):
+                    _stop(f"列を作る組の組と並びの数が合わない: {nm}")
+                ce = rec.get(ce_el)
+                reg = ce.get("登録の名前") if isinstance(ce, dict) else None
+                if sets and not reg:
+                    _stop(f"列を作る組を持つのに、計算の関数の登録の名前が無い: {nm}")
+                for p, i in zip(sets, order):
+                    out.append({"記録": nm, "種類": kind, "名前の型": tpls[0] if tpls else None, "組": list(p), "並び": int(i),
+                                "登録の名前": reg})

@@ -1,0 +1,222 @@
+[
+  {
+    "番号": "1",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+    "直す箇所": "build_catalog の頭（F-1・F-3）＝読む口の列を作る組から列を作る新しい build_catalog を置き、直す前の中身を _catalog_from_config として残す（直す前の本体の文字は1文字も変えない）",
+    "直す前の文字": "def build_catalog(cfg: dict) -> list[tuple]:\n    \"\"\"指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。\n\n    ★2026-08-13（A-2）＝計算式は上の材料の表（MATERIAL_FAMILIES）に在る。\n      この関数がやるのは「設定ファイルの数字を読んで、その組を1つずつ作る」ことだけ。\n    \"\"\"\n",
+    "種類": "直した後の文字",
+    "中身": "def build_catalog(cfg: dict) -> list[tuple]:\n    \"\"\"指標カタログ＝読む口（indicators/indicators.py）の列を作る組から作る（工事 m2c15-catalog-redirect-20261101・やることの表 F-1）。\n\n    ★2026-11-01（161-2・集約の要件定義書 R6）＝直す前は、設定ファイル observe_config.json の鍵（古い鍵・material_params・drop_columns）を\n      読み、種類ごとの for で組を作っていた（その作り方は下の _catalog_from_config に残す＝写すプログラムの写す元・162番で消す）。\n      いまは、indicators.json の列を作る組（②-12・④-9＝161-1 で、省いた後のいまのカタログの列から写した物）を、並びの順に1つずつ列にする。\n    ★cfg から読むのは、帯の床の倍数 band_fee_mult だけ（_band_fee_floor に cfg を渡す）。設定の鍵は1つも読まない。\n    ★計算は、いまと同じく計算の登録（MATERIAL_FAMILIES）から make_material・_band_material が取る\n      （読む口の calc はオフの指標を返さないので使わない＝やることの表 Y-5）。\n    \"\"\"\n    _ind_dir = str(pathlib.Path(__file__).resolve().parent / \"indicators\")\n    if _ind_dir not in sys.path:\n        sys.path.insert(0, _ind_dir)\n    import indicators as _ind                        # 読む口（indicators.json を開くのは、このプログラムだけ＝集約の要件定義書 R5）\n    if not hasattr(_ind, \"load\"):\n        raise SystemExit(f\"[材料カタログ] 読む口でない物が indicators の名前で読み込まれている: {getattr(_ind, '__file__', _ind)}\")\n    _load_pta()\n    _bfl = _band_fee_floor(cfg)\n    C = []\n    for cs in _ind.load().column_sets():\n        reg = cs[\"登録の名前\"]\n        if cs[\"種類\"] == \"部品の記録\":\n            if reg not in _BAND_IMPL:\n                raise SystemExit(f\"[材料カタログ] 部品の記録 {cs['記録']} の登録の名前 {reg} が、帯の計算式の表に無い\")\n            C.append(_band_material(reg, _bfl, *cs[\"組\"]))\n        else:\n            if reg in _BAND_IMPL:\n                raise SystemExit(f\"[材料カタログ] 指標の記録 {cs['記録']} の登録の名前 {reg} が、帯の計算式の表に在る（床を結び付ける部品の記録で作る物）\")\n            C.append(make_material(reg, *cs[\"組\"]))\n    return C\n\n\ndef _catalog_from_config(cfg: dict) -> list[tuple]:\n    \"\"\"直す前の指標カタログの作り方（期間・パラメータを observe_config.json から取る）。\n\n    ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-3）＝列を作る所は build_catalog（読む口の列を作る組から作る）に替えた。\n      この関数は、写すプログラム（gen_indicators_draft.py）が列を作る組を作り直すときの写す元としてだけ残す（162番で消す）。\n      呼ぶのは、写すプログラム・カタログの自己テスト（build_catalog と名前の並びを照らす）・gen_materials の鍵を拾う口だけ。\n    ★2026-08-13（A-2）＝計算式は上の材料の表（MATERIAL_FAMILIES）に在る。\n      この関数がやるのは「設定ファイルの数字を読んで、その組を1つずつ作る」ことだけ。\n    \"\"\"\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py:1792「def build_catalog(cfg: dict) -> list[tuple]:」",
+    "状態": "確定"
+  },
+  {
+    "番号": "2",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+    "直す箇所": "カタログの自己テスト selftest_catalog（F-1）＝build_catalog と写す元の関数の名前の並びの照らし（⑮）と、build_catalog が設定の鍵を読まないことの照らし（⑯）を足す",
+    "直す前の文字": "    if not _g14._group_usable_col(\"ROC12__5m\", \"ROC\", \"5m\", None, _tb14):\n        ng.append(\"修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した\")\n    if exit_:\n",
+    "種類": "直した後の文字",
+    "中身": "    if not _g14._group_usable_col(\"ROC12__5m\", \"ROC\", \"5m\", None, _tb14):\n        ng.append(\"修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した\")\n    # ── 工事 m2c15-catalog-redirect-20261101 の番人（2026-11-01・やることの表 F-1）──\n    #  ⑮build_catalog（読む口の列を作る組から作る）の名前の並びが、写す元の関数 _catalog_from_config と1本も違わない\n    _new15 = [nm for nm, _f, _d in build_catalog(cfg)]\n    _old15 = [nm for nm, _f, _d in _catalog_from_config(cfg)]\n    if _new15 != _old15:\n        _i15 = next((i for i, (a, b) in enumerate(zip(_new15, _old15)) if a != b), min(len(_new15), len(_old15)))\n        ng.append(f\"[材料カタログ] build_catalog の名前の並びが、写す元の関数と違う（{len(_new15)} 本 ／ {len(_old15)} 本・\"\n                  f\"最初に違う番号 {_i15}＝{_new15[_i15] if _i15 < len(_new15) else 'なし'} ／ {_old15[_i15] if _i15 < len(_old15) else 'なし'}）\")\n    #  ⑯build_catalog の構文の木に、cfg の鍵を読む所（cfg[...]・cfg.get(...)）が無い（集約の要件定義書 R6）\n    import ast as _ast16\n    import inspect as _in16\n    _fn16 = _ast16.parse(_in16.getsource(build_catalog))\n    _keys16 = sorted({n.slice.value for n in _ast16.walk(_fn16)\n                      if isinstance(n, _ast16.Subscript) and isinstance(n.value, _ast16.Name) and n.value.id == \"cfg\"\n                      and isinstance(n.slice, _ast16.Constant)}\n                     | {n.args[0].value for n in _ast16.walk(_fn16)\n                        if isinstance(n, _ast16.Call) and isinstance(n.func, _ast16.Attribute) and n.func.attr == \"get\"\n                        and isinstance(n.func.value, _ast16.Name) and n.func.value.id == \"cfg\"\n                        and n.args and isinstance(n.args[0], _ast16.Constant)})\n    if _keys16:\n        ng.append(f\"[材料カタログ] build_catalog が設定の鍵を読んでいる: {_keys16}\")\n    if exit_:\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py:7936「if not _g14._group_usable_col(\"ROC12__5m\", \"ROC\", \"5m\", None, _tb14):」",
+    "状態": "確定"
+  },
+  {
+    "番号": "3",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+    "直す箇所": "読む口の column_sets（F-2）＝組ごとに計算の登録の名前を返す。組を持つのに登録の名前が無い・計算の関数の要素がオフなら止まる",
+    "直す前の文字": "        ★171番まで列を変えないため、決まり⑤の外（オフの指標と、オフの指標を使う部品の列の組も返す）。決まり③は守る＝「列を作る組」の要素が\n          オフなら止まる（監査 CP94 の修正12）。\"\"\"\n        out = []\n        for kind in (\"指標の記録\", \"部品の記録\"):\n            el = self._el(\"列を作る組\", kind)\n            if (self.rows[kind][el].get(\"オン/オフ\")) != \"オン\":\n                _stop(f\"オフの要素は返さない: {kind} の「{el}」\")\n            for nm, rec in self.records[kind].items():\n                cs = rec.get(el)\n                if not cs:\n                    continue\n                tpls, sets, order = cs.get(\"名前の型\") or [], cs.get(\"組\") or [], cs.get(\"並び\") or []\n                if len(sets) != len(order):\n                    _stop(f\"列を作る組の組と並びの数が合わない: {nm}\")\n                for p, i in zip(sets, order):\n                    out.append({\"記録\": nm, \"種類\": kind, \"名前の型\": tpls[0] if tpls else None, \"組\": list(p), \"並び\": int(i)})\n",
+    "種類": "直した後の文字",
+    "中身": "        ★171番まで列を変えないため、決まり⑤の外（オフの指標と、オフの指標を使う部品の列の組も返す）。決まり③は守る＝「列を作る組」の要素が\n          オフなら止まる（監査 CP94 の修正12）。\n        ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-2）＝組ごとに、計算の登録の名前（②-2・④-3 の「登録の名前」）も返す。\n          build_catalog が、その名前で計算の登録から列を作る（記録の名前と登録の名前が違う記録が在る＝例 ALMA傾き% の登録は ALMA傾き）。\n          組を持つのに登録の名前が無ければ止まる。「計算の関数」の要素がオフでも止まる（決まり③）。\"\"\"\n        out = []\n        for kind in (\"指標の記録\", \"部品の記録\"):\n            el = self._el(\"列を作る組\", kind)\n            if (self.rows[kind][el].get(\"オン/オフ\")) != \"オン\":\n                _stop(f\"オフの要素は返さない: {kind} の「{el}」\")\n            ce_el = self._el(\"計算の関数\", kind)\n            if (self.rows[kind][ce_el].get(\"オン/オフ\")) != \"オン\":\n                _stop(f\"オフの要素は返さない: {kind} の「{ce_el}」\")\n            for nm, rec in self.records[kind].items():\n                cs = rec.get(el)\n                if not cs:\n                    continue\n                tpls, sets, order = cs.get(\"名前の型\") or [], cs.get(\"組\") or [], cs.get(\"並び\") or []\n                if len(sets) != len(order):\n                    _stop(f\"列を作る組の組と並びの数が合わない: {nm}\")\n                ce = rec.get(ce_el)\n                reg = ce.get(\"登録の名前\") if isinstance(ce, dict) else None\n                if sets and not reg:\n                    _stop(f\"列を作る組を持つのに、計算の関数の登録の名前が無い: {nm}\")\n                for p, i in zip(sets, order):\n                    out.append({\"記録\": nm, \"種類\": kind, \"名前の型\": tpls[0] if tpls else None, \"組\": list(p), \"並び\": int(i),\n                                \"登録の名前\": reg})\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py:352「out.append({\"記録\": nm, \"種類\": kind, \"名前の型\": tpls[0] if tpls else None, \"組\": list(p), \"並び\": int(i)})」",
+    "状態": "確定"
+  },
+  {
+    "番号": "4",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+    "直す箇所": "読む口の使い方の説明（F-2）",
+    "直す前の文字": "  r.column_sets()                             # 列を作る組（指標と部品）をカタログの並びの順で（161-2 の build_catalog が使う）\n",
+    "種類": "直した後の文字",
+    "中身": "  r.column_sets()                             # 列を作る組（指標と部品）をカタログの並びの順で・組ごとに計算の登録の名前も（build_catalog が使う）\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py:28「# 列を作る組（指標と部品）をカタログの並びの順で（161-2 の build_catalog が使う）」",
+    "状態": "確定"
+  },
+  {
+    "番号": "5",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+    "直す箇所": "読む口の自己テスト（F-2）＝登録の名前を返す行と、無ければ止まる行を足す",
+    "直す前の文字": "    t(\"列を作る組を並びの順で返す（指標と部品）\", [x[\"記録\"] for x in cs] == [\"RSI\", \"OFF指標\", \"RSI\", \"帯見本\"] and [x[\"並び\"] for x in cs] == [0, 1, 2, 3])\n",
+    "種類": "直した後の文字",
+    "中身": "    t(\"列を作る組を並びの順で返す（指標と部品）\", [x[\"記録\"] for x in cs] == [\"RSI\", \"OFF指標\", \"RSI\", \"帯見本\"] and [x[\"並び\"] for x in cs] == [0, 1, 2, 3])\n    t(\"列を作る組は、組ごとに計算の登録の名前も返す（build_catalog が使う・161-2 の F-2）\", [x.get(\"登録の名前\") for x in cs] == [\"RSI\", \"OFF\", \"RSI\", \"帯見本\"])\n    bad = copy.deepcopy(base)\n    bad[\"指標の記録\"][\"RSI\"][\"計算の関数\"][\"登録の名前\"] = None\n    t(\"列を作る組を持つのに計算の登録の名前が無いと止まる（161-2 の F-2）\", stops(bad, \"登録の名前が無い\"))\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py:523「t(\"列を作る組を並びの順で返す（指標と部品）\"」",
+    "状態": "確定"
+  },
+  {
+    "番号": "6",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+    "直す箇所": "読む口の自己テスト（F-2）＝計算の口の「登録の名前が無ければ止まる」の試しを、組を持たない部品（帯既定）で行う（組を持つ記録は、3件目の直しで読み込みのときに止まるため）",
+    "直す前の文字": "    bad = copy.deepcopy(base)\n    bad[\"指標の記録\"][\"RSI\"][\"計算の関数\"][\"登録の名前\"] = None\n    t(\"計算: 登録の名前が無ければ止まる\", calc_stops(Indicators(bad, timeframes=[\"5m\"], registry=reg), \"RSI\", \"計算の関数の登録が無い\"))\n",
+    "種類": "直した後の文字",
+    "中身": "    bad = copy.deepcopy(base)\n    bad[\"部品の記録\"][\"帯既定\"][\"計算の関数\"][\"登録の名前\"] = None\n    t(\"計算: 登録の名前が無ければ止まる（組を持たない部品＝帯既定で試す・組を持つ記録は読み込みで止まる＝161-2 の F-2）\",\n      calc_stops(Indicators(bad, timeframes=[\"5m\"], registry=reg), \"帯既定\", \"計算の関数の登録が無い\"))\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py:563「t(\"計算: 登録の名前が無ければ止まる\"」",
+    "状態": "確定"
+  },
+  {
+    "番号": "7",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの build_old の cols（F-4）＝写す元を _catalog_from_config にする",
+    "直す前の文字": "        for nm, _f, _d in od.build_catalog(c):\n",
+    "種類": "直した後の文字",
+    "中身": "        # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝写す元は、設定から列を作る _catalog_from_config（162番まで）。\n        #   build_catalog は読む口の列を作る組から作るので、写す元にすると indicators.json を indicators.json から作ることになる。\n        for nm, _f, _d in od._catalog_from_config(c):\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:592「for nm, _f, _d in od.build_catalog(c):」",
+    "状態": "確定"
+  },
+  {
+    "番号": "8",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの catalog_sets（F-4）＝写す元を _catalog_from_config にする",
+    "直す前の文字": "    cat = od.build_catalog(cfg)\n",
+    "種類": "直した後の文字",
+    "中身": "    cat = od._catalog_from_config(cfg)                    # 写す元＝設定から列を作る関数（162番まで・161-2 のやることの表 F-4）\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:973「cat = od.build_catalog(cfg)」",
+    "状態": "確定"
+  },
+  {
+    "番号": "9",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの自己テスト（F-4）＝写す元が build_catalog でないことを、構文の木で照らす行を足す",
+    "直す前の文字": "    except SystemExit as e:\n        t(f\"読む口: 写した物を読み込める（{e}）\", False)\n    for name, good in ok:\n",
+    "種類": "直した後の文字",
+    "中身": "    except SystemExit as e:\n        t(f\"読む口: 写した物を読み込める（{e}）\", False)\n    # 5 写す元（161-2 のやることの表 F-4）＝列を作る組と出どころの鍵を作る所（build_old の cols・catalog_sets）は、\n    #   build_catalog でなく写す元の関数 _catalog_from_config を呼ぶ（構文の木で、呼んでいる属性の名前を見る）\n    import ast as _ast5\n    _calls5 = {}\n    for _n5 in _ast5.walk(_ast5.parse(Path(__file__).read_text(encoding=\"utf-8\"))):\n        if isinstance(_n5, _ast5.FunctionDef) and _n5.name in (\"build_old\", \"catalog_sets\"):\n            _calls5[_n5.name] = {c.func.attr for c in _ast5.walk(_n5) if isinstance(c, _ast5.Call) and isinstance(c.func, _ast5.Attribute)}\n    t(\"写す: 写す元は _catalog_from_config で、build_catalog を呼ばない（161-2 の F-4）\",\n      len(_calls5) == 2 and all(\"_catalog_from_config\" in v and \"build_catalog\" not in v for v in _calls5.values()))\n    for name, good in ok:\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:1711「t(f\"読む口: 写した物を読み込める（{e}）\", False)」",
+    "状態": "確定"
+  },
+  {
+    "番号": "10",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの table_update（F-4）＝要素の定義表の ②-12・④-9 の「写す元」を _catalog_from_config に、「読むプログラム」に build_catalog を書く（当てた後の --rewrite で indicators.json に入る）",
+    "直す前の文字": "    for no, add in ((\"②-9\", SRC29_ADD), (\"③-5\", SRC35_ADD)):         # 監査 CP94 の修正9＝写す元の文を、いまの写し先に合わせる\n        e = next(x for x in t[\"要素\"] if x[\"番号\"] == no)\n        if add not in e[\"写す元\"]:\n            e[\"写す元\"] = e[\"写す元\"] + add\n",
+    "種類": "直した後の文字",
+    "中身": "    for no, add in ((\"②-9\", SRC29_ADD), (\"③-5\", SRC35_ADD)):         # 監査 CP94 の修正9＝写す元の文を、いまの写し先に合わせる\n        e = next(x for x in t[\"要素\"] if x[\"番号\"] == no)\n        if add not in e[\"写す元\"]:\n            e[\"写す元\"] = e[\"写す元\"] + add\n    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝列を作る組の写す元は _catalog_from_config（162番まで）、\n    #   読むのは build_catalog になった。要素の定義表の ②-12・④-9 の「写す元」と「読むプログラム」を、いまの形に合わせる（2回 呼んでも同じ物）\n    for no in (\"②-12\", \"④-9\"):\n        e = next(x for x in t[\"要素\"] if x[\"番号\"] == no)\n        e[\"写す元\"] = e[\"写す元\"].replace(\"（observe_diag.build_catalog）\", \"（observe_diag._catalog_from_config＝写す元の関数・162番まで）\")\n        if \"observe_diag.build_catalog\" not in e[\"読むプログラム\"]:\n            e[\"読むプログラム\"] = list(e[\"読むプログラム\"]) + [\"observe_diag.build_catalog\"]\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:835「for no, add in ((\"②-9\", SRC29_ADD), (\"③-5\", SRC35_ADD)):」",
+    "状態": "確定"
+  },
+  {
+    "番号": "11",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの PART_SRC（F-4）＝部品の記録の出どころの文を、帯の for の在りか（_catalog_from_config）に合わせる（当てた後の --rewrite で indicators.json の部品の記録8件に入る）",
+    "直す前の文字": "PART_SRC = \"observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for\"\n",
+    "種類": "直した後の文字",
+    "中身": "PART_SRC = \"observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）\"\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:128「PART_SRC = \"observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for\"」",
+    "状態": "確定"
+  },
+  {
+    "番号": "12",
+    "対象のファイル": ".claude/state/indicator_review/gen_indicators_draft.py",
+    "直す箇所": "写すプログラムの頭の説明（F-4）＝列の並びの写す元を _catalog_from_config と書く",
+    "直す前の文字": "    12 いまのカタログの列の並び（observe_diag.build_catalog＝列を作る組 ②-12・④-9・171番まで）\n",
+    "種類": "直した後の文字",
+    "中身": "    12 いまのカタログの列の並び（observe_diag._catalog_from_config＝写す元の関数・162番まで＝列を作る組 ②-12・④-9・171番まで。161-2 から build_catalog はこれを読む）\n",
+    "根拠の抜き書き": ".claude/state/indicator_review/gen_indicators_draft.py:16「12 いまのカタログの列の並び（observe_diag.build_catalog＝列を作る組 ②-12・④-9・171番まで）」",
+    "状態": "確定"
+  },
+  {
+    "番号": "13",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/leak_causality_diag.py",
+    "直す箇所": "H2 の印の対象 WATCHED（F-5）＝読む口と1つのデータを足す",
+    "直す前の文字": "    f\"{_PR}/observe_diag.py\", f\"{_PR}/observe_config.json\",\n",
+    "種類": "直した後の文字",
+    "中身": "    f\"{_PR}/observe_diag.py\", f\"{_PR}/observe_config.json\",\n    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-5）＝build_catalog が、読む口と1つのデータから列を作るようになったので、\n    #   この2本が変われば材料の列が変わりうる＝印の対象に足す（2026-08-20 に observe_diag.py を足したときと同じ理由）。\n    f\"{_PR}/indicators/indicators.json\", f\"{_PR}/indicators/indicators.py\",\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/leak_causality_diag.py:255「f\"{_PR}/observe_diag.py\", f\"{_PR}/observe_config.json\",」",
+    "状態": "確定"
+  },
+  {
+    "番号": "14",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py",
+    "直す箇所": "gen_materials の鍵を拾う口 _catalog_keys の説明（F-6）",
+    "直す前の文字": "    \"\"\"`observe_diag.build_catalog` が読む設定の鍵を、コードから機械で拾う。\n",
+    "種類": "直した後の文字",
+    "中身": "    \"\"\"`observe_diag._catalog_from_config`（列を作る組の写す元＝設定から列を作る関数・162番まで）が読む設定の鍵を、コードから機械で拾う。\n\n    ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-6）＝build_catalog は読む口の列を作る組から作り、設定の鍵を読まない。\n      設定の鍵（決まった数字の並び）が列を決めるのは、写すプログラムが写す元の関数から列を作る組を作り直すときなので、その関数を数える。\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py:455「\"\"\"`observe_diag.build_catalog` が読む設定の鍵を、コードから機械で拾う。」",
+    "状態": "確定"
+  },
+  {
+    "番号": "15",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py",
+    "直す箇所": "gen_materials の鍵を拾う口 _catalog_keys（F-6）＝見る関数を _catalog_from_config にする",
+    "直す前の文字": "               if isinstance(n, ast.FunctionDef) and n.name == \"build_catalog\"), None)\n",
+    "種類": "直した後の文字",
+    "中身": "               if isinstance(n, ast.FunctionDef) and n.name == \"_catalog_from_config\"), None)\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py:465「if isinstance(n, ast.FunctionDef) and n.name == \"build_catalog\"), None)」",
+    "状態": "確定"
+  },
+  {
+    "番号": "16",
+    "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py",
+    "直す箇所": "gen_materials の自己テスト T12（F-6）＝鍵の読みを足す相手の関数を _catalog_from_config にする",
+    "直す前の文字": "        _od12 = _od12.replace(\"def build_catalog(cfg: dict) -> list[tuple]:\\n\",\n                              \"def build_catalog(cfg: dict) -> list[tuple]:\\n\"\n                              '    _zzz_uso = cfg[\"zzz_uso_periods\"]\\n', 1)\n",
+    "種類": "直した後の文字",
+    "中身": "        _od12 = _od12.replace(\"def _catalog_from_config(cfg: dict) -> list[tuple]:\\n\",\n                              \"def _catalog_from_config(cfg: dict) -> list[tuple]:\\n\"\n                              '    _zzz_uso = cfg[\"zzz_uso_periods\"]\\n', 1)\n",
+    "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py:2478「_od12 = _od12.replace(\"def build_catalog(cfg: dict) -> list[tuple]:\\n\",」",
+    "状態": "確定"
+  },
+  {
+    "番号": "17",
+    "対象のファイル": ".claude/breaks/b222_catalog_drops_last_set.sh",
+    "直す箇所": "壊すプログラム b222（7-6 の F-1 の1行目）＝build_catalog が列を作る組の最後の1組を作らないと、カタログの自己テストが落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: build_catalog が、読む口の列を作る組の最後の1組を作らない形にする＝名前の並びが写す元の関数と違い、カタログの自己テストが落ちる\n# EXPECT_MSG: [材料カタログ] build_catalog の名前の並びが、写す元の関数と違う\n# b222_catalog_drops_last_set — build_catalog が列を作る組を1組でも落とすと、カタログの自己テストが落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-1 の1行目）\n#   守っているもの＝7-6 の F-1 の1行目（測るコマンドは、完成の条件と同じ＝observe_diag.py --selftest-catalog）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    for cs in _ind.load().column_sets():\\n'\nnew = '    for cs in _ind.load().column_sets()[:-1]:\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b222_catalog_drops_last_set] 壊す対象（列を作る組を回す行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-catalog\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-1 の1行目「壊し方＝build_catalog が、列を作る組の最後の1組を作らない形にする」",
+    "状態": "確定"
+  },
+  {
+    "番号": "18",
+    "対象のファイル": ".claude/breaks/b223_catalog_reads_old_key.sh",
+    "直す箇所": "壊すプログラム b223（7-6 の F-1 の2行目）＝build_catalog が設定の鍵を読むと、カタログの自己テストが落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: build_catalog に、設定の古い鍵 rsi_periods を読む行を足す＝構文の木の照らしが当たり、カタログの自己テストが落ちる\n# EXPECT_MSG: [材料カタログ] build_catalog が設定の鍵を読んでいる\n# b223_catalog_reads_old_key — build_catalog が設定の鍵を読む形に戻ると、カタログの自己テストが落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-1 の2行目・集約の要件定義書 R6）\n#   守っているもの＝7-6 の F-1 の2行目（測るコマンドは、完成の条件と同じ＝observe_diag.py --selftest-catalog）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    _bfl = _band_fee_floor(cfg)\\n    C = []\\n    for cs in _ind.load().column_sets():\\n'\nnew = '    _bfl = _band_fee_floor(cfg)\\n    _zzz_rsi = cfg[\"rsi_periods\"]\\n    C = []\\n    for cs in _ind.load().column_sets():\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b223_catalog_reads_old_key] 壊す対象（build_catalog の床と列を作る組を回す行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-catalog\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-1 の2行目「壊し方＝build_catalog に、cfg[\"rsi_periods\"] を読む行を足す」",
+    "状態": "確定"
+  },
+  {
+    "番号": "19",
+    "対象のファイル": ".claude/breaks/b224_reader_sets_no_reg.sh",
+    "直す箇所": "壊すプログラム b224（7-6 の F-2）＝column_sets が登録の名前を返さないと、読む口の自己テストが落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 読む口の column_sets が、組ごとの計算の登録の名前を返さない形にする＝読む口の自己テストが落ちる\n# EXPECT_MSG: ❌ 列を作る組は、組ごとに計算の登録の名前も返す\n# b224_reader_sets_no_reg — 列を作る組に計算の登録の名前が無いと、読む口の自己テストが落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-2）\n#   守っているもの＝7-6 の F-2（測るコマンドは、完成の条件と同じ＝indicators.py --selftest）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicators/indicators.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '                                \"登録の名前\": reg})\\n'\nnew = '                                })\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b224_reader_sets_no_reg] 壊す対象（列を作る組に登録の名前を入れる行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$F\" --selftest\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-2「壊し方＝返り値から登録の名前を外す」",
+    "状態": "確定"
+  },
+  {
+    "番号": "20",
+    "対象のファイル": ".claude/breaks/b225_draft_source_is_catalog.sh",
+    "直す箇所": "壊すプログラム b225（7-6 の F-3・F-4）＝写すプログラムの写す元が build_catalog に戻ると、自己テストが落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 写すプログラムの catalog_sets の呼び先を build_catalog に戻す＝写す元が indicators.json 自身になり、写すプログラムの自己テストが落ちる\n# EXPECT_MSG: ❌ 写す: 写す元は _catalog_from_config で、build_catalog を呼ばない\n# b225_draft_source_is_catalog — 写すプログラムの写す元が build_catalog に戻ると、自己テストが落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-3・F-4）\n#   守っているもの＝7-6 の F-3・F-4（測るコマンドは、完成の条件と同じ＝写すプログラムの --selftest）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$ROOT/.claude/state/indicator_review/gen_indicators_draft.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    cat = od._catalog_from_config(cfg)                    # 写す元＝設定から列を作る関数（162番まで・161-2 のやることの表 F-4）\\n'\nnew = '    cat = od.build_catalog(cfg)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b225_draft_source_is_catalog] 壊す対象（catalog_sets の写す元の行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$F\" --selftest\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-3・F-4「壊し方＝catalog_sets の呼び先を build_catalog に戻す」",
+    "状態": "確定"
+  },
+  {
+    "番号": "21",
+    "対象のファイル": ".claude/breaks/b226_h2_watch_no_indicators.sh",
+    "直す箇所": "壊すプログラム b226（7-6 の F-5）＝H2 の印の対象から読む口と1つのデータを消すと、完成の条件が落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: H2 の印の対象（WATCHED）から、読む口と1つのデータの行を消す＝grep の数が 0 になり、完成の条件が落ちる\n# EXPECT_MSG: leak_causality_diag.py:0\n# b226_h2_watch_no_indicators — H2 の印が indicators.json を見張らなくなると、完成の条件が落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-5）\n#   守っているもの＝7-6 の F-5（測るコマンドは、完成の条件と同じ＝grep -H -c で数え、0 なら終わりのコード 1）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/leak_causality_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    f\"{_PR}/indicators/indicators.json\", f\"{_PR}/indicators/indicators.py\",\\n'\nnew = ''\nif s.count(old) != 1:\n    raise SystemExit(\"[b226_h2_watch_no_indicators] 壊す対象（WATCHED の読む口と1つのデータの行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure grep -H -c -F 'indicators/indicators.json' \"$PR/leak_causality_diag.py\"\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-5「壊し方＝WATCHED から indicators.json の行を消す」",
+    "状態": "確定"
+  },
+  {
+    "番号": "22",
+    "対象のファイル": ".claude/breaks/b227_materials_keys_from_catalog.sh",
+    "直す箇所": "壊すプログラム b227（7-6 の F-6）＝鍵を拾う口が見る関数を build_catalog に戻すと、gen_materials の自己テスト T12 が落ちる（新しいファイル）",
+    "直す前の文字": "なし",
+    "種類": "直した後の文字",
+    "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: gen_materials の鍵を拾う口が見る関数を build_catalog に戻す＝写す元の関数に鍵の読みを足しても場所1 が増えず、gen_materials の自己テスト T12 が落ちる\n# EXPECT_MSG: T12: 場所1 に架空の数の並びを1つ 足しても件数が1 増えない\n# b227_materials_keys_from_catalog — 場所1 の数え方が写す元の関数を見なくなると、gen_materials の自己テストが落ちる（工事 m2c15-catalog-redirect-20261101・やることの表 7-6 の F-6）\n#   守っているもの＝7-6 の F-6（測るコマンドは、完成の条件と同じ＝gen_materials.py --selftest）\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。lib.sh の guard が控えを取り、必ず戻す。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/gen_materials.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '               if isinstance(n, ast.FunctionDef) and n.name == \"_catalog_from_config\"), None)\\n'\nnew = '               if isinstance(n, ast.FunctionDef) and n.name == \"build_catalog\"), None)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b227_materials_keys_from_catalog] 壊す対象（鍵を拾う口が見る関数の名前の行）が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$F\" --selftest\nfinish\n",
+    "根拠の抜き書き": "やることの表 7-6 の F-6「壊し方＝_catalog_keys が見る関数の名前を build_catalog に戻す」",
+    "状態": "確定"
+  }
+]

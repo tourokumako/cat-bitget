@@ -25,7 +25,7 @@ indicators.json を開くのは、このプログラムだけ（集約の要件�
   r.element("RSI", "パラメータの軸")          # 1つの要素の値。無ければ「無いときの扱い」のとおり
   r.usages("RSI")                             # その指標の使い方の記録（指標がオフなら空）
   r.parts()                                   # 部品の記録（使う指標がオフなら外す）
-  r.column_sets()                             # 列を作る組（指標と部品）をカタログの並びの順で（161-2 の build_catalog が使う）
+  r.column_sets()                             # 列を作る組（指標と部品）をカタログの並びの順で・組ごとに計算の登録の名前も（build_catalog が使う）
   r.calc("RSI")                               # 計算の関数（登録の名前・名前の型・向きを持つ・関数）。観察の道具の登録から取る
   r.value("RSI", d, 14)                       # 指標の値（パラメータの値を渡して計算する）
 使い方（コマンド）
@@ -335,12 +335,18 @@ class Indicators:
     def column_sets(self) -> list:
         """列を作る組（②-12・④-9）を、カタログの並びの順で。並びに重なりか抜けが在れば止まる（4-5）。
         ★171番まで列を変えないため、決まり⑤の外（オフの指標と、オフの指標を使う部品の列の組も返す）。決まり③は守る＝「列を作る組」の要素が
-          オフなら止まる（監査 CP94 の修正12）。"""
+          オフなら止まる（監査 CP94 の修正12）。
+        ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-2）＝組ごとに、計算の登録の名前（②-2・④-3 の「登録の名前」）も返す。
+          build_catalog が、その名前で計算の登録から列を作る（記録の名前と登録の名前が違う記録が在る＝例 ALMA傾き% の登録は ALMA傾き）。
+          組を持つのに登録の名前が無ければ止まる。「計算の関数」の要素がオフでも止まる（決まり③）。"""
         out = []
         for kind in ("指標の記録", "部品の記録"):
             el = self._el("列を作る組", kind)
             if (self.rows[kind][el].get("オン/オフ")) != "オン":
                 _stop(f"オフの要素は返さない: {kind} の「{el}」")
+            ce_el = self._el("計算の関数", kind)
+            if (self.rows[kind][ce_el].get("オン/オフ")) != "オン":
+                _stop(f"オフの要素は返さない: {kind} の「{ce_el}」")
             for nm, rec in self.records[kind].items():
                 cs = rec.get(el)
                 if not cs:
@@ -348,8 +354,13 @@ class Indicators:
                 tpls, sets, order = cs.get("名前の型") or [], cs.get("組") or [], cs.get("並び") or []
                 if len(sets) != len(order):
                     _stop(f"列を作る組の組と並びの数が合わない: {nm}")
+                ce = rec.get(ce_el)
+                reg = ce.get("登録の名前") if isinstance(ce, dict) else None
+                if sets and not reg:
+                    _stop(f"列を作る組を持つのに、計算の関数の登録の名前が無い: {nm}")
                 for p, i in zip(sets, order):
-                    out.append({"記録": nm, "種類": kind, "名前の型": tpls[0] if tpls else None, "組": list(p), "並び": int(i)})
+                    out.append({"記録": nm, "種類": kind, "名前の型": tpls[0] if tpls else None, "組": list(p), "並び": int(i),
+                                "登録の名前": reg})
         out.sort(key=lambda x: x["並び"])
         seen = [x["並び"] for x in out]
         if len(set(seen)) != len(seen):
@@ -521,6 +532,10 @@ def selftest() -> int:
     # 列を作る組の並び
     cs = r.column_sets()
     t("列を作る組を並びの順で返す（指標と部品）", [x["記録"] for x in cs] == ["RSI", "OFF指標", "RSI", "帯見本"] and [x["並び"] for x in cs] == [0, 1, 2, 3])
+    t("列を作る組は、組ごとに計算の登録の名前も返す（build_catalog が使う・161-2 の F-2）", [x.get("登録の名前") for x in cs] == ["RSI", "OFF", "RSI", "帯見本"])
+    bad = copy.deepcopy(base)
+    bad["指標の記録"]["RSI"]["計算の関数"]["登録の名前"] = None
+    t("列を作る組を持つのに計算の登録の名前が無いと止まる（161-2 の F-2）", stops(bad, "登録の名前が無い"))
     bad = copy.deepcopy(base)
     bad["指標の記録"]["RSI"]["列を作る組"]["並び"] = [0, 1]
     t("列を作る組の並びが重なると止まる", stops(bad, "並びが重なる"))
@@ -559,8 +574,9 @@ def selftest() -> int:
             return text in str(e)
     t("計算: オフの指標の計算は返さない（要件6）", calc_stops(rc, "OFF指標", "オフの指標の計算は返さない"))
     bad = copy.deepcopy(base)
-    bad["指標の記録"]["RSI"]["計算の関数"]["登録の名前"] = None
-    t("計算: 登録の名前が無ければ止まる", calc_stops(Indicators(bad, timeframes=["5m"], registry=reg), "RSI", "計算の関数の登録が無い"))
+    bad["部品の記録"]["帯既定"]["計算の関数"]["登録の名前"] = None
+    t("計算: 登録の名前が無ければ止まる（組を持たない部品＝帯既定で試す・組を持つ記録は読み込みで止まる＝161-2 の F-2）",
+      calc_stops(Indicators(bad, timeframes=["5m"], registry=reg), "帯既定", "計算の関数の登録が無い"))
     t("計算: 計算の登録に無い名前なら止まる", calc_stops(Indicators(copy.deepcopy(base), timeframes=["5m"], registry={}), "RSI", "計算の登録に無い名前"))
     t("計算: パラメータの数が名前の型と合わなければ止まる", calc_stops(rc, "RSI", "パラメータの数が名前の型と合わない", params=(7, 9)))
     for name, good in ok:

@@ -34,7 +34,7 @@
 | gen_stage0_match.py | 0 | 3 | 0 | 0 |
 | indicator_reference_diag.py | 329 | 88 | 19 | 0 |
 | leak_causality_diag.py | 0 | 7 | 0 | 0 |
-| observe_diag.py | 331 | 214 | 357 | 0 |
+| observe_diag.py | 331 | 215 | 357 | 0 |
 | pre_audit_check.py | 0 | 7 | 0 | 0 |
 | precheck.py | 1 | 2 | 3 | 0 |
 | ratchet_guards.py | 1 | 2 | 0 | 0 |
@@ -170,11 +170,11 @@
 
 ## 照らし（エージェントの報告の行）
 
-範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 202 行
+範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 195 行
 
 - e38_logic_parts.py:37-39  _resample_htf  [自前で計算]  上位足（label=left・closed=left）
-- leak_causality_diag.py:383,407  _sab・_sab_hl  [自前で計算（テスト用にわざと壊す）]  列の名前
-- leak_causality_diag.py:560-583  _sab_local・_sab_global・_sab_lucky  [自前で計算（テスト用）]  列の名前
+- leak_causality_diag.py:386,410  _sab・_sab_hl  [自前で計算（テスト用にわざと壊す）]  列の名前
+- leak_causality_diag.py:563-586  _sab_local・_sab_global・_sab_lucky  [自前で計算（テスト用）]  列の名前
 - regime_label.py:367-371  hindsight_range  [自前で計算]  時間足のまとめ（resample）
 - analyze.py:231-232,251  N6・N8  [持つ]  入った時の指標の列名
 - e38_logic_parts.py:20-26  import・SCALP_FLOOR・V11_SL_BUF・BE_TTL_BARS・UNIT_LOT  [読む・持つ]  手数料の床・SL のバッファ
@@ -193,9 +193,6 @@
 - engine_tuner_exec.py:3496〜3611  run_identity_s1 の checks  [読む・持つ]  v59・v47・v22・v24・v48 ほかの指標の閾値と名前
 - engine_tuner_fire_diag.py:81-82  cond_label の role  [持つ]  役割の名前と日本語の対応表
 - engine_tuner_fire_diag.py:493-503  _synth_recipe  [持つ（テスト用）]  場面の判定の列名・SL の幅
-- gen_acceptance.py:523-525  KIND1_WORDS  [持つ]  ファイル名だけ（工事の種類を決める語）
-- gen_acceptance.py:527-533  PARAMS・ROLES・THRESHOLD_KEY・OBS_CFG  [持つ（パス・鍵）]  資料の表2本・閾値の鍵・時間足の置き場
-- gen_acceptance.py:3054-3097  自己テストの見本  [持つ]  見本の指標の行
 - gen_audit_request.py:123  N_LAWS  [持つ]  法則の件数
 - gen_audit_request.py:125-138  SOURCES  [持つ]  指標と場面の判定のコードの場所
 - gen_audit_request.py:157-174  READING・REFERENCE  [持つ]  指標の情報の資料のファイル名
@@ -216,10 +213,9 @@
 - indicator_reference_diag.py:946-953  MAKO_K3・K7・K3B・B1S1・K3C  [持つ]  mako の欄
 - indicator_reference_diag.py:1720-1726  `_SR_TOUCH_ATR_REMOVED`  [持つ]  外した S-RタッチATR の控え
 - indicator_reference_diag.py:5346-5348  RANGE_GEO_TF  [持つ]  レンジ幾何の時間足
-- indicator_reference_diag.py:5484  LINEAGE_KINDS  [持つ]  札の区分
-- indicator_reference_diag.py:5846-5883  SKIP_APPROVED_20260809・SKIP_POLICY_DUP_20260809・SKIP_APPROVED_20260810・SKIP_APPROVED  [持つ]  入れないライブラリの関数
-- indicator_reference_diag.py:5885-5969  INDUSTRY_SKIP  [持つ]  入れない理由
-- indicator_reference_diag.py:6052-6053  STATE_COLS  [持つ]  ポジションの状態の列
+- indicator_reference_diag.py:5849-5886  SKIP_APPROVED_20260809・SKIP_POLICY_DUP_20260809・SKIP_APPROVED_20260810・SKIP_APPROVED  [持つ]  入れないライブラリの関数
+- indicator_reference_diag.py:5888-5972  INDUSTRY_SKIP  [持つ]  入れない理由
+- indicator_reference_diag.py:6055-6056  STATE_COLS  [持つ]  ポジションの状態の列
 - leak_causality_diag.py:22-25  docstring  [持つ]  列の数
 - observe_diag.py:178-180  `TF_RULE`  [持つ]  時間足
 - observe_diag.py:186  `SUB_5M_TF`  [持つ]  時間足（1分足から作る足）
@@ -229,11 +225,11 @@
 - observe_diag.py:873-890  `_CYC_MEMO`・`_cyc`  [持つ]  前処理（サイクル系の計算を使い回す）
 - observe_diag.py:903  `MATERIAL_FAMILIES`  [持つ]  種類の名前・列の名前の型・方向・計算の式
 - observe_diag.py:1507-1538  `_MA_FUNCS`  [持つ]  計算の式（移動平均24種）
-- observe_diag.py:4983-4984  `_DIST_PAT`・`_SLOPE_PAT`  [持つ]  名前の規則
-- observe_diag.py:5759-5761  `_V9_MATCH_*`・`_V9_INPUT_COLS`  [持つ]  V9 の列のうち対象外にする物
-- observe_diag.py:5856-5882  `_v9_part_variants`  [持つ]  部品の式（slope・slope_avg）
-- observe_diag.py:6069-6070  `_V9_SOURCES`・`_V9_RECORD_SINCE`  [持つ]  v9_logic.md の出どころ3本
-- observe_diag.py:7558-7677  `selftest_atr1h`  [持つ／読む]  S-Rタッチ1時間ATR
+- observe_diag.py:5018-5019  `_DIST_PAT`・`_SLOPE_PAT`  [持つ]  名前の規則
+- observe_diag.py:5794-5796  `_V9_MATCH_*`・`_V9_INPUT_COLS`  [持つ]  V9 の列のうち対象外にする物
+- observe_diag.py:5891-5917  `_v9_part_variants`  [持つ]  部品の式（slope・slope_avg）
+- observe_diag.py:6104-6105  `_V9_SOURCES`・`_V9_RECORD_SINCE`  [持つ]  v9_logic.md の出どころ3本
+- observe_diag.py:7593-7712  `selftest_atr1h`  [持つ／読む]  S-Rタッチ1時間ATR
 - pre_audit_check.py:58-62  INDICATOR_SOURCES_CHECK・KNOWN_MATERIALS_PATH・MATERIALS_CSV・MATERIALS_CHECK  [持つ（パス）]  指標の照らしの道具・分かっている ❌ の一覧・材料の検査
 - pre_audit_check.py:161-171  KNOWN_NG  [持つ]  指標の資料と設定ファイルの、分かっている食い違い
 - pre_audit_check.py:177・:180-189  KNOWN_MATERIALS  [持つ／読む]  分かっている ❌ の一覧の sha256
@@ -285,16 +281,14 @@
 - engine_tuner_fire_diag.py:101  cond_label  [読む]  材料の名前を列の名前にする規則
 - engine_tuner_fire_diag.py:209  funnel_one  [読む]  場面の判定の列
 - engine_tuner_fire_diag.py:357  run_main  [読む]  役割と件数/日の下限
-- gen_acceptance.py:812-826  _table_kinds  [読む]  型の表の部品から指標の種類を引く
-- gen_acceptance.py:829-840  _timeframe_rows  [読む]  使える時間足と、役割ごとの時間足
-- gen_acceptance.py:843-878  _indicator_rows  [読む]  指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の
-- gen_acceptance.py:881-922  _auto_rows  [読む]  法則（番号・場面・一文・説明・機械が読む判定）・型の id と name
-- gen_acceptance.py:965-1028  build_materials  [読む]  オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵
-- gen_acceptance.py:1031-1077  build_laws  [読む]  機械が読む判定の「数える部品」
-- gen_acceptance.py:1080-1108  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
-- gen_acceptance.py:1319-1361  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
-- gen_acceptance.py:1673-1682  indicator_sources_problems  [読む]  check_indicator_sources.check1 を呼ぶ
-- gen_audit_docs.py:1655-1676  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
+- gen_acceptance.py:948-959  _timeframe_rows  [読む]  使える時間足と、役割ごとの時間足
+- gen_acceptance.py:962-997  _indicator_rows  [読む]  指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の
+- gen_acceptance.py:1000-1041  _auto_rows  [読む]  法則（番号・場面・一文・説明・機械が読む判定）・型の id と name
+- gen_acceptance.py:1084-1147  build_materials  [読む]  オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵
+- gen_acceptance.py:1150-1196  build_laws  [読む]  機械が読む判定の「数える部品」
+- gen_acceptance.py:1199-1227  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
+- gen_acceptance.py:1440-1482  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
+- gen_audit_docs.py:1660-1681  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
 - gen_audit_request.py:286-318  copy_all_laws  [読む]  法則の一覧
 - gen_exit_families.py:403-410  confirm_conditions  [読む]  確認の条件の材料・閾値
 - gen_indicator_switch.py:64-74  `ta_classes`  [読む]  ta のクラス
@@ -307,9 +301,9 @@
 - gen_materials.py:117-121  geo_ok・time_ok・demand_ok  [読む]  別枠の部品
 - gen_materials.py:280-286  `_lib_funcs`  [読む]  ライブラリの関数とカテゴリ
 - gen_materials.py:289-300  `_source_note`  [読む]  計算の出どころ・照合の相手
-- gen_materials.py:454-478  `_catalog_keys`  [読む（AST）]  パラメータの設定の鍵
-- gen_materials.py:778-839  `forms_table`  [読む]  条件の形
-- gen_materials.py:1062-1139  `_regime_decl_view`  [読む]  相場の判定の列
+- gen_materials.py:454-481  `_catalog_keys`  [読む（AST）]  パラメータの設定の鍵
+- gen_materials.py:781-842  `forms_table`  [読む]  条件の形
+- gen_materials.py:1065-1142  `_regime_decl_view`  [読む]  相場の判定の列
 - gen_observe_manual.py:147-149  _catalog_names  [読む]  指標の種類の名前
 - gen_observe_manual.py:153-159  _mode_rows  [読む]  探索の系統
 - gen_observe_manual.py:162-172  _pair_cols  [読む]  玉と玉の間の特徴の列名
@@ -329,36 +323,35 @@
 - gen_stage0_match.py:69-105  load_stages  [読む]  段ごとの指標名・系統・レンジ幾何の列・真偽の列
 - gen_stage0_match.py:115-131  columns_of・count_hits  [読む]  列名に、その文字が含まれるか
 - indicator_reference_diag.py:28-49  `_ta`・`_pta`・`_sps`、TA_OK・PTA_OK・SCIPY_OK  [読む]  ext と ext2 で照らす相手
-- indicator_reference_diag.py:5515-5517  `lineage_coverage`  [読む]  FAMILY_LINEAGE
 - leak_causality_diag.py:164-173  load_features  [読む]  指標の列を付けたデータ
 - leak_causality_diag.py:199-200,209  run_e38_trades  [読む]  帯の1時間足の区切り（h1_edge）・前処理
 - leak_causality_diag.py:207  adaptive_k  [読む]  帯のパラメータ
-- leak_causality_diag.py:323  load_tuner_df  [読む]  指標の列を付けたデータ
-- leak_causality_diag.py:337,344  tuner_recipes  [読む]  材料の候補・時間足
-- leak_causality_diag.py:442-444,454  tuner_check  [読む]  分位の一覧と、分位から閾値を出す表
+- leak_causality_diag.py:326  load_tuner_df  [読む]  指標の列を付けたデータ
+- leak_causality_diag.py:340,347  tuner_recipes  [読む]  材料の候補・時間足
+- leak_causality_diag.py:445-447,457  tuner_check  [読む]  分位の一覧と、分位から閾値を出す表
 - observe_diag.py:115  `import indicator_reference_diag as iref`  [読む]  照合・既知答え・定義表
 - observe_diag.py:203-224  `load_config`  [読む]  時間足
 - observe_diag.py:709-712  `_band_fee_floor`  [読む]  閾値（帯の、取れる距離の床）
 - observe_diag.py:908-917  `_pta6`・`_load_pta`  [読む]  ライブラリとの対応
-- observe_diag.py:2214-2216  使われない material_params の検査  [読む]  パラメータ
-- observe_diag.py:2220-2228  `drop_columns`  [読む]  オン・オフ（同じ挙動の列を省く）
-- observe_diag.py:2326-2353  `load_1m`  [読む]  前処理（1m・3m の元データ）
-- observe_diag.py:2452-2456  `_rg_zone_consts`  [読む]  レンジ幾何のパラメータ
-- observe_diag.py:2579-2580  `rank_separation_independent`  [読む]  時間足
-- observe_diag.py:2933-2950  `_one_side` の保有中のシグナル  [読む]  方向・閾値（分位）
-- observe_diag.py:3419-3424  `_scene_floor`  [読む]  閾値
-- observe_diag.py:3777-3869  `_conf_search`  [読む]  区分・時間足・閾値（分位）
-- observe_diag.py:4510-4642  `_insp_indicator_match`  [読む]  照合（ライブラリ ta・2つ目の照合・独立実装・既知答え・許容差・写しの印）
-- observe_diag.py:4645-4692  `_insp_property`  [読む]  性質（trend／vol／それ以外）
-- observe_diag.py:4773-4820  `_insp_lookahead`  [読む]  列（名前__時間足）の作り方
-- observe_diag.py:4823-4831  `_nominal_wlen`  [読む]  パラメータの値（名前の文字から取る）
-- observe_diag.py:4834-4873  `_insp_samples`  [読む]  列の名前の型 `f"{name}__{tf}"`・時間足
-- observe_diag.py:5129-5155  `_insp_v9_periods`  [読む]  設定の期間の一覧
-- observe_diag.py:5170-5230  検査13 `_price_scale_check`  [読む]  カタログの全種（H6）
-- observe_diag.py:5485-5511  `_dup_used_in_repo`  [読む]  レシピ・設定で使っているか
-- observe_diag.py:5630-5742  `inspect_data`  [読む]  カタログを名前で絞る
-- observe_diag.py:5764-5809  `_v9_preprocess_frame`・`_v9_price_kinds`  [読む]  V9 の指標の列
-- observe_diag.py:6682-6694  `_independent_step`  [読む]  時間足の長さ
+- observe_diag.py:2249-2251  使われない material_params の検査  [読む]  パラメータ
+- observe_diag.py:2255-2263  `drop_columns`  [読む]  オン・オフ（同じ挙動の列を省く）
+- observe_diag.py:2361-2388  `load_1m`  [読む]  前処理（1m・3m の元データ）
+- observe_diag.py:2487-2491  `_rg_zone_consts`  [読む]  レンジ幾何のパラメータ
+- observe_diag.py:2614-2615  `rank_separation_independent`  [読む]  時間足
+- observe_diag.py:2968-2985  `_one_side` の保有中のシグナル  [読む]  方向・閾値（分位）
+- observe_diag.py:3454-3459  `_scene_floor`  [読む]  閾値
+- observe_diag.py:3812-3904  `_conf_search`  [読む]  区分・時間足・閾値（分位）
+- observe_diag.py:4545-4677  `_insp_indicator_match`  [読む]  照合（ライブラリ ta・2つ目の照合・独立実装・既知答え・許容差・写しの印）
+- observe_diag.py:4680-4727  `_insp_property`  [読む]  性質（trend／vol／それ以外）
+- observe_diag.py:4808-4855  `_insp_lookahead`  [読む]  列（名前__時間足）の作り方
+- observe_diag.py:4858-4866  `_nominal_wlen`  [読む]  パラメータの値（名前の文字から取る）
+- observe_diag.py:4869-4908  `_insp_samples`  [読む]  列の名前の型 `f"{name}__{tf}"`・時間足
+- observe_diag.py:5164-5190  `_insp_v9_periods`  [読む]  設定の期間の一覧
+- observe_diag.py:5205-5265  検査13 `_price_scale_check`  [読む]  カタログの全種（H6）
+- observe_diag.py:5520-5546  `_dup_used_in_repo`  [読む]  レシピ・設定で使っているか
+- observe_diag.py:5665-5777  `inspect_data`  [読む]  カタログを名前で絞る
+- observe_diag.py:5799-5844  `_v9_preprocess_frame`・`_v9_price_kinds`  [読む]  V9 の指標の列
+- observe_diag.py:6717-6729  `_independent_step`  [読む]  時間足の長さ
 - regime_label.py:46,61-81  load_config  [読む]  正解ラベルの式の版と数字
 - regime_label.py:84-87,313  fee_floor  [読む]  手数料の床（帯の幅の基準に使う）
 - regime_r9_diag.py:202-215  _labels_for  [読む]  正解ラベル
@@ -375,13 +368,13 @@
 - tuner_judgement.py:131-168  role_of・role_floor  [読む]  役割と件数/日の下限
 - tuner_judgement.py:354-453  neighbor_points  [読む／作る]  パラメータ・閾値の前後の点
 
-## エージェントの行で、このプログラムが拾えなかった物（202行・文は報告のまま・実物の最初の行を付けた）
+## エージェントの行で、このプログラムが拾えなかった物（195行・文は報告のまま・実物の最初の行を付けた）
 
 | ファイル | 行 | 報告の欄 | 名前 | 報告の中身 | 実物の最初の行 | 振り分け |
 |---|---|---|---|---|---|---|
 | e38_logic_parts.py | 37-39 | 自前で計算 | _resample_htf | 上位足（label=left・closed=left） | def _resample_htf(d5: pd.DataFrame, rule: str) -> pd.DataFrame: | 振り分けが無い |
-| leak_causality_diag.py | 383,407 | 自前で計算（テスト用にわざと壊す） | _sab・_sab_hl | 列の名前 | x["stoch_k"] = pd.Series(x["stoch_k"]).shift(-6).to_numpy()   # H2OK: 番人の細工＝わざと未来を見せて検査が落ち | 振り分けが無い |
-| leak_causality_diag.py | 560-583 | 自前で計算（テスト用） | _sab_local・_sab_global・_sab_lucky | 列の名前 | def _sab_local(df: pd.DataFrame) -> pd.DataFrame: | 振り分けが無い |
+| leak_causality_diag.py | 386,410 | 自前で計算（テスト用にわざと壊す） | _sab・_sab_hl | 列の名前 | x["stoch_k"] = pd.Series(x["stoch_k"]).shift(-6).to_numpy()   # H2OK: 番人の細工＝わざと未来を見せて検査が落ち | 振り分けが無い |
+| leak_causality_diag.py | 563-586 | 自前で計算（テスト用） | _sab_local・_sab_global・_sab_lucky | 列の名前 | def _sab_local(df: pd.DataFrame) -> pd.DataFrame: | 振り分けが無い |
 | regime_label.py | 367-371 | 自前で計算 | hindsight_range | 時間足のまとめ（resample） | w2 = pd.DataFrame({"high": win["high"].resample(tf, label="left", closed="left").max(), | 外す（B・指標の情報ではない） |
 | analyze.py | 231-232,251 | 持つ | N6・N8 | 入った時の指標の列名 | cols = [c for c in ["entry_time", "exit_reason", "hold_min", "net_usd", "adx_at_entry", | ③向け直す（C・読む所） |
 | e38_logic_parts.py | 20-26 | 読む・持つ | import・SCALP_FLOOR・V11_SL_BUF・BE_TTL_BARS・UNIT_LOT | 手数料の床・SL のバッファ | import e37_scalp as e37 | 振り分けが無い |
@@ -400,9 +393,6 @@
 | engine_tuner_exec.py | 3496〜3611 | 読む・持つ | run_identity_s1 の checks | v59・v47・v22・v24・v48 ほかの指標の閾値と名前 | lg = next(x for x in ad.config()["logics"] if x["id"] == "S1") | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 81-82 | 持つ | cond_label の role | 役割の名前と日本語の対応表 | role = {"trigger": "引き金", "env": "環境認識", "sufficiency": "十分性", "location": "位置"}.get( | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 493-503 | 持つ（テスト用） | _synth_recipe | 場面の判定の列名・SL の幅 | def _synth_recipe(conds: list[dict]) -> dict: | 外す（B・指標の情報ではない） |
-| gen_acceptance.py | 523-525 | 持つ | KIND1_WORDS | ファイル名だけ（工事の種類を決める語） | where = ("やることの表の §1 概要" if k == "何を作るか" | 振り分けが無い |
-| gen_acceptance.py | 527-533 | 持つ（パス・鍵） | PARAMS・ROLES・THRESHOLD_KEY・OBS_CFG | 資料の表2本・閾値の鍵・時間足の置き場 | bad.append(f"「{k}」が無い（{where}）") | 振り分けが無い |
-| gen_acceptance.py | 3054-3097 | 持つ | 自己テストの見本 | 見本の指標の行 | print(f"   T{total} 0-1 の参照と対応の表 → fail（名前={names_ok} 行={n12}/{want12}）") | 振り分けが無い |
 | gen_audit_request.py | 123 | 持つ | N_LAWS | 法則の件数 |  | 振り分けが無い |
 | gen_audit_request.py | 125-138 | 持つ | SOURCES | 指標と場面の判定のコードの場所 |  | 振り分けが無い |
 | gen_audit_request.py | 157-174 | 持つ | READING・REFERENCE | 指標の情報の資料のファイル名 |  | 振り分けが無い |
@@ -423,10 +413,9 @@
 | indicator_reference_diag.py | 946-953 | 持つ | MAKO_K3・K7・K3B・B1S1・K3C | mako の欄 | MAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け、K-3a で監査 CP60 の修正41 の (b)(c) と修正42 の比べる版を、今の | ①写す→②消す（A・指標の情報） |
 | indicator_reference_diag.py | 1720-1726 | 持つ | `_SR_TOUCH_ATR_REMOVED` | 外した S-RタッチATR の控え | _SR_TOUCH_ATR_REMOVED = """（この節は 2026-09-06 に外した登録の控え。次に作る人が参照するために残す） | 外す（B・指標の情報ではない） |
 | indicator_reference_diag.py | 5346-5348 | 持つ | RANGE_GEO_TF | レンジ幾何の時間足 | RANGE_GEO_TF = ("5m（1h ゾーンは label=right・closed=right で5分足の始まりの時刻を束ねる＝1時間足の区切りは正時から5分ずれる" | ①写す→②消す（A・指標の情報） |
-| indicator_reference_diag.py | 5484 | 持つ | LINEAGE_KINDS | 札の区分 | FAMILY_LINEAGE: dict[str, dict] = _lineage_from_table() | 振り分けが無い |
-| indicator_reference_diag.py | 5846-5883 | 持つ | SKIP_APPROVED_20260809・SKIP_POLICY_DUP_20260809・SKIP_APPROVED_20260810・SKIP_APPROVED | 入れないライブラリの関数 | #   出どころ＝そのときの materials.md（git の 03aad50 の ★4）から機械で取り出した19件。 | ①写す→②消す（A・指標の情報） |
-| indicator_reference_diag.py | 5885-5969 | 持つ | INDUSTRY_SKIP | 入れない理由 | **{fn: "◯ 方針は承認済み（判定は CC の実測）" for fn in SKIP_POLICY_DUP_20260809}, | ①写す→②消す（A・指標の情報） |
-| indicator_reference_diag.py | 6052-6053 | 持つ | STATE_COLS | ポジションの状態の列 | #   印を付けるのは位置の出口 uptrend_cut（mode=mark）で、印が付いた玉だけに当たる出口の枝が2本ある | 外す（B・指標の情報ではない） |
+| indicator_reference_diag.py | 5849-5886 | 持つ | SKIP_APPROVED_20260809・SKIP_POLICY_DUP_20260809・SKIP_APPROVED_20260810・SKIP_APPROVED | 入れないライブラリの関数 | SKIP_APPROVED_20260809: frozenset = frozenset({ | ①写す→②消す（A・指標の情報） |
+| indicator_reference_diag.py | 5888-5972 | 持つ | INDUSTRY_SKIP | 入れない理由 | INDUSTRY_SKIP: dict[str, str] = { | ①写す→②消す（A・指標の情報） |
+| indicator_reference_diag.py | 6055-6056 | 持つ | STATE_COLS | ポジションの状態の列 | STATE_COLS = ("unreal_pct", "mfe_pct", "mfe_prev_pct", "mae_pct", "peak_age_bars", "hold_m | 外す（B・指標の情報ではない） |
 | leak_causality_diag.py | 22-25 | 持つ | docstring | 列の数 | 検査1-a｜指標の突き合わせ（速い・列の名前まで分かる） | 振り分けが無い |
 | observe_diag.py | 178-180 | 持つ | `TF_RULE` | 時間足 | TF_RULE = {"1m": "1min", "3m": "3min", | 外す（B・指標の情報ではない） |
 | observe_diag.py | 186 | 持つ | `SUB_5M_TF` | 時間足（1分足から作る足） | SUB_5M_TF = ("1m", "3m")                      # 5分足より短い足＝1分足の元データが材料 | 外す（B・指標の情報ではない） |
@@ -436,11 +425,11 @@
 | observe_diag.py | 873-890 | 持つ | `_CYC_MEMO`・`_cyc` | 前処理（サイクル系の計算を使い回す） | _CYC_MEMO: dict = {"sig": None, "v": {}} | 外す（B・指標の情報ではない） |
 | observe_diag.py | 903 | 持つ | `MATERIAL_FAMILIES` | 種類の名前・列の名前の型・方向・計算の式 | MATERIAL_FAMILIES: dict[str, tuple] = {} | ①写す→②消す（A・指標の情報） |
 | observe_diag.py | 1507-1538 | 持つ | `_MA_FUNCS` | 計算の式（移動平均24種） | _MA_FUNCS = [ | ①写す→②消す（A・指標の情報） |
-| observe_diag.py | 4983-4984 | 持つ | `_DIST_PAT`・`_SLOPE_PAT` | 名前の規則 | _DIST_PAT = re.compile(r"^close vs (.+?)%")   # 「終値と◯◯の距離%」の部品 | ①写す→②消す（A・指標の情報） |
-| observe_diag.py | 5759-5761 | 持つ | `_V9_MATCH_*`・`_V9_INPUT_COLS` | V9 の列のうち対象外にする物 | _V9_MATCH_SAME = 0.99999   # これを超えたら「うちのカタログに同じ意味の列が在る」 | ③向け直す |
-| observe_diag.py | 5856-5882 | 持つ | `_v9_part_variants` | 部品の式（slope・slope_avg） | def _v9_part_variants(grid: list[int]) -> list[dict]: | ①写す→②消す（A・指標の情報） |
-| observe_diag.py | 6069-6070 | 持つ | `_V9_SOURCES`・`_V9_RECORD_SINCE` | v9_logic.md の出どころ3本 | _V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_ | 外す（B・指標の情報ではない） |
-| observe_diag.py | 7558-7677 | 持つ／読む | `selftest_atr1h` | S-Rタッチ1時間ATR | def selftest_atr1h(exit_: bool = True, bars_csv: str ／ None = None) -> list: | 外す（B・指標の情報ではない） |
+| observe_diag.py | 5018-5019 | 持つ | `_DIST_PAT`・`_SLOPE_PAT` | 名前の規則 | _DIST_PAT = re.compile(r"^close vs (.+?)%")   # 「終値と◯◯の距離%」の部品 | ①写す→②消す（A・指標の情報） |
+| observe_diag.py | 5794-5796 | 持つ | `_V9_MATCH_*`・`_V9_INPUT_COLS` | V9 の列のうち対象外にする物 | _V9_MATCH_SAME = 0.99999   # これを超えたら「うちのカタログに同じ意味の列が在る」 | ③向け直す |
+| observe_diag.py | 5891-5917 | 持つ | `_v9_part_variants` | 部品の式（slope・slope_avg） | def _v9_part_variants(grid: list[int]) -> list[dict]: | ①写す→②消す（A・指標の情報） |
+| observe_diag.py | 6104-6105 | 持つ | `_V9_SOURCES`・`_V9_RECORD_SINCE` | v9_logic.md の出どころ3本 | _V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_ | 外す（B・指標の情報ではない） |
+| observe_diag.py | 7593-7712 | 持つ／読む | `selftest_atr1h` | S-Rタッチ1時間ATR | def selftest_atr1h(exit_: bool = True, bars_csv: str ／ None = None) -> list: | 外す（B・指標の情報ではない） |
 | pre_audit_check.py | 58-62 | 持つ（パス） | INDICATOR_SOURCES_CHECK・KNOWN_MATERIALS_PATH・MATERIALS_CSV・MATERIALS_CHECK | 指標の照らしの道具・分かっている ❌ の一覧・材料の検査 | INDICATOR_SOURCES_CHECK = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tool | 振り分けが無い |
 | pre_audit_check.py | 161-171 | 持つ | KNOWN_NG | 指標の資料と設定ファイルの、分かっている食い違い | KNOWN_NG = { | 振り分けが無い |
 | pre_audit_check.py | 177・:180-189 | 持つ／読む | KNOWN_MATERIALS | 分かっている ❌ の一覧の sha256 | KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad59007 | 振り分けが無い |
@@ -492,16 +481,14 @@
 | engine_tuner_fire_diag.py | 101 | 読む | cond_label | 材料の名前を列の名前にする規則 | names = " と ".join(ex._mat_key(m, lane) for m in mats) if mats else "（材料なし）" | ③向け直す |
 | engine_tuner_fire_diag.py | 209 | 読む | funnel_one | 場面の判定の列 | ok, up = ex._regime_series(df, recipe) | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 357 | 読む | run_main | 役割と件数/日の下限 | role, rfloor = tj.role_floor(a.strategy) | 外す（B・指標の情報ではない） |
-| gen_acceptance.py | 812-826 | 読む | _table_kinds | 型の表の部品から指標の種類を引く | bad.append(f"【{HEAD_NUMS}】の「{r['数字か式']}」に、出どころが無い") | 振り分けが無い |
-| gen_acceptance.py | 829-840 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | def sec_state(d: dict, sec: str) -> tuple: | 振り分けが無い |
-| gen_acceptance.py | 843-878 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ |  | 振り分けが無い |
-| gen_acceptance.py | 881-922 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | def _goal_lines(d: dict) -> list: | 振り分けが無い |
-| gen_acceptance.py | 965-1028 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | rl = _load(ROLES) | 振り分けが無い |
-| gen_acceptance.py | 1031-1077 | 読む | build_laws | 機械が読む判定の「数える部品」 | L += [""] | 振り分けが無い |
-| gen_acceptance.py | 1080-1108 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 |  | 振り分けが無い |
-| gen_acceptance.py | 1319-1361 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 |  | 振り分けが無い |
-| gen_acceptance.py | 1673-1682 | 読む | indicator_sources_problems | check_indicator_sources.check1 を呼ぶ | rid = str(r.get("出どころ", "")) | 振り分けが無い |
-| gen_audit_docs.py | 1655-1676 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | "「やらないこと」に回した直しの中に、この工事でやるべき物が無いかも見てください。", | 振り分けが無い |
+| gen_acceptance.py | 948-959 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | def _timeframe_rows() -> list: | 振り分けが無い |
+| gen_acceptance.py | 962-997 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ | def _indicator_rows(text: str) -> list: | 振り分けが無い |
+| gen_acceptance.py | 1000-1041 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | def _auto_rows(no: str, lines: list, d: dict) -> list: | 振り分けが無い |
+| gen_acceptance.py | 1084-1147 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | def build_materials(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1150-1196 | 読む | build_laws | 機械が読む判定の「数える部品」 | def build_laws(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1199-1227 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | def build_ranking(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1440-1482 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | def build_stages(d: dict) -> str: | 振り分けが無い |
+| gen_audit_docs.py | 1660-1681 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
 | gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 |  | 振り分けが無い |
 | gen_exit_families.py | 403-410 | 読む | confirm_conditions | 確認の条件の材料・閾値 | confirm_conditions=dict( | ③向け直す |
 | gen_indicator_switch.py | 64-74 | 読む | `ta_classes` | ta のクラス | def ta_classes() -> list[tuple[str, str]]: | ②消す（プログラムごと無くなる） |
@@ -514,9 +501,9 @@
 | gen_materials.py | 117-121 | 読む | geo_ok・time_ok・demand_ok | 別枠の部品 | extra = (_j.loads(_SIGFAM.read_text(encoding="utf-8")).get("extra_parts") or {}) | 振り分けが無い |
 | gen_materials.py | 280-286 | 読む | `_lib_funcs` | ライブラリの関数とカテゴリ | def _lib_funcs() -> dict[str, str]: | 振り分けが無い |
 | gen_materials.py | 289-300 | 読む | `_source_note` | 計算の出どころ・照合の相手 | def _source_note(fam: str, ext_ok: bool) -> str: | 振り分けが無い |
-| gen_materials.py | 454-478 | 読む（AST） | `_catalog_keys` | パラメータの設定の鍵 | def _catalog_keys(od_src: str ／ None = None) -> set[str]: | 振り分けが無い |
-| gen_materials.py | 778-839 | 読む | `forms_table` | 条件の形 | def forms_table() -> list[dict]: | 振り分けが無い |
-| gen_materials.py | 1062-1139 | 読む | `_regime_decl_view` | 相場の判定の列 | def _regime_decl_view(names: tuple ／ None = None, decls: list ／ None = None, | 振り分けが無い |
+| gen_materials.py | 454-481 | 読む（AST） | `_catalog_keys` | パラメータの設定の鍵 | def _catalog_keys(od_src: str ／ None = None) -> set[str]: | 振り分けが無い |
+| gen_materials.py | 781-842 | 読む | `forms_table` | 条件の形 | def forms_table() -> list[dict]: | 振り分けが無い |
+| gen_materials.py | 1065-1142 | 読む | `_regime_decl_view` | 相場の判定の列 | def _regime_decl_view(names: tuple ／ None = None, decls: list ／ None = None, | 振り分けが無い |
 | gen_observe_manual.py | 147-149 | 読む | _catalog_names | 指標の種類の名前 | def _catalog_names(cfg: dict) -> list[str]: | 振り分けが無い |
 | gen_observe_manual.py | 153-159 | 読む | _mode_rows | 探索の系統 | """探索の系統ごとに（今オンか・名前・何を検証するロジックか・検証する値）を実体から取る。""" | 振り分けが無い |
 | gen_observe_manual.py | 162-172 | 読む | _pair_cols | 玉と玉の間の特徴の列名 | def _pair_cols() -> list[str]: | 振り分けが無い |
@@ -536,36 +523,35 @@
 | gen_stage0_match.py | 69-105 | 読む | load_stages | 段ごとの指標名・系統・レンジ幾何の列・真偽の列 | def load_stages() -> list: | 振り分けが無い |
 | gen_stage0_match.py | 115-131 | 読む | columns_of・count_hits | 列名に、その文字が含まれるか | def columns_of(rank: dict, role: str) -> list: | 振り分けが無い |
 | indicator_reference_diag.py | 28-49 | 読む | `_ta`・`_pta`・`_sps`、TA_OK・PTA_OK・SCIPY_OK | ext と ext2 で照らす相手 | try: | 外す（B・指標の情報ではない） |
-| indicator_reference_diag.py | 5515-5517 | 読む | `lineage_coverage` | FAMILY_LINEAGE | } | 振り分けが無い |
 | leak_causality_diag.py | 164-173 | 読む | load_features | 指標の列を付けたデータ | orig = e37.load_5m | 振り分けが無い |
 | leak_causality_diag.py | 199-200,209 | 読む | run_e38_trades | 帯の1時間足の区切り（h1_edge）・前処理 | if cfg["global"]["regime"]["h1_edge"] != "right": | 振り分けが無い |
 | leak_causality_diag.py | 207 | 読む | adaptive_k | 帯のパラメータ | adaptive_k = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else No | 振り分けが無い |
-| leak_causality_diag.py | 323 | 読む | load_tuner_df | 指標の列を付けたデータ | (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=False) | 振り分けが無い |
-| leak_causality_diag.py | 337,344 | 読む | tuner_recipes | 材料の候補・時間足 | pool, _rej, _n = gen.material_pool() | 振り分けが無い |
-| leak_causality_diag.py | 442-444,454 | 読む | tuner_check | 分位の一覧と、分位から閾値を出す表 | lm, _ = gen.load_limits() | 振り分けが無い |
+| leak_causality_diag.py | 326 | 読む | load_tuner_df | 指標の列を付けたデータ | (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=False) | 振り分けが無い |
+| leak_causality_diag.py | 340,347 | 読む | tuner_recipes | 材料の候補・時間足 | pool, _rej, _n = gen.material_pool() | 振り分けが無い |
+| leak_causality_diag.py | 445-447,457 | 読む | tuner_check | 分位の一覧と、分位から閾値を出す表 | lm, _ = gen.load_limits() | 振り分けが無い |
 | observe_diag.py | 115 | 読む | `import indicator_reference_diag as iref` | 照合・既知答え・定義表 | import indicator_reference_diag as iref   # noqa: E402 | ③向け直す |
 | observe_diag.py | 203-224 | 読む | `load_config` | 時間足 | def load_config(path: str ／ None = None) -> dict: | ③向け直す |
 | observe_diag.py | 709-712 | 読む | `_band_fee_floor` | 閾値（帯の、取れる距離の床） | def _band_fee_floor(cfg: dict ／ None = None) -> float: | 外す（B・指標の情報ではない） |
 | observe_diag.py | 908-917 | 読む | `_pta6`・`_load_pta` | ライブラリとの対応 | _pta6 = None | 外す（B・指標の情報ではない） |
-| observe_diag.py | 2214-2216 | 読む | 使われない material_params の検査 | パラメータ | _unused = sorted(set(_per) - _per_done) | ③向け直す |
-| observe_diag.py | 2220-2228 | 読む | `drop_columns` | オン・オフ（同じ挙動の列を省く） | drop = {d: k for d, k in (cfg.get("drop_columns") or [])} | ③向け直す |
-| observe_diag.py | 2326-2353 | 読む | `load_1m` | 前処理（1m・3m の元データ） | def load_1m(start, end, path: str ／ None = None) -> pd.DataFrame: | 外す（B・指標の情報ではない） |
-| observe_diag.py | 2452-2456 | 読む | `_rg_zone_consts` | レンジ幾何のパラメータ | def _rg_zone_consts() -> tuple[float, int, int]: | ③向け直す |
-| observe_diag.py | 2579-2580 | 読む | `rank_separation_independent` | 時間足 | tf = c.rsplit("__", 1)[1] if "__" in c else "5m" | 外す（B・指標の情報ではない） |
-| observe_diag.py | 2933-2950 | 読む | `_one_side` の保有中のシグナル | 方向・閾値（分位） | names, mats, sig_dirs = [], [], [] | ③向け直す |
-| observe_diag.py | 3419-3424 | 読む | `_scene_floor` | 閾値 | def _scene_floor(cfg) -> float: | 外す（B・指標の情報ではない） |
-| observe_diag.py | 3777-3869 | 読む | `_conf_search` | 区分・時間足・閾値（分位） | def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor): | ③向け直す |
-| observe_diag.py | 4510-4642 | 読む | `_insp_indicator_match` | 照合（ライブラリ ta・2つ目の照合・独立実装・既知答え・許容差・写しの印） | def _insp_indicator_match(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> t | ③向け直す |
-| observe_diag.py | 4645-4692 | 読む | `_insp_property` | 性質（trend／vol／それ以外） | def _insp_property(cfg: dict, catalog: list ／ None = None) -> tuple[set, dict]: | ③向け直す |
-| observe_diag.py | 4773-4820 | 読む | `_insp_lookahead` | 列（名前__時間足）の作り方 | def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> list[st | ③向け直す |
-| observe_diag.py | 4823-4831 | 読む | `_nominal_wlen` | パラメータの値（名前の文字から取る） | def _nominal_wlen(name: str, lead: int) -> int: | ③向け直す |
-| observe_diag.py | 4834-4873 | 読む | `_insp_samples` | 列の名前の型 `f"{name}__{tf}"`・時間足 | def _insp_samples(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> None: | ③向け直す |
-| observe_diag.py | 5129-5155 | 読む | `_insp_v9_periods` | 設定の期間の一覧 | def _insp_v9_periods(cfg: dict, rows: list[dict] ／ None = None) -> list[str]: | ③向け直す |
-| observe_diag.py | 5170-5230 | 読む | 検査13 `_price_scale_check` | カタログの全種（H6） | def _price_scale_check(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None, | ③向け直す |
-| observe_diag.py | 5485-5511 | 読む | `_dup_used_in_repo` | レシピ・設定で使っているか | def _dup_used_in_repo(name: str) -> int: | ③向け直す |
-| observe_diag.py | 5630-5742 | 読む | `inspect_data` | カタログを名前で絞る | def inspect_data(bars_csv: str, config_path: str ／ None = None, only: str ／ None = None, | ③向け直す |
-| observe_diag.py | 5764-5809 | 読む | `_v9_preprocess_frame`・`_v9_price_kinds` | V9 の指標の列 | def _v9_preprocess_frame(bars: pd.DataFrame, calc_rows: int = 30000) -> tuple[pd.DataFrame | ③向け直す |
-| observe_diag.py | 6682-6694 | 読む | `_independent_step` | 時間足の長さ | def _independent_step(tf: str, n: int) -> int: | 外す（B・指標の情報ではない） |
+| observe_diag.py | 2249-2251 | 読む | 使われない material_params の検査 | パラメータ | _unused = sorted(set(_per) - _per_done) | ③向け直す |
+| observe_diag.py | 2255-2263 | 読む | `drop_columns` | オン・オフ（同じ挙動の列を省く） | drop = {d: k for d, k in (cfg.get("drop_columns") or [])} | ③向け直す |
+| observe_diag.py | 2361-2388 | 読む | `load_1m` | 前処理（1m・3m の元データ） | def load_1m(start, end, path: str ／ None = None) -> pd.DataFrame: | 外す（B・指標の情報ではない） |
+| observe_diag.py | 2487-2491 | 読む | `_rg_zone_consts` | レンジ幾何のパラメータ | def _rg_zone_consts() -> tuple[float, int, int]: | ③向け直す |
+| observe_diag.py | 2614-2615 | 読む | `rank_separation_independent` | 時間足 | tf = c.rsplit("__", 1)[1] if "__" in c else "5m" | 外す（B・指標の情報ではない） |
+| observe_diag.py | 2968-2985 | 読む | `_one_side` の保有中のシグナル | 方向・閾値（分位） | names, mats, sig_dirs = [], [], [] | ③向け直す |
+| observe_diag.py | 3454-3459 | 読む | `_scene_floor` | 閾値 | def _scene_floor(cfg) -> float: | 外す（B・指標の情報ではない） |
+| observe_diag.py | 3812-3904 | 読む | `_conf_search` | 区分・時間足・閾値（分位） | def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor): | ③向け直す |
+| observe_diag.py | 4545-4677 | 読む | `_insp_indicator_match` | 照合（ライブラリ ta・2つ目の照合・独立実装・既知答え・許容差・写しの印） | def _insp_indicator_match(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> t | ③向け直す |
+| observe_diag.py | 4680-4727 | 読む | `_insp_property` | 性質（trend／vol／それ以外） | def _insp_property(cfg: dict, catalog: list ／ None = None) -> tuple[set, dict]: | ③向け直す |
+| observe_diag.py | 4808-4855 | 読む | `_insp_lookahead` | 列（名前__時間足）の作り方 | def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> list[st | ③向け直す |
+| observe_diag.py | 4858-4866 | 読む | `_nominal_wlen` | パラメータの値（名前の文字から取る） | def _nominal_wlen(name: str, lead: int) -> int: | ③向け直す |
+| observe_diag.py | 4869-4908 | 読む | `_insp_samples` | 列の名前の型 `f"{name}__{tf}"`・時間足 | def _insp_samples(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None) -> None: | ③向け直す |
+| observe_diag.py | 5164-5190 | 読む | `_insp_v9_periods` | 設定の期間の一覧 | def _insp_v9_periods(cfg: dict, rows: list[dict] ／ None = None) -> list[str]: | ③向け直す |
+| observe_diag.py | 5205-5265 | 読む | 検査13 `_price_scale_check` | カタログの全種（H6） | def _price_scale_check(bars: pd.DataFrame, cfg: dict, catalog: list ／ None = None, | ③向け直す |
+| observe_diag.py | 5520-5546 | 読む | `_dup_used_in_repo` | レシピ・設定で使っているか | def _dup_used_in_repo(name: str) -> int: | ③向け直す |
+| observe_diag.py | 5665-5777 | 読む | `inspect_data` | カタログを名前で絞る | def inspect_data(bars_csv: str, config_path: str ／ None = None, only: str ／ None = None, | ③向け直す |
+| observe_diag.py | 5799-5844 | 読む | `_v9_preprocess_frame`・`_v9_price_kinds` | V9 の指標の列 | def _v9_preprocess_frame(bars: pd.DataFrame, calc_rows: int = 30000) -> tuple[pd.DataFrame | ③向け直す |
+| observe_diag.py | 6717-6729 | 読む | `_independent_step` | 時間足の長さ | def _independent_step(tf: str, n: int) -> int: | 外す（B・指標の情報ではない） |
 | regime_label.py | 46,61-81 | 読む | load_config | 正解ラベルの式の版と数字 | CONFIG = HERE / "recipes" / "regime_label.json" | 外す（B・指標の情報ではない） |
 | regime_label.py | 84-87,313 | 読む | fee_floor | 手数料の床（帯の幅の基準に使う） | def fee_floor() -> float: | 外す（B・指標の情報ではない） |
 | regime_r9_diag.py | 202-215 | 読む | _labels_for | 正解ラベル | def _labels_for(df_win: pd.DataFrame) -> dict: | 外す（B・指標の情報ではない） |
@@ -1184,7 +1170,7 @@
 | gen_acceptance.py | 3244 | 直書き | ADX | ③向け直す |
 | gen_acceptance.py | 3244 | 直書き | POC | ③向け直す |
 | gen_acceptance.py | 3244 | 直書き | 前日POC | ③向け直す |
-| gen_audit_docs.py | 3124 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_audit_docs.py | 3132 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
 | gen_audit_request.py | 0 | 読めない | ファイルが見つからない | — |
 | gen_composition_rules.py | 62 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_composition_rules.py | 63 | 読む | json の名前「search_limits.json」 | ③向け直す |
@@ -1254,49 +1240,49 @@
 | gen_materials.py | 270 | 読む | json の名前「signal_families.json の role_lineage から「系統 → 使える役割」を作る（書き写さない」 | ③向け直す |
 | gen_materials.py | 323 | 読む | json の名前「observe_config.json」 | ③向け直す |
 | gen_materials.py | 324 | 読む | json の名前「search_limits.json」 | ③向け直す |
-| gen_materials.py | 482 | 読む | json の名前「場所1＝`observe_config.json` の、指標のパラメータ（材料カタログを作る関数が読む鍵）。
+| gen_materials.py | 485 | 読む | json の名前「場所1＝`observe_config.json` の、指標のパラメータ（材料カタログを作る関数が読む鍵）。
 
     」 | ③向け直す |
-| gen_materials.py | 496 | 読む | json の名前「場所2＝`recipes/search_limits.json`（使い方の中の本数・閾値の段・上限）。」 | ③向け直す |
-| gen_materials.py | 649 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
-| gen_materials.py | 651 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
-| gen_materials.py | 721 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| gen_materials.py | 729 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| gen_materials.py | 773 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| gen_materials.py | 863 | 読む | json の名前「condition_parts.json」 | ③向け直す |
-| gen_materials.py | 908 | 持つ | _m14（名前 1・例 RSI） | ①写す→②消す |
-| gen_materials.py | 920 | 読む | _m14 | ③向け直す |
-| gen_materials.py | 922 | 読む | _m14 | ③向け直す |
-| gen_materials.py | 968 | 読む | json の名前「condition_parts.json」 | ③向け直す |
-| gen_materials.py | 1195 | 読む | json の名前「signal_families.json」 | ③向け直す |
-| gen_materials.py | 1212 | 読む | json の名前「`signal_families.json` の `parts`」 | ③向け直す |
-| gen_materials.py | 1214 | 読む | json の名前「`signal_families.json` の `timeframes`」 | ③向け直す |
-| gen_materials.py | 1252 | 読む | REFS | ③向け直す |
-| gen_materials.py | 1254 | 読む | FAMILY_LINEAGE | ③向け直す |
-| gen_materials.py | 1269 | 読む | FAMILY_LINEAGE | ③向け直す |
-| gen_materials.py | 1335 | 読む | json の名前「★6｜条件の部品の一覧（段C の C-1）。中身は condition_parts.json＝ここで新しい事実を書かない」 | ③向け直す |
-| gen_materials.py | 1337 | 読む | json の名前「**★この節は機械が作ります（手書きゼロ）。**中身の正本＝`.claude/ratchet/condition_par」 | ③向け直す |
-| gen_materials.py | 1548 | 読む | json の名前「> 生成器が実際にその部品を引くかどうかは、承認済みの型の表（`signal_families.json`）に」 | ③向け直す |
-| gen_materials.py | 1565 | 読む | json の名前「- 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_」 | ③向け直す |
-| gen_materials.py | 1686 | 読む | json の名前「`recipes/search_limits.json` の `int_grid` に並んだ数字だけです。**ここも ★」 | ③向け直す |
-| gen_materials.py | 1734 | 読む | json の名前「／ 使える役割 ／ `.claude/ratchet/signal_families.json` の `role_lin」 | ③向け直す |
-| gen_materials.py | 1738 | 読む | json の名前「／ engine_tuner ／ `engine_tuner_exec.FAMILY_TEMPLATES`（生成器が名前」 | ③向け直す |
-| gen_materials.py | 2142 | 読む | json の名前「signal_families.json」 | ③向け直す |
-| gen_materials.py | 2165 | 読む | json の名前「**） ／ signal_families.json の parts と extra_parts ／
+| gen_materials.py | 499 | 読む | json の名前「場所2＝`recipes/search_limits.json`（使い方の中の本数・閾値の段・上限）。」 | ③向け直す |
+| gen_materials.py | 652 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_materials.py | 654 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
+| gen_materials.py | 724 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| gen_materials.py | 732 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| gen_materials.py | 776 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| gen_materials.py | 866 | 読む | json の名前「condition_parts.json」 | ③向け直す |
+| gen_materials.py | 911 | 持つ | _m14（名前 1・例 RSI） | ①写す→②消す |
+| gen_materials.py | 923 | 読む | _m14 | ③向け直す |
+| gen_materials.py | 925 | 読む | _m14 | ③向け直す |
+| gen_materials.py | 971 | 読む | json の名前「condition_parts.json」 | ③向け直す |
+| gen_materials.py | 1198 | 読む | json の名前「signal_families.json」 | ③向け直す |
+| gen_materials.py | 1215 | 読む | json の名前「`signal_families.json` の `parts`」 | ③向け直す |
+| gen_materials.py | 1217 | 読む | json の名前「`signal_families.json` の `timeframes`」 | ③向け直す |
+| gen_materials.py | 1255 | 読む | REFS | ③向け直す |
+| gen_materials.py | 1257 | 読む | FAMILY_LINEAGE | ③向け直す |
+| gen_materials.py | 1272 | 読む | FAMILY_LINEAGE | ③向け直す |
+| gen_materials.py | 1338 | 読む | json の名前「★6｜条件の部品の一覧（段C の C-1）。中身は condition_parts.json＝ここで新しい事実を書かない」 | ③向け直す |
+| gen_materials.py | 1340 | 読む | json の名前「**★この節は機械が作ります（手書きゼロ）。**中身の正本＝`.claude/ratchet/condition_par」 | ③向け直す |
+| gen_materials.py | 1551 | 読む | json の名前「> 生成器が実際にその部品を引くかどうかは、承認済みの型の表（`signal_families.json`）に」 | ③向け直す |
+| gen_materials.py | 1568 | 読む | json の名前「- 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_」 | ③向け直す |
+| gen_materials.py | 1689 | 読む | json の名前「`recipes/search_limits.json` の `int_grid` に並んだ数字だけです。**ここも ★」 | ③向け直す |
+| gen_materials.py | 1737 | 読む | json の名前「／ 使える役割 ／ `.claude/ratchet/signal_families.json` の `role_lin」 | ③向け直す |
+| gen_materials.py | 1741 | 読む | json の名前「／ engine_tuner ／ `engine_tuner_exec.FAMILY_TEMPLATES`（生成器が名前」 | ③向け直す |
+| gen_materials.py | 2145 | 読む | json の名前「signal_families.json」 | ③向け直す |
+| gen_materials.py | 2168 | 読む | json の名前「**） ／ signal_families.json の parts と extra_parts ／
 ／ 8 ／ ★」 | ③向け直す |
-| gen_materials.py | 2283 | 読む | json の名前「materials.json の指紋が正本と合わない（--write で作り直す）」 | ③向け直す |
-| gen_materials.py | 2285 | 読む | json の名前「materials.json が無い（--write で作る）」 | ③向け直す |
-| gen_materials.py | 2353 | 読む | REFS | ③向け直す |
-| gen_materials.py | 2360 | 読む | REFS | ③向け直す |
-| gen_materials.py | 2385 | 読む | REFS | ③向け直す |
-| gen_materials.py | 2422 | 読む | FAMILY_TEMPLATES | ③向け直す |
-| gen_materials.py | 2424 | 直書き | RSI | ③向け直す |
-| gen_materials.py | 2424 | 読む | FAMILY_TEMPLATES | ③向け直す |
-| gen_materials.py | 2432 | 読む | FAMILY_TEMPLATES | ③向け直す |
-| gen_materials.py | 2433 | 読む | FAMILY_TEMPLATES | ③向け直す |
-| gen_materials.py | 2559 | 読む | _m14 | ③向け直す |
-| gen_materials.py | 2560 | 直書き | RSI | ③向け直す |
-| gen_materials.py | 2628 | 読む | json の名前「signal_families.json」 | ③向け直す |
+| gen_materials.py | 2286 | 読む | json の名前「materials.json の指紋が正本と合わない（--write で作り直す）」 | ③向け直す |
+| gen_materials.py | 2288 | 読む | json の名前「materials.json が無い（--write で作る）」 | ③向け直す |
+| gen_materials.py | 2356 | 読む | REFS | ③向け直す |
+| gen_materials.py | 2363 | 読む | REFS | ③向け直す |
+| gen_materials.py | 2388 | 読む | REFS | ③向け直す |
+| gen_materials.py | 2425 | 読む | FAMILY_TEMPLATES | ③向け直す |
+| gen_materials.py | 2427 | 直書き | RSI | ③向け直す |
+| gen_materials.py | 2427 | 読む | FAMILY_TEMPLATES | ③向け直す |
+| gen_materials.py | 2435 | 読む | FAMILY_TEMPLATES | ③向け直す |
+| gen_materials.py | 2436 | 読む | FAMILY_TEMPLATES | ③向け直す |
+| gen_materials.py | 2562 | 読む | _m14 | ③向け直す |
+| gen_materials.py | 2563 | 直書き | RSI | ③向け直す |
+| gen_materials.py | 2631 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_observe_manual.py | 55 | 読む | json の名前「observe_config.json」 | ③向け直す |
 | gen_observe_manual.py | 246 | 読む | json の名前「⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config」 | ③向け直す |
 | gen_observe_manual.py | 399 | 直書き | mid | ③向け直す |
@@ -1812,7 +1798,7 @@
 | leak_causality_diag.py | 251 | 読む | json の名前「v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/sign」 | ③向け直す |
 | leak_causality_diag.py | 252 | 読む | json の名前「v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit」 | ③向け直す |
 | leak_causality_diag.py | 255 | 読む | json の名前「/observe_config.json」 | ③向け直す |
-| leak_causality_diag.py | 262 | 読む | json の名前「v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regi」 | ③向け直す |
+| leak_causality_diag.py | 265 | 読む | json の名前「v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regi」 | ③向け直す |
 | observe_diag.py | 177 | 読む | json の名前「/observe_config.json」 | ③向け直す |
 | observe_diag.py | 250 | 持つ | _DEMAND_FILES（名前 3・例 CVD, L-S比, taker_ls） | ①写す→②消す |
 | observe_diag.py | 471 | 持つ | _SR_ATR_TOL_LO, _SR_ATR_TOL_HI（パラメータの定数 0.0015, 0.006） | ①写す→②消す |
@@ -2139,587 +2125,586 @@
 | observe_diag.py | 1783 | 持つ | _reg(...) の呼び出し | ①写す→②消す |
 | observe_diag.py | 1784 | 持つ | _reg(...) の呼び出し | ①写す→②消す |
 | observe_diag.py | 1786 | 持つ | _reg(...) の呼び出し | ①写す→②消す |
-| observe_diag.py | 1793 | 読む | json の名前「指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。
-
-    ★2」 | ③向け直す |
-| observe_diag.py | 1821 | 直書き | ADX | ③向け直す |
-| observe_diag.py | 1822 | 直書き | DI差 | ③向け直す |
-| observe_diag.py | 1824 | 直書き | MACD線% | ③向け直す |
-| observe_diag.py | 1825 | 直書き | MACDシグナル線% | ③向け直す |
-| observe_diag.py | 1826 | 直書き | MACDヒスト% | ③向け直す |
-| observe_diag.py | 1828 | 直書き | RSI | ③向け直す |
-| observe_diag.py | 1839 | 直書き | ROC | ③向け直す |
-| observe_diag.py | 1841 | 直書き | Stoch%K | ③向け直す |
-| observe_diag.py | 1842 | 直書き | Stoch%D | ③向け直す |
-| observe_diag.py | 1844 | 直書き | MFI | ③向け直す |
-| observe_diag.py | 1846 | 直書き | CMF | ③向け直す |
-| observe_diag.py | 1848 | 直書き | OBV傾き | ③向け直す |
-| observe_diag.py | 1850 | 直書き | close vs 転換線% | ③向け直す |
-| observe_diag.py | 1851 | 直書き | close vs 基準線% | ③向け直す |
-| observe_diag.py | 1853 | 直書き | RCI | ③向け直す |
-| observe_diag.py | 1855 | 直書き | EMA傾き | ③向け直す |
-| observe_diag.py | 1858 | 直書き | ATR% | ③向け直す |
-| observe_diag.py | 1861 | 直書き | BB%b | ③向け直す |
-| observe_diag.py | 1862 | 直書き | BB幅 | ③向け直す |
-| observe_diag.py | 1864 | 直書き | realized_vol | ③向け直す |
-| observe_diag.py | 1865 | 直書き | realized_vol_rv | ③向け直す |
-| observe_diag.py | 1867 | 直書き | Donchian幅% | ③向け直す |
-| observe_diag.py | 1869 | 直書き | zscore | ③向け直す |
-| observe_diag.py | 1870 | 直書き | zscore_return | ③向け直す |
-| observe_diag.py | 1873 | 直書き | volume_ratio | ③向け直す |
-| observe_diag.py | 1875 | 直書き | 包み足 | ③向け直す |
-| observe_diag.py | 1876 | 直書き | 孕み足 | ③向け直す |
-| observe_diag.py | 1877 | 直書き | pinbar | ③向け直す |
-| observe_diag.py | 1878 | 直書き | 連続本数 | ③向け直す |
-| observe_diag.py | 1879 | 直書き | body比 | ③向け直す |
-| observe_diag.py | 1880 | 直書き | 上ヒゲ比 | ③向け直す |
-| observe_diag.py | 1881 | 直書き | 下ヒゲ比 | ③向け直す |
-| observe_diag.py | 1884 | 直書き | swing高値距離% | ③向け直す |
-| observe_diag.py | 1885 | 直書き | swing安値距離% | ③向け直す |
-| observe_diag.py | 1886 | 直書き | 高値からの経過バー | ③向け直す |
-| observe_diag.py | 1887 | 直書き | 安値からの経過バー | ③向け直す |
-| observe_diag.py | 1888 | 直書き | 形スコア | ③向け直す |
-| observe_diag.py | 1890 | 直書き | W字 | ③向け直す |
-| observe_diag.py | 1891 | 直書き | W字確定谷 | ③向け直す |
-| observe_diag.py | 1894 | 直書き | fractal高値距離% | ③向け直す |
-| observe_diag.py | 1895 | 直書き | fractal安値距離% | ③向け直す |
-| observe_diag.py | 1896 | 直書き | 高値切り上げ幅% | ③向け直す |
-| observe_diag.py | 1897 | 直書き | 安値切り上げ幅% | ③向け直す |
-| observe_diag.py | 1898 | 直書き | 構造破断距離% | ③向け直す |
-| observe_diag.py | 1901 | 直書き | close vs EMA | ③向け直す |
-| observe_diag.py | 1903 | 直書き | close vs SMA | ③向け直す |
-| observe_diag.py | 1905 | 直書き | close vs VWAP% | ③向け直す |
-| observe_diag.py | 1906 | 直書き | close vs VWAP典型% | ③向け直す |
-| observe_diag.py | 1907 | 直書き | close vs 当日VWAP% | ③向け直す |
-| observe_diag.py | 1909 | 直書き | close vs Keltner上% | ③向け直す |
-| observe_diag.py | 1910 | 直書き | close vs Keltner下% | ③向け直す |
-| observe_diag.py | 1912 | 直書き | close vs Supertrend% | ③向け直す |
-| observe_diag.py | 1914 | 直書き | close vs 本高値% | ③向け直す |
-| observe_diag.py | 1915 | 直書き | close vs 本安値% | ③向け直す |
-| observe_diag.py | 1918 | 直書き | close vs pivotPP% | ③向け直す |
-| observe_diag.py | 1919 | 直書き | close vs pivotR1% | ③向け直す |
-| observe_diag.py | 1920 | 直書き | close vs pivotS1% | ③向け直す |
-| observe_diag.py | 1922 | 直書き | close vs 前期間pivotPP% | ③向け直す |
-| observe_diag.py | 1923 | 直書き | close vs 前期間pivotR1% | ③向け直す |
-| observe_diag.py | 1924 | 直書き | close vs 前期間pivotS1% | ③向け直す |
-| observe_diag.py | 1925 | 直書き | close vs 前週pivotPP% | ③向け直す |
-| observe_diag.py | 1926 | 直書き | close vs 前週pivotR1% | ③向け直す |
-| observe_diag.py | 1927 | 直書き | close vs 前週pivotS1% | ③向け直す |
-| observe_diag.py | 1929 | 直書き | fib位置 | ③向け直す |
-| observe_diag.py | 1931 | 直書き | close vs POC% | ③向け直す |
-| observe_diag.py | 1932 | 直書き | close vs VAH% | ③向け直す |
-| observe_diag.py | 1933 | 直書き | close vs VAL% | ③向け直す |
-| observe_diag.py | 1935 | 直書き | close vs 前日POC% | ③向け直す |
-| observe_diag.py | 1936 | 直書き | close vs 前日VAH% | ③向け直す |
-| observe_diag.py | 1937 | 直書き | close vs 前日VAL% | ③向け直す |
-| observe_diag.py | 1938 | 直書き | close vs 当日POC% | ③向け直す |
-| observe_diag.py | 1939 | 直書き | close vs 当日VAH% | ③向け直す |
-| observe_diag.py | 1940 | 直書き | close vs 当日VAL% | ③向け直す |
-| observe_diag.py | 1943 | 直書き | S-Rタッチ数 | ③向け直す |
-| observe_diag.py | 1944 | 直書き | S-Rタッチ確定数 | ③向け直す |
-| observe_diag.py | 1950 | 直書き | MMI | ③向け直す |
-| observe_diag.py | 1956 | 直書き | S-Rタッチ1時間ATR | ③向け直す |
-| observe_diag.py | 1957 | 直書き | S-Rタッチ確定1時間ATR | ③向け直す |
-| observe_diag.py | 1968 | 直書き | 帯スイング | ③向け直す |
-| observe_diag.py | 1971 | 直書き | 帯スイング1時間ATR | ③向け直す |
-| observe_diag.py | 1973 | 直書き | 帯pivot | ③向け直す |
-| observe_diag.py | 1974 | 直書き | 帯pivot前週 | ③向け直す |
-| observe_diag.py | 1975 | 直書き | 帯VA | ③向け直す |
-| observe_diag.py | 1978 | 直書き | 帯pivot1時間ATR | ③向け直す |
-| observe_diag.py | 1979 | 直書き | 帯pivot前週1時間ATR | ③向け直す |
-| observe_diag.py | 1980 | 直書き | 帯VA1時間ATR | ③向け直す |
-| observe_diag.py | 1984 | 直書き | LeeMykland | ③向け直す |
-| observe_diag.py | 1985 | 直書き | LeeMykland_E36版 | ③向け直す |
-| observe_diag.py | 1995 | 直書き | AR | ③向け直す |
-| observe_diag.py | 1995 | 直書き | BIAS | ③向け直す |
-| observe_diag.py | 1995 | 直書き | BR | ③向け直す |
-| observe_diag.py | 1995 | 直書き | CCI | ③向け直す |
-| observe_diag.py | 1995 | 直書き | CFO | ③向け直す |
-| observe_diag.py | 1995 | 直書き | CG | ③向け直す |
-| observe_diag.py | 1995 | 直書き | CMO | ③向け直す |
-| observe_diag.py | 1995 | 直書き | CTI | ③向け直す |
-| observe_diag.py | 1996 | 直書き | DM+% | ③向け直す |
-| observe_diag.py | 1996 | 直書き | DM-% | ③向け直す |
-| observe_diag.py | 1996 | 直書き | ER | ③向け直す |
-| observe_diag.py | 1996 | 直書き | ERI弱気% | ③向け直す |
-| observe_diag.py | 1996 | 直書き | ERI強気% | ③向け直す |
-| observe_diag.py | 1996 | 直書き | INERTIA | ③向け直す |
-| observe_diag.py | 1999 | 直書き | LRSI | ③向け直す |
-| observe_diag.py | 2000 | 直書き | BOP | ③向け直す |
-| observe_diag.py | 2001 | 直書き | KST | ③向け直す |
-| observe_diag.py | 2003 | 直書き | APO% | ③向け直す |
-| observe_diag.py | 2006 | 直書き | COPC | ③向け直す |
-| observe_diag.py | 2007 | 直書き | FISHER | ③向け直す |
-| observe_diag.py | 2008 | 直書き | FISHERシグナル | ③向け直す |
-| observe_diag.py | 2009 | 直書き | KSTシグナル | ③向け直す |
-| observe_diag.py | 2011 | 直書き | KDJ%K | ③向け直す |
-| observe_diag.py | 2012 | 直書き | KDJ%D | ③向け直す |
-| observe_diag.py | 2013 | 直書き | KDJ%J | ③向け直す |
-| observe_diag.py | 2016 | 直書き | AO% | ③向け直す |
-| observe_diag.py | 2020 | 直書き | MOM% | ③向け直す |
-| observe_diag.py | 2020 | 直書き | PGO | ③向け直す |
-| observe_diag.py | 2020 | 直書き | PO | ③向け直す |
-| observe_diag.py | 2020 | 直書き | PSL | ③向け直す |
-| observe_diag.py | 2020 | 直書き | RSX | ③向け直す |
-| observe_diag.py | 2020 | 直書き | RVGI | ③向け直す |
-| observe_diag.py | 2020 | 直書き | RVGIシグナル | ③向け直す |
-| observe_diag.py | 2020 | 直書き | RVGIヒスト | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PPO | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PPOシグナル | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PPOヒスト | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PVO | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PVOシグナル | ③向け直す |
-| observe_diag.py | 2023 | 直書き | PVOヒスト | ③向け直す |
-| observe_diag.py | 2025 | 直書き | QQE | ③向け直す |
-| observe_diag.py | 2025 | 直書き | QQE_RSIMA | ③向け直す |
-| observe_diag.py | 2025 | 直書き | SMC_SWEEP | ③向け直す |
-| observe_diag.py | 2025 | 直書き | SQZ% | ③向け直す |
-| observe_diag.py | 2025 | 直書き | SQZ_ON | ③向け直す |
-| observe_diag.py | 2026 | 直書き | SQZPRO_ON_NARROW | ③向け直す |
-| observe_diag.py | 2026 | 直書き | SQZPRO_ON_WIDE | ③向け直す |
-| observe_diag.py | 2026 | 直書き | STC | ③向け直す |
-| observe_diag.py | 2026 | 直書き | STCstoch | ③向け直す |
-| observe_diag.py | 2028 | 直書き | SMC_SWEEP確定 | ③向け直す |
-| observe_diag.py | 2029 | 直書き | SQZ_ON_Carter | ③向け直す |
-| observe_diag.py | 2033 | 直書き | StochRSI%K | ③向け直す |
-| observe_diag.py | 2034 | 直書き | StochRSI%D | ③向け直す |
-| observe_diag.py | 2035 | 直書き | StochRSI素%K | ③向け直す |
-| observe_diag.py | 2037 | 直書き | TRIX | ③向け直す |
-| observe_diag.py | 2038 | 直書き | TRIXシグナル | ③向け直す |
-| observe_diag.py | 2039 | 直書き | TRIXヒスト | ③向け直す |
-| observe_diag.py | 2040 | 直書き | TRIX_EMAシグナル | ③向け直す |
-| observe_diag.py | 2041 | 直書き | TRIX_EMAヒスト | ③向け直す |
-| observe_diag.py | 2042 | 直書き | TD_SEQ_UP | ③向け直す |
-| observe_diag.py | 2043 | 直書き | TD_SEQ_DN | ③向け直す |
-| observe_diag.py | 2044 | 直書き | UO | ③向け直す |
-| observe_diag.py | 2046 | 直書き | TSI | ③向け直す |
-| observe_diag.py | 2046 | 直書き | TSIシグナル | ③向け直す |
-| observe_diag.py | 2046 | 直書き | TSIヒスト | ③向け直す |
-| observe_diag.py | 2047 | 直書き | VWMACDシグナル% | ③向け直す |
-| observe_diag.py | 2047 | 直書き | VWMACDヒスト% | ③向け直す |
-| observe_diag.py | 2047 | 直書き | VWMACD線% | ③向け直す |
-| observe_diag.py | 2056 | 直書き | LRangle | ③向け直す |
-| observe_diag.py | 2066 | 直書き | close vs FWMA% | ③向け直す |
-| observe_diag.py | 2067 | 直書き | FWMA傾き | ③向け直す |
-| observe_diag.py | 2068 | 直書き | close vs HILO% | ③向け直す |
-| observe_diag.py | 2069 | 直書き | close vs HT_TRENDLINE% | ③向け直す |
-| observe_diag.py | 2070 | 直書き | close vs HT_TRENDLINE_HL% | ③向け直す |
-| observe_diag.py | 2071 | 直書き | close vs HWMA% | ③向け直す |
-| observe_diag.py | 2078 | 直書き | LRslope% | ③向け直す |
-| observe_diag.py | 2079 | 直書き | close vs MAMA% | ③向け直す |
-| observe_diag.py | 2080 | 直書き | close vs FAMA% | ③向け直す |
-| observe_diag.py | 2081 | 直書き | close vs MAMA_HL% | ③向け直す |
-| observe_diag.py | 2082 | 直書き | close vs FAMA_HL% | ③向け直す |
-| observe_diag.py | 2091 | 直書き | close vs MMAR% | ③向け直す |
-| observe_diag.py | 2092 | 直書き | MMAR傾き | ③向け直す |
-| observe_diag.py | 2095 | 直書き | close vs RAINBOW% | ③向け直す |
-| observe_diag.py | 2096 | 直書き | RAINBOW傾き | ③向け直す |
-| observe_diag.py | 2104 | 直書き | close vs SSF平均% | ③向け直す |
-| observe_diag.py | 2105 | 直書き | close vs TRIMA_TA% | ③向け直す |
-| observe_diag.py | 2106 | 直書き | close vs VIDYA_CMO% | ③向け直す |
-| observe_diag.py | 2110 | 直書き | ADXR | ③向け直す |
-| observe_diag.py | 2110 | 直書き | AROOND | ③向け直す |
-| observe_diag.py | 2110 | 直書き | AROONOSC | ③向け直す |
-| observe_diag.py | 2110 | 直書き | AROONU | ③向け直す |
-| observe_diag.py | 2110 | 直書き | DI+ | ③向け直す |
-| observe_diag.py | 2110 | 直書き | DI- | ③向け直す |
-| observe_diag.py | 2110 | 直書き | DX | ③向け直す |
-| observe_diag.py | 2111 | 直書き | CHOP | ③向け直す |
-| observe_diag.py | 2111 | 直書き | VHF | ③向け直す |
-| observe_diag.py | 2111 | 直書き | VTXM | ③向け直す |
-| observe_diag.py | 2111 | 直書き | VTXP | ③向け直す |
-| observe_diag.py | 2114 | 直書き | QSTICK% | ③向け直す |
-| observe_diag.py | 2116 | 直書き | DPO% | ③向け直す |
-| observe_diag.py | 2117 | 直書き | DPO教科書% | ③向け直す |
-| observe_diag.py | 2118 | 直書き | TTM_TREND | ③向け直す |
-| observe_diag.py | 2119 | 直書き | AMAT_LR | ③向け直す |
-| observe_diag.py | 2119 | 直書き | close vs CKSPl% | ③向け直す |
-| observe_diag.py | 2119 | 直書き | close vs CKSPs% | ③向け直す |
-| observe_diag.py | 2119 | 直書き | close vs PMAX% | ③向け直す |
-| observe_diag.py | 2120 | 直書き | PSAR加速 | ③向け直す |
-| observe_diag.py | 2120 | 直書き | PSAR反転 | ③向け直す |
-| observe_diag.py | 2120 | 直書き | close vs PSAR% | ③向け直す |
-| observe_diag.py | 2120 | 直書き | close vs SAREXT% | ③向け直す |
-| observe_diag.py | 2133 | 直書き | EFI比 | ③向け直す |
-| observe_diag.py | 2133 | 直書き | EOM比 | ③向け直す |
-| observe_diag.py | 2133 | 直書き | MARKETFI比 | ③向け直す |
-| observe_diag.py | 2133 | 直書き | NVI傾き | ③向け直す |
-| observe_diag.py | 2133 | 直書き | PVI傾き | ③向け直す |
-| observe_diag.py | 2134 | 直書き | PVOL比 | ③向け直す |
-| observe_diag.py | 2134 | 直書き | PVT傾き | ③向け直す |
-| observe_diag.py | 2134 | 直書き | WAD傾き | ③向け直す |
-| observe_diag.py | 2136 | 直書き | ADOSC比 | ③向け直す |
-| observe_diag.py | 2136 | 直書き | AOBV_LR | ③向け直す |
-| observe_diag.py | 2136 | 直書き | KVOシグナル比 | ③向け直す |
-| observe_diag.py | 2136 | 直書き | KVO比 | ③向け直す |
-| observe_diag.py | 2136 | 直書き | VOSC | ③向け直す |
-| observe_diag.py | 2141 | 直書き | VFI | ③向け直す |
-| observe_diag.py | 2143 | 直書き | 出来高変化率% | ③向け直す |
-| observe_diag.py | 2151 | 直書き | MAD比 | ③向け直す |
-| observe_diag.py | 2151 | 直書き | kurtosis | ③向け直す |
-| observe_diag.py | 2151 | 直書き | skew | ③向け直す |
-| observe_diag.py | 2151 | 直書き | stdev% | ③向け直す |
-| observe_diag.py | 2154 | 直書き | close vs MEDIAN% | ③向け直す |
-| observe_diag.py | 2155 | 直書き | MEDIAN傾き% | ③向け直す |
-| observe_diag.py | 2166 | 直書き | ABER位置 | ③向け直す |
-| observe_diag.py | 2166 | 直書き | close vs ABER_ZG% | ③向け直す |
-| observe_diag.py | 2166 | 直書き | close vs ACCBL% | ③向け直す |
-| observe_diag.py | 2166 | 直書き | close vs ACCBU% | ③向け直す |
-| observe_diag.py | 2167 | 直書き | close vs CE_L% | ③向け直す |
-| observe_diag.py | 2167 | 直書き | close vs CE_S% | ③向け直す |
-| observe_diag.py | 2169 | 直書き | ABER原作位置 | ③向け直す |
-| observe_diag.py | 2174 | 直書き | HWC位置 | ③向け直す |
-| observe_diag.py | 2174 | 直書き | HWC幅% | ③向け直す |
-| observe_diag.py | 2174 | 直書き | MASSI | ③向け直す |
-| observe_diag.py | 2174 | 直書き | PDIST% | ③向け直す |
-| observe_diag.py | 2174 | 直書き | THERMO% | ③向け直す |
-| observe_diag.py | 2174 | 直書き | THERMO比 | ③向け直す |
-| observe_diag.py | 2174 | 直書き | TR% | ③向け直す |
-| observe_diag.py | 2176 | 直書き | THERMO原作% | ③向け直す |
-| observe_diag.py | 2177 | 直書き | THERMO_EMA% | ③向け直す |
-| observe_diag.py | 2179 | 直書き | CVI | ③向け直す |
-| observe_diag.py | 2180 | 直書き | RVI | ③向け直す |
-| observe_diag.py | 2181 | 直書き | UI | ③向け直す |
-| observe_diag.py | 2192 | 直書き | EBSW | ③向け直す |
-| observe_diag.py | 2192 | 直書き | HT_DCPERIOD | ③向け直す |
-| observe_diag.py | 2192 | 直書き | HT_DCPHASE | ③向け直す |
-| observe_diag.py | 2192 | 直書き | HT_INPHASE% | ③向け直す |
-| observe_diag.py | 2192 | 直書き | HT_QUAD% | ③向け直す |
-| observe_diag.py | 2193 | 直書き | HT_LEADSINE | ③向け直す |
-| observe_diag.py | 2193 | 直書き | HT_SINE | ③向け直す |
-| observe_diag.py | 2193 | 直書き | HT_TRENDMODE | ③向け直す |
-| observe_diag.py | 2193 | 直書き | MSW_LEAD | ③向け直す |
-| observe_diag.py | 2193 | 直書き | MSW_SINE | ③向け直す |
-| observe_diag.py | 2206 | 直書き | 実体幅比 | ③向け直す |
-| observe_diag.py | 2207 | 直書き | 内側バー | ③向け直す |
-| observe_diag.py | 2211 | 直書き | HA実体% | ③向け直す |
-| observe_diag.py | 2212 | 直書き | HA上ヒゲ比 | ③向け直す |
-| observe_diag.py | 2213 | 直書き | HA下ヒゲ比 | ③向け直す |
-| observe_diag.py | 2432 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 2432 | 読む | files | ③向け直す |
-| observe_diag.py | 2480 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 2480 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 2480 | 直書き | sup_hi | ③向け直す |
-| observe_diag.py | 2480 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 2481 | 直書き | W% | ③向け直す |
-| observe_diag.py | 2481 | 直書き | mid | ③向け直す |
-| observe_diag.py | 2481 | 直書き | 下半分位置 | ③向け直す |
-| observe_diag.py | 2481 | 直書き | 帯内位置% | ③向け直す |
-| observe_diag.py | 2524 | 直書き | 帯内位置% | ③向け直す |
-| observe_diag.py | 2525 | 直書き | 帯内位置% | ③向け直す |
-| observe_diag.py | 2816 | 読む | g | ③向け直す |
-| observe_diag.py | 2816 | 読む | g | ③向け直す |
-| observe_diag.py | 2817 | 読む | g | ③向け直す |
-| observe_diag.py | 2840 | 持つ | g0（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
-| observe_diag.py | 2841 | 読む | g0 | ③向け直す |
-| observe_diag.py | 2886 | 直書き | mid | ③向け直す |
-| observe_diag.py | 2982 | 読む | g | ③向け直す |
-| observe_diag.py | 2988 | 読む | g | ③向け直す |
-| observe_diag.py | 3034 | 読む | g | ③向け直す |
-| observe_diag.py | 3039 | 読む | g | ③向け直す |
-| observe_diag.py | 3054 | 読む | g | ③向け直す |
-| observe_diag.py | 3055 | 読む | g | ③向け直す |
-| observe_diag.py | 3058 | 読む | g | ③向け直す |
-| observe_diag.py | 3059 | 読む | g | ③向け直す |
-| observe_diag.py | 3059 | 読む | g | ③向け直す |
-| observe_diag.py | 3060 | 読む | g | ③向け直す |
-| observe_diag.py | 3060 | 読む | g | ③向け直す |
-| observe_diag.py | 3061 | 読む | g | ③向け直す |
-| observe_diag.py | 3061 | 読む | g | ③向け直す |
-| observe_diag.py | 3062 | 読む | g | ③向け直す |
-| observe_diag.py | 3062 | 読む | g | ③向け直す |
-| observe_diag.py | 3063 | 読む | g | ③向け直す |
-| observe_diag.py | 3064 | 読む | g | ③向け直す |
-| observe_diag.py | 3064 | 読む | g | ③向け直す |
-| observe_diag.py | 3065 | 読む | g | ③向け直す |
-| observe_diag.py | 3182 | 読む | g | ③向け直す |
-| observe_diag.py | 3185 | 読む | g | ③向け直す |
-| observe_diag.py | 3391 | 直書き | ATR% | ③向け直す |
-| observe_diag.py | 3391 | 直書き | BB幅 | ③向け直す |
-| observe_diag.py | 3391 | 直書き | Donchian幅 | ③向け直す |
-| observe_diag.py | 3391 | 直書き | realized_vol | ③向け直す |
-| observe_diag.py | 3393 | 直書き | CMF | ③向け直す |
-| observe_diag.py | 3393 | 直書き | CVD | ③向け直す |
-| observe_diag.py | 3393 | 直書き | L-S比 | ③向け直す |
-| observe_diag.py | 3393 | 直書き | MFI | ③向け直す |
-| observe_diag.py | 3393 | 直書き | taker_ls | ③向け直す |
-| observe_diag.py | 3393 | 直書き | volume_ratio | ③向け直す |
-| observe_diag.py | 3395 | 直書き | body比 | ③向け直す |
-| observe_diag.py | 3395 | 直書き | pinbar | ③向け直す |
-| observe_diag.py | 3395 | 直書き | 包み足 | ③向け直す |
-| observe_diag.py | 3395 | 直書き | 連続本数 | ③向け直す |
-| observe_diag.py | 3397 | 直書き | fib位置 | ③向け直す |
-| observe_diag.py | 3398 | 直書き | BB%b | ③向け直す |
-| observe_diag.py | 3398 | 直書き | pivotPP | ③向け直す |
-| observe_diag.py | 3398 | 直書き | zscore | ③向け直す |
-| observe_diag.py | 3398 | 直書き | 形スコア | ③向け直す |
-| observe_diag.py | 3440 | 持つ | g（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
-| observe_diag.py | 3443 | 読む | g | ③向け直す |
-| observe_diag.py | 3456 | 読む | g | ③向け直す |
-| observe_diag.py | 3457 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 3457 | 直書き | sup_hi | ③向け直す |
-| observe_diag.py | 3457 | 読む | g | ③向け直す |
-| observe_diag.py | 3457 | 読む | g | ③向け直す |
-| observe_diag.py | 3457 | 読む | g | ③向け直す |
-| observe_diag.py | 3458 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3458 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 3458 | 読む | g | ③向け直す |
-| observe_diag.py | 3458 | 読む | g | ③向け直す |
-| observe_diag.py | 3459 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3459 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3459 | 直書き | sup_hi | ③向け直す |
-| observe_diag.py | 3459 | 読む | g | ③向け直す |
-| observe_diag.py | 3459 | 読む | g | ③向け直す |
-| observe_diag.py | 3469 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3469 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3479 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3479 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3484 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 3484 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 3504 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 3504 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 3517 | 直書き | sup_hi | ③向け直す |
-| observe_diag.py | 3517 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 3524 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 3524 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3541 | 持つ | (lo_edge, hi_edge)（名前 2・例 res_lo, sup_hi） | ①写す→②消す |
-| observe_diag.py | 3569 | 読む | json の名前「場面バーの抽出（型は登録表 _SCENE_KINDS・パラメータは observe_config.json の scen」 | ③向け直す |
-| observe_diag.py | 3574 | 読む | g | ③向け直す |
-| observe_diag.py | 3575 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3579 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3596 | 持つ | (res_hi, res_lo)（名前 2・例 res_hi, res_lo） | ①写す→②消す |
-| observe_diag.py | 3597 | 持つ | (sup_lo, sup_hi)（名前 2・例 sup_hi, sup_lo） | ①写す→②消す |
-| observe_diag.py | 3646 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3673 | 持つ | (res_hi, res_lo)（名前 2・例 res_hi, res_lo） | ①写す→②消す |
-| observe_diag.py | 3674 | 持つ | (sup_lo, sup_hi)（名前 2・例 sup_hi, sup_lo） | ①写す→②消す |
-| observe_diag.py | 3675 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3728 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3730 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3762 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3878 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3900 | 読む | json の名前「 が無い（observe_config.json・定義済み 」 | ③向け直す |
-| observe_diag.py | 3903 | 読む | g | ③向け直す |
-| observe_diag.py | 3916 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 3929 | 読む | json の名前「
+| observe_diag.py | 1814 | 読む | _BAND_IMPL | ③向け直す |
+| observe_diag.py | 1818 | 読む | _BAND_IMPL | ③向け直す |
+| observe_diag.py | 1856 | 直書き | ADX | ③向け直す |
+| observe_diag.py | 1857 | 直書き | DI差 | ③向け直す |
+| observe_diag.py | 1859 | 直書き | MACD線% | ③向け直す |
+| observe_diag.py | 1860 | 直書き | MACDシグナル線% | ③向け直す |
+| observe_diag.py | 1861 | 直書き | MACDヒスト% | ③向け直す |
+| observe_diag.py | 1863 | 直書き | RSI | ③向け直す |
+| observe_diag.py | 1874 | 直書き | ROC | ③向け直す |
+| observe_diag.py | 1876 | 直書き | Stoch%K | ③向け直す |
+| observe_diag.py | 1877 | 直書き | Stoch%D | ③向け直す |
+| observe_diag.py | 1879 | 直書き | MFI | ③向け直す |
+| observe_diag.py | 1881 | 直書き | CMF | ③向け直す |
+| observe_diag.py | 1883 | 直書き | OBV傾き | ③向け直す |
+| observe_diag.py | 1885 | 直書き | close vs 転換線% | ③向け直す |
+| observe_diag.py | 1886 | 直書き | close vs 基準線% | ③向け直す |
+| observe_diag.py | 1888 | 直書き | RCI | ③向け直す |
+| observe_diag.py | 1890 | 直書き | EMA傾き | ③向け直す |
+| observe_diag.py | 1893 | 直書き | ATR% | ③向け直す |
+| observe_diag.py | 1896 | 直書き | BB%b | ③向け直す |
+| observe_diag.py | 1897 | 直書き | BB幅 | ③向け直す |
+| observe_diag.py | 1899 | 直書き | realized_vol | ③向け直す |
+| observe_diag.py | 1900 | 直書き | realized_vol_rv | ③向け直す |
+| observe_diag.py | 1902 | 直書き | Donchian幅% | ③向け直す |
+| observe_diag.py | 1904 | 直書き | zscore | ③向け直す |
+| observe_diag.py | 1905 | 直書き | zscore_return | ③向け直す |
+| observe_diag.py | 1908 | 直書き | volume_ratio | ③向け直す |
+| observe_diag.py | 1910 | 直書き | 包み足 | ③向け直す |
+| observe_diag.py | 1911 | 直書き | 孕み足 | ③向け直す |
+| observe_diag.py | 1912 | 直書き | pinbar | ③向け直す |
+| observe_diag.py | 1913 | 直書き | 連続本数 | ③向け直す |
+| observe_diag.py | 1914 | 直書き | body比 | ③向け直す |
+| observe_diag.py | 1915 | 直書き | 上ヒゲ比 | ③向け直す |
+| observe_diag.py | 1916 | 直書き | 下ヒゲ比 | ③向け直す |
+| observe_diag.py | 1919 | 直書き | swing高値距離% | ③向け直す |
+| observe_diag.py | 1920 | 直書き | swing安値距離% | ③向け直す |
+| observe_diag.py | 1921 | 直書き | 高値からの経過バー | ③向け直す |
+| observe_diag.py | 1922 | 直書き | 安値からの経過バー | ③向け直す |
+| observe_diag.py | 1923 | 直書き | 形スコア | ③向け直す |
+| observe_diag.py | 1925 | 直書き | W字 | ③向け直す |
+| observe_diag.py | 1926 | 直書き | W字確定谷 | ③向け直す |
+| observe_diag.py | 1929 | 直書き | fractal高値距離% | ③向け直す |
+| observe_diag.py | 1930 | 直書き | fractal安値距離% | ③向け直す |
+| observe_diag.py | 1931 | 直書き | 高値切り上げ幅% | ③向け直す |
+| observe_diag.py | 1932 | 直書き | 安値切り上げ幅% | ③向け直す |
+| observe_diag.py | 1933 | 直書き | 構造破断距離% | ③向け直す |
+| observe_diag.py | 1936 | 直書き | close vs EMA | ③向け直す |
+| observe_diag.py | 1938 | 直書き | close vs SMA | ③向け直す |
+| observe_diag.py | 1940 | 直書き | close vs VWAP% | ③向け直す |
+| observe_diag.py | 1941 | 直書き | close vs VWAP典型% | ③向け直す |
+| observe_diag.py | 1942 | 直書き | close vs 当日VWAP% | ③向け直す |
+| observe_diag.py | 1944 | 直書き | close vs Keltner上% | ③向け直す |
+| observe_diag.py | 1945 | 直書き | close vs Keltner下% | ③向け直す |
+| observe_diag.py | 1947 | 直書き | close vs Supertrend% | ③向け直す |
+| observe_diag.py | 1949 | 直書き | close vs 本高値% | ③向け直す |
+| observe_diag.py | 1950 | 直書き | close vs 本安値% | ③向け直す |
+| observe_diag.py | 1953 | 直書き | close vs pivotPP% | ③向け直す |
+| observe_diag.py | 1954 | 直書き | close vs pivotR1% | ③向け直す |
+| observe_diag.py | 1955 | 直書き | close vs pivotS1% | ③向け直す |
+| observe_diag.py | 1957 | 直書き | close vs 前期間pivotPP% | ③向け直す |
+| observe_diag.py | 1958 | 直書き | close vs 前期間pivotR1% | ③向け直す |
+| observe_diag.py | 1959 | 直書き | close vs 前期間pivotS1% | ③向け直す |
+| observe_diag.py | 1960 | 直書き | close vs 前週pivotPP% | ③向け直す |
+| observe_diag.py | 1961 | 直書き | close vs 前週pivotR1% | ③向け直す |
+| observe_diag.py | 1962 | 直書き | close vs 前週pivotS1% | ③向け直す |
+| observe_diag.py | 1964 | 直書き | fib位置 | ③向け直す |
+| observe_diag.py | 1966 | 直書き | close vs POC% | ③向け直す |
+| observe_diag.py | 1967 | 直書き | close vs VAH% | ③向け直す |
+| observe_diag.py | 1968 | 直書き | close vs VAL% | ③向け直す |
+| observe_diag.py | 1970 | 直書き | close vs 前日POC% | ③向け直す |
+| observe_diag.py | 1971 | 直書き | close vs 前日VAH% | ③向け直す |
+| observe_diag.py | 1972 | 直書き | close vs 前日VAL% | ③向け直す |
+| observe_diag.py | 1973 | 直書き | close vs 当日POC% | ③向け直す |
+| observe_diag.py | 1974 | 直書き | close vs 当日VAH% | ③向け直す |
+| observe_diag.py | 1975 | 直書き | close vs 当日VAL% | ③向け直す |
+| observe_diag.py | 1978 | 直書き | S-Rタッチ数 | ③向け直す |
+| observe_diag.py | 1979 | 直書き | S-Rタッチ確定数 | ③向け直す |
+| observe_diag.py | 1985 | 直書き | MMI | ③向け直す |
+| observe_diag.py | 1991 | 直書き | S-Rタッチ1時間ATR | ③向け直す |
+| observe_diag.py | 1992 | 直書き | S-Rタッチ確定1時間ATR | ③向け直す |
+| observe_diag.py | 2003 | 直書き | 帯スイング | ③向け直す |
+| observe_diag.py | 2006 | 直書き | 帯スイング1時間ATR | ③向け直す |
+| observe_diag.py | 2008 | 直書き | 帯pivot | ③向け直す |
+| observe_diag.py | 2009 | 直書き | 帯pivot前週 | ③向け直す |
+| observe_diag.py | 2010 | 直書き | 帯VA | ③向け直す |
+| observe_diag.py | 2013 | 直書き | 帯pivot1時間ATR | ③向け直す |
+| observe_diag.py | 2014 | 直書き | 帯pivot前週1時間ATR | ③向け直す |
+| observe_diag.py | 2015 | 直書き | 帯VA1時間ATR | ③向け直す |
+| observe_diag.py | 2019 | 直書き | LeeMykland | ③向け直す |
+| observe_diag.py | 2020 | 直書き | LeeMykland_E36版 | ③向け直す |
+| observe_diag.py | 2030 | 直書き | AR | ③向け直す |
+| observe_diag.py | 2030 | 直書き | BIAS | ③向け直す |
+| observe_diag.py | 2030 | 直書き | BR | ③向け直す |
+| observe_diag.py | 2030 | 直書き | CCI | ③向け直す |
+| observe_diag.py | 2030 | 直書き | CFO | ③向け直す |
+| observe_diag.py | 2030 | 直書き | CG | ③向け直す |
+| observe_diag.py | 2030 | 直書き | CMO | ③向け直す |
+| observe_diag.py | 2030 | 直書き | CTI | ③向け直す |
+| observe_diag.py | 2031 | 直書き | DM+% | ③向け直す |
+| observe_diag.py | 2031 | 直書き | DM-% | ③向け直す |
+| observe_diag.py | 2031 | 直書き | ER | ③向け直す |
+| observe_diag.py | 2031 | 直書き | ERI弱気% | ③向け直す |
+| observe_diag.py | 2031 | 直書き | ERI強気% | ③向け直す |
+| observe_diag.py | 2031 | 直書き | INERTIA | ③向け直す |
+| observe_diag.py | 2034 | 直書き | LRSI | ③向け直す |
+| observe_diag.py | 2035 | 直書き | BOP | ③向け直す |
+| observe_diag.py | 2036 | 直書き | KST | ③向け直す |
+| observe_diag.py | 2038 | 直書き | APO% | ③向け直す |
+| observe_diag.py | 2041 | 直書き | COPC | ③向け直す |
+| observe_diag.py | 2042 | 直書き | FISHER | ③向け直す |
+| observe_diag.py | 2043 | 直書き | FISHERシグナル | ③向け直す |
+| observe_diag.py | 2044 | 直書き | KSTシグナル | ③向け直す |
+| observe_diag.py | 2046 | 直書き | KDJ%K | ③向け直す |
+| observe_diag.py | 2047 | 直書き | KDJ%D | ③向け直す |
+| observe_diag.py | 2048 | 直書き | KDJ%J | ③向け直す |
+| observe_diag.py | 2051 | 直書き | AO% | ③向け直す |
+| observe_diag.py | 2055 | 直書き | MOM% | ③向け直す |
+| observe_diag.py | 2055 | 直書き | PGO | ③向け直す |
+| observe_diag.py | 2055 | 直書き | PO | ③向け直す |
+| observe_diag.py | 2055 | 直書き | PSL | ③向け直す |
+| observe_diag.py | 2055 | 直書き | RSX | ③向け直す |
+| observe_diag.py | 2055 | 直書き | RVGI | ③向け直す |
+| observe_diag.py | 2055 | 直書き | RVGIシグナル | ③向け直す |
+| observe_diag.py | 2055 | 直書き | RVGIヒスト | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PPO | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PPOシグナル | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PPOヒスト | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PVO | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PVOシグナル | ③向け直す |
+| observe_diag.py | 2058 | 直書き | PVOヒスト | ③向け直す |
+| observe_diag.py | 2060 | 直書き | QQE | ③向け直す |
+| observe_diag.py | 2060 | 直書き | QQE_RSIMA | ③向け直す |
+| observe_diag.py | 2060 | 直書き | SMC_SWEEP | ③向け直す |
+| observe_diag.py | 2060 | 直書き | SQZ% | ③向け直す |
+| observe_diag.py | 2060 | 直書き | SQZ_ON | ③向け直す |
+| observe_diag.py | 2061 | 直書き | SQZPRO_ON_NARROW | ③向け直す |
+| observe_diag.py | 2061 | 直書き | SQZPRO_ON_WIDE | ③向け直す |
+| observe_diag.py | 2061 | 直書き | STC | ③向け直す |
+| observe_diag.py | 2061 | 直書き | STCstoch | ③向け直す |
+| observe_diag.py | 2063 | 直書き | SMC_SWEEP確定 | ③向け直す |
+| observe_diag.py | 2064 | 直書き | SQZ_ON_Carter | ③向け直す |
+| observe_diag.py | 2068 | 直書き | StochRSI%K | ③向け直す |
+| observe_diag.py | 2069 | 直書き | StochRSI%D | ③向け直す |
+| observe_diag.py | 2070 | 直書き | StochRSI素%K | ③向け直す |
+| observe_diag.py | 2072 | 直書き | TRIX | ③向け直す |
+| observe_diag.py | 2073 | 直書き | TRIXシグナル | ③向け直す |
+| observe_diag.py | 2074 | 直書き | TRIXヒスト | ③向け直す |
+| observe_diag.py | 2075 | 直書き | TRIX_EMAシグナル | ③向け直す |
+| observe_diag.py | 2076 | 直書き | TRIX_EMAヒスト | ③向け直す |
+| observe_diag.py | 2077 | 直書き | TD_SEQ_UP | ③向け直す |
+| observe_diag.py | 2078 | 直書き | TD_SEQ_DN | ③向け直す |
+| observe_diag.py | 2079 | 直書き | UO | ③向け直す |
+| observe_diag.py | 2081 | 直書き | TSI | ③向け直す |
+| observe_diag.py | 2081 | 直書き | TSIシグナル | ③向け直す |
+| observe_diag.py | 2081 | 直書き | TSIヒスト | ③向け直す |
+| observe_diag.py | 2082 | 直書き | VWMACDシグナル% | ③向け直す |
+| observe_diag.py | 2082 | 直書き | VWMACDヒスト% | ③向け直す |
+| observe_diag.py | 2082 | 直書き | VWMACD線% | ③向け直す |
+| observe_diag.py | 2091 | 直書き | LRangle | ③向け直す |
+| observe_diag.py | 2101 | 直書き | close vs FWMA% | ③向け直す |
+| observe_diag.py | 2102 | 直書き | FWMA傾き | ③向け直す |
+| observe_diag.py | 2103 | 直書き | close vs HILO% | ③向け直す |
+| observe_diag.py | 2104 | 直書き | close vs HT_TRENDLINE% | ③向け直す |
+| observe_diag.py | 2105 | 直書き | close vs HT_TRENDLINE_HL% | ③向け直す |
+| observe_diag.py | 2106 | 直書き | close vs HWMA% | ③向け直す |
+| observe_diag.py | 2113 | 直書き | LRslope% | ③向け直す |
+| observe_diag.py | 2114 | 直書き | close vs MAMA% | ③向け直す |
+| observe_diag.py | 2115 | 直書き | close vs FAMA% | ③向け直す |
+| observe_diag.py | 2116 | 直書き | close vs MAMA_HL% | ③向け直す |
+| observe_diag.py | 2117 | 直書き | close vs FAMA_HL% | ③向け直す |
+| observe_diag.py | 2126 | 直書き | close vs MMAR% | ③向け直す |
+| observe_diag.py | 2127 | 直書き | MMAR傾き | ③向け直す |
+| observe_diag.py | 2130 | 直書き | close vs RAINBOW% | ③向け直す |
+| observe_diag.py | 2131 | 直書き | RAINBOW傾き | ③向け直す |
+| observe_diag.py | 2139 | 直書き | close vs SSF平均% | ③向け直す |
+| observe_diag.py | 2140 | 直書き | close vs TRIMA_TA% | ③向け直す |
+| observe_diag.py | 2141 | 直書き | close vs VIDYA_CMO% | ③向け直す |
+| observe_diag.py | 2145 | 直書き | ADXR | ③向け直す |
+| observe_diag.py | 2145 | 直書き | AROOND | ③向け直す |
+| observe_diag.py | 2145 | 直書き | AROONOSC | ③向け直す |
+| observe_diag.py | 2145 | 直書き | AROONU | ③向け直す |
+| observe_diag.py | 2145 | 直書き | DI+ | ③向け直す |
+| observe_diag.py | 2145 | 直書き | DI- | ③向け直す |
+| observe_diag.py | 2145 | 直書き | DX | ③向け直す |
+| observe_diag.py | 2146 | 直書き | CHOP | ③向け直す |
+| observe_diag.py | 2146 | 直書き | VHF | ③向け直す |
+| observe_diag.py | 2146 | 直書き | VTXM | ③向け直す |
+| observe_diag.py | 2146 | 直書き | VTXP | ③向け直す |
+| observe_diag.py | 2149 | 直書き | QSTICK% | ③向け直す |
+| observe_diag.py | 2151 | 直書き | DPO% | ③向け直す |
+| observe_diag.py | 2152 | 直書き | DPO教科書% | ③向け直す |
+| observe_diag.py | 2153 | 直書き | TTM_TREND | ③向け直す |
+| observe_diag.py | 2154 | 直書き | AMAT_LR | ③向け直す |
+| observe_diag.py | 2154 | 直書き | close vs CKSPl% | ③向け直す |
+| observe_diag.py | 2154 | 直書き | close vs CKSPs% | ③向け直す |
+| observe_diag.py | 2154 | 直書き | close vs PMAX% | ③向け直す |
+| observe_diag.py | 2155 | 直書き | PSAR加速 | ③向け直す |
+| observe_diag.py | 2155 | 直書き | PSAR反転 | ③向け直す |
+| observe_diag.py | 2155 | 直書き | close vs PSAR% | ③向け直す |
+| observe_diag.py | 2155 | 直書き | close vs SAREXT% | ③向け直す |
+| observe_diag.py | 2168 | 直書き | EFI比 | ③向け直す |
+| observe_diag.py | 2168 | 直書き | EOM比 | ③向け直す |
+| observe_diag.py | 2168 | 直書き | MARKETFI比 | ③向け直す |
+| observe_diag.py | 2168 | 直書き | NVI傾き | ③向け直す |
+| observe_diag.py | 2168 | 直書き | PVI傾き | ③向け直す |
+| observe_diag.py | 2169 | 直書き | PVOL比 | ③向け直す |
+| observe_diag.py | 2169 | 直書き | PVT傾き | ③向け直す |
+| observe_diag.py | 2169 | 直書き | WAD傾き | ③向け直す |
+| observe_diag.py | 2171 | 直書き | ADOSC比 | ③向け直す |
+| observe_diag.py | 2171 | 直書き | AOBV_LR | ③向け直す |
+| observe_diag.py | 2171 | 直書き | KVOシグナル比 | ③向け直す |
+| observe_diag.py | 2171 | 直書き | KVO比 | ③向け直す |
+| observe_diag.py | 2171 | 直書き | VOSC | ③向け直す |
+| observe_diag.py | 2176 | 直書き | VFI | ③向け直す |
+| observe_diag.py | 2178 | 直書き | 出来高変化率% | ③向け直す |
+| observe_diag.py | 2186 | 直書き | MAD比 | ③向け直す |
+| observe_diag.py | 2186 | 直書き | kurtosis | ③向け直す |
+| observe_diag.py | 2186 | 直書き | skew | ③向け直す |
+| observe_diag.py | 2186 | 直書き | stdev% | ③向け直す |
+| observe_diag.py | 2189 | 直書き | close vs MEDIAN% | ③向け直す |
+| observe_diag.py | 2190 | 直書き | MEDIAN傾き% | ③向け直す |
+| observe_diag.py | 2201 | 直書き | ABER位置 | ③向け直す |
+| observe_diag.py | 2201 | 直書き | close vs ABER_ZG% | ③向け直す |
+| observe_diag.py | 2201 | 直書き | close vs ACCBL% | ③向け直す |
+| observe_diag.py | 2201 | 直書き | close vs ACCBU% | ③向け直す |
+| observe_diag.py | 2202 | 直書き | close vs CE_L% | ③向け直す |
+| observe_diag.py | 2202 | 直書き | close vs CE_S% | ③向け直す |
+| observe_diag.py | 2204 | 直書き | ABER原作位置 | ③向け直す |
+| observe_diag.py | 2209 | 直書き | HWC位置 | ③向け直す |
+| observe_diag.py | 2209 | 直書き | HWC幅% | ③向け直す |
+| observe_diag.py | 2209 | 直書き | MASSI | ③向け直す |
+| observe_diag.py | 2209 | 直書き | PDIST% | ③向け直す |
+| observe_diag.py | 2209 | 直書き | THERMO% | ③向け直す |
+| observe_diag.py | 2209 | 直書き | THERMO比 | ③向け直す |
+| observe_diag.py | 2209 | 直書き | TR% | ③向け直す |
+| observe_diag.py | 2211 | 直書き | THERMO原作% | ③向け直す |
+| observe_diag.py | 2212 | 直書き | THERMO_EMA% | ③向け直す |
+| observe_diag.py | 2214 | 直書き | CVI | ③向け直す |
+| observe_diag.py | 2215 | 直書き | RVI | ③向け直す |
+| observe_diag.py | 2216 | 直書き | UI | ③向け直す |
+| observe_diag.py | 2227 | 直書き | EBSW | ③向け直す |
+| observe_diag.py | 2227 | 直書き | HT_DCPERIOD | ③向け直す |
+| observe_diag.py | 2227 | 直書き | HT_DCPHASE | ③向け直す |
+| observe_diag.py | 2227 | 直書き | HT_INPHASE% | ③向け直す |
+| observe_diag.py | 2227 | 直書き | HT_QUAD% | ③向け直す |
+| observe_diag.py | 2228 | 直書き | HT_LEADSINE | ③向け直す |
+| observe_diag.py | 2228 | 直書き | HT_SINE | ③向け直す |
+| observe_diag.py | 2228 | 直書き | HT_TRENDMODE | ③向け直す |
+| observe_diag.py | 2228 | 直書き | MSW_LEAD | ③向け直す |
+| observe_diag.py | 2228 | 直書き | MSW_SINE | ③向け直す |
+| observe_diag.py | 2241 | 直書き | 実体幅比 | ③向け直す |
+| observe_diag.py | 2242 | 直書き | 内側バー | ③向け直す |
+| observe_diag.py | 2246 | 直書き | HA実体% | ③向け直す |
+| observe_diag.py | 2247 | 直書き | HA上ヒゲ比 | ③向け直す |
+| observe_diag.py | 2248 | 直書き | HA下ヒゲ比 | ③向け直す |
+| observe_diag.py | 2467 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 2467 | 読む | files | ③向け直す |
+| observe_diag.py | 2515 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 2515 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 2515 | 直書き | sup_hi | ③向け直す |
+| observe_diag.py | 2515 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 2516 | 直書き | W% | ③向け直す |
+| observe_diag.py | 2516 | 直書き | mid | ③向け直す |
+| observe_diag.py | 2516 | 直書き | 下半分位置 | ③向け直す |
+| observe_diag.py | 2516 | 直書き | 帯内位置% | ③向け直す |
+| observe_diag.py | 2559 | 直書き | 帯内位置% | ③向け直す |
+| observe_diag.py | 2560 | 直書き | 帯内位置% | ③向け直す |
+| observe_diag.py | 2851 | 読む | g | ③向け直す |
+| observe_diag.py | 2851 | 読む | g | ③向け直す |
+| observe_diag.py | 2852 | 読む | g | ③向け直す |
+| observe_diag.py | 2875 | 持つ | g0（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
+| observe_diag.py | 2876 | 読む | g0 | ③向け直す |
+| observe_diag.py | 2921 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3017 | 読む | g | ③向け直す |
+| observe_diag.py | 3023 | 読む | g | ③向け直す |
+| observe_diag.py | 3069 | 読む | g | ③向け直す |
+| observe_diag.py | 3074 | 読む | g | ③向け直す |
+| observe_diag.py | 3089 | 読む | g | ③向け直す |
+| observe_diag.py | 3090 | 読む | g | ③向け直す |
+| observe_diag.py | 3093 | 読む | g | ③向け直す |
+| observe_diag.py | 3094 | 読む | g | ③向け直す |
+| observe_diag.py | 3094 | 読む | g | ③向け直す |
+| observe_diag.py | 3095 | 読む | g | ③向け直す |
+| observe_diag.py | 3095 | 読む | g | ③向け直す |
+| observe_diag.py | 3096 | 読む | g | ③向け直す |
+| observe_diag.py | 3096 | 読む | g | ③向け直す |
+| observe_diag.py | 3097 | 読む | g | ③向け直す |
+| observe_diag.py | 3097 | 読む | g | ③向け直す |
+| observe_diag.py | 3098 | 読む | g | ③向け直す |
+| observe_diag.py | 3099 | 読む | g | ③向け直す |
+| observe_diag.py | 3099 | 読む | g | ③向け直す |
+| observe_diag.py | 3100 | 読む | g | ③向け直す |
+| observe_diag.py | 3217 | 読む | g | ③向け直す |
+| observe_diag.py | 3220 | 読む | g | ③向け直す |
+| observe_diag.py | 3426 | 直書き | ATR% | ③向け直す |
+| observe_diag.py | 3426 | 直書き | BB幅 | ③向け直す |
+| observe_diag.py | 3426 | 直書き | Donchian幅 | ③向け直す |
+| observe_diag.py | 3426 | 直書き | realized_vol | ③向け直す |
+| observe_diag.py | 3428 | 直書き | CMF | ③向け直す |
+| observe_diag.py | 3428 | 直書き | CVD | ③向け直す |
+| observe_diag.py | 3428 | 直書き | L-S比 | ③向け直す |
+| observe_diag.py | 3428 | 直書き | MFI | ③向け直す |
+| observe_diag.py | 3428 | 直書き | taker_ls | ③向け直す |
+| observe_diag.py | 3428 | 直書き | volume_ratio | ③向け直す |
+| observe_diag.py | 3430 | 直書き | body比 | ③向け直す |
+| observe_diag.py | 3430 | 直書き | pinbar | ③向け直す |
+| observe_diag.py | 3430 | 直書き | 包み足 | ③向け直す |
+| observe_diag.py | 3430 | 直書き | 連続本数 | ③向け直す |
+| observe_diag.py | 3432 | 直書き | fib位置 | ③向け直す |
+| observe_diag.py | 3433 | 直書き | BB%b | ③向け直す |
+| observe_diag.py | 3433 | 直書き | pivotPP | ③向け直す |
+| observe_diag.py | 3433 | 直書き | zscore | ③向け直す |
+| observe_diag.py | 3433 | 直書き | 形スコア | ③向け直す |
+| observe_diag.py | 3475 | 持つ | g（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
+| observe_diag.py | 3478 | 読む | g | ③向け直す |
+| observe_diag.py | 3491 | 読む | g | ③向け直す |
+| observe_diag.py | 3492 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 3492 | 直書き | sup_hi | ③向け直す |
+| observe_diag.py | 3492 | 読む | g | ③向け直す |
+| observe_diag.py | 3492 | 読む | g | ③向け直す |
+| observe_diag.py | 3492 | 読む | g | ③向け直す |
+| observe_diag.py | 3493 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 3493 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 3493 | 読む | g | ③向け直す |
+| observe_diag.py | 3493 | 読む | g | ③向け直す |
+| observe_diag.py | 3494 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3494 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 3494 | 直書き | sup_hi | ③向け直す |
+| observe_diag.py | 3494 | 読む | g | ③向け直す |
+| observe_diag.py | 3494 | 読む | g | ③向け直す |
+| observe_diag.py | 3504 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 3504 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 3514 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3514 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3519 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 3519 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 3539 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 3539 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 3552 | 直書き | sup_hi | ③向け直す |
+| observe_diag.py | 3552 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 3559 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 3559 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 3576 | 持つ | (lo_edge, hi_edge)（名前 2・例 res_lo, sup_hi） | ①写す→②消す |
+| observe_diag.py | 3604 | 読む | json の名前「場面バーの抽出（型は登録表 _SCENE_KINDS・パラメータは observe_config.json の scen」 | ③向け直す |
+| observe_diag.py | 3609 | 読む | g | ③向け直す |
+| observe_diag.py | 3610 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3614 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3631 | 持つ | (res_hi, res_lo)（名前 2・例 res_hi, res_lo） | ①写す→②消す |
+| observe_diag.py | 3632 | 持つ | (sup_lo, sup_hi)（名前 2・例 sup_hi, sup_lo） | ①写す→②消す |
+| observe_diag.py | 3681 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3708 | 持つ | (res_hi, res_lo)（名前 2・例 res_hi, res_lo） | ①写す→②消す |
+| observe_diag.py | 3709 | 持つ | (sup_lo, sup_hi)（名前 2・例 sup_hi, sup_lo） | ①写す→②消す |
+| observe_diag.py | 3710 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3763 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3765 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3797 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3913 | 直書き | mid | ③向け直す |
+| observe_diag.py | 3935 | 読む | json の名前「 が無い（observe_config.json・定義済み 」 | ③向け直す |
+| observe_diag.py | 3938 | 読む | g | ③向け直す |
+| observe_diag.py | 3951 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 3964 | 読む | json の名前「
   ⚠️ この計画の外は検証しない。場面・バリア・探索条件を変えるのは observe_config.json を編集」 | ③向け直す |
-| observe_diag.py | 3937 | 読む | json の名前「 が無い（observe_config.json）」 | ③向け直す |
-| observe_diag.py | 3941 | 読む | g | ③向け直す |
-| observe_diag.py | 3959 | 直書き | mid | ③向け直す |
-| observe_diag.py | 3967 | 読む | g | ③向け直す |
-| observe_diag.py | 3990 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3990 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 3990 | 読む | g | ③向け直す |
-| observe_diag.py | 3990 | 読む | g | ③向け直す |
-| observe_diag.py | 4070 | 直書き | mid | ③向け直す |
-| observe_diag.py | 4075 | 読む | g | ③向け直す |
-| observe_diag.py | 4101 | 読む | json の名前「検証計画の自動生成＝検証する内容・項目・条件を実値から出す1枚。検証する前にまこさんへ提出する。
+| observe_diag.py | 3972 | 読む | json の名前「 が無い（observe_config.json）」 | ③向け直す |
+| observe_diag.py | 3976 | 読む | g | ③向け直す |
+| observe_diag.py | 3994 | 直書き | mid | ③向け直す |
+| observe_diag.py | 4002 | 読む | g | ③向け直す |
+| observe_diag.py | 4025 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 4025 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 4025 | 読む | g | ③向け直す |
+| observe_diag.py | 4025 | 読む | g | ③向け直す |
+| observe_diag.py | 4105 | 直書き | mid | ③向け直す |
+| observe_diag.py | 4110 | 読む | g | ③向け直す |
+| observe_diag.py | 4136 | 読む | json の名前「検証計画の自動生成＝検証する内容・項目・条件を実値から出す1枚。検証する前にまこさんへ提出する。
     CC は計画を」 | ③向け直す |
-| observe_diag.py | 4124 | 読む | g | ③向け直す |
-| observe_diag.py | 4124 | 読む | g | ③向け直す |
-| observe_diag.py | 4126 | 読む | g | ③向け直す |
-| observe_diag.py | 4133 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 4149 | 読む | json の名前「
+| observe_diag.py | 4159 | 読む | g | ③向け直す |
+| observe_diag.py | 4159 | 読む | g | ③向け直す |
+| observe_diag.py | 4161 | 読む | g | ③向け直す |
+| observe_diag.py | 4168 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 4184 | 読む | json の名前「
   ⚠️ この計画の外は検証しない。項目を足す/減らすのは observe_config.json を編集して計画を再」 | ③向け直す |
-| observe_diag.py | 4224 | 読む | g | ③向け直す |
-| observe_diag.py | 4224 | 読む | g | ③向け直す |
-| observe_diag.py | 4224 | 読む | g | ③向け直す |
-| observe_diag.py | 4225 | 読む | g | ③向け直す |
-| observe_diag.py | 4225 | 読む | g | ③向け直す |
-| observe_diag.py | 4228 | 読む | g | ③向け直す |
-| observe_diag.py | 4232 | 読む | g | ③向け直す |
-| observe_diag.py | 4232 | 読む | g | ③向け直す |
-| observe_diag.py | 4238 | 読む | g | ③向け直す |
+| observe_diag.py | 4259 | 読む | g | ③向け直す |
+| observe_diag.py | 4259 | 読む | g | ③向け直す |
+| observe_diag.py | 4259 | 読む | g | ③向け直す |
+| observe_diag.py | 4260 | 読む | g | ③向け直す |
+| observe_diag.py | 4260 | 読む | g | ③向け直す |
+| observe_diag.py | 4263 | 読む | g | ③向け直す |
 | observe_diag.py | 4267 | 読む | g | ③向け直す |
-| observe_diag.py | 4460 | 読む | g | ③向け直す |
-| observe_diag.py | 4460 | 読む | g | ③向け直す |
-| observe_diag.py | 4461 | 読む | g | ③向け直す |
-| observe_diag.py | 4461 | 読む | g | ③向け直す |
-| observe_diag.py | 4462 | 読む | g | ③向け直す |
-| observe_diag.py | 4477 | 読む | json の名前「  足の内訳（observe_config.json の timeframes・全 」 | ③向け直す |
-| observe_diag.py | 4711 | 読む | REFS | ③向け直す |
-| observe_diag.py | 4712 | 読む | REFS | ③向け直す |
-| observe_diag.py | 4714 | 読む | REFS | ③向け直す |
-| observe_diag.py | 4723 | 読む | REFS | ③向け直す |
-| observe_diag.py | 4750 | 読む | REFS | ③向け直す |
-| observe_diag.py | 4887 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 4887 | 読む | files | ③向け直す |
-| observe_diag.py | 4889 | 読む | files | ③向け直す |
-| observe_diag.py | 4891 | 読む | files | ③向け直す |
-| observe_diag.py | 4899 | 読む | files | ③向け直す |
-| observe_diag.py | 4967 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 5013 | 読む | g | ③向け直す |
-| observe_diag.py | 5013 | 読む | g | ③向け直す |
-| observe_diag.py | 5013 | 読む | g | ③向け直す |
-| observe_diag.py | 5032 | 読む | REFS | ③向け直す |
-| observe_diag.py | 5033 | 読む | fams | ③向け直す |
-| observe_diag.py | 5036 | 読む | fams | ③向け直す |
-| observe_diag.py | 5039 | 読む | fams | ③向け直す |
-| observe_diag.py | 5064 | 持つ | _V9_PERIOD_PATTERNS（名前 4・例 ADX, ATR%, RCI） | ①写す→②消す |
-| observe_diag.py | 5092 | 持つ | _V9_PERIOD_PARAMS（名前 1・例 RSI） | ①写す→②消す |
-| observe_diag.py | 5102 | 読む | _V9_PERIOD_PATTERNS | ③向け直す |
-| observe_diag.py | 5119 | 読む | _V9_PERIOD_PARAMS | ③向け直す |
-| observe_diag.py | 5339 | 読む | g | ③向け直す |
-| observe_diag.py | 5339 | 読む | g | ③向け直す |
-| observe_diag.py | 5355 | 持つ | _V9_LABEL_TO_FAMILIES（名前 15・例 ADX, ATR%, BB%b） | ①写す→②消す |
-| observe_diag.py | 5372 | 読む | _V9_LABEL_TO_FAMILIES | ③向け直す |
-| observe_diag.py | 5382 | 読む | files | ③向け直す |
-| observe_diag.py | 5394 | 読む | files | ③向け直す |
-| observe_diag.py | 5406 | 持つ | _USE_PATTERNS（名前 15・例 ADX, ATR%, BB%b） | ①写す→②消す |
-| observe_diag.py | 5431 | 読む | _USE_PATTERNS | ③向け直す |
-| observe_diag.py | 5437 | 読む | files | ③向け直す |
-| observe_diag.py | 5535 | 読む | g | ③向け直す |
-| observe_diag.py | 5536 | 読む | g | ③向け直す |
-| observe_diag.py | 5542 | 読む | g | ③向け直す |
-| observe_diag.py | 5543 | 読む | g | ③向け直す |
-| observe_diag.py | 5544 | 読む | g | ③向け直す |
-| observe_diag.py | 5545 | 読む | g | ③向け直す |
-| observe_diag.py | 5545 | 読む | g | ③向け直す |
-| observe_diag.py | 5546 | 読む | g | ③向け直す |
-| observe_diag.py | 5546 | 読む | g | ③向け直す |
-| observe_diag.py | 5546 | 読む | g | ③向け直す |
-| observe_diag.py | 5547 | 読む | g | ③向け直す |
-| observe_diag.py | 5547 | 読む | g | ③向け直す |
-| observe_diag.py | 5549 | 読む | g | ③向け直す |
-| observe_diag.py | 5549 | 読む | g | ③向け直す |
-| observe_diag.py | 5552 | 読む | g | ③向け直す |
-| observe_diag.py | 5552 | 読む | g | ③向け直す |
-| observe_diag.py | 5555 | 読む | g | ③向け直す |
-| observe_diag.py | 5555 | 読む | g | ③向け直す |
-| observe_diag.py | 5556 | 読む | g | ③向け直す |
-| observe_diag.py | 5594 | 読む | _SR_ATR_TOL_LO | ③向け直す |
-| observe_diag.py | 5595 | 読む | _SR_ATR_TOL_HI | ③向け直す |
-| observe_diag.py | 5615 | 読む | _SR_ATR_TOL_HI | ③向け直す |
-| observe_diag.py | 5615 | 読む | _SR_ATR_TOL_LO | ③向け直す |
-| observe_diag.py | 5844 | 読む | json の名前「search_limits.json」 | ③向け直す |
-| observe_diag.py | 5848 | 読む | json の名前「部品の n・m に使う数字を recipes/search_limits.json の int_grid から引く（手で」 | ③向け直す |
-| observe_diag.py | 5851 | 読む | g | ③向け直す |
-| observe_diag.py | 5853 | 読む | g | ③向け直す |
-| observe_diag.py | 6028 | 読む | json の名前「  ★『対応なし』の列だけ、うちの材料に条件の部品を当てた列とも比べる（部品4種＝そのまま／n本前との差／m本の平均／m」 | ③向け直す |
-| observe_diag.py | 6068 | 持つ | _HOUKOU2PROP（区分の言葉 8（例 none, reversal, trend）） | ①写す→②消す |
-| observe_diag.py | 6073 | 読む | INDICATOR_TABLE | ③向け直す |
-| observe_diag.py | 6076 | 読む | INDICATOR_TABLE | ③向け直す |
-| observe_diag.py | 6080 | 読む | json の名前「.claude/ratchet/indicator_switch.json」 | ③向け直す |
-| observe_diag.py | 6184 | 読む | INDICATOR_TABLE | ③向け直す |
-| observe_diag.py | 6196 | 読む | _HOUKOU2PROP | ③向け直す |
-| observe_diag.py | 6200 | 読む | _HOUKOU2PROP | ③向け直す |
-| observe_diag.py | 6303 | 読む | FAMILY_LINEAGE | ③向け直す |
-| observe_diag.py | 6317 | 読む | _OSC_BOUNDS | ③向け直す |
-| observe_diag.py | 6318 | 読む | _OSC_PCTL | ③向け直す |
-| observe_diag.py | 6488 | 直書き | DI差 | ③向け直す |
-| observe_diag.py | 6496 | 直書き | ATR% | ③向け直す |
-| observe_diag.py | 6497 | 直書き | ATR% | ③向け直す |
-| observe_diag.py | 6543 | 持つ | REGIME_LABELS（区分の言葉 2（例 向き, 強さ）） | ①写す→②消す |
-| observe_diag.py | 6678 | 読む | json の名前「signal_families.json」 | ③向け直す |
-| observe_diag.py | 6732 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 6791 | 読む | g | ③向け直す |
-| observe_diag.py | 6792 | 読む | g | ③向け直す |
-| observe_diag.py | 6818 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 6846 | 読む | FAMILY_LINEAGE | ③向け直す |
-| observe_diag.py | 6850 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 6884 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 6911 | 読む | json の名前「material_ranking.json」 | ③向け直す |
-| observe_diag.py | 6967 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 6984 | 読む | files | ③向け直す |
-| observe_diag.py | 6993 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7040 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7075 | 読む | json の名前「material_ranking.json」 | ③向け直す |
-| observe_diag.py | 7143 | 持つ | files（名前 3・例 CVD, L-S比, taker_ls） | ①写す→②消す |
-| observe_diag.py | 7145 | 読む | files | ③向け直す |
-| observe_diag.py | 7148 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7149 | 読む | files | ③向け直す |
-| observe_diag.py | 7169 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7174 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7176 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7177 | 読む | REGIME_LABELS | ③向け直す |
-| observe_diag.py | 7227 | 読む | g | ③向け直す |
-| observe_diag.py | 7227 | 読む | g | ③向け直す |
-| observe_diag.py | 7244 | 読む | g | ③向け直す |
-| observe_diag.py | 7250 | 読む | g | ③向け直す |
-| observe_diag.py | 7254 | 読む | g | ③向け直す |
-| observe_diag.py | 7267 | 読む | g | ③向け直す |
-| observe_diag.py | 7267 | 読む | g | ③向け直す |
-| observe_diag.py | 7419 | 直書き | HT_INPHASE% | ③向け直す |
-| observe_diag.py | 7461 | 読む | FAMILY_LINEAGE | ③向け直す |
-| observe_diag.py | 7473 | 読む | FAMILY_LINEAGE | ③向け直す |
-| observe_diag.py | 7496 | 持つ | fams（名前 10・例 LeeMykland, LeeMykland_E36版, 帯VA） | ①写す→②消す |
-| observe_diag.py | 7501 | 読む | fams | ③向け直す |
-| observe_diag.py | 7503 | 読む | fams | ③向け直す |
-| observe_diag.py | 7708 | 持つ | _cases（名前 1・例 W字確定谷） | ①写す→②消す |
-| observe_diag.py | 7712 | 直書き | 帯スイング | ③向け直す |
-| observe_diag.py | 7712 | 直書き | 帯スイング1時間ATR | ③向け直す |
-| observe_diag.py | 7713 | 読む | _cases | ③向け直す |
-| observe_diag.py | 7715 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| observe_diag.py | 7730 | 読む | _cases | ③向け直す |
-| observe_diag.py | 7730 | 読む | _cases | ③向け直す |
-| observe_diag.py | 7785 | 読む | REFS | ③向け直す |
-| observe_diag.py | 7858 | 読む | REFS | ③向け直す |
-| observe_diag.py | 7875 | 直書き | AO% | ③向け直す |
-| observe_diag.py | 7878 | 直書き | RCI | ③向け直す |
-| observe_diag.py | 7878 | 読む | REFS | ③向け直す |
-| observe_diag.py | 7899 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| observe_diag.py | 7912 | 読む | json の名前「search_limits.json」 | ③向け直す |
-| observe_diag.py | 7915 | 読む | MATERIAL_FAMILIES | ③向け直す |
-| observe_diag.py | 7934 | 直書き | ROC | ③向け直す |
-| observe_diag.py | 7936 | 直書き | ROC | ③向け直す |
-| observe_diag.py | 8172 | 持つ | gg（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
-| observe_diag.py | 8175 | 読む | gg | ③向け直す |
-| observe_diag.py | 8182 | 直書き | mid | ③向け直す |
-| observe_diag.py | 8182 | 読む | gg | ③向け直す |
-| observe_diag.py | 8214 | 直書き | res_hi | ③向け直す |
-| observe_diag.py | 8214 | 直書き | res_lo | ③向け直す |
-| observe_diag.py | 8215 | 直書き | sup_hi | ③向け直す |
-| observe_diag.py | 8215 | 直書き | sup_lo | ③向け直す |
-| observe_diag.py | 8226 | 持つ | _ng5（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
-| observe_diag.py | 8233 | 読む | _ng5 | ③向け直す |
-| observe_diag.py | 8360 | 持つ | _fake（名前 1・例 RSI） | ①写す→②消す |
-| observe_diag.py | 8362 | 読む | _fake | ③向け直す |
-| observe_diag.py | 8374 | 直書き | fractal安値距離% | ③向け直す |
-| observe_diag.py | 8374 | 直書き | fractal高値距離% | ③向け直す |
-| observe_diag.py | 8374 | 直書き | 高値切り上げ幅% | ③向け直す |
-| observe_diag.py | 8375 | 直書き | 安値切り上げ幅% | ③向け直す |
-| observe_diag.py | 8375 | 直書き | 構造破断距離% | ③向け直す |
-| observe_diag.py | 8429 | 直書き | POC | ③向け直す |
-| observe_diag.py | 8429 | 直書き | VAH | ③向け直す |
-| observe_diag.py | 8429 | 直書き | VAL | ③向け直す |
-| observe_diag.py | 8450 | 直書き | POC | ③向け直す |
-| observe_diag.py | 8450 | 直書き | VAH | ③向け直す |
-| observe_diag.py | 8450 | 直書き | VAL | ③向け直す |
-| observe_diag.py | 8451 | 読む | REFS | ③向け直す |
-| observe_diag.py | 8485 | 直書き | 時刻 | ③向け直す |
-| observe_diag.py | 8485 | 直書き | 曜日 | ③向け直す |
-| observe_diag.py | 8485 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 8498 | 直書き | mid | ③向け直す |
-| observe_diag.py | 8498 | 直書き | mid | ③向け直す |
-| observe_diag.py | 8498 | 読む | g | ③向け直す |
-| observe_diag.py | 8498 | 読む | g | ③向け直す |
-| observe_diag.py | 8499 | 読む | g | ③向け直す |
-| observe_diag.py | 8502 | 読む | CONST_REGISTRY | ③向け直す |
-| observe_diag.py | 8518 | 持つ | _files_ok（名前 1・例 taker_ls） | ①写す→②消す |
-| observe_diag.py | 8520 | 読む | _files_ok | ③向け直す |
-| observe_diag.py | 8527 | 持つ | _files_bad（名前 1・例 taker_ls） | ①写す→②消す |
-| observe_diag.py | 8529 | 読む | _files_bad | ③向け直す |
-| observe_diag.py | 8546 | 直書き | CVD | ③向け直す |
-| observe_diag.py | 8548 | 直書き | CVD | ③向け直す |
-| observe_diag.py | 8566 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 8575 | 直書き | taker_ls | ③向け直す |
-| observe_diag.py | 8586 | 読む | _DEMAND_FILES | ③向け直す |
-| observe_diag.py | 8593 | 直書き | 包み足 | ③向け直す |
-| observe_diag.py | 8594 | 直書き | 包み足 | ③向け直す |
-| observe_diag.py | 8600 | 直書き | EMA9傾き% | ③向け直す |
-| observe_diag.py | 8600 | 直書き | RSI14 | ③向け直す |
-| observe_diag.py | 8600 | 直書き | close vs EMA9% | ③向け直す |
-| observe_diag.py | 8609 | 直書き | RSI14 | ③向け直す |
-| observe_diag.py | 8620 | 読む | REFS | ③向け直す |
-| observe_diag.py | 8685 | 直書き | RCI | ③向け直す |
-| observe_diag.py | 8707 | 持つ | _want14（名前 3・例 BB幅(20,2.0), RSI21, fib位置20） | ①写す→②消す |
-| observe_diag.py | 8708 | 読む | _want14 | ③向け直す |
-| observe_diag.py | 8709 | 読む | _want14 | ③向け直す |
-| observe_diag.py | 8717 | 読む | _want14 | ③向け直す |
-| observe_diag.py | 8745 | 直書き | RSI21 | ③向け直す |
-| observe_diag.py | 8777 | 直書き | RCI | ③向け直す |
-| observe_diag.py | 8780 | 直書き | RCI | ③向け直す |
-| observe_diag.py | 8951 | 読む | json の名前「Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の」 | ③向け直す |
-| observe_diag.py | 8972 | 読む | json の名前「observe_config.json のパス（既定は同ディレクトリ）」 | ③向け直す |
+| observe_diag.py | 4267 | 読む | g | ③向け直す |
+| observe_diag.py | 4273 | 読む | g | ③向け直す |
+| observe_diag.py | 4302 | 読む | g | ③向け直す |
+| observe_diag.py | 4495 | 読む | g | ③向け直す |
+| observe_diag.py | 4495 | 読む | g | ③向け直す |
+| observe_diag.py | 4496 | 読む | g | ③向け直す |
+| observe_diag.py | 4496 | 読む | g | ③向け直す |
+| observe_diag.py | 4497 | 読む | g | ③向け直す |
+| observe_diag.py | 4512 | 読む | json の名前「  足の内訳（observe_config.json の timeframes・全 」 | ③向け直す |
+| observe_diag.py | 4746 | 読む | REFS | ③向け直す |
+| observe_diag.py | 4747 | 読む | REFS | ③向け直す |
+| observe_diag.py | 4749 | 読む | REFS | ③向け直す |
+| observe_diag.py | 4758 | 読む | REFS | ③向け直す |
+| observe_diag.py | 4785 | 読む | REFS | ③向け直す |
+| observe_diag.py | 4922 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 4922 | 読む | files | ③向け直す |
+| observe_diag.py | 4924 | 読む | files | ③向け直す |
+| observe_diag.py | 4926 | 読む | files | ③向け直す |
+| observe_diag.py | 4934 | 読む | files | ③向け直す |
+| observe_diag.py | 5002 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 5048 | 読む | g | ③向け直す |
+| observe_diag.py | 5048 | 読む | g | ③向け直す |
+| observe_diag.py | 5048 | 読む | g | ③向け直す |
+| observe_diag.py | 5067 | 読む | REFS | ③向け直す |
+| observe_diag.py | 5068 | 読む | fams | ③向け直す |
+| observe_diag.py | 5071 | 読む | fams | ③向け直す |
+| observe_diag.py | 5074 | 読む | fams | ③向け直す |
+| observe_diag.py | 5099 | 持つ | _V9_PERIOD_PATTERNS（名前 4・例 ADX, ATR%, RCI） | ①写す→②消す |
+| observe_diag.py | 5127 | 持つ | _V9_PERIOD_PARAMS（名前 1・例 RSI） | ①写す→②消す |
+| observe_diag.py | 5137 | 読む | _V9_PERIOD_PATTERNS | ③向け直す |
+| observe_diag.py | 5154 | 読む | _V9_PERIOD_PARAMS | ③向け直す |
+| observe_diag.py | 5374 | 読む | g | ③向け直す |
+| observe_diag.py | 5374 | 読む | g | ③向け直す |
+| observe_diag.py | 5390 | 持つ | _V9_LABEL_TO_FAMILIES（名前 15・例 ADX, ATR%, BB%b） | ①写す→②消す |
+| observe_diag.py | 5407 | 読む | _V9_LABEL_TO_FAMILIES | ③向け直す |
+| observe_diag.py | 5417 | 読む | files | ③向け直す |
+| observe_diag.py | 5429 | 読む | files | ③向け直す |
+| observe_diag.py | 5441 | 持つ | _USE_PATTERNS（名前 15・例 ADX, ATR%, BB%b） | ①写す→②消す |
+| observe_diag.py | 5466 | 読む | _USE_PATTERNS | ③向け直す |
+| observe_diag.py | 5472 | 読む | files | ③向け直す |
+| observe_diag.py | 5570 | 読む | g | ③向け直す |
+| observe_diag.py | 5571 | 読む | g | ③向け直す |
+| observe_diag.py | 5577 | 読む | g | ③向け直す |
+| observe_diag.py | 5578 | 読む | g | ③向け直す |
+| observe_diag.py | 5579 | 読む | g | ③向け直す |
+| observe_diag.py | 5580 | 読む | g | ③向け直す |
+| observe_diag.py | 5580 | 読む | g | ③向け直す |
+| observe_diag.py | 5581 | 読む | g | ③向け直す |
+| observe_diag.py | 5581 | 読む | g | ③向け直す |
+| observe_diag.py | 5581 | 読む | g | ③向け直す |
+| observe_diag.py | 5582 | 読む | g | ③向け直す |
+| observe_diag.py | 5582 | 読む | g | ③向け直す |
+| observe_diag.py | 5584 | 読む | g | ③向け直す |
+| observe_diag.py | 5584 | 読む | g | ③向け直す |
+| observe_diag.py | 5587 | 読む | g | ③向け直す |
+| observe_diag.py | 5587 | 読む | g | ③向け直す |
+| observe_diag.py | 5590 | 読む | g | ③向け直す |
+| observe_diag.py | 5590 | 読む | g | ③向け直す |
+| observe_diag.py | 5591 | 読む | g | ③向け直す |
+| observe_diag.py | 5629 | 読む | _SR_ATR_TOL_LO | ③向け直す |
+| observe_diag.py | 5630 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 5650 | 読む | _SR_ATR_TOL_HI | ③向け直す |
+| observe_diag.py | 5650 | 読む | _SR_ATR_TOL_LO | ③向け直す |
+| observe_diag.py | 5879 | 読む | json の名前「search_limits.json」 | ③向け直す |
+| observe_diag.py | 5883 | 読む | json の名前「部品の n・m に使う数字を recipes/search_limits.json の int_grid から引く（手で」 | ③向け直す |
+| observe_diag.py | 5886 | 読む | g | ③向け直す |
+| observe_diag.py | 5888 | 読む | g | ③向け直す |
+| observe_diag.py | 6063 | 読む | json の名前「  ★『対応なし』の列だけ、うちの材料に条件の部品を当てた列とも比べる（部品4種＝そのまま／n本前との差／m本の平均／m」 | ③向け直す |
+| observe_diag.py | 6103 | 持つ | _HOUKOU2PROP（区分の言葉 8（例 none, reversal, trend）） | ①写す→②消す |
+| observe_diag.py | 6108 | 読む | INDICATOR_TABLE | ③向け直す |
+| observe_diag.py | 6111 | 読む | INDICATOR_TABLE | ③向け直す |
+| observe_diag.py | 6115 | 読む | json の名前「.claude/ratchet/indicator_switch.json」 | ③向け直す |
+| observe_diag.py | 6219 | 読む | INDICATOR_TABLE | ③向け直す |
+| observe_diag.py | 6231 | 読む | _HOUKOU2PROP | ③向け直す |
+| observe_diag.py | 6235 | 読む | _HOUKOU2PROP | ③向け直す |
+| observe_diag.py | 6338 | 読む | FAMILY_LINEAGE | ③向け直す |
+| observe_diag.py | 6352 | 読む | _OSC_BOUNDS | ③向け直す |
+| observe_diag.py | 6353 | 読む | _OSC_PCTL | ③向け直す |
+| observe_diag.py | 6523 | 直書き | DI差 | ③向け直す |
+| observe_diag.py | 6531 | 直書き | ATR% | ③向け直す |
+| observe_diag.py | 6532 | 直書き | ATR% | ③向け直す |
+| observe_diag.py | 6578 | 持つ | REGIME_LABELS（区分の言葉 2（例 向き, 強さ）） | ①写す→②消す |
+| observe_diag.py | 6713 | 読む | json の名前「signal_families.json」 | ③向け直す |
+| observe_diag.py | 6767 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 6826 | 読む | g | ③向け直す |
+| observe_diag.py | 6827 | 読む | g | ③向け直す |
+| observe_diag.py | 6853 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 6881 | 読む | FAMILY_LINEAGE | ③向け直す |
+| observe_diag.py | 6885 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 6919 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 6946 | 読む | json の名前「material_ranking.json」 | ③向け直す |
+| observe_diag.py | 7002 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 7019 | 読む | files | ③向け直す |
+| observe_diag.py | 7028 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7075 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7110 | 読む | json の名前「material_ranking.json」 | ③向け直す |
+| observe_diag.py | 7178 | 持つ | files（名前 3・例 CVD, L-S比, taker_ls） | ①写す→②消す |
+| observe_diag.py | 7180 | 読む | files | ③向け直す |
+| observe_diag.py | 7183 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7184 | 読む | files | ③向け直す |
+| observe_diag.py | 7204 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7209 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7211 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7212 | 読む | REGIME_LABELS | ③向け直す |
+| observe_diag.py | 7262 | 読む | g | ③向け直す |
+| observe_diag.py | 7262 | 読む | g | ③向け直す |
+| observe_diag.py | 7279 | 読む | g | ③向け直す |
+| observe_diag.py | 7285 | 読む | g | ③向け直す |
+| observe_diag.py | 7289 | 読む | g | ③向け直す |
+| observe_diag.py | 7302 | 読む | g | ③向け直す |
+| observe_diag.py | 7302 | 読む | g | ③向け直す |
+| observe_diag.py | 7454 | 直書き | HT_INPHASE% | ③向け直す |
+| observe_diag.py | 7496 | 読む | FAMILY_LINEAGE | ③向け直す |
+| observe_diag.py | 7508 | 読む | FAMILY_LINEAGE | ③向け直す |
+| observe_diag.py | 7531 | 持つ | fams（名前 10・例 LeeMykland, LeeMykland_E36版, 帯VA） | ①写す→②消す |
+| observe_diag.py | 7536 | 読む | fams | ③向け直す |
+| observe_diag.py | 7538 | 読む | fams | ③向け直す |
+| observe_diag.py | 7743 | 持つ | _cases（名前 1・例 W字確定谷） | ①写す→②消す |
+| observe_diag.py | 7747 | 直書き | 帯スイング | ③向け直す |
+| observe_diag.py | 7747 | 直書き | 帯スイング1時間ATR | ③向け直す |
+| observe_diag.py | 7748 | 読む | _cases | ③向け直す |
+| observe_diag.py | 7750 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| observe_diag.py | 7765 | 読む | _cases | ③向け直す |
+| observe_diag.py | 7765 | 読む | _cases | ③向け直す |
+| observe_diag.py | 7820 | 読む | REFS | ③向け直す |
+| observe_diag.py | 7893 | 読む | REFS | ③向け直す |
+| observe_diag.py | 7910 | 直書き | AO% | ③向け直す |
+| observe_diag.py | 7913 | 直書き | RCI | ③向け直す |
+| observe_diag.py | 7913 | 読む | REFS | ③向け直す |
+| observe_diag.py | 7934 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| observe_diag.py | 7947 | 読む | json の名前「search_limits.json」 | ③向け直す |
+| observe_diag.py | 7950 | 読む | MATERIAL_FAMILIES | ③向け直す |
+| observe_diag.py | 7969 | 直書き | ROC | ③向け直す |
+| observe_diag.py | 7971 | 直書き | ROC | ③向け直す |
+| observe_diag.py | 8228 | 持つ | gg（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
+| observe_diag.py | 8231 | 読む | gg | ③向け直す |
+| observe_diag.py | 8238 | 直書き | mid | ③向け直す |
+| observe_diag.py | 8238 | 読む | gg | ③向け直す |
+| observe_diag.py | 8270 | 直書き | res_hi | ③向け直す |
+| observe_diag.py | 8270 | 直書き | res_lo | ③向け直す |
+| observe_diag.py | 8271 | 直書き | sup_hi | ③向け直す |
+| observe_diag.py | 8271 | 直書き | sup_lo | ③向け直す |
+| observe_diag.py | 8282 | 持つ | _ng5（名前 4・例 res_hi, res_lo, sup_hi） | ①写す→②消す |
+| observe_diag.py | 8289 | 読む | _ng5 | ③向け直す |
+| observe_diag.py | 8416 | 持つ | _fake（名前 1・例 RSI） | ①写す→②消す |
+| observe_diag.py | 8418 | 読む | _fake | ③向け直す |
+| observe_diag.py | 8430 | 直書き | fractal安値距離% | ③向け直す |
+| observe_diag.py | 8430 | 直書き | fractal高値距離% | ③向け直す |
+| observe_diag.py | 8430 | 直書き | 高値切り上げ幅% | ③向け直す |
+| observe_diag.py | 8431 | 直書き | 安値切り上げ幅% | ③向け直す |
+| observe_diag.py | 8431 | 直書き | 構造破断距離% | ③向け直す |
+| observe_diag.py | 8485 | 直書き | POC | ③向け直す |
+| observe_diag.py | 8485 | 直書き | VAH | ③向け直す |
+| observe_diag.py | 8485 | 直書き | VAL | ③向け直す |
+| observe_diag.py | 8506 | 直書き | POC | ③向け直す |
+| observe_diag.py | 8506 | 直書き | VAH | ③向け直す |
+| observe_diag.py | 8506 | 直書き | VAL | ③向け直す |
+| observe_diag.py | 8507 | 読む | REFS | ③向け直す |
+| observe_diag.py | 8541 | 直書き | 時刻 | ③向け直す |
+| observe_diag.py | 8541 | 直書き | 曜日 | ③向け直す |
+| observe_diag.py | 8541 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 8554 | 直書き | mid | ③向け直す |
+| observe_diag.py | 8554 | 直書き | mid | ③向け直す |
+| observe_diag.py | 8554 | 読む | g | ③向け直す |
+| observe_diag.py | 8554 | 読む | g | ③向け直す |
+| observe_diag.py | 8555 | 読む | g | ③向け直す |
+| observe_diag.py | 8558 | 読む | CONST_REGISTRY | ③向け直す |
+| observe_diag.py | 8574 | 持つ | _files_ok（名前 1・例 taker_ls） | ①写す→②消す |
+| observe_diag.py | 8576 | 読む | _files_ok | ③向け直す |
+| observe_diag.py | 8583 | 持つ | _files_bad（名前 1・例 taker_ls） | ①写す→②消す |
+| observe_diag.py | 8585 | 読む | _files_bad | ③向け直す |
+| observe_diag.py | 8602 | 直書き | CVD | ③向け直す |
+| observe_diag.py | 8604 | 直書き | CVD | ③向け直す |
+| observe_diag.py | 8622 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 8631 | 直書き | taker_ls | ③向け直す |
+| observe_diag.py | 8642 | 読む | _DEMAND_FILES | ③向け直す |
+| observe_diag.py | 8649 | 直書き | 包み足 | ③向け直す |
+| observe_diag.py | 8650 | 直書き | 包み足 | ③向け直す |
+| observe_diag.py | 8656 | 直書き | EMA9傾き% | ③向け直す |
+| observe_diag.py | 8656 | 直書き | RSI14 | ③向け直す |
+| observe_diag.py | 8656 | 直書き | close vs EMA9% | ③向け直す |
+| observe_diag.py | 8665 | 直書き | RSI14 | ③向け直す |
+| observe_diag.py | 8676 | 読む | REFS | ③向け直す |
+| observe_diag.py | 8741 | 直書き | RCI | ③向け直す |
+| observe_diag.py | 8763 | 持つ | _want14（名前 3・例 BB幅(20,2.0), RSI21, fib位置20） | ①写す→②消す |
+| observe_diag.py | 8764 | 読む | _want14 | ③向け直す |
+| observe_diag.py | 8765 | 読む | _want14 | ③向け直す |
+| observe_diag.py | 8773 | 読む | _want14 | ③向け直す |
+| observe_diag.py | 8801 | 直書き | RSI21 | ③向け直す |
+| observe_diag.py | 8833 | 直書き | RCI | ③向け直す |
+| observe_diag.py | 8836 | 直書き | RCI | ③向け直す |
+| observe_diag.py | 9007 | 読む | json の名前「Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の」 | ③向け直す |
+| observe_diag.py | 9028 | 読む | json の名前「observe_config.json のパス（既定は同ディレクトリ）」 | ③向け直す |
 | pre_audit_check.py | 109 | 読む | json の名前「observe_config.json」 | ③向け直す |
 | pre_audit_check.py | 113 | 読む | json の名前「recipes/search_limits.json」 | ③向け直す |
 | pre_audit_check.py | 114 | 読む | json の名前「/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/s」 | ③向け直す |

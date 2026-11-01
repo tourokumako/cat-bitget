@@ -1,0 +1,24 @@
+    if not _g14._group_usable_col("ROC12__5m", "ROC", "5m", None, _tb14):
+        ng.append("修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した")
+    # ── 工事 m2c15-catalog-redirect-20261101 の番人（2026-11-01・やることの表 F-1）──
+    #  ⑮build_catalog（読む口の列を作る組から作る）の名前の並びが、写す元の関数 _catalog_from_config と1本も違わない
+    _new15 = [nm for nm, _f, _d in build_catalog(cfg)]
+    _old15 = [nm for nm, _f, _d in _catalog_from_config(cfg)]
+    if _new15 != _old15:
+        _i15 = next((i for i, (a, b) in enumerate(zip(_new15, _old15)) if a != b), min(len(_new15), len(_old15)))
+        ng.append(f"[材料カタログ] build_catalog の名前の並びが、写す元の関数と違う（{len(_new15)} 本 ／ {len(_old15)} 本・"
+                  f"最初に違う番号 {_i15}＝{_new15[_i15] if _i15 < len(_new15) else 'なし'} ／ {_old15[_i15] if _i15 < len(_old15) else 'なし'}）")
+    #  ⑯build_catalog の構文の木に、cfg の鍵を読む所（cfg[...]・cfg.get(...)）が無い（集約の要件定義書 R6）
+    import ast as _ast16
+    import inspect as _in16
+    _fn16 = _ast16.parse(_in16.getsource(build_catalog))
+    _keys16 = sorted({n.slice.value for n in _ast16.walk(_fn16)
+                      if isinstance(n, _ast16.Subscript) and isinstance(n.value, _ast16.Name) and n.value.id == "cfg"
+                      and isinstance(n.slice, _ast16.Constant)}
+                     | {n.args[0].value for n in _ast16.walk(_fn16)
+                        if isinstance(n, _ast16.Call) and isinstance(n.func, _ast16.Attribute) and n.func.attr == "get"
+                        and isinstance(n.func.value, _ast16.Name) and n.func.value.id == "cfg"
+                        and n.args and isinstance(n.args[0], _ast16.Constant)})
+    if _keys16:
+        ng.append(f"[材料カタログ] build_catalog が設定の鍵を読んでいる: {_keys16}")
+    if exit_:

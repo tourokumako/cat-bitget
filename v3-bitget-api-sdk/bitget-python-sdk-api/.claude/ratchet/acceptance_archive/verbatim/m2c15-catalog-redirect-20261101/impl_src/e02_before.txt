@@ -1,0 +1,3 @@
+    if not _g14._group_usable_col("ROC12__5m", "ROC", "5m", None, _tb14):
+        ng.append("修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した")
+    if exit_:

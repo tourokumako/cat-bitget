@@ -1,0 +1,1 @@
+PART_SRC = "observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"

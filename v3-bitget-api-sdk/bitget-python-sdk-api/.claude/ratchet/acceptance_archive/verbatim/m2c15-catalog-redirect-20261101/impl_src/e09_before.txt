@@ -1,0 +1,3 @@
+    except SystemExit as e:
+        t(f"読む口: 写した物を読み込める（{e}）", False)
+    for name, good in ok:

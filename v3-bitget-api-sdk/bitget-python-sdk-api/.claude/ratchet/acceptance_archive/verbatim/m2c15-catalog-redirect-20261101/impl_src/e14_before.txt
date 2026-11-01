@@ -1,0 +1,4 @@
+    for no, add in (("②-9", SRC29_ADD), ("③-5", SRC35_ADD)):         # 監査 CP94 の修正9＝写す元の文を、いまの写し先に合わせる
+        e = next(x for x in t["要素"] if x["番号"] == no)
+        if add not in e["写す元"]:
+            e["写す元"] = e["写す元"] + add

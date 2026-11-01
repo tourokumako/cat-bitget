@@ -1,0 +1,16 @@
+        ★171番まで列を変えないため、決まり⑤の外（オフの指標と、オフの指標を使う部品の列の組も返す）。決まり③は守る＝「列を作る組」の要素が
+          オフなら止まる（監査 CP94 の修正12）。"""
+        out = []
+        for kind in ("指標の記録", "部品の記録"):
+            el = self._el("列を作る組", kind)
+            if (self.rows[kind][el].get("オン/オフ")) != "オン":
+                _stop(f"オフの要素は返さない: {kind} の「{el}」")
+            for nm, rec in self.records[kind].items():
+                cs = rec.get(el)
+                if not cs:
+                    continue
+                tpls, sets, order = cs.get("名前の型") or [], cs.get("組") or [], cs.get("並び") or []
+                if len(sets) != len(order):
+                    _stop(f"列を作る組の組と並びの数が合わない: {nm}")
+                for p, i in zip(sets, order):
+                    out.append({"記録": nm, "種類": kind, "名前の型": tpls[0] if tpls else None, "組": list(p), "並び": int(i)})

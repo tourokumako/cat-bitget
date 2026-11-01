@@ -151,7 +151,7 @@
        },
        {
         "欄": [
-         " `.claude/state/verbatim/m2c15-catalog-redirect-20261101/やることの表.md` ",
+         " `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-catalog-redirect-20261101/やることの表.md` ",
          " 161-2 の やることの表（247行）。一覧 F-1〜F-6・やらないこと Y-1〜Y-13（3-2 から外した2件＝F-3・Y-5）・4-4 の7段・7-6 の完成の条件。最後の行まで開く ",
          " 161-2 の承認の後 "
         ]
@@ -371,8 +371,8 @@
     {
      "文": [
       "",
-      "- **H2 の印**は `4a0cf53e210ae9cc…` です。未来のデータを使っていないかを調べる検査（`leak_causality_diag.py`）が、全部通ったときの記録です（`.claude/state/h2_pass.json`・2026-11-01 09:20:14・対象24ファイル）。",
-      "- **G2 の印**は `96ac47c5df71bf22…` です。型の表に沿った案かを見る審査が、見本に正しく反応するかを試すテスト（`gen_signal_families.py --verify`）が通ったときの記録です（`.claude/state/g2_pass.json`・2026-11-01 09:14:58・対象39ファイル）。",
+      "- **H2 の印**は `a40f400813f455ff…` です。未来のデータを使っていないかを調べる検査（`leak_causality_diag.py`）が、全部通ったときの記録です（`.claude/state/h2_pass.json`・2026-11-01 20:44:02・対象26ファイル）。",
+      "- **G2 の印**は `0697b60be4dcdb46…` です。型の表に沿った案かを見る審査が、見本に正しく反応するかを試すテスト（`gen_signal_families.py --verify`）が通ったときの記録です（`.claude/state/g2_pass.json`・2026-11-01 20:38:55・対象40ファイル）。",
       "- コードを触ったら、G2、H2 の順に印を取り直します。かかる時間は、G2 が約30秒、H2 が約5分です（教訓 L-565）。",
       ""
      ]

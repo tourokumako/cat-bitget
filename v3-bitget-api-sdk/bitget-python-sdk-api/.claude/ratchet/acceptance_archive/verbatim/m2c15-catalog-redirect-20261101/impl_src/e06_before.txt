@@ -1,0 +1,3 @@
+    bad = copy.deepcopy(base)
+    bad["指標の記録"]["RSI"]["計算の関数"]["登録の名前"] = None
+    t("計算: 登録の名前が無ければ止まる", calc_stops(Indicators(bad, timeframes=["5m"], registry=reg), "RSI", "計算の関数の登録が無い"))

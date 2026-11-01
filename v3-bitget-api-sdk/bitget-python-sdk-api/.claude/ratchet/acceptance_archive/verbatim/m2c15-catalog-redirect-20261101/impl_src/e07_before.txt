@@ -1,0 +1,1 @@
+        for nm, _f, _d in od.build_catalog(c):

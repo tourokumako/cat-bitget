@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=e9360fdc2ae07146 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=e166aa0f92c015ee tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## 1 毎回最初に読むこと
@@ -74,7 +74,7 @@
 | `.claude/state/indicator_review/value_conflicts_20261024.md` | 置き場どうしで値が違う物の一覧（150番）。決め方は worklog 20261024 §2 | 同じ |
 | `.claude/state/session_worklog_20261101.md` | 234回目＝161-2 の設計書の監査の依頼書 CP96（§12）・締め（§13）。§12・§13 を最後の行まで開く | CP96 の修正を当てた後 |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-11-01_m2c15_catalog_redirect_20261101_design_cp96_audit_request.md` | 161-2 の設計書の監査の依頼書 CP96（719行・手書きの問い Q8〜Q12 は Q2 の特に見てほしい点）。結果と照らす。最後の行まで開く | CP96 の修正を当てた後 |
-| `.claude/state/verbatim/m2c15-catalog-redirect-20261101/やることの表.md` | 161-2 の やることの表（247行）。一覧 F-1〜F-6・やらないこと Y-1〜Y-13（3-2 から外した2件＝F-3・Y-5）・4-4 の7段・7-6 の完成の条件。最後の行まで開く | 161-2 の承認の後 |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-catalog-redirect-20261101/やることの表.md` | 161-2 の やることの表（247行）。一覧 F-1〜F-6・やらないこと Y-1〜Y-13（3-2 から外した2件＝F-3・Y-5）・4-4 の7段・7-6 の完成の条件。最後の行まで開く | 161-2 の承認の後 |
 | `.claude/state/acceptance.md` | 161-2 の設計書（1730行・sha256 3137c614…）。監査 CP96 の相手。修正の指示と照らす。最後の行まで開く | 161-2 の承認の後 |
 
 **③ ToDo の表**　この表は、前のセッションの ToDo のうち、済んでいない行をプログラムが写したものです。番号と順番は まこさんが決めたもので、入れ替えません。表に無い番号は、済んだものか、ほかの番号に置き替えた欠番です。
@@ -120,8 +120,8 @@
 次は、CP96 の結果を読み、直す範囲を決めていただく所から。
 ### 3-2 🔴 印の状態（2026-11-01・この節はプログラムが印の記録から書く）
 
-- **H2 の印**は `4a0cf53e210ae9cc…` です。未来のデータを使っていないかを調べる検査（`leak_causality_diag.py`）が、全部通ったときの記録です（`.claude/state/h2_pass.json`・2026-11-01 09:20:14・対象24ファイル）。
-- **G2 の印**は `96ac47c5df71bf22…` です。型の表に沿った案かを見る審査が、見本に正しく反応するかを試すテスト（`gen_signal_families.py --verify`）が通ったときの記録です（`.claude/state/g2_pass.json`・2026-11-01 09:14:58・対象39ファイル）。
+- **H2 の印**は `a40f400813f455ff…` です。未来のデータを使っていないかを調べる検査（`leak_causality_diag.py`）が、全部通ったときの記録です（`.claude/state/h2_pass.json`・2026-11-01 20:44:02・対象26ファイル）。
+- **G2 の印**は `0697b60be4dcdb46…` です。型の表に沿った案かを見る審査が、見本に正しく反応するかを試すテスト（`gen_signal_families.py --verify`）が通ったときの記録です（`.claude/state/g2_pass.json`・2026-11-01 20:38:55・対象40ファイル）。
 - コードを触ったら、G2、H2 の順に印を取り直します。かかる時間は、G2 が約30秒、H2 が約5分です（教訓 L-565）。
 
 ### 3-3 ★まだ埋まっていないこと（2件・2026-09-17 に実物で確かめた）

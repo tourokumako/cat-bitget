@@ -1,0 +1,4 @@
+    f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",
+    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-5）＝build_catalog が、読む口と1つのデータから列を作るようになったので、
+    #   この2本が変われば材料の列が変わりうる＝印の対象に足す（2026-08-20 に observe_diag.py を足したときと同じ理由）。
+    f"{_PR}/indicators/indicators.json", f"{_PR}/indicators/indicators.py",

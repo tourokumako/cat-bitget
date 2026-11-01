@@ -291,8 +291,10 @@
     },
     "無いときの扱い": "未設定（列を作らない種類は空の並び）",
     "オン/オフ": "オン",
-    "読むプログラム": [],
-    "写す元": "記録の「列の名前の型」「列を作る値」と、いまのカタログの並び（observe_diag.build_catalog）",
+    "読むプログラム": [
+     "observe_diag.build_catalog"
+    ],
+    "写す元": "記録の「列の名前の型」「列を作る値」と、いまのカタログの並び（observe_diag._catalog_from_config＝写す元の関数・162番まで）",
     "根拠": {
      "要件の行": [
       "core_requirements_full.md:55"
@@ -801,8 +803,10 @@
     },
     "無いときの扱い": "未設定（列を作らない部品は空の並び）",
     "オン/オフ": "オン",
-    "読むプログラム": [],
-    "写す元": "記録の「列の名前の型」「列を作る値」と、いまのカタログの並び（observe_diag.build_catalog）",
+    "読むプログラム": [
+     "observe_diag.build_catalog"
+    ],
+    "写す元": "記録の「列の名前の型」「列を作る値」と、いまのカタログの並び（observe_diag._catalog_from_config＝写す元の関数・162番まで）",
     "根拠": {
      "要件の行": [
       "core_requirements_full.md:55"
@@ -1426,52 +1430,52 @@
      "値": "_MA_FUNCS = [\n    # ★ALMA（監査 CP60）＝ライブラリは重みを w_norm[::-1] で逆向きに当てる（overlap/alma.py:37）。\n    #   ずらし 0.85 を渡すと山が古い側に来る＝Legoux の定義と逆。0.15 を渡すと、教科書の offset 0.85\n    #   （山が新しい側）と同じ重みになる（ガウスの重みは左右対称なので、0.15 の逆向き＝0.85 の正向き）。\n    (\"ALMA\", lambda d, n, distribution_offset=0.15, sigma=None: _pta6.alma(close=d.close, length=n, distribution_offset=distribution_offset, sigma=sigma)),\n    (\"DEMA\", lambda d, n: _pta6.dema(close=d.close, length=n)),\n    (\"HMA\", lambda d, n: _pta6.hma(close=d.close, length=n)),\n    (\"JMA\", lambda d, n, phase=None: _pta6.jma(close=d.close, length=n, phase=phase)),\n    (\"KAMA\", lambda d, n, fast=None, slow=None: _pta6.kama(close=d.close, length=n, fast=fast, slow=slow)),\n    (\"LINREG\", lambda d, n: _pta6.linreg(close=d.close, length=n)),\n    (\"LRb\", lambda d, n: _pta6.linregintercept(close=d.close, length=n)),\n    (\"MCGD\", lambda d, n, c=None: _pta6.mcgd(close=d.close, length=n, c=c)),\n    (\"MIDPOINT\", lambda d, n: _pta6.midpoint(close=d.close, length=n)),\n    (\"MIDPRICE\", lambda d, n: _pta6.midprice(high=d.high, low=d.low, length=n)),\n    (\"PWMA\", lambda d, n: _pta6.pwma(close=d.close, length=n)),\n    (\"RMA\", lambda d, n: _pta6.rma(close=d.close, length=n)),\n    (\"SINWMA\", lambda d, n: _pta6.sinwma(close=d.close, length=n)),\n    (\"SSF\", lambda d, n, poles=None: _pta6.ssf(close=d.close, length=n, poles=poles)),\n    (\"SWMA\", lambda d, n: _pta6.swma(close=d.close, length=n)),\n    # ★t3 は先頭の欠損を落とした短い列を返す（実測）。日付で突き合わせ直して長さをそろえる。\n    #   データが短くて計算できないときは None を返すので、全部 欠損の列にして落ちないようにする。\n    (\"T3\", lambda d, n, a=None: (lambda r: pd.Series(np.nan, index=d.index) if r is None\n                         else r.reindex(d.index))(_pta6.t3(close=d.close, length=n, a=a))),\n    (\"TEMA\", lambda d, n: _pta6.tema(close=d.close, length=n)),\n    (\"TRIMA\", lambda d, n: _pta6.trima(close=d.close, length=n)),\n    (\"TSF\", lambda d, n: _pta6.tsf(close=d.close, length=n)),\n    (\"VIDYA\", lambda d, n: _pta6.vidya(close=d.close, length=n)),\n    (\"VWMA\", lambda d, n: _pta6.vwma(close=d.close, volume=d.volume, length=n)),\n    (\"WMA\", lambda d, n: _pta6.wma(close=d.close, length=n)),\n    (\"ZLMA\", lambda d, n: _pta6.zlma(close=d.close, length=n)),\n    (\"FWMA\", lambda d, n: _pta6.fwma(close=d.close, length=n)),\n]"
     },
     {
-     "置き場": "observe_diag.py:4983",
+     "置き場": "observe_diag.py:5018",
      "名前": "_DIST_PAT",
      "値": "_DIST_PAT = re.compile(r\"^close vs (.+?)%\")   # 「終値と◯◯の距離%」の部品"
     },
     {
-     "置き場": "observe_diag.py:4984",
+     "置き場": "observe_diag.py:5019",
      "名前": "_SLOPE_PAT",
      "値": "_SLOPE_PAT = re.compile(r\"^(.+?)傾き\")         # 「◯◯ そのものの向き」の部品"
     },
     {
-     "置き場": "observe_diag.py:5857",
+     "置き場": "observe_diag.py:5892",
      "名前": "_v9_part_variants",
      "値": "    \"\"\"当てる部品の組み合わせ（4種）。warm＝暖機（先頭の何行が使えないか）。\"\"\""
     },
     {
-     "置き場": "observe_diag.py:5858",
+     "置き場": "observe_diag.py:5893",
      "名前": "_v9_part_variants",
      "値": "    def _ma(a: np.ndarray, m: int) -> np.ndarray:              # 実行器と同じ pd の rolling 平均\n        return pd.DataFrame(a).rolling(m).mean().to_numpy()"
     },
     {
-     "置き場": "observe_diag.py:5861",
+     "置き場": "observe_diag.py:5896",
      "名前": "_v9_part_variants",
      "値": "    def _dn(a: np.ndarray, n: int) -> np.ndarray:              # いまの値 − n本前の値\n        d = np.full_like(a, np.nan)\n        d[n:] = a[n:] - a[:-n]\n        return d"
     },
     {
-     "置き場": "observe_diag.py:5866",
+     "置き場": "observe_diag.py:5901",
      "名前": "out",
      "値": "    out = [dict(kind=\"そのまま\", label=\"そのまま\", warm=0,\n                parts=[\"value\"], fn=lambda a: a)]"
     },
     {
-     "置き場": "observe_diag.py:5868",
+     "置き場": "observe_diag.py:5903",
      "名前": "_v9_part_variants",
      "値": "    for n in grid:\n        out.append(dict(kind=\"n本前との差\", label=f\"{n}本前との差\", warm=n,\n                        parts=[\"value\", \"lag\", \"sub\"],\n                        fn=(lambda n_: (lambda a: _dn(a, n_)))(n)))"
     },
     {
-     "置き場": "observe_diag.py:5872",
+     "置き場": "observe_diag.py:5907",
      "名前": "_v9_part_variants",
      "値": "    for m in grid:\n        out.append(dict(kind=\"m本の平均\", label=f\"{m}本の平均\", warm=m,\n                        parts=[\"value\", \"ma\"],\n                        fn=(lambda m_: (lambda a: _ma(a, m_)))(m)))"
     },
     {
-     "置き場": "observe_diag.py:5876",
+     "置き場": "observe_diag.py:5911",
      "名前": "_v9_part_variants",
      "値": "    for m in grid:\n        for n in grid:\n            out.append(dict(kind=\"m本の平均の n本前との差\",\n                            label=f\"{m}本の平均の {n}本前との差\", warm=n + m,\n                            parts=[\"value\", \"ma\", \"lag\", \"sub\"],\n                            fn=(lambda m_, n_: (lambda a: _dn(_ma(a, m_), n_)))(m, n)))"
     },
     {
-     "置き場": "observe_diag.py:5882",
+     "置き場": "observe_diag.py:5917",
      "名前": "_v9_part_variants",
      "値": "    return out"
     },
@@ -1703,7 +1707,7 @@
      ]
     },
     {
-     "置き場": "observe_diag.py:6068",
+     "置き場": "observe_diag.py:6103",
      "名前": "_HOUKOU2PROP",
      "値": {
       "順張り値": "trend",
@@ -1713,7 +1717,7 @@
      }
     },
     {
-     "置き場": "observe_diag.py:6543",
+     "置き場": "observe_diag.py:6578",
      "名前": "REGIME_LABELS",
      "値": [
       "強さ",
@@ -3085,7 +3089,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5064",
+      "置き場": "observe_diag.py:5099",
       "名前": "_V9_PERIOD_PATTERNS",
       "値": [
        [
@@ -3099,7 +3103,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "ADX": [
@@ -3109,7 +3113,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "ADX": [
@@ -6425,7 +6429,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5064",
+      "置き場": "observe_diag.py:5099",
       "名前": "_V9_PERIOD_PATTERNS",
       "値": [
        [
@@ -6439,7 +6443,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "ATR%": [
@@ -6448,7 +6452,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "ATR%": [
@@ -7117,7 +7121,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "BB": [
@@ -7126,7 +7130,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "BB%b": [
@@ -7762,7 +7766,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "BB": [
@@ -7774,7 +7778,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "BB幅": [
@@ -11475,7 +11479,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "ADX": [
@@ -14274,7 +14278,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "EMA": [
@@ -25486,7 +25490,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "MACD": [
@@ -26108,7 +26112,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "MACD": [
@@ -26683,7 +26687,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "MACD": [
@@ -26692,7 +26696,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "MACD線%": [
@@ -37576,7 +37580,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5064",
+      "置き場": "observe_diag.py:5099",
       "名前": "_V9_PERIOD_PATTERNS",
       "値": [
        [
@@ -37606,7 +37610,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "RCI": [
@@ -37615,7 +37619,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "RCI": [
@@ -38347,7 +38351,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "ROC": [
@@ -38930,7 +38934,7 @@
       }
      },
      {
-      "置き場": "gen_materials.py:908",
+      "置き場": "gen_materials.py:911",
       "名前": "_m14",
       "値": [
        {
@@ -38941,7 +38945,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5092",
+      "置き場": "observe_diag.py:5127",
       "名前": "_V9_PERIOD_PARAMS",
       "値": [
        [
@@ -38955,7 +38959,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "RSI": [
@@ -38964,7 +38968,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "RSI": [
@@ -45944,7 +45948,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "Stoch": [
@@ -45953,7 +45957,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "Stoch%D": [
@@ -46566,7 +46570,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "Stoch": [
@@ -46575,7 +46579,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "Stoch%K": [
@@ -60191,7 +60195,7 @@
     ],
     "ほかの置き場の値": [
      {
-      "置き場": "observe_diag.py:7708",
+      "置き場": "observe_diag.py:7743",
       "名前": "_cases",
       "値": "    _cases = {\"W字確定谷\": lambda: iref._w_case(24, 100.2)}"
      }
@@ -65580,7 +65584,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "EMA": [
@@ -65589,7 +65593,7 @@
       }
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "close vs EMA": [
@@ -76800,7 +76804,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "close vs SMA": [
@@ -83160,7 +83164,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5064",
+      "置き場": "observe_diag.py:5099",
       "名前": "_V9_PERIOD_PATTERNS",
       "値": [
        [
@@ -83174,7 +83178,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5355",
+      "置き場": "observe_diag.py:5390",
       "名前": "_V9_LABEL_TO_FAMILIES",
       "値": {
        "fib位置": [
@@ -87592,22 +87596,22 @@
       "値": "    exp = {\"res_lo\": 110 * (1 - t / 2), \"res_hi\": 110 * (1 + t / 2),\n           \"sup_lo\": 90 * (1 - t / 2), \"sup_hi\": 90 * (1 + t / 2)}"
      },
      {
-      "置き場": "observe_diag.py:2840",
+      "置き場": "observe_diag.py:2875",
       "名前": "g0",
       "値": "    g0 = {\"res_hi\": nan, \"res_lo\": nan, \"sup_hi\": nan, \"sup_lo\": nan}"
      },
      {
-      "置き場": "observe_diag.py:3440",
+      "置き場": "observe_diag.py:3475",
       "名前": "g",
       "値": "    g = {\"rng\": rng, \"res_lo\": res_lo, \"res_hi\": res_hi, \"sup_lo\": sup_lo, \"sup_hi\": sup_hi,\n         \"dev_z\": df[\"dev_z\"].to_numpy(float) if \"dev_z\" in df.columns else None}"
      },
      {
-      "置き場": "observe_diag.py:3596",
+      "置き場": "observe_diag.py:3631",
       "名前": "(res_hi, res_lo)",
       "値": "    res_hi, res_lo = g[\"res_hi\"], g[\"res_lo\"]"
      },
      {
-      "置き場": "observe_diag.py:3673",
+      "置き場": "observe_diag.py:3708",
       "名前": "(res_hi, res_lo)",
       "値": "    res_hi, res_lo = g[\"res_hi\"], g[\"res_lo\"]"
      }
@@ -87750,27 +87754,27 @@
       "値": "    exp = {\"res_lo\": 110 * (1 - t / 2), \"res_hi\": 110 * (1 + t / 2),\n           \"sup_lo\": 90 * (1 - t / 2), \"sup_hi\": 90 * (1 + t / 2)}"
      },
      {
-      "置き場": "observe_diag.py:2840",
+      "置き場": "observe_diag.py:2875",
       "名前": "g0",
       "値": "    g0 = {\"res_hi\": nan, \"res_lo\": nan, \"sup_hi\": nan, \"sup_lo\": nan}"
      },
      {
-      "置き場": "observe_diag.py:3440",
+      "置き場": "observe_diag.py:3475",
       "名前": "g",
       "値": "    g = {\"rng\": rng, \"res_lo\": res_lo, \"res_hi\": res_hi, \"sup_lo\": sup_lo, \"sup_hi\": sup_hi,\n         \"dev_z\": df[\"dev_z\"].to_numpy(float) if \"dev_z\" in df.columns else None}"
      },
      {
-      "置き場": "observe_diag.py:3541",
+      "置き場": "observe_diag.py:3576",
       "名前": "(lo_edge, hi_edge)",
       "値": "    lo_edge, hi_edge = x[\"g\"][\"sup_hi\"], x[\"g\"][\"res_lo\"]        # レンジの内側の下端と上端"
      },
      {
-      "置き場": "observe_diag.py:3596",
+      "置き場": "observe_diag.py:3631",
       "名前": "(res_hi, res_lo)",
       "値": "    res_hi, res_lo = g[\"res_hi\"], g[\"res_lo\"]"
      },
      {
-      "置き場": "observe_diag.py:3673",
+      "置き場": "observe_diag.py:3708",
       "名前": "(res_hi, res_lo)",
       "値": "    res_hi, res_lo = g[\"res_hi\"], g[\"res_lo\"]"
      }
@@ -88266,7 +88270,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "stdev%": [
@@ -88440,27 +88444,27 @@
       "値": "    exp = {\"res_lo\": 110 * (1 - t / 2), \"res_hi\": 110 * (1 + t / 2),\n           \"sup_lo\": 90 * (1 - t / 2), \"sup_hi\": 90 * (1 + t / 2)}"
      },
      {
-      "置き場": "observe_diag.py:2840",
+      "置き場": "observe_diag.py:2875",
       "名前": "g0",
       "値": "    g0 = {\"res_hi\": nan, \"res_lo\": nan, \"sup_hi\": nan, \"sup_lo\": nan}"
      },
      {
-      "置き場": "observe_diag.py:3440",
+      "置き場": "observe_diag.py:3475",
       "名前": "g",
       "値": "    g = {\"rng\": rng, \"res_lo\": res_lo, \"res_hi\": res_hi, \"sup_lo\": sup_lo, \"sup_hi\": sup_hi,\n         \"dev_z\": df[\"dev_z\"].to_numpy(float) if \"dev_z\" in df.columns else None}"
      },
      {
-      "置き場": "observe_diag.py:3541",
+      "置き場": "observe_diag.py:3576",
       "名前": "(lo_edge, hi_edge)",
       "値": "    lo_edge, hi_edge = x[\"g\"][\"sup_hi\"], x[\"g\"][\"res_lo\"]        # レンジの内側の下端と上端"
      },
      {
-      "置き場": "observe_diag.py:3597",
+      "置き場": "observe_diag.py:3632",
       "名前": "(sup_lo, sup_hi)",
       "値": "    sup_lo, sup_hi = g[\"sup_lo\"], g[\"sup_hi\"]"
      },
      {
-      "置き場": "observe_diag.py:3674",
+      "置き場": "observe_diag.py:3709",
       "名前": "(sup_lo, sup_hi)",
       "値": "    sup_lo, sup_hi = g[\"sup_lo\"], g[\"sup_hi\"]"
      }
@@ -88603,22 +88607,22 @@
       "値": "    exp = {\"res_lo\": 110 * (1 - t / 2), \"res_hi\": 110 * (1 + t / 2),\n           \"sup_lo\": 90 * (1 - t / 2), \"sup_hi\": 90 * (1 + t / 2)}"
      },
      {
-      "置き場": "observe_diag.py:2840",
+      "置き場": "observe_diag.py:2875",
       "名前": "g0",
       "値": "    g0 = {\"res_hi\": nan, \"res_lo\": nan, \"sup_hi\": nan, \"sup_lo\": nan}"
      },
      {
-      "置き場": "observe_diag.py:3440",
+      "置き場": "observe_diag.py:3475",
       "名前": "g",
       "値": "    g = {\"rng\": rng, \"res_lo\": res_lo, \"res_hi\": res_hi, \"sup_lo\": sup_lo, \"sup_hi\": sup_hi,\n         \"dev_z\": df[\"dev_z\"].to_numpy(float) if \"dev_z\" in df.columns else None}"
      },
      {
-      "置き場": "observe_diag.py:3597",
+      "置き場": "observe_diag.py:3632",
       "名前": "(sup_lo, sup_hi)",
       "値": "    sup_lo, sup_hi = g[\"sup_lo\"], g[\"sup_hi\"]"
      },
      {
-      "置き場": "observe_diag.py:3674",
+      "置き場": "observe_diag.py:3709",
       "名前": "(sup_lo, sup_hi)",
       "値": "    sup_lo, sup_hi = g[\"sup_lo\"], g[\"sup_hi\"]"
      }
@@ -89848,7 +89852,7 @@
       "値": "AXIS_EC: list[dict] = [\n    # トレンド/モメンタム\n    dict(cat=\"トレンド/モメンタム\", token=\"ADX\", impl=[r\"ADX\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"DI\", impl=[r\"DI差\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MACD(line/sig/hist)\",\n         impl=[r\"MACD線%\", r\"MACDシグナル線%\", r\"MACDヒスト%\"],\n         status=\"あり\", note=\"シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RSI(7/14/21)\", impl=[r\"RSI\\d+\"], status=\"あり\",\n         note=\"実装は 7/9/14/21＝一覧より広い\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"ROC\", impl=[r\"ROC\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Stoch(k/d)\", impl=[r\"Stoch%K\\d+\", r\"Stoch%D\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"OBV\", impl=[r\"OBV傾き\\d+\"], status=\"あり\",\n         note=\"傾きとして実装（生の累積は列でない）\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"Ichimoku\", impl=[r\"close vs 転換線%\", r\"close vs 基準線%\"],\n         status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"RCI\", impl=[r\"RCI\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"トレンド/モメンタム\", token=\"MTF傾き整合\", impl=[], status=\"未実装\",\n         note=\"足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）\"),\n    # ボラ\n    dict(cat=\"ボラ\", token=\"ATR%\", impl=[r\"ATR%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB%b\", impl=[r\"BB%b\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"BB幅\", impl=[r\"BB幅\\(\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"realized_vol\", impl=[r\"realized_vol\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"donchian幅\", impl=[r\"Donchian幅%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ボラ\", token=\"zscore_return\", impl=[r\"zscore_return\\d+\"], status=\"あり\",\n         note=\"対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す\"),\n    # 出来高\n    dict(cat=\"出来高\", token=\"volume_ratio\", impl=[r\"volume_ratio\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"OBV傾き\", impl=[r\"OBV傾き\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"CMF\", impl=[r\"CMF\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"出来高\", token=\"MFI\", impl=[r\"MFI\\d+\"], status=\"あり\", note=\"\"),\n    # ローソク\n    dict(cat=\"ローソク\", token=\"engulfing\", impl=[r\"包み足\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"pinbar\", impl=[r\"pinbar\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"harami孕み足\", impl=[r\"孕み足\"], status=\"あり\",\n         note=\"教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）\"),\n    dict(cat=\"ローソク\", token=\"streak\", impl=[r\"連続本数\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"body_ratio\", impl=[r\"body比\"], status=\"あり\", note=\"\"),\n    dict(cat=\"ローソク\", token=\"wick_ratio\", impl=[r\"上ヒゲ比\", r\"下ヒゲ比\"], status=\"あり\", note=\"\"),\n    # 形(W窓)\n    dict(cat=\"形(W窓)\", token=\"V\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア V=+2\"),\n    dict(cat=\"形(W窓)\", token=\"W\", impl=[r\"W字\\(\"], status=\"あり\",\n         note=\"教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）\"),\n    dict(cat=\"形(W窓)\", token=\"M\", impl=[r\"形スコア\\d+\"], status=\"あり\", note=\"形スコア M=−2\"),\n    dict(cat=\"形(W窓)\", token=\"swing_dist\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"],\n         status=\"あり\",\n         note=\"★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、\"\n              \"検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』\"\n              \"（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語\"\n              \"「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ\"),\n    dict(cat=\"形(W窓)\", token=\"bars_since_high-low\",\n         impl=[r\"高値からの経過バー\\d+\", r\"安値からの経過バー\\d+\"], status=\"あり\", note=\"\"),\n    # 位置\n    dict(cat=\"位置\", token=\"close vs EMA\", impl=[r\"close vs EMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"SMA\", impl=[r\"close vs SMA\\d+%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"VWAP\", impl=[r\"close vs VWAP%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"kijun\", impl=[r\"close vs 基準線%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"keltner\", impl=[r\"close vs Keltner上%\", r\"close vs Keltner下%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"supertrend\", impl=[r\"close vs Supertrend%\"], status=\"あり\", note=\"\"),\n    dict(cat=\"位置\", token=\"high-low\", impl=[r\"close vs \\d+本高値%\", r\"close vs \\d+本安値%\"], status=\"あり\", note=\"\"),\n    # 構造\n    dict(cat=\"構造\", token=\"pivot(PP/R/S)\",\n         impl=[r\"close vs pivotPP%\\d+\", r\"close vs pivotR1%\\d+\", r\"close vs pivotS1%\\d+\"], status=\"あり\",\n         note=\"R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）\"),\n    dict(cat=\"構造\", token=\"fib(382-786)\", impl=[r\"fib位置\\d+\"], status=\"あり\",\n         note=\"連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現\"),\n    dict(cat=\"構造\", token=\"VP(VAH/VAL/POC)\",\n         impl=[r\"close vs POC%\\d+\", r\"close vs VAH%\\d+\", r\"close vs VAL%\\d+\"], status=\"あり\", note=\"\"),\n    dict(cat=\"構造\", token=\"S-R touch_count\", impl=[r\"S-Rタッチ数\\(\"], status=\"あり\", note=\"\"),\n    # 需給\n    dict(cat=\"需給\", token=\"taker_ls\", impl=[r\"taker_ls\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"L-S比\", impl=[r\"L-S比\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n    dict(cat=\"需給\", token=\"CVD\", impl=[r\"CVD\"], status=\"あり\",\n         note=\"外部データ（load_demand）＝被覆は検査6\"),\n]"
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "volume_ratio": [
@@ -90029,7 +90033,7 @@
       ]
      },
      {
-      "置き場": "observe_diag.py:5406",
+      "置き場": "observe_diag.py:5441",
       "名前": "_USE_PATTERNS",
       "値": {
        "zscore": [
@@ -99198,7 +99202,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯VA」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯VA」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -99546,7 +99550,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯VA1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯VA1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -99924,7 +99928,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯pivot」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯pivot」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -100251,7 +100255,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯pivot1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯pivot1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -100644,7 +100648,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯pivot前週」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯pivot前週」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -100971,7 +100975,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯pivot前週1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯pivot前週1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -101419,7 +101423,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯スイング」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯スイング」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [
@@ -102015,7 +102019,7 @@
      "mako"
     ],
     "mako": "2026-10-20 まこさん「OK　１〜4もOK」（向きを見る所）と「OK」（3つの決定）＝逐語のファイル ok_direction_20261020・ok_three_points_20261020（m2c15-band-s1-20261020）。帯の部品＝まこさん「絶対につくってほしい」（worklog 20261003 §37）・「1,2OK」「１は案ア」（同 §35）・帯pivot と帯VA は触れた回数を数えない＝まこさん「Aでいい」（ok_pivot_a_20261020）／S1 の部品＝m2_todo.json の M2-C-15 の中身③／2026-10-21 監査 CP83 の修正＝まこさん「修正１は案A」（論文の版と E36 の版の2つ）・「修正７は案B」と「甲」（K は論文の値5つ）・「修正12（Minor）→ウ」（前の週の版の帯pivot）・「修正14は案B」（床は渡した設定から）",
-    "作った元": "INDICATOR_TABLE の記録「帯スイング1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+    "作った元": "INDICATOR_TABLE の記録「帯スイング1時間ATR」と observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
    },
    "列を作る組": {
     "名前の型": [

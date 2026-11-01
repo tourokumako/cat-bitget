@@ -1,0 +1,3 @@
+        _od12 = _od12.replace("def build_catalog(cfg: dict) -> list[tuple]:\n",
+                              "def build_catalog(cfg: dict) -> list[tuple]:\n"
+                              '    _zzz_uso = cfg["zzz_uso_periods"]\n', 1)

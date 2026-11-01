@@ -1,0 +1,1 @@
+    f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",

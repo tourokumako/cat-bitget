@@ -1,0 +1,1 @@
+    """`observe_diag.build_catalog` が読む設定の鍵を、コードから機械で拾う。

@@ -1,0 +1,6 @@
+def build_catalog(cfg: dict) -> list[tuple]:
+    """指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。
+
+    ★2026-08-13（A-2）＝計算式は上の材料の表（MATERIAL_FAMILIES）に在る。
+      この関数がやるのは「設定ファイルの数字を読んで、その組を1つずつ作る」ことだけ。
+    """

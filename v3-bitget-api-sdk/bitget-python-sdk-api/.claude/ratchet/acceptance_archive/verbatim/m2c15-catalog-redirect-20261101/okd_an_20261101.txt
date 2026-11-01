@@ -1,0 +1,272 @@
+受け取り方＝指示（やることの表の★の見出しと、宣言に OK）。範囲＝案を返信に出すところまでです。本物のコード・設定・設計書は書いていません。
+
+いまの工程＝M2-C-15（指標の工事）の161番＝161-2（工事 m2c15-catalog-redirect-20261101）の案です。
+ToDo＝全20件。★いまここ＝161番。
+止まっているもの＝この案への、まこさんの OK。
+次＝OK をいただいたら、この返信を工事のフォルダへ写し、設計書を作ります。そのあと設計書を全部読み、見直し表を作り、設計書の監査の依頼書を作ります。
+
+## 結論
+
+案です（工事 m2c15-catalog-redirect-20261101＝列を作る所 build_catalog を、読む口の列を作る組から列を作る形にし、列の名前・並び・値が直す前と同じかを比べる工事。やることの表の一覧 F-1〜F-6・やらないこと Y-1〜Y-13・案の前に確認していただく見出しの全部に、まこさん「よい」「ok」）。本物のコードには、まだ1文字も書いていません。
+
+- 実装の指示（4-20）は22件です。1〜2件目は observe_diag.py（build_catalog の頭・カタログの自己テスト）、3〜6件目は読む口 indicators.py、7〜12件目は写すプログラム gen_indicators_draft.py（写す元の2か所・自己テスト・要素の定義表と部品の出どころの文を合わせる3か所）、13件目は H2 の検査 leak_causality_diag.py、14〜16件目は gen_materials.py、17〜22件目は新しい壊すプログラム6本（b222〜b227）です。
+- 直す前の文字16件は、実物の行と diff で1文字も違いません。目印の行は、どれも対象のファイルに1か所だけです（grep -c で 1）。
+- いまのコードで、カタログの自己テスト（observe_diag.py --selftest-catalog）は「❌ 0 件」・12.7秒でした。
+- この案から試しの設計書（.claude/state/_trial_acceptance.md）を作り、承認の前の検査を、仮当て（A12）を含めて通しました（2回目で A群 0件・古い語 0件・534秒）。仮当ては、22件を本物のファイルに仮に当てて、完成の条件の6行・壊すプログラム6本・自己テストを通し、控えから元に戻す検査です（戻した後の git status で、本物の変更は残っていません）。1回目は照合A（当てた後に触った所の名前の書き方）で止まり、【4-3】【7-5】【7-8】の名前を直しました。試しの設計書は1行目から最後まで開き、見直し表は「止める理由 0 件・根拠 106 件」です。
+
+やることの表を、まこさんの OK の後に、次の5つの点で直しました（ひな型の決まり＝見せた後で変わった所は見せ直す）。
+- F-6 から、materials.md に入る説明の文（gen_materials.py:1588）を外しました。ここを直すと、作る文書 materials.md の作り直しが要るためです。
+- やらないことに Y-13（その説明の文を直さない・162番で直す）を足しました。
+- 7-6 の F-5 のコマンドを、grep -q から grep -H -c に替えました。壊すプログラムは、測ったコマンドの出力に決まった文が在るかで照らされる（.claude/breaks/lib.sh:85〜100）ので、落ちたときに「…leak_causality_diag.py:0」と出る形にしました。
+- 2-1 の読み方の欄から数字を外し、コマンドの「&&」を外しました（設計書を作る道具が、読み方の数字と、読むだけでないコマンドの記号で止めたため）。出る数は同じです（awk で 71 と 0）。
+- F-4 に、要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」と、部品の記録8件の出どころの文を合わせる直しを足しました（indicators.json:283〜303 が「写す元＝…（observe_diag.build_catalog）」「読むプログラム＝空」のままだと、161-2 の後は事実と違う文になるため）。4-4 の3 に --rewrite の段を、4-13 と 4-19 に1行ずつ足しました。
+- §1 の範囲の「外す物」を Y-1〜Y-13 にし、4-5 の最後の行の画面の文を、写すプログラムの自己テストの実際の名前（「写す: 写す元は _catalog_from_config で、build_catalog を呼ばない」）に合わせました（試しの設計書を全部読んで見つけた食い違い）。
+
+【4-0 この仕組みは何か】
+いまの build_catalog（observe_diag.py:1792〜2229）は、設定ファイル observe_config.json の鍵を読み（cfg[ の行 71）、種類ごとの for で列を作ります。161-1 で indicators.json に入れた列を作る組（②-12・④-9・314記録・652組）は、まだ誰も読んでいません（scripts の下で column_sets を呼ぶ所は indicators.py の中だけ）。この工事は、build_catalog を、読む口 indicators.py の column_sets が返す組を、並びの順に1つずつ列にする形に替えます。指標の記録の組は make_material（計算の登録の名前・組）で、部品の記録（帯の8種）の組は _band_material（登録の名前・床・組）で作ります。床だけは、いまと同じく設定の band_fee_mult から作ります。直す前の作り方は _catalog_from_config という名前で残し、写すプログラムが列を作る組を作り直すときの写す元にだけ使います（162番で消す）。完成すると、build_catalog は設定の鍵を1つも読まず、indicators.json の列を作る組を直せば、その列が engine_tuner の材料に届きます。列の名前・並び・値は直す前と同じです（列の比べ col_snapshot.py --compare で確かめる）。なぜこの形か＝列を作る組は、いまのカタログの列を、省いた後の形で写した物（gen_indicators_draft.py:970〜988）なので、組を並びの順に回すだけで、名前と並びが直す前と同じになります。10-25 の下書き（build_catalog_new.txt:14〜18）も同じ形でした。読む口の calc を使わないのは、calc がオフの指標を返さず（indicators.py:311〜312）、列を作る組はオフの121記録の250組も持つためです。
+
+【4-1 システムの境界】
+- この工事の実装を書くのは、当てる道具 apply_audit_fix.py --design です。承認の後に CC が走らせます。
+- build_catalog を呼ぶのは、観察の道具の中の48か所と、engine_tuner_gen.py:211・:268・engine_tuner.py:168・:182・engine_tuner_exec.py:4020・gen_signal_families.py:60・gen_observe_manual.py:149・condition_parts_diag.py:521・col_snapshot.py:46・gen_params_in_name.py:274 です。出力の形（名前・計算・向きの組の並び）は変わらないので、呼ぶ側は直しません。
+- _catalog_from_config を呼ぶのは、写すプログラム（gen_indicators_draft.py:592・:973）・カタログの自己テスト・gen_materials の鍵を拾う口（gen_materials.py:465）だけです。
+
+【4-2 入力と出力】
+- build_catalog の入力＝設定 cfg（読むのは band_fee_mult だけ・_band_fee_floor を通す）と、読む口の column_sets です。出力＝(名前, 計算, 向き) の並びで、直す前と同じ形・同じ652本です。
+- column_sets の出力＝組ごとに {記録・種類・名前の型・組・並び・登録の名前} です（登録の名前を足す）。
+- _catalog_from_config の入力と出力は、直す前の build_catalog と同じです。
+- 写すプログラムの入力は、写す元を _catalog_from_config に替えるほかは同じです。出力の indicators.json は、要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」と、部品の記録8件の出どころの文だけが変わります（当てた後の --rewrite で1回）。
+- コマンド＝観察の道具の --selftest-catalog（照らしを2つ足す）・読む口の --selftest・写すプログラムの --selftest・--rewrite・--verify・gen_materials の --selftest です。旗は足しません。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| observe_diag.py の build_catalog | 読む口の列を作る組を並びの順に列にする。設定の鍵を読まない | 直す（中身を置き替える） |
+| observe_diag.py の _catalog_from_config | 直す前の build_catalog の中身（写すプログラムの写す元・162番まで） | 新設（中身は直す前の build_catalog のまま） |
+| observe_diag.py の selftest_catalog | 名前の並びの照らし（⑮）と、設定の鍵を読まないことの照らし（⑯）を足す | 直す |
+| indicators.py の Indicators.column_sets と <モジュール直下>（使い方の説明の行） | 組ごとに計算の登録の名前を返す。無ければ止まる。使い方の説明を合わせる | 直す |
+| gen_indicators_draft.py の build_old と catalog_sets | 写す元を _catalog_from_config にする | 直す |
+| gen_indicators_draft.py の table_update と <モジュール直下>（PART_SRC・頭の説明） | 要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」と、部品の記録の出どころの文を、いまの形に合わせる | 直す |
+| leak_causality_diag.py の <モジュール直下>（WATCHED） | H2 の印の対象に indicators.json と indicators.py を足す | 直す |
+| gen_materials.py の _catalog_keys と T12 | 場所1 を数える相手を _catalog_from_config にする | 直す |
+| .claude/breaks/b222〜b227 | 7-6 の6行の守り | 新設 |
+- 指標を使う部品について：build_catalog は、指標を、読む口の列を作る組（indicators.json の②-12・④-9）と、計算の登録（observe_diag.py:903 の MATERIAL_FAMILIES と、make_material :1051〜1065）から作ります。自前の式は置きません（実装の指示の1件目の直した後の文字に、計算の式は無く、make_material と _band_material を呼ぶだけです）。指標のオン・オフは、いまと同じく engine_tuner の側で indicator_switch.json から効きます（engine_tuner_gen.py:219・:277）。build_catalog は、171番まで列を変えないため、オフの列も作ります（Y-4・indicators.py:337〜338）。
+
+【4-6 制約】
+| 種類 | 決まり | 原文 | この設計でどう守るか |
+|---|---|---|---|
+| 法則 | 無し（判定の中身を変えない） | ［自動］ | 法則のファイルに触らない（Y-1・直すファイルの一覧に無い） |
+| 型の表 | 無し | ［自動］ | 型の表に触らない（Y-12）。列の名前が同じなので、型の表を作る道具が読む名前（gen_signal_families.py:53〜62）も同じ。G2 で確かめる |
+| 場面の決まり | 無し | ［自動］ | 触らない（直すファイルの一覧に無い） |
+| そのほか | 指標は指標一覧（material）からだけ呼び出す | core_requirements_full.md:85 | build_catalog が、指標一覧に当たる読む口の列を作る組から列を作る（F-1・F-2） |
+| そのほか | 範囲は指標ごとに1つ | core_requirements_full.md:60 | 範囲に触らない（②-4・④-4 の軸のまま・161-1 で写した物） |
+| そのほか | 指標の名前に値を入れない | core_requirements_full.md:55・:62 | 列の名前を変えない（Y-4）。記録の名前は RSI のまま |
+| そのほか | 作ってはいけない物2（探す値を一覧で限定しない） | core_requirements_full.md:101 | 新しく限定しない。列を作る組は、いまのカタログの列をそのまま写した物で、171番まで列を変えないための物（Y-4） |
+| そのほか | 新しいファイルを作らない（恒久78番） | permanent_rules.md §6 の78番 | 新しいファイルは、7-6 が求める壊すプログラム6本だけ |
+| そのほか | 控えを作らない（恒久79番の4） | permanent_rules.md §6 の79番 | 直す前の build_catalog は、控えでなく、写すプログラムが使う写す元の関数として残す（162番で消す）。直す前の文字は git に在る |
+| そのほか | コードを触ったら G2、H2 の順に印を取り直す | permanent_rules.md §7 の §0-5・§0-5b | observe_diag.py と leak_causality_diag.py を直すので、当てた後に G2 → H2 を走らせる（4-4 の4） |
+- 新しく足す決まり：足しません。照らし2つ（⑮⑯）は、列を変えないことと R6 を見張る物で、組めなくなる形はありません。
+
+【4-7 探索の範囲】
+| 何 | この工事が関わるか | どう扱うか | 探し方のどの段階か | 役割・範囲・代表の値（スキャル／デイトレ）・出どころ・カタログに在るか・オンか |
+|---|---|---|---|---|
+| 指標 | 関わる（列を作る所の読み元を替える。列は変えない） | 読むだけ（列を作る組の652組を読む） | 最初の段階の母数の元（指標 × 時間足）。中身は変えない | ［自動］ |
+| 閾値 | 関わらない（直すファイルに閾値の置き場が無い・build_catalog は閾値を読まない＝observe_diag.py:1792〜2229） | 触らない | — | ［自動］ |
+| パラメータ | 列を作る組の値（いまの列のパラメータ）を読む | 読むだけ。値は変えない | 最初の段階（いまの列のまま）。範囲から探すのは171番・M2-E-8 | ［自動］ |
+| 時間足 | 関わらない（build_catalog は時間足を読まない＝observe_diag.py:1792〜2229 に timeframes が無い・時間足は build_features が読む） | 触らない | — | ［自動］ |
+- 役割に沿って使うこと（要件定義の3番の5）：この工事は指標の役割を変えません。列を作る所の読み元だけを替えます。右の列にプログラムが写す役割と違う使い方はしません。
+
+【4-9 設定】
+- 指定できる項目は足しません。build_catalog が読む設定は band_fee_mult だけです（observe_config.json:410）。設定の古い鍵と material_params・drop_columns は、写す元の関数（_catalog_from_config）だけが読みます。
+- 値の持ち方：範囲は、指標ごとに1つの欄にだけ置きます（②-4・④-4 の軸ごと・161-1 のまま）。この工事は範囲に触りません。
+
+【新しく入る数字と式の一覧】
+| 番号 | 数字か式 | 出どころ |
+|---|---|---|
+| ［自動］ | 2026・11・01・20261101・161・162・171 | 工事の日付（2026-11-01）と工事名（m2c15-catalog-redirect-20261101）と ToDo の番号（161-2・162番・171番）。全部 説明の文で、計算には使わない |
+| ［自動］ | 2・3・4・5・6・9・12 | やることの表の番号（F-1〜F-6・Y-5）と要素の定義表の番号（②-2・②-12・④-3・④-9）と、集約の要件定義書の R5・R6。説明の文で、計算には使わない |
+| ［自動］ | 1・-1・0 | 壊すプログラム b222 の、最後の1組を落とす切り方（[:-1]）と、b226 の grep の数が 0 という決まった文。build_catalog の照らし（⑮）の、最初に違う番号を数える所の 0 始まり |
+| ［自動］ | 222・223・224・225・226・227 | 新しい壊すプログラムの番号（.claude/breaks の最後の番号 b221 の次から） |
+| ［自動］ | 2026-08-20・2026-08-13 | 既に在る説明の文の日付（observe_diag.py:1795 の A-2・leak_causality_diag.py:253 の M2-1-9）を、そのまま残した物 |
+
+【4-10 保存先】
+- 直すのはコードと、壊すプログラム6本（新しいファイル）です。データは、当てた後の写すプログラムの --rewrite が indicators.json を1回 上書きします。変わるのは、要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」と、部品の記録8件の出どころの文の10か所だけで、列を作る組の組と並び・指標の値は変わりません（--rewrite が違う所を全部 画面に出す）。
+- 置き場が1か所であること：列を作る組は、indicators.json の②-12・④-9 の1か所だけで、build_catalog はそこを読みます（scripts の下で column_sets を呼ぶ所は、直した後も build_catalog だけ＝grep -rn "column_sets()" --include='*.py' v3-bitget-api-sdk/bitget-python-sdk-api/scripts）。写す元の関数（_catalog_from_config）は、列を作る組を作り直すときの写す元で、列を作る所ではありません（162番で消す）。
+- 直すと届く先：build_catalog を呼ぶ所の全部（【4-1】の2行目）。
+- 出どころをどこまで確かめたか：値がページに在るかまで（列を作る組は、161-1 で写した値をそのまま読む）。中身の正しさは確かめていません（70番）。
+
+【4-11 時刻の扱い】
+非該当＝この工事は、時刻と足の区切りを扱いません。build_catalog は列の名前と計算を組むだけで、時間足と足の区切りは build_features が扱います（observe_diag.py:1792〜2229 に timeframes が無い）。
+
+【4-12 出る結果の姿】
+当てた直後に、7-6 の6行のコマンドが全部 通ります（観察の道具の --selftest-catalog は「❌ 0 件」・読む口と写すプログラムと gen_materials の自己テストは全部 ✅・grep は「…leak_causality_diag.py:1」）。当てた後の手順が済んでから確かめる物は、次のとおりです。
+- 写すプログラムの --rewrite＝「写す元から作り直した物と違う所＝10 件」（要素の定義表の ②-12・④-9 と、部品の記録8件の出どころ）を出して書く（python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/gen_indicators_draft.py --rewrite を SDK の直下で）。
+- 写すプログラムの --verify＝「✅ 違い 0 件」（python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/gen_indicators_draft.py --verify を SDK の直下で）。
+- 2-1 の3行＝awk の数が 0 と 1 以上・grep -c が 1（WATCHED の2本は1行に書く）。
+- G2 → H2 の印＝python3 scripts/priority_rebuild/gen_signal_families.py --verify と python3 scripts/priority_rebuild/leak_causality_diag.py が全部 pass（h2_pass.json の対象が2本増える）。
+- 列の比べ（155-1）＝python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/col_snapshot.py --compare /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/col_snapshot/before_20261024.json が「控えに在って今に無い列 0・今にだけ在る列 0・値が違う列 0・名前の並び 同じ」で終わりのコード 0（約61分・まこさんの OK の後）。
+
+【4-23 置き場の地図】
+| 置き場 | 直す前（何が在る・誰が書く・誰が読む） | 直した後（何が在る・誰が書く・誰が読む） |
+|---|---|---|
+| 列を作る組の読み元 | build_catalog が observe_config.json の古い鍵・material_params・drop_columns を読む。indicators.json の②-12・④-9 は誰も読まない | build_catalog が読む口の column_sets から②-12・④-9 を読む。設定は band_fee_mult だけを読む |
+| 直す前の build_catalog の中身 | build_catalog（列を作る所と、写すプログラムの写す元を兼ねる） | _catalog_from_config（写すプログラムの写す元だけ・162番で消す） |
+| H2 の印の対象 | WATCHED に indicators/ の2本が無い | WATCHED に indicators.json と indicators.py が在る |
+| materials.md の場所1 の数え方 | build_catalog の中の設定の鍵を数える | _catalog_from_config の中の設定の鍵を数える（数は同じ） |
+| indicators.json の要素の定義表の ②-12・④-9 と部品の記録の出どころの文 | 写す元＝build_catalog・読むプログラム＝空・部品の出どころ＝build_catalog の帯の for | 写す元＝_catalog_from_config・読むプログラム＝build_catalog・部品の出どころ＝_catalog_from_config の帯の for（写すプログラムが --rewrite で書く） |
+- 直した後に、列を作る組を変えるときの手順：162番までは、写す元（observe_config.json の鍵）を直し、写すプログラムの --rewrite で indicators.json を作り直します（161-1 の修正14 案B）。build_catalog は、作り直した indicators.json を読みます。
+- 読む先が変わるプログラム：build_catalog だけです。呼ぶ側（【4-1】の2行目）は、build_catalog の出力をいまと同じ形で受けます。写すプログラムと gen_materials は、読む相手を build_catalog から _catalog_from_config に替えます。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 観察の道具の --selftest-catalog | 約13秒（build_catalog と写す元の関数を1回ずつ多く作るが、関数を組むだけ） | 2026-11-01 に今のコードで 12.7秒 |
+| 読む口の --selftest | 約0.1秒 | worklog 20261101:118 |
+| 写すプログラムの --selftest・--rewrite・--verify | 約3秒・約97秒・約95秒 | worklog 20261101:118・:229・:230 |
+| gen_materials の --selftest | 約82秒 | worklog 20261101:157 |
+| G2 → H2 | 約73秒 → 約315秒 | worklog 20261101:157 |
+| 列の比べ | 約61分 | col_snapshot/before_20261024.log の 3637秒 |
+| 監査に出す前のチェック | 約12分 | worklog 20261101:157 |
+
+【4-15 競合】
+- 仮当て（A12）と壊すプログラムは、本物のファイルを仮に書き替える道具の錠を取ってから走ります（require_design_check_before_approval.py:800〜816）。2つが同じファイルを同時に書くことはありません。
+- 列の比べ（col_snapshot.py --compare）は、控えを読むだけで書きません（col_snapshot.py:105〜113）。
+- この工事の走行は1つずつ打ちます。
+
+【4-16 セキュリティ】
+- 取引所の鍵・本番で実際に発注するかの切り替えには触りません（直すファイルの一覧に無い）。
+- 検査済みの記録（h2_pass.json・g2_pass.json）は、当てた後に G2 と H2 の検査を走らせて、道具が書きます。手では書きません。
+
+【4-17 ログと進捗表示】
+- 自己テストは、1行ずつ通ったか落ちたかの印を出します（python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog ほか、7-6 の6行のコマンド）。
+- 列の比べは、50種ごとに「何種目まで・何秒」を出します（col_snapshot.py:79〜80）。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| .claude/state/verbatim/m2c15-single-source-redirect-20261025/cc_draft_2a1/build_catalog_new.txt | 組を並びの順に回して make_material か _band_material を呼ぶ形 |
+| .claude/state/indicator_review/gen_fix_inventory.py の読む口の import（sys.path に indicators を足して import する） | build_catalog が読む口を読み込む形 |
+| observe_diag.py:7894〜7928（カタログの自己テストの P-1・P-2） | 照らし（⑮⑯）の書き方 |
+| .claude/breaks/b137_material_params_ignored.sh・b221_draft_rep_by_position.sh | 壊すプログラムの形（guard・1か所でなければ止まる・measure・finish） |
+
+【4-20 実装の指示】
+ファイル: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verbatim/m2c15-catalog-redirect-20261101/impl_4-20_20261101.json sha256=4c2f597591bf53e3aca7f25cdda9b1787313760eef84ee00b8b244a0ab4db8a9
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 直す前の build_catalog の中身を、写す元の関数 _catalog_from_config として残す（F-3） | 写すプログラムの写す元が indicators.json 自身になるのを防ぎ、161-1 で決まった「162番までは写す元で直して作り直す」（修正14 案B）を変えずに済む。技術のやり方なので CC が決め、設計書の監査で問う（まこさん「よい」2026-11-01） | 写すプログラムが②-12・④-9 を作り直さず、indicators.json を正本にする形（162番より前に、設定の鍵を直しても列に届かなくなり、修正14 案B と食い違う） |
+| build_catalog から読む口の calc を呼ばず、make_material と _band_material を使う（Y-5） | calc はオフの指標を返さない（indicators.py:311〜312）が、列を作る組はオフの250組を持つ。calc が返す関数と make_material の関数は同じ計算の登録の同じ行。calc は観察の道具を import し直すので、読み込みが輪になる | calc がオフの指標も返す形に直す（決まり⑤と要件6 の「オフの指標は、どのロジックからも使えない」に反する） |
+| column_sets が組ごとに計算の登録の名前を返す（F-2） | 記録の名前と登録の名前が違う記録が56ある。build_catalog が要素の名前（計算の関数）をコードに書いて引くと、決まり①（要素の名前をコードに書かない）に反する | build_catalog が記録の計算の関数の要素を直に引く形 |
+| H2 の印の対象に indicators.json と indicators.py を足す（F-5） | build_catalog がこの2本から列を作るので、2本が変われば材料の列が変わりうる。足さないと、indicators.json を直しても H2 の印が合ったままになる | 足さない形 |
+| 要素の定義表の ②-12・④-9 と部品の記録の出どころの文を、写すプログラムで合わせる（F-4） | 同じ事実（列を作る組の写す元と読む所）を書く場所を揃える（恒久72番の2）。indicators.json は手で直さず、写すプログラムで作り直す（161-1 の修正14 案B） | 文を直さずに 162番まで残す形（indicators.json の説明が事実と違ったままになる） |
+| gen_materials の場所1 を、写す元の関数で数える（F-6） | 設定の鍵が列を決めるのは、写す元の関数を通して写すプログラムが組を作り直すときだから。数は直す前と同じ | 読む口の列を作る組で数える形（場所1 の意味が変わり、materials.md の作り直しが要る） |
+| 列の比べは、完成の条件でなく、当てた後の手順（4-4 の5）で行う | 約61分かかり、当てた直後の仮当てでは走らせられない（案のひな型 :193） | 完成の条件に入れる形 |
+| 監査の前の検査の指紋の直しは、この設計書に入れない（Y-6） | .claude/tools の直しは、インフラの直しで、設計書と監査が要らない（2026-10-20 の決定の2） | この設計書に入れる形 |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 読み込みの輪 | build_catalog は読む口を import するだけで、calc を呼ばない。読む口は calc を呼んだときだけ観察の道具を import する（indicators.py:73〜87・:301〜306） |
+| 読む口は1回だけ読む（indicators.py:366〜378） | 同じ走行の中で indicators.json を書き替えても、build_catalog は前に読んだ物を使う。写すプログラムの --rewrite は、F-4 の後は build_catalog を呼ばないので、この形で困る所は無い |
+| 同じ名前のモジュール | cat/indicators.py は「cat.indicators」として読まれる（strategies/cat_v9_decider.py:25）ので、読む口の「indicators」とぶつからない |
+| materials.md の説明の文が古くなる | Y-13。162番で写す元の関数を消すときに直す |
+| 閉じた工事の壊すプログラム b137・b128 が効かなくなる | Y-7。161-2 の守りは b222〜b227 |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる・7-6 の6行 | 約3分 | 【4-14】の自己テストの時間の合計 |
+| --rewrite・--verify・G2・H2 | 約10分 | 【4-14】 |
+| 列の比べ | 約61分 | 【4-14】 |
+| 監査に出す前のチェック | 約12分 | 【4-14】 |
+
+【確かめていないこと】
+| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |
+|---|---|---|
+| 列の比べで、列の名前・並び・値が直す前と同じこと（155-1） | 約61分の走行で、承認の後・まこさんの OK の後に走らせる（4-4 の5） | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/col_snapshot.py --compare /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/col_snapshot/before_20261024.json |
+| G2 で、型の表と承認の指紋が変わらないこと | 当てた後に走らせる（4-4 の4） | python3 scripts/priority_rebuild/gen_signal_families.py --verify |
+| materials.md の場所1 の数が、直す前と同じこと | gen_materials の --verify を、当てた後に走らせていない | python3 scripts/priority_rebuild/gen_materials.py --verify |
+| --rewrite が出す「違う所」が、要素の定義表の ②-12・④-9 と部品の記録8件の出どころの10か所だけであること | 当てた後に走らせる（4-4 の3）。indicators.json で build_catalog を書く所は10か所（grep -c・2026-11-01） | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/gen_indicators_draft.py --rewrite（SDK の直下） |
+| 監査の前の検査の指紋に indicators/ の2本を足す直し | インフラの直し（Y-6）で、承認の後に行う | 直した後に python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --run |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 161-1 で列を作る組を indicators.json に入れたが、build_catalog を同じ設計書で直せなかった（当てた直後の indicators.json が古い形で、承認の前の検査が走らせる観察の道具の自己テストが落ちる＝worklog 20261031:495）。そのため、列を作る所がまだ設定の鍵を読み、indicators.json を直しても列に届かない（要件 core_requirements_full.md:85・集約の要件定義書 R6 と違う） |
+| 期待値分解 | 売買に触らない工事＝［自動］目標の③④の写し |
+| root か symptom か | root。列を作る所の読み元そのものを、設定の鍵から読む口の列を作る組に替える。代表の値と範囲から列を作る形（171番・M2-E-8）は別の工事 |
+| ベースアップ | 233回目の読むもの宣言40件（指標の構造の要件定義書・集約の要件定義書の §5・§7・§8・§10・161-1 の やることの表と設計書の控え・CP95 の §7・§8・読む口・indicators.json・observe_diag.py の帯と計算の登録と build_catalog とカタログの自己テスト・col_snapshot.py と控え・写すプログラム・gen_materials の鍵を拾う口・H2 の対象・監査の前の検査の指紋・承認の前の検査の自己テスト・b137・value_conflicts・fix_inventory）。WebSearch は使っていない（値を新しく調べない工事のため） |
+
+【7-2 固定値ゼロ宣言】
+この工事は、疑似シミュ由来の固定値を1つも入れません。列は、161-1 で写した列を作る組（いまのカタログの列の写し）から作ります。コードの中の数字は、壊すプログラムの切り方と決まった文、説明の文の日付と番号だけです。
+
+【7-3 変更の単位】
+変更の単位は「列を作る所（build_catalog）の読み元を、設定の鍵から読む口の列を作る組に替える（それに伴い、写すプログラムの写す元・H2 の印の対象・gen_materials の数える相手を付け替える）」の1つです。代表の値と範囲から列を作る形（171番・M2-E-8）・engine_tuner の経路の7本（171番）・残りの24本（170番）・元の置き場と写す元の関数を消す（162番）・閾値と代表の値を写す（70番）は別の工事です。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 根拠 | 確かめ直すコマンド |
+|---|---|---|
+| 1 | この工事は条件をつなぎません。列を作る所の読み元を替えるだけです。実装の指示に乱数の語は0件です | grep -c -e random -e rng /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verbatim/m2c15-catalog-redirect-20261101/impl_4-20_20261101.json |
+| 2 | 探す値を一覧で新しく限定しません。列を作る組は、いまのカタログの列をそのまま写した物で、171番まで列を変えないための物です（Y-4）。列の名前と並びが直す前と同じことを、カタログの自己テストの照らし（⑮）と列の比べで見ます | python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 照らし⑮は値まで見るか | 見ない。名前と並びだけを見る。値は、列の比べ（約61分）で見る |
+| 照らし⑯は、関数を通した設定の読みまで見るか | 見ない。build_catalog の中の cfg[...]・cfg.get(...) だけを見る。cfg を渡す関数（_band_fee_floor）の中の読みは見ない（床の倍数は、この形で読むと決めた物） |
+| 写す元の関数と build_catalog が同じ列を作るか | 名前と並びは⑮が見る。計算の関数は、どちらも同じ計算の登録から取る（make_material・_band_material）が、値が同じかは列の比べで見る |
+| 閉じた工事の壊すプログラム b137・b128 | 前提が変わり、壊しても build_catalog は変わらない（Y-7）。消さないので、走らせると期待と違う結果になる |
+| 監査 cp14 の Q5 の1＝照合D は中身を見るか | 見ない。名前が在るかだけを見る。中身は 7-6 の6行と壊すプログラム6本と、当てた後の --verify・列の比べで見る |
+| 監査 cp14 の Q5 の2＝照合A・B は循環していないか | impl_functions は、直す前の文字が入る関数を def の行から確かめて書いた。照合A は、触った関数が impl_functions に在るかを見る。設計の中身は設計書の監査で見る |
+| 監査 cp14 の Q5 の3＝must_use_from を使うか | 使わない。must_use は、カタログの自己テストが呼ぶ関数（build_catalog・_catalog_from_config・load_config・find_material）を書く |
+| 監査 cp14 の Q5 の4＝Bash の止めを抜ける打ち方は無いか | 変数から組んだコマンドなどは門の語の外に出うる。この工事は当てる道具でだけ書く |
+| 監査 cp14 の Q5 の5＝承認の記録を消したら門は通るか | 通る。手で消す・書き替えることは門では見抜けない。git の差で後から見る |
+
+【7-5 §4.6 の照合】
+- TARGET は、やることの表の「直す」の行の5本（observe_diag.py・indicators.py・gen_indicators_draft.py・leak_causality_diag.py・gen_materials.py）です（設計書を作るプログラムが一覧から作る）。
+- DESIGN_CONTRACT は【7-8】に書きます。impl_file は observe_diag.py で、impl_functions は直す関数（observe_diag.py の build_catalog・_catalog_from_config・selftest_catalog、indicators.py の <モジュール直下>（使い方の説明の行）・Indicators.column_sets・selftest、gen_indicators_draft.py の <モジュール直下>（PART_SRC と頭の説明）・build_old・catalog_sets・table_update・selftest、leak_causality_diag.py の <モジュール直下>（WATCHED）、gen_materials.py の _catalog_keys・selftest）です。名前は、仮当て（A12）の照合A が出した名前に合わせました。
+- NEW_FILE は、7-6 の壊すプログラム6本（b222〜b227）で、プログラムが足します。MODEL は .claude/breaks/b137_material_params_ignored.sh です。
+- 真因は【7-1】に書きました。
+- 期待値分解は【7-1】に書きました。
+- root か symptom かは【7-1】に書きました（root）。
+- ベースアップは【7-1】に書きました。
+- 1レバーです。列を作る所の読み元を替えることだけで、指標の値・列の名前と並び・計算の式は変えません。
+- 過去の失敗を再演しません。前の回の誤り（--verify の後にファイルを消し、走らせ直さずに commit した＝worklog 20261101:212）は、4-4 の7（commit の直前に走らせ直す）で防ぎます。
+- 非該当です。案を作るプログラムに、新しい部品・前処理を足しません。
+- 直すファイルに engine_tuner_exec.py・engine_tuner_gen.py は入りません。build_catalog を呼ぶ側は、出力の形が同じなので直しません。
+- 直すファイルの名前で .claude/breaks を grep すると、observe_diag.py を名指す壊すプログラムが約70本 当たります。壊す相手の行（old の1行目）が build_catalog の範囲（:1792〜2229）に在るのは b137・b128 の2本で、閉じた工事の物なので直しません（Y-7）。ほかは各指標の式を壊す物で、build_catalog の行を壊しません。
+- 壊すプログラム6本が測るのは、自己テストと grep だけで、結果の置き場に書きません。壊す相手は lib.sh の guard が控えを取り、必ず戻します。
+- 新しく足す関数（def）は、observe_diag.py の _catalog_from_config だけです（中身は直す前の build_catalog）。build_catalog は中身を置き替えます。
+- 新しく足すコマンドの旗と設定の鍵はありません。
+- 実装の後に設計書を作り直すときは、変わった手順を 4-4・やらないこと・4-13・4-19・見積もりに書き直してから作り直します。
+- 固定値ゼロの宣言は【7-2】に書きました。
+- ARC の行は、設計書を作るプログラムが入れます。
+- 1変更です（8つ目の答え）。過去の失敗は、9つ目の答えのとおり再演しません。
+- 自己検査は、7-6 の6行（観察の道具の --selftest-catalog・読む口と写すプログラムと gen_materials の --selftest・grep）と、壊すプログラム6本と、当てた後の --verify・G2・H2・列の比べです。
+
+【7-8 プログラムが読む設定】
+```json
+{"MODEL": [".claude/breaks/b137_material_params_ignored.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "scripts/priority_rebuild/observe_diag.py",
+                     "_impl_file の意味": "列を作る所 build_catalog と、写す元の関数 _catalog_from_config と、カタログの自己テストが在る観察の道具。",
+                     "impl_functions": {"scripts/priority_rebuild/observe_diag.py": ["build_catalog", "_catalog_from_config", "selftest_catalog"],
+                                        "scripts/priority_rebuild/indicators/indicators.py": ["<モジュール直下>", "Indicators.column_sets", "selftest"],
+                                        "../../.claude/state/indicator_review/gen_indicators_draft.py": ["<モジュール直下>", "build_old", "catalog_sets", "table_update", "selftest"],
+                                        "scripts/priority_rebuild/leak_causality_diag.py": ["<モジュール直下>"],
+                                        "scripts/priority_rebuild/gen_materials.py": ["_catalog_keys", "selftest"]},
+                     "self_check_calls": ["selftest_catalog"],
+                     "_self_check_calls の意味": "observe_diag.py に在るはずの、カタログの自己テストの関数の名前。",
+                     "must_use": {"selftest_catalog": ["build_catalog", "_catalog_from_config", "load_config", "find_material"]},
+                     "_must_use の意味": "カタログの自己テストが呼ぶ関数（_catalog_from_config は、この工事で足す照らし⑮が呼ぶ）。",
+                     "spec_lists": {},
+                     "no_spec_lists_reason": "この工事は、観察の道具の外から読む一覧の形（カタログの1件＝名前・計算・向き）を変えない。column_sets の返り値に登録の名前を足すが、それを読むのは build_catalog だけ（grep）。",
+                     "generated_from": {"impl_functions": "直す前の文字が入る関数を、grep で def の行から確かめた。一番外の行（説明・PART_SRC）は <モジュール直下>・クラスの中の関数は Indicators.column_sets と、仮当て（A12）の照合A が出した名前に合わせた",
+                                        "must_use": "selftest_catalog の中の呼び出しを grep で確かめた（_catalog_from_config は実装の指示の2件目で足す）",
+                                        "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【外部検索】
+| 名前 | 中身 | 検索の言葉 |
+|---|---|---|
+| 列を作る所を、データの側の定義から作る作り | 列の組（名前の型・パラメータの組・並び）をデータの側に持ち、列を作る関数がそれを読んで、計算の本体は名前で引く登録から取る作りが、外の一般の作り方と合うか。新しく Web は開いていない | feature catalog built from metadata registry function lookup by name single source of truth |
+| 作り直す前と後で出力が同じことを確かめる作り | 直す前の列の名前と値のハッシュ値を控え、直した後に同じかを比べる作り（回帰の照合）が、外の一般の作り方と合うか。新しく Web は開いていない | refactoring regression test snapshot hash compare feature columns before after |

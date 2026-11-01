@@ -1,0 +1,1 @@
+PART_SRC = "observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"

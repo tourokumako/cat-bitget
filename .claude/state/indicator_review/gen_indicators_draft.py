@@ -13,7 +13,7 @@
   9 資料の表・調べた結果と、直す相手の一覧（fix_inventory_20261024.md）の「①写す」の行の全部（どの行を読むかは一覧から読む）
   ★161-1 で足した写す元＝10 要素の定義表（indicators.json の中・要素の名前と形はここから読む・コードに欄の名前を書かない）
     11 隠れた数字（172番の道具 gen_params_in_name.py の measure と、計算式が呼ぶ自前の関数の数の既定＝監査 CP91 の修正1）
-    12 いまのカタログの列の並び（observe_diag.build_catalog＝列を作る組 ②-12・④-9・171番まで）
+    12 いまのカタログの列の並び（observe_diag._catalog_from_config＝写す元の関数・162番まで＝列を作る組 ②-12・④-9・171番まで。161-2 から build_catalog はこれを読む）
 写す先の形（一番外の5つ）＝_作った道具・要素の定義表・指標の記録（名前を鍵にした辞書）・使い方の記録（行の並び）・部品の記録（名前を鍵にした辞書）
   指標の記録＝②の要素（名前・計算の関数・パラメータの軸・値の単位と値域・値の読み方・教科書の役割・照らしと出どころ・オン/オフ・閾値の範囲・列を作る組）
   使い方の記録＝③の要素。いまのデータが使い方を決めている4種（出口の水準の定数を持つ ADX・RSI・Stoch%K・Stoch%D）だけ＝
@@ -125,7 +125,7 @@ _ATR = [{"指標の記録": "ATR%", "時間足": "1h", "呼ぶ関数": "_band_to
          "使う量": "1時間足の ATR ÷ 終値（×100 しない・observe_diag.py:507）。ATR% の記録の出力（×100・列の時間足・observe_diag.py:1102）と違う"}]
 PART_USES = {"帯VA": _VA, "帯VA1時間ATR": _VA + _ATR, "帯pivot": _PV, "帯pivot1時間ATR": _PV + _ATR,
              "帯pivot前週": _PW, "帯pivot前週1時間ATR": _PW + _ATR, "帯スイング": _SW, "帯スイング1時間ATR": _SW + _ATR}
-PART_SRC = "observe_diag.py の _BAND_IMPL（帯の計算式の表）と build_catalog の帯の for"
+PART_SRC = "observe_diag.py の _BAND_IMPL（帯の計算式の表）と _catalog_from_config の帯の for（161-2 の前は build_catalog の中に在った）"
 # ── 部品の記録に足す要素の4行（監査 CP94 の修正8 案B）＝②-5〜②-7・②-9 と同じ形の行を、置く記録を部品の記録にして足す ────────
 SRC_CP94 = "監査 CP94（工事 m2c15-indicator-redirect-20261031・まこさん「全部修正する」「CCのおすすめでOK」2026-11-01）"
 PART_ROWS = (("②-5", "④-10"), ("②-6", "④-11"), ("②-7", "④-12"), ("②-9", "④-13"))
@@ -589,7 +589,9 @@ def build_old() -> tuple:
     # 4 列を作る値＝いまのカタログの列を、定義表の find でたどった値。出どころの鍵は、鍵を1つずつ空にして列が減る種類で決める
     def cols(c):
         got = {}
-        for nm, _f, _d in od.build_catalog(c):
+        # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝写す元は、設定から列を作る _catalog_from_config（162番まで）。
+        #   build_catalog は読む口の列を作る組から作るので、写す元にすると indicators.json を indicators.json から作ることになる。
+        for nm, _f, _d in od._catalog_from_config(c):
             e, p = iref.find(nm)
             if e:
                 got.setdefault(e["family"], set()).add(tuple(p or ()))
@@ -836,6 +838,13 @@ def table_update(table: dict, role_table: dict, prop_table: dict, kubun: list) -
         e = next(x for x in t["要素"] if x["番号"] == no)
         if add not in e["写す元"]:
             e["写す元"] = e["写す元"] + add
+    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 F-4）＝列を作る組の写す元は _catalog_from_config（162番まで）、
+    #   読むのは build_catalog になった。要素の定義表の ②-12・④-9 の「写す元」と「読むプログラム」を、いまの形に合わせる（2回 呼んでも同じ物）
+    for no in ("②-12", "④-9"):
+        e = next(x for x in t["要素"] if x["番号"] == no)
+        e["写す元"] = e["写す元"].replace("（observe_diag.build_catalog）", "（observe_diag._catalog_from_config＝写す元の関数・162番まで）")
+        if "observe_diag.build_catalog" not in e["読むプログラム"]:
+            e["読むプログラム"] = list(e["読むプログラム"]) + ["observe_diag.build_catalog"]
     cv = t["選べる値"]
     cv.setdefault("玉の向き", list(SIDE_CHOICES))
     cv["役割の区分の表"] = copy.deepcopy(role_table)
@@ -970,7 +979,7 @@ def hidden_numbers(old: dict, sets: dict) -> tuple:
 def catalog_sets(old: dict) -> dict:
     """記録 → {名前の型, 照らす形, 組, 並び, 出どころの鍵}。カタログの列（observe_diag.build_catalog）を上から順にたどる。"""
     cfg = jload(PR / "observe_config.json")
-    cat = od.build_catalog(cfg)
+    cat = od._catalog_from_config(cfg)                    # 写す元＝設定から列を作る関数（162番まで・161-2 のやることの表 F-4）
     reg2rec = {c["登録の名前"]: nm for nm, r in old.items() for c in r["計算の関数"] if c["登録の名前"]}
     #   組＝登録の名前の型に入れる数字（build_catalog が make_material に渡す物）。照らす形の値＝参照表の型で列の名前から読んだ数字
     #   （記録の「列を作る値」・RVGI({},4) のように型に固定の数字が在る種類は、組より1つ多い）。どちらも捨てない。
@@ -1709,6 +1718,15 @@ def selftest() -> int:
         t("読む口: 列を作る組を並びの順で返す", [x["記録"] for x in rd.column_sets()] == ["RSI", "RSI", "帯VA", "帯VA", "前日VAH", "前日VAH", "前日VAL", "前日VAL"])
     except SystemExit as e:
         t(f"読む口: 写した物を読み込める（{e}）", False)
+    # 5 写す元（161-2 のやることの表 F-4）＝列を作る組と出どころの鍵を作る所（build_old の cols・catalog_sets）は、
+    #   build_catalog でなく写す元の関数 _catalog_from_config を呼ぶ（構文の木で、呼んでいる属性の名前を見る）
+    import ast as _ast5
+    _calls5 = {}
+    for _n5 in _ast5.walk(_ast5.parse(Path(__file__).read_text(encoding="utf-8"))):
+        if isinstance(_n5, _ast5.FunctionDef) and _n5.name in ("build_old", "catalog_sets"):
+            _calls5[_n5.name] = {c.func.attr for c in _ast5.walk(_n5) if isinstance(c, _ast5.Call) and isinstance(c.func, _ast5.Attribute)}
+    t("写す: 写す元は _catalog_from_config で、build_catalog を呼ばない（161-2 の F-4）",
+      len(_calls5) == 2 and all("_catalog_from_config" in v and "build_catalog" not in v for v in _calls5.values()))
     for name, good in ok:
         print(f"  {'✅' if good else '❌'} {name}")
     n_ng = sum(1 for _n, g in ok if not g)

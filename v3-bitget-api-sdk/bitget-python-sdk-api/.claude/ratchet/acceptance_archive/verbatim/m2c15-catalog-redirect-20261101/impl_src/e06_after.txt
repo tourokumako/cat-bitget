@@ -1,0 +1,4 @@
+    bad = copy.deepcopy(base)
+    bad["部品の記録"]["帯既定"]["計算の関数"]["登録の名前"] = None
+    t("計算: 登録の名前が無ければ止まる（組を持たない部品＝帯既定で試す・組を持つ記録は読み込みで止まる＝161-2 の F-2）",
+      calc_stops(Indicators(bad, timeframes=["5m"], registry=reg), "帯既定", "計算の関数の登録が無い"))
