@@ -539,3 +539,12 @@
 - gen_materials.py --selftest＝全部 pass・--verify＝一致・git diff の消えた行＝1行（前と同じ）。
 - カタログの自己テストほか（observe_diag.py を走らせる Bash）を、設計↔実装ゲート（require_design_contract_before_run.sh → verify_design_contract.py:1083〜1103）が止めた＝「A(双方向) .claude/tools/pre_audit_check.py: 設計書の impl_functions に書いていないファイルを触った」。ほかの5本は全部一致。ゲートは git status で作業中の変更が在る .py を数え、承認の時点で汚れていた物（<iter>.dirty.json）だけを外す。Y-6（設計書のやらないことで「承認の後にインフラの直しで行う」と決めた物）を承認の後に直したので数えられた＝設計書の Y-6 とゲートが食い違う。
 - 作業中の変更が在るインフラのファイル＝.claude/tools/pre_audit_check.py（Y-6）・.claude/hooks/require_work_declaration.py（202番）・.claude/state/hook_inventory.md と hook_inventory_src.json（202番）。hook_fix_proposals と gen_fix_inventory.py（203番）は git の対象外。まこさんに伺って止めた。
+- まこさん「よい」→ インフラの4本だけをパスを指定して commit（a3e50dfb）。承認のプログラムが先に git に加えていた工事のフォルダの控えは入れなかった。
+- 走らせ直し＝カタログの自己テスト「❌ 0 件」・読む口 36/36・写すプログラム 40/40・grep「…:1」・gen_materials の自己テスト全部 pass・--verify 一致・消えた行1行・写すプログラムの --verify「違い 0 件」・--rewrite の後も indicators.json の sha256 4d3f3717… のまま・一覧は写す行 732・2,761行。
+- まこさん「コミットOK」→ 161-2 の実装と控え（79ファイル）を1本ずつ加えて commit（eed56c58）。鍵のファイルの変更なし。
+
+## §23 235回目の締め（156番・宣言に まこさん「よい」）
+- ToDo＝161番を「まだ（途中＝161-2 の実装の監査の依頼書から）」、★いまここを156番へ。202番・203番は ✅済。
+- 教訓 L-743（lessons_active.md）を書いた＝長い走行の見込みは同じ条件の過去の実測から出す・宣言の根拠に作業が書き替える行を引かない・承認の後の段が道具とゲートに当たるかを設計書を書く時点で照らす。
+- tidy_next_step.py --todo-from（21行・「2」の見出し236回目・締めの行（236回目））。元データの手で書く所＝①（161-2 は commit eed56c58 まで・次は実装の監査の依頼書 CP97・インフラは a3e50dfb）・②（worklog §14〜§23 と設計書を開く → 実装の監査の段 → 手書きの元 → 自己申告に書く事 → 記録の時刻）・必読の表（外す条件を満たした4行＝指標の構造の要件定義書・CP96 の依頼書・やることの表を外し、worklog と設計書の行の理由と外す条件を実装の監査向けに替えた）・④・3-1。あとで直すことに268番（書いた直後の検査の hook が作業場の json を設計書と取り違えた件）を足した。
+- 次のセッションの最初＝この §14〜§23 を最後の行まで開く → 設計書 acceptance.md（承認済み・b3bc8c29）→ next_move.py --work m2c15-catalog-redirect-20261101 で実装の監査の段 → 手書きの元（161-1 の「監査依頼の手書き（実装の監査）.md」が手本）。自己申告＝4-4 と違った手順（一覧の作り直し・203番・--rewrite の違う所34件・Y-6 を先に commit）と見込みを外した走行。
