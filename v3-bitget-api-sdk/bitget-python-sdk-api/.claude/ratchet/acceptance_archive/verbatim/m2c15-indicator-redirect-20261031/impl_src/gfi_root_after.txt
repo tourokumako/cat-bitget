@@ -1,0 +1,1 @@
+ROOT = Path(os.environ.get("IND_ROOT", "/Users/tachiharamasako/Documents/GitHub/cat-bitget"))   # ★2026-10-31（F-4）＝写しで確かめるときは IND_ROOT で写しの一番上を渡す（ss_outside_probe.py の SS_ROOT と同じ形）

@@ -1,0 +1,5 @@
+# ★2026-10-31（工事 m2c15-indicator-redirect-20261031・やることの表 F-4）＝名前は読む口 indicators.py から読む（集約の要件定義書 R5）。
+#   indicators.json を直に開かない。読む口が無い・読めない・古い形なら、読む口が止める（fail-closed）
+sys.path.insert(0, str(PR / "indicators"))
+import indicators as _ind  # noqa: E402  読む口（indicators.json を開くのはこのプログラムだけ）
+_BASE = set(_ind.load().names("指標の記録")) | set(_ind.load().names("部品の記録"))

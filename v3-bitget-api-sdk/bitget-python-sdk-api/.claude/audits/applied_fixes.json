@@ -9274,6 +9274,90 @@
    "file": ".claude/state/verbatim/m2c15-indicator-redirect-20261031/やることの表.md",
    "at": "2026-11-01T06:01:50",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "2",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "3",
+   "file": ".claude/state/indicator_review/gen_fix_inventory.py",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "4",
+   "file": ".claude/state/indicator_review/gen_fix_inventory.py",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "5",
+   "file": ".claude/state/indicator_review/ss_outside_probe.py",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "6",
+   "file": ".claude/breaks/b215_reader_off_element.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "7",
+   "file": ".claude/breaks/b216_reader_choice_check.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "8",
+   "file": ".claude/breaks/b217_draft_range_not_copied.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "9",
+   "file": ".claude/breaks/b218_draft_hidden_rows_missing.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "10",
+   "file": ".claude/breaks/b219_probe_direct_read.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "11",
+   "file": ".claude/breaks/b220_reader_calc_from_registry.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-redirect-20261031",
+   "num": "12",
+   "file": ".claude/breaks/b221_draft_rep_by_position.sh",
+   "at": "2026-11-01T08:58:01",
+   "how": "当てた"
   }
  ]
 }

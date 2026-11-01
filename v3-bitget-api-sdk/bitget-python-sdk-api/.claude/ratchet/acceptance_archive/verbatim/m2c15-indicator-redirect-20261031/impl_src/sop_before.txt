@@ -1,0 +1,11 @@
+# ★2026-10-24（ToDo の151番）＝名前の読み元を差し替えられる形にする。indicators.json が在ればその記録の名前、無ければ INDICATOR_TABLE
+#   （gen_fix_inventory.py と同じ形。INDICATOR_TABLE を消した後も、この道具が止まらないようにする）
+_IJ = PR / "indicators" / "indicators.json"
+if _IJ.exists():
+    FAMS = set(json.loads(_IJ.read_text(encoding="utf-8")).get("記録", {}))
+else:
+    text = IREF.read_text(encoding="utf-8")
+    a, b = text.find("# ══ INDICATOR_TABLE_START"), text.find("# ══ INDICATOR_TABLE_END")
+    body = text[text.index("\n", a) + 1:b]
+    TABLE = ast.literal_eval(re.search(r"^INDICATOR_TABLE: dict\[str, dict\] = (\{.*\})\s*$", body, re.S | re.M).group(1))
+    FAMS = set(TABLE)

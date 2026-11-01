@@ -1,0 +1,1 @@
+ROOT = Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")

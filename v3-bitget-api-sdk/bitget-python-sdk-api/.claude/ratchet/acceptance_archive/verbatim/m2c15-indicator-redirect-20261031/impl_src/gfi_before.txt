@@ -1,0 +1,3 @@
+# ★2026-10-24（ToDo の151番）＝名前の読み元を差し替えられる形にする。indicators.json が在ればその記録の名前、無ければ INDICATOR_TABLE
+_IJ = PR / "indicators" / "indicators.json"
+_BASE = set(json.loads(_IJ.read_text(encoding="utf-8")).get("記録", {})) if _IJ.exists() else set(iref.INDICATOR_TABLE)

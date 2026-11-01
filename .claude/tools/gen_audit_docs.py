@@ -971,7 +971,7 @@ HAND_FORM = """# 監査依頼の手書き（実装の監査）｜工事 <工事�
 | <この工事の目的（まこさんの決定・要望から。手段ではなく、なぜ作るのか）> | req_x_20260101:V03 |
 
 ## 経緯
-<この監査に至るまでに何があったか（日付・誰が・何を決めたか・前の監査の結果・見つかった問題）を 3〜5 行。無くてよい>
+<監査人が、どこを疑って見ればよいかを決める事実を書く（必須）。①前の監査の結論と大きな誤り（Critical の中身）②まこさんの決定で変わった設計 ③実装か設計の後に見つかった問題と、確かめていない所。セッションの番号・CC の作業の順番・どの依頼書にも同じ文は書かない（まこさん 2026-11-01）>
 
 ## なぜこの監査が要るか
 <設計書の無い直しなど、要るときだけ。無くてよい>
@@ -1146,7 +1146,10 @@ def read_hand(wdir, label: str, kind: str, names: list, gv) -> dict:
     history = [ln for ln in (sec.get("経緯") or []) if ln.strip()]
     why_audit = [ln for ln in (sec.get("なぜこの監査が要るか") or []) if ln.strip()]
     if not history:
-        bad.append("「## 経緯」が無い（この監査に至るまでに何があったかを、日付つきで3〜5行 書く・まこさん決定 2026-10-18「必須にする」）")
+        # ★2026-11-01（231回目・まこさん「ひな形の経緯の説明を、書き直してよい」）＝説明を「何があったか（日付・誰が）」から
+        #   「監査人が疑う所を決める事実」に替えた。直す前は、CC が依頼書 CP95 の経緯をセッションの回目つきの作業の日記で書いた
+        bad.append("「## 経緯」が無い（監査人が、どこを疑って見ればよいかを決める事実を書く＝①前の監査の結論と大きな誤り"
+                   " ②決定で変わった設計 ③後で見つかった問題と、確かめていない所・まこさん決定 2026-10-18「必須にする」）")
     reqs = [n for n in names if n.split("/")[-1].startswith("req_")]
     valid = {vid for n in reqs for vid, _l in gv.lines(n)}
 
@@ -1908,6 +1911,12 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     if new_form:
         add(f"2. **この工事は何か**：この工事の中身は、設計書の「§1 概要」に書いてあります。施策の一覧は、Q1 の表に載せました。"
             f"やることの番号は、{'・'.join(todos) or '無し'}です。")
+    elif kind == "impl" and d.get("形") == "新":
+        # ★2026-11-01（231回目・まこさん「修正してほしい」）＝実装の監査でも、新しい形の設計書なら §1 概要を写さない。
+        #   直す前は 10-21 の直しが設計書の監査だけに効き（new_form は kind == "design" のときだけ）、実装の監査の依頼書に
+        #   §1 の全文が「⏎」でつながった1行で入った（CP93 の128行・CP95 の128行）
+        add(f"2. **この工事は何か**：この工事の中身は、設計書の「§1 概要」に書いてあります。実装の指示の一覧は、事実データの表に載せました。"
+            f"やることの番号は、{'・'.join(todos) or '無し'}です。")
     else:
         add(f"2. **この工事は何か**：{VERBATIM_NAME_RE.sub('逐語のファイル', _one_line(d.get('何を作るか')))}"
             f"（やることの番号は、{'・'.join(todos) or '無し'}です）")
@@ -2035,8 +2044,14 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
         else:
             pj = json.load(open(PRE_JSON, encoding="utf-8"))
             add(f"CC は、このチェックを {pj.get('at', '')} に走らせました。")
-            add("設計書の監査は、実装の前に出します。そのため、設計書と実物の照合（verify_design_contract.py --diff）の終了コードは、"
-                "設計書に書いた新しい関数がまだ実物に無いので、1 になります。道具は、設計書の監査の依頼書では、この1本を見ません。"
+            # ★2026-11-01（231回目・まこさん「直す」）＝「1 になります」と言い切らず、新しい関数を書いた工事に限る文にし、記録の終了コードを添える。
+            #   直す前は、新しい関数を足さない工事（例＝工事 m2c15-indicator-redirect-20261031・impl_functions が空）でも「1 になります」と書き、
+            #   すぐ下の表の 0 と食い違っていた（依頼書 CP94 の 574行と 591行）。
+            diff_rc = next((r.get("rc") for r in pj.get("rows") or []
+                            if "verify_design_contract.py --diff" in str(r.get("cmd"))), None)
+            add("設計書の監査は、実装の前に出します。設計書に新しい関数を書いた工事では、その関数がまだ実物に無いので、"
+                "設計書と実物の照合（verify_design_contract.py --diff）の終了コードは 1 になります。道具は、設計書の監査の依頼書では、この1本を見ません。"
+                + (f"この工事の照合の終了コードは、下の表のとおり {diff_rc} です。" if diff_rc is not None else "")
                 if kind == "design" else "")
             add("")
             add("| コマンド | 種類 | 終了コード |")
@@ -2266,7 +2281,9 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
                 add("<!-- 項目: 自己申告 -->")
                 add(f"**承認の後に設計書を作り直した**：CC は、承認の後に設計書を作り直しました。前の版は `{a}` で、いまの版は `{newest[0]}` です。"
                     f"違いは、次のとおりです。{_version_diff(os.path.join(ROOT, a), os.path.join(ROOT, newest[0]))}")
-        outside = _dirty_outside(d.get("TARGET") or [])
+        # ★2026-11-01（231回目・まこさん「直す」）＝新しく作るファイル（NEW_FILE）も、この工事の物として除く。
+        #   直す前は TARGET だけを除き、工事 m2c15-indicator-redirect-20261031 の実装1 で作った indicators.py を「この工事の外」と書いた（依頼書 CP95 の :301）
+        outside = _dirty_outside((d.get("TARGET") or []) + (d.get("NEW_FILE") or []))
         if outside:
             add("")
             add("<!-- 項目: 自己申告 -->")
