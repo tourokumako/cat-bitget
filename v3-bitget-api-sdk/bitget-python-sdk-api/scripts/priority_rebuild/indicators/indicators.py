@@ -311,6 +311,8 @@ class Indicators:
         if not self.is_on(name):
             _stop(f"オフの指標の計算は返さない: {name}")
         kind, _rec = self._find(name)
+        if kind == "部品の記録" and name not in self.parts(name):     # ★決まり⑤＝使う物の指標がオフの部品の計算も返さない（監査 CP95）
+            _stop(f"オフの指標を使う部品の計算は返さない: {name}")
         c = self.element(name, self._el("計算の関数", kind))
         reg = c.get("登録の名前") if isinstance(c, dict) else None
         if not reg:

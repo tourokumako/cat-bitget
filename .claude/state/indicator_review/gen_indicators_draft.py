@@ -1135,11 +1135,12 @@ def axes_for(o: dict, hidden: list, sets: dict, fn) -> list:
                         rg["dec"] = _range_dec([b["下限"], b["上限"], v])
                     rg_src = f"indicator_params_by_strategy.json の範囲（{pnames[got[ai][0]]}・{how}）"
             ax = {"名前": nm, "種類": _kind_of(v), "範囲": rg or UNDECIDED,
-                  "代表の値": UNDECIDED if rev else (rep_of(ai) if how else {"スキャル": [v], "デイトレ": [v]}),
+                  "代表の値": UNDECIDED if rev else (rep_of(ai) if how else ({"スキャル": UNDECIDED, "デイトレ": UNDECIDED} if any(u["記録"] == rec for u in UNPLACED) else {"スキャル": [v], "デイトレ": [v]})),
                   "出どころ": {"値": h["出どころ"], "範囲": rg_src,
-                            "代表の値": (f"資料の表の {rev} の値は、計算式の今の値（{v}）と向きが逆＝写さない（CP91 の修正12・70番の T-3）" if rev else
+                            "代表の値": (f"資料の表の {rev} の値（{[s[i] for i, p in enumerate(pnames) if name_token(p) == rev for s in (rep.get('スキャル') or []) if isinstance(s, list) and len(s) == len(pnames)]}）は、計算式の今の値（{v}）と向きが逆＝写さない（CP91 の修正12・70番の T-3）" if rev else
                                      f"indicator_params_by_strategy.json の最初の値（{how}）" if how else
-                                     "いまの値（コードの既定値）・資料の表の名前と合わない（対応は70番の T-3）")}}
+                                     f"資料の表の名前と合わない（この記録には資料の表の合わない値が在る＝いまの値 {v} は代表の値にしない・対応は70番の T-3・監査 CP95）" if any(u["記録"] == rec for u in UNPLACED) else
+                                     "いまの値（コードの既定値）・資料の表に、この軸に当てる値が無い（要件5 の②＝既定の値・監査 CP95）")}}
         else:
             vals = [p[ai] for p in sets["組"]] if sets["組"] else []
             rg0 = old_ranges[ai] if ai < len(old_ranges) else None                     # ★範囲を軸へ写す（search_limits.json）
@@ -1151,7 +1152,8 @@ def axes_for(o: dict, hidden: list, sets: dict, fn) -> list:
                   "出どころ": {"範囲": ("recipes/search_limits.json の material_param_ranges" if rg0 else
                                      "engine_tuner_gen.material_ranges の catalog（カタログの列の値の最小〜最大・engine_tuner_gen.py:286〜293）" if vals else "無し"),
                             "代表の値": (f"indicator_params_by_strategy.json の最初の値（{how}）" if how else
-                                     "資料の表の名前と合わない（対応は70番の T-3）"),
+                                     "資料の表の名前と合わない（対応は70番の T-3）" if pnames else
+                                     "資料の表にパラメータの名前が無い（名前で合わせる相手が無い・70番の T-3・監査 CP95）"),
                             "名前": "計算式の引数の名前"}}
         if how:
             ax["資料の表の名前"] = pnames[got[ai][0]]
@@ -1678,8 +1680,8 @@ def selftest() -> int:
     kama = _one("KAMA傾き%", "KAMA傾き%{}", ["er_period", "fast_sc", "slow_sc"], {"スキャル": [[10, 2, 30]], "デイトレ": [[10, 2, 30]]},
                 [("fast", 2), ("slow", 30), ("slope_n", 5)], lambda d, n, f=None, slope_n=5, **kw: 0,
                 "lambda d, n, f=_mafn, slope_n=5, **kw: f(d, n, **kw).pct_change(slope_n) * 100", [[10]])
-    t("写す: KAMA傾き% の形＝名前の合わない軸に、資料の表の値を並びで入れない（n は「まだ決めていない」・fast は いまの値 2）",
-      kama[0]["代表の値"] == {"スキャル": UNDECIDED, "デイトレ": UNDECIDED} and kama[1]["代表の値"] == {"スキャル": [2], "デイトレ": [2]}
+    t("写す: KAMA傾き% の形＝名前の合わない軸に、資料の表の値を並びで入れない（資料の表に合わない値が在るので、n も fast も「まだ決めていない」・監査 CP95）",
+      kama[0]["代表の値"] == {"スキャル": UNDECIDED, "デイトレ": UNDECIDED} and kama[1]["代表の値"] == {"スキャル": UNDECIDED, "デイトレ": UNDECIDED}
       and "資料の表の名前" not in kama[1])
     tenkan = _one("転換線", "close vs 転換線%({})", ["転換線の期間", "基準線の期間", "先行スパンBの期間"], {"スキャル": [[9, 26, 52]], "デイトレ": [[9, 26, 52]]},
                   [], lambda d, t_: 0, "lambda d, t_: 0", [[9]])
@@ -1694,7 +1696,7 @@ def selftest() -> int:
     old2 = dict(old)
     old2["RSI"] = bad
     try:
-        to_new(old2, table, hidden, sets)                     # 3行を足す前の表＝②-12 が無い
+        to_new(old2, {**table, "要素": [e for e in table["要素"] if e["番号"] != "②-12"]}, hidden, sets)   # ②-12 を除いた表（本物の表が新しい形でも、②-12 が無い表で試す＝監査 CP95 の修正1）
         t("写す: 要素の定義表に ②-12 が無ければ止まる", False)
     except SystemExit as e:
         t("写す: 要素の定義表に ②-12 が無ければ止まる", "要素の定義表に無い番号" in str(e))

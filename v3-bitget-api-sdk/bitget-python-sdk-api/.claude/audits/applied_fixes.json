@@ -9358,6 +9358,62 @@
    "file": ".claude/breaks/b221_draft_rep_by_position.sh",
    "at": "2026-11-01T08:58:01",
    "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "1",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "4",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "5",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "6",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "12",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "13",
+   "file": ".claude/state/indicator_review/gen_indicators_draft.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "14",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-01_m2c15_indicator_redirect_20261031_impl_cp95_audit_report.md",
+   "num": "15",
+   "file": ".claude/state/indicator_review/ss_outside_probe.py",
+   "at": "2026-11-01T13:01:08",
+   "how": "当てた"
   }
  ]
 }

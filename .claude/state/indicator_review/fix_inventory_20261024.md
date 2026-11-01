@@ -19,7 +19,7 @@
 | engine_tuner_gen.py | 14 | 93 | 37 | 1 |
 | gen_acceptance.py | 0 | 12 | 6 | 0 |
 | gen_audit_docs.py | 0 | 1 | 0 | 0 |
-| gen_audit_request.py | 2 | 3 | 0 | 0 |
+| gen_audit_request.py | 0 | 0 | 0 | 0 |
 | gen_composition_rules.py | 0 | 18 | 0 | 0 |
 | gen_decisions.py | 0 | 2 | 0 | 0 |
 | gen_docmap.py | 0 | 0 | 0 | 0 |
@@ -170,7 +170,7 @@
 
 ## 照らし（エージェントの報告の行）
 
-範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 201 行
+範囲の中の報告の行（持つ・読む・自前で計算）402 行のうち、このプログラムが拾えなかった行 202 行
 
 - e38_logic_parts.py:37-39  _resample_htf  [自前で計算]  上位足（label=left・closed=left）
 - leak_causality_diag.py:383,407  _sab・_sab_hl  [自前で計算（テスト用にわざと壊す）]  列の名前
@@ -198,6 +198,7 @@
 - gen_acceptance.py:3054-3097  自己テストの見本  [持つ]  見本の指標の行
 - gen_audit_request.py:123  N_LAWS  [持つ]  法則の件数
 - gen_audit_request.py:125-138  SOURCES  [持つ]  指標と場面の判定のコードの場所
+- gen_audit_request.py:157-174  READING・REFERENCE  [持つ]  指標の情報の資料のファイル名
 - gen_composition_rules.py:114-122  `_extra_lineage`  [持つ]  geo と time の系統
 - gen_indicator_switch.py:473-490  `_ON_KINDS`・`_OFF_KINDS`  [持つ]  材料の種類の区分
 - gen_indicator_table.py:52  POS_MAX  [持つ]  `_r` の位置引数の数
@@ -374,7 +375,7 @@
 - tuner_judgement.py:131-168  role_of・role_floor  [読む]  役割と件数/日の下限
 - tuner_judgement.py:354-453  neighbor_points  [読む／作る]  パラメータ・閾値の前後の点
 
-## エージェントの行で、このプログラムが拾えなかった物（201行・文は報告のまま・実物の最初の行を付けた）
+## エージェントの行で、このプログラムが拾えなかった物（202行・文は報告のまま・実物の最初の行を付けた）
 
 | ファイル | 行 | 報告の欄 | 名前 | 報告の中身 | 実物の最初の行 | 振り分け |
 |---|---|---|---|---|---|---|
@@ -402,8 +403,9 @@
 | gen_acceptance.py | 523-525 | 持つ | KIND1_WORDS | ファイル名だけ（工事の種類を決める語） | where = ("やることの表の §1 概要" if k == "何を作るか" | 振り分けが無い |
 | gen_acceptance.py | 527-533 | 持つ（パス・鍵） | PARAMS・ROLES・THRESHOLD_KEY・OBS_CFG | 資料の表2本・閾値の鍵・時間足の置き場 | bad.append(f"「{k}」が無い（{where}）") | 振り分けが無い |
 | gen_acceptance.py | 3054-3097 | 持つ | 自己テストの見本 | 見本の指標の行 | print(f"   T{total} 0-1 の参照と対応の表 → fail（名前={names_ok} 行={n12}/{want12}）") | 振り分けが無い |
-| gen_audit_request.py | 123 | 持つ | N_LAWS | 法則の件数 | N_LAWS = 50                                   # §11 の法則の件数（C10＋R10＋U10＋D9＋S6＋T5） | 振り分けが無い |
-| gen_audit_request.py | 125-138 | 持つ | SOURCES | 指標と場面の判定のコードの場所 | SOURCES = [ | 振り分けが無い |
+| gen_audit_request.py | 123 | 持つ | N_LAWS | 法則の件数 |  | 振り分けが無い |
+| gen_audit_request.py | 125-138 | 持つ | SOURCES | 指標と場面の判定のコードの場所 |  | 振り分けが無い |
+| gen_audit_request.py | 157-174 | 持つ | READING・REFERENCE | 指標の情報の資料のファイル名 |  | 振り分けが無い |
 | gen_composition_rules.py | 114-122 | 持つ | `_extra_lineage` | geo と time の系統 | def _extra_lineage(sig: dict) -> dict: | 振り分けが無い |
 | gen_indicator_switch.py | 473-490 | 持つ | `_ON_KINDS`・`_OFF_KINDS` | 材料の種類の区分 | _ON_KINDS = {"family", "geo", "demand", "time"}      # 印で切り替える（一律＝M2-C の見出し） | 外す（B・指標の情報ではない） |
 | gen_indicator_table.py | 52 | 持つ | POS_MAX | `_r` の位置引数の数 | POS_MAX = 4                                     # _r の位置引数＝pat・family・teigi・ryugi（方向・性質は表か | 外す（B・指標の情報ではない） |
@@ -499,8 +501,8 @@
 | gen_acceptance.py | 1080-1108 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 |  | 振り分けが無い |
 | gen_acceptance.py | 1319-1361 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 |  | 振り分けが無い |
 | gen_acceptance.py | 1673-1682 | 読む | indicator_sources_problems | check_indicator_sources.check1 を呼ぶ | rid = str(r.get("出どころ", "")) | 振り分けが無い |
-| gen_audit_docs.py | 1655-1676 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | # ── 2. 設計の主張と出どころ ── | 振り分けが無い |
-| gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 | def copy_all_laws() -> list[str]: | 振り分けが無い |
+| gen_audit_docs.py | 1655-1676 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | "「やらないこと」に回した直しの中に、この工事でやるべき物が無いかも見てください。", | 振り分けが無い |
+| gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 |  | 振り分けが無い |
 | gen_exit_families.py | 403-410 | 読む | confirm_conditions | 確認の条件の材料・閾値 | confirm_conditions=dict( | ③向け直す |
 | gen_indicator_switch.py | 64-74 | 読む | `ta_classes` | ta のクラス | def ta_classes() -> list[tuple[str, str]]: | ②消す（プログラムごと無くなる） |
 | gen_indicator_switch.py | 135-143 | 読む | `ta_map_approved` | 承認済みの対応 | def ta_map_approved() -> dict[str, set[str]]: | ②消す（プログラムごと無くなる） |
@@ -1182,12 +1184,8 @@
 | gen_acceptance.py | 3244 | 直書き | ADX | ③向け直す |
 | gen_acceptance.py | 3244 | 直書き | POC | ③向け直す |
 | gen_acceptance.py | 3244 | 直書き | 前日POC | ③向け直す |
-| gen_audit_docs.py | 3113 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
-| gen_audit_request.py | 169 | 読む | json の名前「signal_families.json」 | ③向け直す |
-| gen_audit_request.py | 496 | 持つ | _REF_MD_RE（名前が定義の表） | ①写す→②消す |
-| gen_audit_request.py | 497 | 持つ | _REF_SEC_RE（名前が定義の表） | ①写す→②消す |
-| gen_audit_request.py | 513 | 読む | _REF_MD_RE | ③向け直す |
-| gen_audit_request.py | 514 | 読む | _REF_SEC_RE | ③向け直す |
+| gen_audit_docs.py | 3124 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_audit_request.py | 0 | 読めない | ファイルが見つからない | — |
 | gen_composition_rules.py | 62 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_composition_rules.py | 63 | 読む | json の名前「search_limits.json」 | ③向け直す |
 | gen_composition_rules.py | 64 | 読む | json の名前「exit_families.json」 | ③向け直す |
