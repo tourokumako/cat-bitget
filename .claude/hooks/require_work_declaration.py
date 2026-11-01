@@ -13,6 +13,8 @@
      ＝必読の一覧（must_read_now.txt）のファイルを、このセッションで Read で開いた記録（sessions/<id>/read_log.txt）が在る。
      かつ、宣言の中に、必読のファイルごとに根拠「<ファイル名>:<行番号>「<その行の逐語・10字以上>」」が1つ以上在り、
      逐語がそのファイルの、その行の前後3行に1文字も違わずに在る（211回目・212回目に、必読を開いても使わずに設計書を作れなかった）。
+     ★2026-11-01（202番）＝根拠を照らすのは、宣言ごとに1回。まこさんの返事の後に1回 合った宣言は、同じ宣言・同じ必読の一覧の間は
+     照らし直さない（作業が根拠の行を書き替えても止めない）。新しい宣言と、必読の一覧が変わったときは照らす（_evid_key・EVID_OK）。
 止めるもの＝Write・Edit・MultiEdit・NotebookEdit・読むだけでない Bash・Agent。
 止めないもの＝読む操作／検査だけの実行（--selftest・--verify・--check・--help・--dry・try_hooks.py・next_move.py。--write の付く物は除く）／
   セッションの置き場（ToDo）・worklog・memory・計画のファイルへの書き込み／サブエージェント／記録が読めないとき／
@@ -101,6 +103,39 @@ def must_problems(todo: pathlib.Path, decl: str) -> list:
     return probs
 
 
+# ★2026-11-01（235回目・202番・まこさん「それで修正して」「よい」）＝根拠を照らすのは、宣言ごとに1回。
+#   直す前は、道具を呼ぶたびに、根拠をいまのファイルと照らし直した。必読の一覧には作業で直すファイル（やることの表・設計書ほか）が
+#   入るので、まこさんの OK の後に作業が根拠の行を書き替えると、OK をいただいた作業そのものを止めた（同じ形が6回・worklog 20261101 §14-7）。
+#   いまは、まこさんの返事の後に根拠が1回 合った宣言を、セッションの置き場に記録し、同じ宣言・同じ必読の一覧の間は照らし直さない。
+#   新しい宣言と、必読の一覧が変わったときは、いままでどおり、いまのファイルと照らす。
+EVID_OK = "decl_evidence_ok.json"
+
+
+def _evid_key(decl: str, must: list) -> str:
+    """宣言の文と必読の一覧から作る鍵（どちらかが変われば別の鍵＝照らし直す）。"""
+    import hashlib
+    return hashlib.sha256((decl + "\n\0\n" + "\n".join(must)).encode("utf-8")).hexdigest()
+
+
+def _evid_seen(todo: pathlib.Path, key: str) -> bool:
+    """その鍵の宣言の根拠が、前に照らして合ったか（記録が読めなければ、合っていない扱い＝照らす）。"""
+    try:
+        return key in json.loads((todo.parent / EVID_OK).read_text(encoding="utf-8"))
+    except Exception:
+        return False
+
+
+def _evid_write(todo: pathlib.Path, key: str) -> None:
+    """根拠が合った宣言の鍵を記録に足す（書けなくても止めない＝次も照らすだけ）。"""
+    f = todo.parent / EVID_OK
+    try:
+        keys = json.loads(f.read_text(encoding="utf-8")) if f.exists() else []
+        if key not in keys:
+            f.write_text(json.dumps(keys + [key], ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def session_id(d: dict):
     sid = d.get("session_id")
     if not (isinstance(sid, str) and sid.strip()):
@@ -182,8 +217,12 @@ def check(transcript: pathlib.Path, todo: pathlib.Path):
         if probs is None:
             continue
         if not probs and any(x[0] == "user" for x in ev[i + 1:]):
+            key = _evid_key(e[1], must_list())
+            if _evid_seen(todo, key):
+                return None                    # ★2026-11-01（202番）＝この宣言の根拠は前に照らして合った（作業で行が動いても止めない）
             mp = must_problems(todo, e[1])     # ★2026-10-24＝決まり4（必読を開いた記録と、宣言の中の根拠）
             if not mp:
+                _evid_write(todo, key)         # 合った宣言を記録する（同じ宣言・同じ必読の一覧の間は、照らし直さない）
                 return None                    # 足りている宣言が在り、その後に まこさんの発言が在る
             probs = ["必読の証拠＝" + x for x in mp]
         last = (i, probs)
@@ -368,8 +407,19 @@ def selftest() -> int:
         run("T31 開いた記録と、行の前後に在る逐語の根拠 → 通る", [_say(good), _user("OK")], todo3, False)
         run("T32 根拠の逐語が、その行の前後に無い → 止まる",
             [_say(decl3 + "\n根拠＝doc.md:3「ファイルのどこにも無い文をここに書きました」"), _user("OK")], todo3, True)
+        # ★2026-11-01（202番・まこさん「よい」）＝根拠を照らすのは、宣言ごとに1回（作業が根拠の行を書き替えても止めない）
+        doc.write_text("見出しの行\n要件の一行目はここに在ります\n二行目を作業で書き替えました\n", encoding="utf-8")
+        run("T33 T31 で通った宣言の、根拠の行を書き替えた後 → 通る", [_say(good), _user("OK")], todo3, False)
+        run("T34 書き替えた後の古い逐語を引いた、新しい宣言 → 止まる",
+            [_say(good + "\n（宣言を出し直した）"), _user("OK")], todo3, True)
+        doc.write_text("見出しの行\n要件の一行目はここに在ります\n二行目は閾値とパラメータの範囲を書く所です\n", encoding="utf-8")
+        doc2 = tdp / "doc2.md"
+        doc2.write_text("足された必読の一行目です\n", encoding="utf-8")
+        MUST_FILE.write_text("# 見出し\n" + str(doc) + "\n" + str(doc2) + "\n", encoding="utf-8")
+        log.write_text(str(doc) + "\n" + str(doc2) + "\n", encoding="utf-8")
+        run("T35 必読の一覧に1本足す → 照らし直して止まる（足したファイルの根拠が無い）", [_say(good), _user("OK")], todo3, True)
         MUST_FILE = tdp / "must_none.txt"
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 32件のうち、期待と違う {ng} 件")
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 35件のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 

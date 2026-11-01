@@ -119,6 +119,9 @@ FINGERPRINT_FILES = [
     # ★2026-10-23（工事 m2c15-single-source-20261022・監査 CP86 の修正7）＝表を書く・照らす道具と、分かっている ❌ の一覧も指紋に入れる
     "gen_indicator_table.py",
     KNOWN_MATERIALS_PATH,
+    # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 Y-6）＝build_catalog が読む口と1つのデータから列を作るので、
+    #   この2本が変われば材料の列が変わりうる＝指紋に入れる（--run の後に indicators.json を直せば --verify が止める）
+    "indicators/indicators.json", "indicators/indicators.py",
 ]
 
 
@@ -212,6 +215,7 @@ def materials_fingerprint() -> str:
     v9 = _v9_sources()
     files = (sorted(PR.glob("*.py")) + sorted(PR.glob("*.json")) + sorted((PR / "recipes").glob("*.json"))
              + [SDK / MATERIALS_CSV, pathlib.Path(KNOWN_MATERIALS_PATH), SDK / ".claude/ratchet/indicator_switch.json"]
+             + [PR / "indicators/indicators.json", PR / "indicators/indicators.py"]   # ★2026-11-01（Y-6）＝build_catalog が読む口から列を作る
              + [SDK / rel for rel in v9])
     for p in files:
         h.update(str(p).encode())
