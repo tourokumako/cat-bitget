@@ -788,15 +788,26 @@ def must_file_text(rows) -> str:
     return "\n".join(head + [p for p, _w, _c in rows if p]) + "\n"
 
 
-def copy_todo(next_path: pathlib.Path, sid: str) -> int:
+# ★2026-11-01（233回目・まこさん「ミス多すぎだし、時間かかりすぎなので、改善してほしい」「今すぐ修正できないのか？」）
+#   ＝締めで CC が毎回 手で直していた決まった書き替え（「2」の見出しの回目・締めの行・3-1 の見出しの日付と回目）を、
+#     --todo-from が書く。回目は、そのセッションの ToDo の締めの行（「★いまここ」）から読む＝2回打っても同じ結果。
+#     233回目の締めは、道具の呼び出し74回のうち21回が失敗し、手順の調べ直しも約20回あった（worklog 20261101 §10）。
+CLOSE_ROW_RE = re.compile(r"（(\d+)回目）の締め")                       # ToDo の締めの行（例＝「このセッション（233回目）の締め」）
+STATE_HEAD_RE = re.compile(r"^(### 3-1 いまの状態（)\d{4}-\d{2}-\d{2}・\d+回目の締め")   # 3-1 の見出しの日付と回目
+
+
+def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None) -> int:
     """そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（2026-10-12・まこさん「OK」）。
-    なぜ要るか＝171回目の締めで、ToDo の流れの段を手で写さず、次の回が落とした（worklog 20261012 §29）。写した後に --write を打つ。"""
+    なぜ要るか＝171回目の締めで、ToDo の流れの段を手で写さず、次の回が落とした（worklog 20261012 §29）。写した後に --write を打つ。
+    ★2026-11-01＝締めの行が「★いまここ」なら、決まった書き替えもして、締めの手順を画面に出す（close_steps）。"""
     src_path = next_path.parent / SRC_NAME
     todo = next_path.parent / "sessions" / sid / "session_todo.md"
     if not src_path.exists() or not todo.exists():
         print(f"❌ [tidy --todo-from] 元データか ToDo が無い（{src_path}・{todo}）")
         return 2
+    today = today or date.today().isoformat()
     rows = []
+    close_n = None                                  # 締めの行の回目（いま締めているセッションの回目）
     for l in todo.read_text(encoding="utf-8").splitlines():
         s = l.strip()
         if not s.startswith("|"):
@@ -806,13 +817,29 @@ def copy_todo(next_path: pathlib.Path, sid: str) -> int:
         #   日付つきの済んだ行（29・35・43番）を写していた＝毎回読む部分が上限を超えた
         if len(c) < 3 or not c[0].isdigit() or c[2].startswith(DONE_MARK):
             continue
-        # ToDo の「★いまここ」の行は、次の回が始める行＝「いまここ（次の回は、ここから）」と写す
-        rows.append({"欄": [f" {c[0]} ", f" {c[1]} ", f" {'いまここ（次の回は、ここから）' if c[2] == HERE_MARK else c[2]} "]})
+        what, state = c[1], c[2]
+        m = CLOSE_ROW_RE.search(what)
+        if state == HERE_MARK and m:
+            # 締めの行＝次の回の締めの行として写す（回目を1つ進め、状態は「まだ」）
+            close_n = int(m.group(1))
+            what, state = what.replace(m.group(0), f"（{close_n + 1}回目）の締め", 1), "まだ"
+        elif state == HERE_MARK:
+            # ToDo の「★いまここ」の行は、次の回が始める行＝「いまここ（次の回は、ここから）」と写す
+            state = "いまここ（次の回は、ここから）"
+        rows.append({"欄": [f" {c[0]} ", f" {what} ", f" {state} "]})
     src = json.loads(src_path.read_text(encoding="utf-8"))
     done = False
+    state_head_done = False
     for sec in src["節"]:
-        if not sec.get("見出し", "").startswith(NEXT_SEC):
+        head = sec.get("見出し", "")
+        if close_n is not None and head.startswith(STATE_SEC):
+            new_head = STATE_HEAD_RE.sub(lambda h: f"{h.group(1)}{today}・{close_n}回目の締め", head, count=1)
+            state_head_done = STATE_HEAD_RE.match(head) is not None
+            sec["見出し"] = new_head
+        if not head.startswith(NEXT_SEC):
             continue
+        if close_n is not None:
+            sec["見出し"] = f"{NEXT_SEC}（{close_n + 1}回目）"
         for blk in sec.get("塊", []):
             if "表" in blk and blk["表"]["見出しの行"].strip() == TODO_HEAD:
                 blk["表"]["行"] = rows
@@ -822,7 +849,40 @@ def copy_todo(next_path: pathlib.Path, sid: str) -> int:
         return 2
     _atomic_write(src_path, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
     print(f"✅ [tidy --todo-from] ToDo の済んでいない {len(rows)} 行を、元データの表に写した → 続けて --write を打つ")
+    if close_n is None:
+        print(f"   ⚠ 締めの行（「（N回目）の締め」で状態が「{HERE_MARK}」）が無い＝「2」の見出しの回目・締めの行・3-1 の見出しは書き替えていない")
+    else:
+        print(f"   「2」の見出し＝{close_n + 1}回目・締めの行＝（{close_n + 1}回目）の締め・まだ"
+              + (f"・3-1 の見出し＝{today}・{close_n}回目の締め" if state_head_done else "・⚠ 3-1 の見出しの形が違うので書き替えていない（手で直す）"))
+    for ln in close_steps(next_path, src_path):
+        print(ln)
     return 0
+
+
+def close_steps(next_path: pathlib.Path, src_path: pathlib.Path) -> list[str]:
+    """締めの手順（2026-11-01・233回目）。--todo-from の後に画面に出す。
+    なぜ要るか＝締めの手順が1か所に無く、CC が毎回 道具の中身・hook の作り・前の回の記録を開き直していた（worklog 20261101 §10）。
+    ここに書くのは、233回目までの締めで実際に止められた所だけ（何で止まるかの出どころを各行に書く）。"""
+    lines = src_path.read_text(encoding="utf-8").splitlines()
+
+    def at(s: str) -> str:
+        n = next((i for i, l in enumerate(lines, 1) if s in l), 0)
+        return f":{n}" if n else "（見つからない）"
+    n_next = len(next_path.read_text(encoding="utf-8").splitlines()) if next_path.exists() else 0
+    return [
+        "[tidy --todo-from] 締めの手順（この後に CC がすること・上から順に）",
+        f" 1. 手で書く所（元データ {SRC_NAME} の行）＝① 作る物 {at('**① 作る物**')}／② 最初にやる事 {at('2 最初にやる事の見出し')}"
+        f"／必読の表 {at(MUST_HEAD)}／④ この先の順番 {at('**④ この先の順番**')}／3-1 の本文と見出しの § の範囲 {at(STATE_SEC)}",
+        " 2. Edit は1本ずつ出す（並べて出すと、1本が hook に止められたとき、残りも同じ相手への失敗に数えられて止められる＝233回目に16本）",
+        f" 3. 「2」の CC が書く行に、教訓の番号（L-NNN）と「★」を書かない（検査 (t)）。1行は {LINE_MAX} 字まで（検査 (p)）"
+        f"・next_step 全体は {ALL_MAX} 行まで（検査 (q)・いまは {n_next} 行）",
+        " 4. 教訓（lessons_active.md）は --write の前に書く（--write で必読の一覧が変わると、宣言の hook が、宣言を出し直すまで書き込みを止める）",
+        " 5. 必読の表に新しいファイルを足したら、そのファイルを Read で開く。コミットの前の宣言に、必読の全部の分の根拠"
+        "「ファイル名:行番号「逐語（10字以上）」」を入れる（require_work_declaration.py の決まり4）",
+        " 6. 道具は「python3 <道具> <旗>」の1本で打つ（timeout・パイプ・python3 -c を付けない＝土台ゲートと設計↔実装ゲートが止める）",
+        " 7. --write → --selftest → 作り直した「2」と「3-1」を Read で開いて worklog と照らす → worklog に締めの節"
+        " → コミットの対象を出して止まる（コミットは まこさんの OK の後・1本ずつ add）",
+    ]
 
 
 def _worklog_secs(state_dir: pathlib.Path, ymd: str, cache: dict) -> set[str] | None:
@@ -1493,16 +1553,47 @@ def selftest() -> int:
     else:
         ng.append("T8: hook が無い")
 
+    # T18（2026-11-01・233回目）＝--todo-from の決まった書き替え。見本の元データと ToDo を一時の場所に作って試す。
+    #   ①「2」の見出しが次の回目 ②締めの行が次の回目・まだ ③済んだ行は写さない ④3-1 の見出しの日付と回目 ⑤2回打っても同じ
+    import contextlib
+    import io
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td)
+        (tp / "next_step.md").write_text("x\n", encoding="utf-8")
+        sample = {"節": [
+            {"見出し": f"{NEXT_SEC}（5回目）",
+             "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": []}}]},
+            {"見出し": f"{STATE_SEC}（2026-01-01・4回目の締め・記録＝`session_worklog_20260101.md` §1）", "塊": []}]}
+        (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        (tp / "sessions" / "s1").mkdir(parents=True)
+        (tp / "sessions" / "s1" / "session_todo.md").write_text(
+            f"{TODO_HEAD}\n|---|---|---|\n| 7 | 何か | まだ |\n| 8 | 済んだ | {DONE_MARK}（2026-01-02） |\n"
+            f"| 9 | このセッション（5回目）の締め（引き継ぎ・コミット） | {HERE_MARK} |\n", encoding="utf-8")
+        got = []
+        for _ in range(2):
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = copy_todo(tp / "next_step.md", "s1", today="2026-01-02")
+            got.append((rc, json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))))
+        r18 = got[0][1]["節"]
+        rows18 = [[x.strip() for x in r["欄"]] for r in r18[0]["塊"][0]["表"]["行"]]
+        ok18 = (got[0][0] == 0 and r18[0]["見出し"] == f"{NEXT_SEC}（6回目）"
+                and rows18 == [["7", "何か", "まだ"], ["9", "このセッション（6回目）の締め（引き継ぎ・コミット）", "まだ"]]
+                and r18[1]["見出し"].startswith(f"{STATE_SEC}（2026-01-02・5回目の締め・記録")
+                and got[1] == got[0])
+        if not ok18:
+            ng.append(f"T18: --todo-from の決まった書き替えが違う／{got[0][0]}・{r18[0]['見出し']}・{rows18}・{r18[1]['見出し']}")
+
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
           "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
           "／T10d 控えに区切りの行が入る／T10e 生きている行を複製しない／T10f 見出しが無い表でも落ちない"
           "／T4b 印の時刻も照らす"
           "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
-          "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない")
+          "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない"
+          "／T18 --todo-from の決まった書き替え")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 27
+    total = 28
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 
@@ -1520,7 +1611,8 @@ def main() -> int:
     ap.add_argument("--archive", type=pathlib.Path, default=ARCHIVE)
     ap.add_argument("--limit", type=int, default=LIMIT)
     ap.add_argument("--todo-from", dest="todo_from", metavar="セッションの id",
-                    help="そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（続けて --write を打つ）")
+                    help="そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（続けて --write を打つ）。"
+                         "締めの行が「★いまここ」なら、「2」の見出しの回目・締めの行・3-1 の見出しも書き、締めの手順を出す")
     a = ap.parse_args()
     if a.selftest:
         return selftest()

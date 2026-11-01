@@ -255,3 +255,117 @@
 - 161-2 の読むもの宣言（.claude/state/design_read_plan.md）を作り、まこさんの OK をいただく。工事名の案＝m2c15-catalog-redirect-20261101（OK と一緒に決めていただく）。
 - 161-2 のやることの表には、CP95 の修正10 の代わりに、案B の分け方（資料の表に合わない値が在る記録の隠れた数字＝まだ決めていない・資料の表に値が無い軸＝いまの値）を書く。155-1 の確かめ（同じパラメータの値で計算した値が直す前と同じ）も161-2 の設計書に書く（Y-18）。
 - 写しの残り＝作業場の before_cp95/（git に入っていない3本の控え）。git に入っている4本の控えは commit 70d86790。
+
+## §8 233回目＝161番（161-2 の読むもの宣言・宣言に まこさん「ok」）
+
+### 8-1 開いた物と ToDo
+- 必読10件を Read で開いた。最後の行まで開いていないのは3本＝集約の要件定義書（本文 1〜266行）・fix_inventory（1〜479行）・permanent_rules.md（Read は1〜40行・全文は自動で読み込み）。返信で申告した。
+- ToDo を next_step の③の表どおりに書いた（20行・161番に ★いまここ）。161番の宣言に まこさん「ok」。
+
+### 8-2 依存のたどり（4つの方法）
+- ①build_catalog を呼ぶ本物＝observe_diag.py の中 48か所／scripts の8本（gen_materials・engine_tuner_gen・engine_tuner_exec・engine_tuner・gen_observe_manual・gen_signal_families・condition_parts_diag・indicators.py の注記）／写すプログラム（gen_indicators_draft.py:592・:973＝列を作る組の写す元）／col_snapshot.py:46／gen_params_in_name.py:274 ほか。
+- ②自動で作る文書（docmap.json）＝materials.md・materials.json・マイルストーン2本（gen_materials）・observe_diag_manual.md（gen_observe_manual）・signal_families の3本（gen_signal_families）。gen_materials.py:454 の _catalog_keys は、build_catalog が読む鍵をコードから拾う。
+- ③印の対象＝observe_diag.py と observe_config.json は H2（h2_pass.json）と G2（g2_pass.json）の両方に在る。indicators.json と indicators.py はどちらにも無い。H2 の対象は leak_causality_diag.py:244 の WATCHED。監査の前の検査が材料の検査を省く指紋は、scripts/priority_rebuild の直下の .py と .json（pre_audit_check.py:193〜194）。
+- ④名前の grep＝build_catalog（observe_diag.py:1792〜2232）が読む設定の鍵＝古い鍵約40（atr_periods 7回・sma_periods 5回・macd_params 5回 ほか）・material_params・drop_columns と、_band_fee_floor 経由の band_fee_mult（:1964）。同じ鍵を読むほかの .py＝material_params（check_indicator_sources・gen_value_conflicts・写すプログラム ほか）・drop_columns（engine_tuner_exec・gen_materials ほか）・band_fee_mult（indicator_reference_diag）。
+- 壊すプログラム＝observe_diag.py を名指す約70本のうち、old の1行目が build_catalog の範囲に在るのは b128（:1823）と b137（:1811）の2本。
+- 列の控え＝before_20261024.json（29940行・名前652・列7148）。作った走行は 3637秒（before_20261024.log）。10-24 の後の observe_diag.py の変更は commit d2fb0f39 の注記1行だけ（git show）。
+
+### 8-3 読むもの宣言
+- 元データ read_plan_src.json を161-2 の中身で書き替えた。161-1 の宣言は、工事のフォルダの 読むもの宣言の写し.md と cmp で同じ。元データの写しは作っていない（恒久79番の4）。
+- require_read_plan_before_design.py --selftest 26/26・--write＝読むもの 40件（道具が先頭に足す3件を含む）。工事名の案＝m2c15-catalog-redirect-20261101。まこさんの OK 待ち。
+- 途中で土台ゲートに1回止められた（関数の定義と「$(」と .claude/tools・hooks のパスを1つの Bash に入れた）。grep だけの形に分けて打ち直した。
+- まこさん「OK」（宣言と工事名 m2c15-catalog-redirect-20261101）→ --ok "OK" で宣言を作り直した（40件）→ 貼った印（design_read_plan_posted）を作った → --verify＝宣言は元データと実物から作ったまま。161番の宣言のゴール（読むもの宣言に OK をいただく）に届いたので、報告して止めた。
+
+## §9 233回目＝161番（161-2 の40件を開き、やることの表の下書きを書いた・宣言に まこさん「工事内容を正確に理解できているのなら、やることの表へと進めて良い」）
+
+### 9-1 まこさんの問い「工事内容は正確に理解できてるよね？」への答え
+- 文書の範囲の理解（build_catalog が読む口の列を作る組と計算から列を作る・列の名前と並びは変えない・列の比べ・161-1 から受ける3つ・案B の分け方・やらない物）を出どころつきで答えた。コードの実物は未読と申告した。R6 の「記録のパラメータだけから」のうち、161-2 は「古い鍵を読まない・記録から作る」までで、代表の値から作るのは171番と書いた。
+
+### 9-2 開いて分かった事実（コードの実物）
+- build_catalog（observe_diag.py:1792〜2229）＝設定の鍵ごとの for で make_material を呼ぶ。cfg[ の行 71（awk）・cfg.get 2。material_params に在る種類はその組で作る（:1806〜1817）。帯の8種は _band_material に _band_fee_floor(cfg) の床を渡す（:1964〜1980）。最後に drop_columns で省く（:2220〜2228）。column_sets を呼ぶ行は0。
+- 読む口（indicators.py）＝column_sets は {記録・種類・名前の型・組・並び} を並びの順に返し、決まり⑤の外＝オフの組も返す（:335〜360）。calc はオフの指標を返さない（:311〜312）。registry は観察の道具を import して MATERIAL_FAMILIES を返す（:73〜87・:301〜306）。scripts の下で column_sets を呼ぶ所は indicators.py の中だけ（grep）。
+- indicators.json（jq）＝列を作る組を持つ記録 314（指標 306・部品 8）・組 652。オフの記録の組 250（121記録）。名前と登録の名前が違う記録 56（例 ALMA傾き% → ALMA傾き）。登録の名前が無い13記録は組が空。部品の8種の登録の名前は _BAND_IMPL の鍵と同じで、組に床は入らない。RSI の組 [5]・[7]・[9]・[14]・[21]・並び 8〜12。帯VA の組 [0.0015]・[0.003]・[0.006]・並び 230・233・236。
+- 写すプログラム（gen_indicators_draft.py）＝列を作る組を od.build_catalog の出力から作る（catalog_sets :970〜988）。出どころの鍵も build_catalog に渡す設定の鍵を1つずつ空にして決める（build_old の cols :590〜606）。--verify（:1421）と --rewrite（:1474）は build() を通してこれを使う＝build_catalog が記録から作ると、写す元が indicators.json 自身になる。
+- gen_materials.py の _catalog_keys（:454〜478）＝build_catalog の中の cfg[...]・cfg.get(...) の鍵を構文の木で拾い、materials.md の場所1 に使う。自己テスト T12（:2477〜2480）は build_catalog の頭の行に鍵の読みを足して数が1増えるかを見る。
+- 印＝H2 の WATCHED（leak_causality_diag.py:244〜263）に indicators/ の2本は無い。G2 は走行中に読まれたファイルを集める（gen_signal_families.py:871〜972）。監査の前の検査の指紋（pre_audit_check.py:108〜122・:213〜215）は indicators/ の下を含まない。承認の前の検査は当てた直後に observe_diag.py --selftest ほか5本を走らせる（require_design_check_before_approval.py:697〜704）。
+- カタログの自己テスト（observe_diag.py:7812〜7943）＝設定の macd_params・material_params・ema_periods から期待の名前を作り、build_catalog の名前と照らす（列が同じなら通る）。
+- 列の比べ（col_snapshot.py）＝build_catalog と build_features をそのまま呼び、名前と値の sha256 を控えと比べる（:46・:68・:107〜113）。10-24 の後の計算の変更＝observe_diag.py は d2fb0f39 の注記1行・indicator_reference_diag.py は ca445bd3 の説明の文だけ・5分足の CSV は 07-23 から同じ（git log・git show・stat）。
+- CP95 の修正10 の案B（結果 :518）と修正17（:631）を確かめた。10-25 の下書き（build_catalog_new.txt:14〜18）は、組を回して make_material か _band_material を呼ぶだけの形。
+- engine_tuner_gen.py:219・:277（オン・オフで外す）・:286〜293（カタログの値から範囲を作る）を開いた。
+
+### 9-3 やることの表の下書き
+- 工事のフォルダ（.claude/state/verbatim/m2c15-catalog-redirect-20261101/やることの表.md）に、ひな型（.claude/templates/design_origin_todo_template.md）の形で書いた。一覧 F-1〜F-6・やらないこと Y-1〜Y-12・3-2 の2件（写すプログラムの写す元・calc の代わりに make_material）・4-4（7段）・4-5（8行）・4-13（12行）・4-19（7行）・7-6（6行・壊すプログラム b222〜b227）。
+- 開いていない読むもの＝okd_plan5 の本体（集約の要件定義書 §6-1 の写しで読んだ）・engine_tuner_requirements.md の 113行の節・161-1 の設計書の控え（4-8・4-13・6-5＝やることの表の同じ節で読んだ）・gen_params_in_name.py の measure と check_redirect_main・ss_outside_probe.py・worklog 20261024 §4・b128 の本文（壊す相手の行だけ grep で見た）・engine_tuner.py・engine_tuner_exec.py・gen_signal_families.py・gen_observe_manual.py・condition_parts_diag.py は grep の行だけ。
+- gen_acceptance.py --dry-run（書かない＝:3382〜3383）＝足りない所12件。12件とも案の【】の見出し（新しく入る数字と式の一覧・確かめていないこと・7-3b・真因ほか）で、やることの表の形の誤りは0件。
+
+### 9-4 3-2 の2件（まこさん「決めてほしいことは、よくわからない。別AIに聞けばいいのか？」→「よい」）
+- 答え＝別の AI に聞かなくてよい。技術の正しさは設計書の監査で確かめる（m2c15_指標の構造_要件定義書.md:291 の前例）。2件とも技術のやり方で、まこさんに決めていただく事ではなかった（恒久49番）＝お詫びした。
+- まこさん「よい」→ やることの表を直した＝3-2 を「無し」にし、写す元の関数を残す形（F-3）と calc の代わりに make_material を使う形（Y-5）に、理由と「設計書の監査で問う」を書いた。grep で 3-2 を指す古い文が0件・--dry-run は12件のまま。
+- 次＝★の見出しの中身に まこさんの OK をいただき、逐語のファイル（ok_yarukoto）にしてから、案を書く。設計書の監査の依頼書に、この2件を問う問いを入れる。
+
+### 9-5 やることの表に まこさん「ok」→ 案の下書き（宣言に まこさん「ok」）
+- gen_verbatim.py --write ok_yarukoto_20261101（uuid 5ce0d6ad「よい」・0b9a7898「ok」・行2行）→ --verify＝記録の発言と1文字も違わない。
+- 案のひな型（.claude/templates/design_origin_proposal_template.txt・205行）と、161-1 の案 okd_an（1〜90行・185〜276行）と実装の指示の json の形（番号は文字・直す前の文字が無い新しいファイルは「なし」）を開いた。
+- いまのコードで observe_diag.py --selftest-catalog＝「❌ 0 件」・12.7秒。
+- 実装の指示の下書きを工事のフォルダの impl_src に書いた（直す前16・直した後16・壊すプログラム6）。直す前の文字16件は sed と diff で実物の行と同じ・目印の行は grep -c で 1。jq --rawfile で impl_4-20_20261101.json（22件・sha256 4c2f5975…・乱数の語 0件）。
+- 下書きの途中で見つけて足した物＝写すプログラムの table_update・PART_SRC・頭の説明（indicators.json の②-12・④-9 の「写す元＝…（observe_diag.build_catalog）」「読むプログラム＝空」と、部品の記録8件の出どころ「build_catalog の帯の for」が、161-2 の後は事実と違う文になる＝indicators.json:283〜303・grep -c で 2 と 8）。当てた後に --rewrite を1回走らせて作り直す（4-4 の3）。
+- 壊すプログラムの決まった文は、測ったコマンドの出力と照らされる（.claude/breaks/lib.sh:85〜100）ので、F-5 の完成の条件を grep -q から grep -H -c に替えた。gen_materials の T12 の落ちる文は :2489（:2983 の for で出す）。
+- 試しの設計書（trial_design.py --fast）で止められて直した物＝①2-1 の読み方の数字（数字はコマンドの出力にだけ）②2-1 のコマンドの「&&」（読むだけのコマンドに限る＝awk を f{if(...)n++} の形に）③目的の照合（purpose_check.md が 161-1 のまま・H2 の対象を触るので「変えない」と書けない＝2a-1 の前例 purpose_check_2a1.md のとおり4条件を ✅ と根拠で書き替えた）④「読んだ」と書いて開いていない4本（indicators.json・cat/indicators.py・strategies/cat_v9_decider.py・materials.md）を開いた ⑤【7-4】に監査 Q5 の5行 ⑥【4-12】【4-17】の結果の行に実行コマンド ⑦【7-5】の触る関数に table_update。
+- 試しの設計書（1725行）を1行目から最後まで Read で開いた。見つけて直した物＝§1 の範囲 Y-1〜Y-12 → Y-13・4-5 の最後の行の画面の文（自己テストの実際の名前）・4-12 の「grep -c が 2」→ 1（2本を1行に書く）。
+- 見直し表（.claude/state/reviews/_trial_acceptance.review.md・80項目）＝gen_review.py --check「止める理由 0 件・根拠 106 件」（.log の根拠は拡張子が数えられないので、設計書の行に替えた）。
+- やることの表は OK の後に、F-4 の追加・F-6 から :1588 を外す・Y-13・F-5 のコマンド・2-1 の読み方とコマンド・§1 の範囲・4-5 の文を直した＝案の頭で見せ直す。
+- 仮当て（A12）を含む試しを裏で走らせた（前の実測で約6分）。
+
+### 9-6 仮当て込みの試しの結果
+- 1回目（544.6秒）＝A12 の照合A だけで止まった（indicators.py の <モジュール直下>・Indicators.column_sets／gen_indicators_draft.py の <モジュール直下> が impl_functions に無い）。完成の条件の6行・壊すプログラム6本・自己テストでは止まっていない。
+- 直した物＝案の【7-8】の impl_functions を、照合A の名前（一番外の行＝<モジュール直下>・クラスの中＝Indicators.column_sets）に合わせ、leak_causality_diag.py の <モジュール直下>（WATCHED）も足した（照合A は impl_functions に書いたファイルしか見ないので、抜けにしないため）。前例＝verify_design_contract.py:884〜903・okd_an_mod_20261025。【7-5】【4-3】の名前も合わせた（速い段の A13 で止められた）。見直し表は --skeleton で作り直し（行を引き継ぐ）→ --check「止める理由 0 件・根拠 106 件」。
+- 2回目（533.9秒）＝A群 0件・古い語 0件・終わりのコード 0。git status で、本物の scripts の下に新しい変更は残っていない（A12 が控えから戻した）。
+- 案を出す前の検査（require_trial_before_proposal.py:10〜13）は、返信の全部の行が試した下書きに在ることを求めるので、結論に試しの結果の1行を足し、3回目を裏で走らせた。
+- bash -n＝壊すプログラムの下書き6本とも文法 OK（Stop の hook require_run_after_edit の求め・1本ずつ打った）。
+- 3回目（531.3秒）＝A群 0件・古い語 0件・終わりのコード 0。本物の scripts の下に変更は残っていない。見直し表は「止める理由 0 件・根拠 106 件」。案を、試した下書きと1文字も変えずに返信に出した。
+
+### 9-7 案に まこさん OK → 設計書を作った（宣言に まこさん「OK」）
+- まこさんの問い「この工事の内容をわかりやすく、簡潔に説明して」に答えた（列を作る所の読み元を設定ファイルから indicators.json に替える・列の中身は変えない・確かめは自己テストと壊すプログラムと列の比べ）。
+- まこさん「了解。OKなので次へ進めて良い／セッションはこのままでいける？」→ 答え＝設計書を作るところまでで締め、設計書の監査の依頼書は次のセッション（読み込んだ量が多く、依頼書の段〔手書きの元・約700行の依頼書・見直し表〕で要約に細部が抜ける恐れ）。宣言に まこさん「OK」。
+- gen_verbatim.py --write okd_an_20261101（案の返信 uuid 815e93ce・237行）・ok_an_20261101（まこさんの OK uuid 96d04837・3行・V03 の問いは --drop）→ --verify 2本とも記録と1文字も違わない。okd_an は試した下書きと同じ（空行を除いて diff）。
+- gen_acceptance.py --work m2c15-catalog-redirect-20261101 --write＝設計書 .claude/state/acceptance.md（1730行・囲み12個）。161-1 の設計書は承認の控え acceptance_archive/m2c15-indicator-redirect-20261031.md に在る（上書きの決まり＝恒久 §0-2）。
+- cmp＝設計書は試しの設計書と1文字も違わない（sha256 3137c614…）＝全部読んだ版と同じ。見直し表は、試しの見直し表を文書の名前だけ替えて写した（sed）→ gen_review.py --check「止める理由 0 件・根拠 106 件」。
+- require_design_check_before_approval.py --after-write＝A12 のほかの止まり所は全部 通る（不足0件・14.5秒）。A12 は、同じ中身の試しの設計書で3回目まで通した。
+- 次＝締め（156番）。次のセッションは、設計書の監査の依頼書（CP96）の手書きの元から。依頼書に、3-2 の2件（写す元の関数を残す形・calc の代わりに make_material）を問う問いを入れる（§9-4）。
+
+## §10 233回目の締め（156番・宣言に まこさん「OK」）
+
+### 10-1 締めでしたこと
+- ToDo＝161番を「まだ（途中＝161-2 の設計書の監査の依頼書から）」、★いまここ を156番へ（Edit）。156番の宣言（必読7本の根拠つき）に まこさん「OK」。
+- 教訓 L-741（lessons_active.md）を書いた＝①技術のやり方を 3-2 に入れて まこさんに伺った（恒久49番）②試しの検査が求める形を、前の工事の通った案で先に確かめなかった（速い段9回・仮当て込み3回）③写すプログラムが書き出す説明の文を、やることの表を書く時点で開かなかった ④土台ゲート・jq の再演。
+- 締めの前の next_step_src.json と next_step.md を作業場に控えた（next_step_src.before_close.json・next_step.before_close.md）。tidy_next_step.py --todo-from で ToDo の済んでいない21行を写し、156番の行を「（234回目）の締め・まだ」に直した。
+- next_step の元データ＝「2」の見出しを234回目に・①（161-2 は設計書まで済・次は設計書の監査の依頼書・3-2 から外した2件を依頼書で問う・承認の後の長い走行は OK をいただいてから・順番）・②（worklog §8〜§10 → やることの表と設計書を最後の行まで → next_move の段5＝手書き → 問いに入れる物 → 依頼書を作る道具の順 → 経緯の書き方と pre_audit_check の --run）・必読の表（161-1 のやることの表の行を外し〔外す条件＝161-2 のやることの表を書いた後〕、161-2 のやることの表と設計書 acceptance.md の行を足した・worklog 20261101 の行は理由と外す条件を替えた）・ToDo の161番の行を短くした・④・3-1 を233回目に。
+- 途中で、土台ゲートに2回目に止められた（next_move.py に timeout とパイプを付けた）。block_repeat_kind が元データの Edit 8本を止めたので、セッションの決まり（sessions/<id>/lessons.md）を書いた。続く8本は block_repeat_failure が止めたので、見立て（diagnosis.md）を書いた。そのあと同じ8本を1回打ち、全部入った。
+- 必読の表に新しいファイル（161-2 のやることの表・acceptance.md）が入るので、宣言の hook は、締めのコミットの前に、その2本の根拠を入れた宣言を求める（require_work_declaration.py:75〜103）。コミットの対象を出す返信に、156番の宣言を根拠つきで出し直す。
+- 開いた記録（read_log.txt）に、161-2 のやることの表と acceptance.md が無かった（読んだのは試しの設計書 _trial_acceptance.md と Bash の表示）。2本を Read で開いた（やることの表 1〜60行・acceptance.md 1〜40行。acceptance.md は、全部読んだ試しの設計書と cmp で同じ）。
+- tidy --write の1回目は、(t)「2」の CC が書く行に教訓の番号が在る、で止まった（②の3行目の「教訓 L-741」）＝恒久49番に替えた。2回目で検査20個が通った（項目 3・5・6 が59行）。--write が教訓の最古の1件を lessons_archive.md へ移し、1日を過ぎたセッションのフォルダ2個を消した。--selftest 27/27。
+- 作り直した next_step の「2」（45〜112行）と「3-1」を Read で開き、この §10 と照らした（作る物・次の依頼書・3-2 の2件・承認の後の長い走行・順番・最初にやる事5行・必読の表8行・ToDo の161番・156番・④）＝食い違い0件。
+
+### 10-2 引き継ぎ（次のセッションの最初）
+- 最初に、この §8〜§10 を最後の行まで開く。次に、161-2 のやることの表（.claude/state/verbatim/m2c15-catalog-redirect-20261101/やることの表.md・247行）と設計書（.claude/state/acceptance.md・1730行）を最後の行まで開く。
+- いまの段＝next_move.py の段5（設計書の監査の依頼書）。工事のフォルダに監査依頼の手書き（設計書の監査）.md を書く。前例＝161-1 の同じ名前の手書き（SDK/.claude/ratchet/acceptance_archive/verbatim/m2c15-indicator-redirect-20261031/・Q15＝指標の構造の要件定義書の章ごとの照らし）。
+- 手書きの問いに、3-2 から外した2件（F-3＝写す元の関数 _catalog_from_config を162番まで残す形・Y-5＝calc の代わりに make_material）が正しいかを入れる。
+- 工事のフォルダ .claude/state/verbatim/m2c15-catalog-redirect-20261101/ の中身＝やることの表.md・impl_4-20_20261101.json（22件・sha256 4c2f5975…）・impl_src/（直す前16・直した後16・壊すプログラム6）・逐語（ok_read_plan・ok_yarukoto・okd_an・ok_an）。git の対象外。
+- やってはいけない事（この回で止められた打ち方）＝道具を timeout・パイプ付きで打つ（土台ゲート）・Bash に関数の定義と「$(」と .claude/tools のパスを混ぜる・next_step の「2」に教訓の番号を書く（tidy の (t)）・必読に入れるファイルを Read で開かずに必読の表に足す。
+
+## §11 233回目＝201番（締めの改善・宣言に まこさん「ok」）
+
+### 11-1 経緯
+- まこさんの問い「なんで毎回セッション終了の締め作業にこれだけ時間がかかるの？」に、記録から数えて答えた＝締めは 06:34:31〜06:45:58（11分27秒）・道具の呼び出し74回のうち失敗21回（hook に止められた Bash 2・Edit 16・tidy 1 ほか）・手順の調べ直し約20回。
+- まこさん「ミス多すぎだし、時間かかりすぎなので、改善してほしい」→ 前の返信の案（打つ前に試す・手順を1か所に書く）だけでは足りないと答えた（打つ前に試す決まりは L-739 に在るのに破った・2026-10-15 にやめた決まり）。→ まこさん「今すぐ修正できないのか？」→ 201番を ToDo の末尾に足し、宣言（規模＝tidy_next_step.py 1本・4か所・足す約80行）に まこさん「ok」。
+
+### 11-2 直した物（.claude/tools/tidy_next_step.py）
+- copy_todo（--todo-from）＝ToDo の締めの行（「（N回目）の締め」で ★いまここ）を見つけたら、①「2」の見出しを N+1回目 ②締めの行を「（N+1回目）の締め」・まだ ③3-1 の見出しの日付と回目（N回目の締め）を書く。回目は ToDo から読むので、2回打っても同じ結果。
+- close_steps（新しい関数）＝--todo-from の最後に、締めの手順7行を出す（手で書く所と元データの行番号・Edit は1本ずつ・(t)(p)(q) の決まりといまの行数・教訓は --write の前・必読に足したら Read と根拠・道具の打ち方・その後の順）。
+- selftest に T18（見本の元データと ToDo で、①〜③と、済んだ行を写さないことと、2回打っても同じこと）＝28/28。main の旗の説明を直した。
+- 消した行は無い。検査や止める条件は外していない・緩めていない。
+- 4か所の Edit を、宣言の直後に並べて出した（自分で「Edit は1本ずつ」と言った直後）。4本とも入ったが、決まりに反した。
+
+### 11-3 確かめ
+- 作業場の写し（scratchpad/t201）で、元データを締めの前の控え（233回目の見出し）に替えて --todo-from を打った＝手で直した本物と違うのは、手で書く所（①②・必読の表・④・3-1 の本文と見出しの § の範囲）だけ。「2」の見出し・締めの行・ToDo の表21行は1文字も違わない。
+- 本物の ToDo を締めの形に戻し（201番 ✅済・★いまここ を156番へ）、本物で --todo-from を打った＝元データは打つ前と cmp で同じ。--write＝検査20個 通過・next_step.md は前と cmp で同じ。--write は1日を過ぎたセッションのフォルダを1個消した。
