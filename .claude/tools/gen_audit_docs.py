@@ -2047,11 +2047,19 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
             # ★2026-11-01（231回目・まこさん「直す」）＝「1 になります」と言い切らず、新しい関数を書いた工事に限る文にし、記録の終了コードを添える。
             #   直す前は、新しい関数を足さない工事（例＝工事 m2c15-indicator-redirect-20261031・impl_functions が空）でも「1 になります」と書き、
             #   すぐ下の表の 0 と食い違っていた（依頼書 CP94 の 574行と 591行）。
-            diff_rc = next((r.get("rc") for r in pj.get("rows") or []
-                            if "verify_design_contract.py --diff" in str(r.get("cmd"))), None)
+            # ★2026-11-01（234回目・まこさん「直して良い」）＝記録の行の終了コードを写さず、いまの設計書で照合を走らせ、測った終了コードと齟齬の件数を書く。
+            #   直す前は、記録の行をそのまま「この工事の照合の終了コード」と書いた。記録は 09:25 に161-1 の設計書で走った物で、
+            #   設計書を作り直した後の依頼書 CP96 に、事実と違う「0」が載った（いまの設計書では 1・齟齬1件）。記録は走らせ直さない（229回目の決定のまま）。
+            vd = (subprocess.run([sys.executable, os.path.join(SDK, "scripts", "priority_rebuild", "verify_design_contract.py"),
+                                  "--diff", os.path.abspath(design_path or DESIGN)], cwd=SDK, capture_output=True, text=True)
+                  if kind == "design" else None)
+            vd_m = re.search(r"齟齬: (\d+)件", vd.stdout) if vd else None
+            vd_s = (f"終了コードは {vd.returncode}、齟齬は {vd_m.group(1)} 件です。" if vd_m
+                    else f"終了コードは {vd.returncode} です（{_one_line((vd.stdout or vd.stderr).strip().splitlines()[0] if (vd.stdout or vd.stderr).strip() else '出力なし')}）。") if vd else ""
             add("設計書の監査は、実装の前に出します。設計書に新しい関数を書いた工事では、その関数がまだ実物に無いので、"
                 "設計書と実物の照合（verify_design_contract.py --diff）の終了コードは 1 になります。道具は、設計書の監査の依頼書では、この1本を見ません。"
-                + (f"この工事の照合の終了コードは、下の表のとおり {diff_rc} です。" if diff_rc is not None else "")
+                f"道具は、この依頼書を作るときに、いまの設計書で照合を走らせました。{vd_s}"
+                f"下の表の照合の行は、{pj.get('at', '')} の記録の物で、そのときの設計書を照らした結果です。"
                 if kind == "design" else "")
             add("")
             add("| コマンド | 種類 | 終了コード |")
