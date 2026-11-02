@@ -2,7 +2,7 @@
 # 要件定義と工事の流れ（全文・固定・消さない）
 
 ★この文書は、まこさんが OK した文を、プログラムが逐語のファイルから写した物です。見出しの3行と、この説明の4行だけが、プログラムの中の決まった文です。
-★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
+★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt／`.claude/state/verbatim/order-few-indicators-20261102/` の okd_order_few_20261102.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
 ★作り直し＝`python3 .claude/tools/gen_core_requirements.py --write`。検出＝`--verify`。
 ★毎回 載せる物は、この全文の要約（`.claude/rules/core_requirements.md`）です。設計書の監査の要件ごとの問いは、この全文から組みます。
 
@@ -158,3 +158,15 @@
 4. 検査・問い・止める条件を外す、または緩める直しは、直す前に、消す行を まこさんに見ていただく。
 
 まこさんの決定（逐語 2026-10-20）＝「確定して良い」
+
+# 工事の順番（2026-11-02 の決定・上の 6 の「順番＝」の行を置き替える。番号は ToDo の番号。表の6種は、その後 DI差 を足した7種）
+
+| 段 | 中身 | 番号 |
+|---|---|---|
+| ① 準備 | ToDo・試験・M2〜M6 のやること | 206・228・207・217〜221（変更なし） |
+| ② 構造の修正（**全指標が対象**） | 記録の形を決める、全プログラムを読む口へ向ける、古い置き場を消す。ゴール1はここで達成する | 208・209・210・172・171・211・200・**170・162**・195・196 |
+| ③ 6種の値を埋める | 6種の役割・使い方・閾値・法則を入れ、表を作り直して試験を通す | 222・214・194・215・197・M2-D-8・216 |
+| ④ 6種で全工程を通す | M2 → M3 → M4 → M5 → M6 | 223〜227 |
+| ⑤ 指標を増やす（**1種ずつの作業**） | 残りの指標の役割・使い方・閾値を埋める。全指標で走らせて net を問う | 169・212・213・70・155 の残り・229 |
+
+まこさんの決定（逐語 2026-11-02）＝「「少数の指標で全工程を通してから、残りの指標を直して増やす」に変えてよい／よい。／一旦それで作って、ヌケモ手戻り修正があったとしても、指標の数が少ないので、今よりはスピーディーに進められるはずだよね。」

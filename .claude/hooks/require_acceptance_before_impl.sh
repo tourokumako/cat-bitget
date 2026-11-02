@@ -209,7 +209,11 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #     .claude/state/verbatim/requirements-core-20261012/ の逐語のファイル（読むだけ）。
               #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
-              'gen_core_requirements.py')
+              'gen_core_requirements.py',
+              # ★2026-11-02（ToDo の206番・まこさん「よい」）＝要件の行・工事・試験の対応表を作る道具。
+              #   書く先は道具の側（OUT）で .claude/state/req_trace.md の1本だけ。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'gen_req_trace.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-okdir', '-delete', '-fprint', '-fprint0', '-fprintf', '-fls', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')

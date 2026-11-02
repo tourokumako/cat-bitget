@@ -68,6 +68,7 @@ TODO = RATCHET / "m2_todo.json"                     # ★2026-09-29＝設計の�
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gen_verbatim as gv                           # noqa: E402  ★2026-09-29＝まこさんの文の逐語のファイル
 import gen_core_requirements as gcr                 # noqa: E402  ★2026-10-12＝固定で載せる文（要件定義と工事の流れ）の正本
+import gen_req_trace as grt                         # noqa: E402  ★2026-11-02（ToDo の206番）＝要件の行・工事・試験の対応表
 
 # ★2026-10-12（170回目・まこさん「OK」＝直し方の案 A-1・A-4）＝固定で載せる文と、要件定義との照らしの表を、設計書の上部に載せる。
 CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"   # 載っているかを見る文字（正本の先頭の見出しを太字にした行）
@@ -722,6 +723,9 @@ def _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: 
     if why:
         bad.append(why)
     d["やることの番号の文"], d["結ぶ要件"], d["読むもの宣言の文"] = nums, req, text
+    # ★2026-11-02（ToDo の206番・まこさん「ok」）＝要件の行に工事か試験が無いまま、設計書を作らない。
+    #   2026-11-02 より前の名前の工事は見ない（判定は grt.design_gate の1か所だけ）。
+    bad.extend(grt.design_gate(work))
     # ★読むもの宣言のすり抜けを塞ぐ（設計書の監査 CP75 の Q10）＝宣言が「なし」（やることリストに行が無い工事）なのに、
     #   やることの表の一覧に、やることリストの行の番号が出てくれば止める。
     if nums.startswith("なし"):
