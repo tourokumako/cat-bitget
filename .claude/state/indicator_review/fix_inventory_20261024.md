@@ -231,8 +231,8 @@
 - observe_diag.py:6104-6105  `_V9_SOURCES`・`_V9_RECORD_SINCE`  [持つ]  v9_logic.md の出どころ3本
 - observe_diag.py:7593-7712  `selftest_atr1h`  [持つ／読む]  S-Rタッチ1時間ATR
 - pre_audit_check.py:58-62  INDICATOR_SOURCES_CHECK・KNOWN_MATERIALS_PATH・MATERIALS_CSV・MATERIALS_CHECK  [持つ（パス）]  指標の照らしの道具・分かっている ❌ の一覧・材料の検査
-- pre_audit_check.py:161-171  KNOWN_NG  [持つ]  指標の資料と設定ファイルの、分かっている食い違い
-- pre_audit_check.py:177・:180-189  KNOWN_MATERIALS  [持つ／読む]  分かっている ❌ の一覧の sha256
+- pre_audit_check.py:164-174  KNOWN_NG  [持つ]  指標の資料と設定ファイルの、分かっている食い違い
+- pre_audit_check.py:180・:183-192  KNOWN_MATERIALS  [持つ／読む]  分かっている ❌ の一覧の sha256
 - precheck.py:46  V17_LOWVOL_BANDS  [持つ]  ATR% の低ボラ帯の数
 - ratchet_guards.py:175  _selftest  [持つ（テスト用）]  指標の列名
 - regime_r9_diag.py:275-277  measure  [持つ]  比べる相手の判定の列名
@@ -281,14 +281,14 @@
 - engine_tuner_fire_diag.py:101  cond_label  [読む]  材料の名前を列の名前にする規則
 - engine_tuner_fire_diag.py:209  funnel_one  [読む]  場面の判定の列
 - engine_tuner_fire_diag.py:357  run_main  [読む]  役割と件数/日の下限
-- gen_acceptance.py:948-959  _timeframe_rows  [読む]  使える時間足と、役割ごとの時間足
-- gen_acceptance.py:962-997  _indicator_rows  [読む]  指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の
-- gen_acceptance.py:1000-1041  _auto_rows  [読む]  法則（番号・場面・一文・説明・機械が読む判定）・型の id と name
-- gen_acceptance.py:1084-1147  build_materials  [読む]  オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵
-- gen_acceptance.py:1150-1196  build_laws  [読む]  機械が読む判定の「数える部品」
-- gen_acceptance.py:1199-1227  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
-- gen_acceptance.py:1440-1482  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
-- gen_audit_docs.py:1660-1681  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
+- gen_acceptance.py:952-963  _timeframe_rows  [読む]  使える時間足と、役割ごとの時間足
+- gen_acceptance.py:966-1001  _indicator_rows  [読む]  指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の
+- gen_acceptance.py:1004-1045  _auto_rows  [読む]  法則（番号・場面・一文・説明・機械が読む判定）・型の id と name
+- gen_acceptance.py:1088-1151  build_materials  [読む]  オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵
+- gen_acceptance.py:1154-1200  build_laws  [読む]  機械が読む判定の「数える部品」
+- gen_acceptance.py:1203-1231  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
+- gen_acceptance.py:1444-1486  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
+- gen_audit_docs.py:1673-1694  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
 - gen_audit_request.py:286-318  copy_all_laws  [読む]  法則の一覧
 - gen_exit_families.py:403-410  confirm_conditions  [読む]  確認の条件の材料・閾値
 - gen_indicator_switch.py:64-74  `ta_classes`  [読む]  ta のクラス
@@ -431,8 +431,8 @@
 | observe_diag.py | 6104-6105 | 持つ | `_V9_SOURCES`・`_V9_RECORD_SINCE` | v9_logic.md の出どころ3本 | _V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_ | 外す（B・指標の情報ではない） |
 | observe_diag.py | 7593-7712 | 持つ／読む | `selftest_atr1h` | S-Rタッチ1時間ATR | def selftest_atr1h(exit_: bool = True, bars_csv: str ／ None = None) -> list: | 外す（B・指標の情報ではない） |
 | pre_audit_check.py | 58-62 | 持つ（パス） | INDICATOR_SOURCES_CHECK・KNOWN_MATERIALS_PATH・MATERIALS_CSV・MATERIALS_CHECK | 指標の照らしの道具・分かっている ❌ の一覧・材料の検査 | INDICATOR_SOURCES_CHECK = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tool | 振り分けが無い |
-| pre_audit_check.py | 161-171 | 持つ | KNOWN_NG | 指標の資料と設定ファイルの、分かっている食い違い | KNOWN_NG = { | 振り分けが無い |
-| pre_audit_check.py | 177・:180-189 | 持つ／読む | KNOWN_MATERIALS | 分かっている ❌ の一覧の sha256 | KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad59007 | 振り分けが無い |
+| pre_audit_check.py | 164-174 | 持つ | KNOWN_NG | 指標の資料と設定ファイルの、分かっている食い違い | KNOWN_NG = { | 振り分けが無い |
+| pre_audit_check.py | 180・:183-192 | 持つ／読む | KNOWN_MATERIALS | 分かっている ❌ の一覧の sha256 | KNOWN_MATERIALS = dict(path=KNOWN_MATERIALS_PATH, sha="0c99daaa705d62f2918391952189ad59007 | 振り分けが無い |
 | precheck.py | 46 | 持つ | V17_LOWVOL_BANDS | ATR% の低ボラ帯の数 | V17_LOWVOL_BANDS = 2   # ATR% 帯の低ボラ側（<0.2 の2帯）＝帯別証跡の合算対象（E37 v17 acceptance 2026-07-07 承認） | 外す（B・指標の情報ではない） |
 | ratchet_guards.py | 175 | 持つ（テスト用） | _selftest | 指標の列名 | r = report_vol_importance({"atr_pct_7": 111939, "bb_slope_pct_20": 5000, "adx_14": 4000}) | 外す（B・指標の情報ではない） |
 | regime_r9_diag.py | 275-277 | 持つ | measure | 比べる相手の判定の列名 | if "range_ok_rg5" in df.columns: | 外す（B・指標の情報ではない） |
@@ -481,14 +481,14 @@
 | engine_tuner_fire_diag.py | 101 | 読む | cond_label | 材料の名前を列の名前にする規則 | names = " と ".join(ex._mat_key(m, lane) for m in mats) if mats else "（材料なし）" | ③向け直す |
 | engine_tuner_fire_diag.py | 209 | 読む | funnel_one | 場面の判定の列 | ok, up = ex._regime_series(df, recipe) | 外す（B・指標の情報ではない） |
 | engine_tuner_fire_diag.py | 357 | 読む | run_main | 役割と件数/日の下限 | role, rfloor = tj.role_floor(a.strategy) | 外す（B・指標の情報ではない） |
-| gen_acceptance.py | 948-959 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | def _timeframe_rows() -> list: | 振り分けが無い |
-| gen_acceptance.py | 962-997 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ | def _indicator_rows(text: str) -> list: | 振り分けが無い |
-| gen_acceptance.py | 1000-1041 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | def _auto_rows(no: str, lines: list, d: dict) -> list: | 振り分けが無い |
-| gen_acceptance.py | 1084-1147 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | def build_materials(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1150-1196 | 読む | build_laws | 機械が読む判定の「数える部品」 | def build_laws(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1199-1227 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | def build_ranking(d: dict) -> str: | 振り分けが無い |
-| gen_acceptance.py | 1440-1482 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | def build_stages(d: dict) -> str: | 振り分けが無い |
-| gen_audit_docs.py | 1660-1681 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
+| gen_acceptance.py | 952-963 | 読む | _timeframe_rows | 使える時間足と、役割ごとの時間足 | def _timeframe_rows() -> list: | 振り分けが無い |
+| gen_acceptance.py | 966-1001 | 読む | _indicator_rows | 指標ごとのパラメータの名前・範囲（下限・上限・出どころ）・代表の値（スキャル／デイトレ）と出どころ・役割（出どころの役割・役割の印）・閾値の値・オンかオフか・カ | def _indicator_rows(text: str) -> list: | 振り分けが無い |
+| gen_acceptance.py | 1004-1045 | 読む | _auto_rows | 法則（番号・場面・一文・説明・機械が読む判定）・型の id と name | def _auto_rows(no: str, lines: list, d: dict) -> list: | 振り分けが無い |
+| gen_acceptance.py | 1088-1151 | 読む | build_materials | オンの指標・geo_on・demand_on・time_on・役割ごとの系統と時間足とレンジ幾何・探す範囲の鍵 | def build_materials(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1154-1200 | 読む | build_laws | 機械が読む判定の「数える部品」 | def build_laws(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1203-1231 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | def build_ranking(d: dict) -> str: | 振り分けが無い |
+| gen_acceptance.py | 1444-1486 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | def build_stages(d: dict) -> str: | 振り分けが無い |
+| gen_audit_docs.py | 1673-1694 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
 | gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 |  | 振り分けが無い |
 | gen_exit_families.py | 403-410 | 読む | confirm_conditions | 確認の条件の材料・閾値 | confirm_conditions=dict( | ③向け直す |
 | gen_indicator_switch.py | 64-74 | 読む | `ta_classes` | ta のクラス | def ta_classes() -> list[tuple[str, str]]: | ②消す（プログラムごと無くなる） |
@@ -1151,26 +1151,26 @@
 | engine_tuner_gen.py | 8109 | 読む | json の名前「 から決めた（設定 recipes/search_limits.json の hold_range_by_role が正」 | ③向け直す |
 | engine_tuner_gen.py | 8317 | 読む | json の名前「[歩4] 本走はまだ始められない＝search_limits.json の値がまこさん待ち:」 | ③向け直す |
 | engine_tuner_gen.py | 8444 | 読む | FAMILY_LINEAGE | ③向け直す |
-| gen_acceptance.py | 150 | 読む | json の名前「indicator_switch.json」 | ③向け直す |
-| gen_acceptance.py | 151 | 読む | json の名前「regime_laws.json」 | ③向け直す |
-| gen_acceptance.py | 152 | 読む | json の名前「signal_families.json」 | ③向け直す |
-| gen_acceptance.py | 153 | 読む | json の名前「material_ranking.json」 | ③向け直す |
-| gen_acceptance.py | 154 | 読む | json の名前「search_limits.json」 | ③向け直す |
-| gen_acceptance.py | 562 | 読む | json の名前「materials.json」 | ③向け直す |
-| gen_acceptance.py | 564 | 読む | json の名前「indicator_params_by_strategy.json」 | ③向け直す |
-| gen_acceptance.py | 565 | 読む | json の名前「indicator_roles_thresholds.json」 | ③向け直す |
-| gen_acceptance.py | 570 | 読む | json の名前「observe_config.json」 | ③向け直す |
-| gen_acceptance.py | 932 | 読む | json の名前「承認済みの型の表（signal_families.json の parts）に部品が在る、指標の種類。
+| gen_acceptance.py | 151 | 読む | json の名前「indicator_switch.json」 | ③向け直す |
+| gen_acceptance.py | 152 | 読む | json の名前「regime_laws.json」 | ③向け直す |
+| gen_acceptance.py | 153 | 読む | json の名前「signal_families.json」 | ③向け直す |
+| gen_acceptance.py | 154 | 読む | json の名前「material_ranking.json」 | ③向け直す |
+| gen_acceptance.py | 155 | 読む | json の名前「search_limits.json」 | ③向け直す |
+| gen_acceptance.py | 563 | 読む | json の名前「materials.json」 | ③向け直す |
+| gen_acceptance.py | 565 | 読む | json の名前「indicator_params_by_strategy.json」 | ③向け直す |
+| gen_acceptance.py | 566 | 読む | json の名前「indicator_roles_thresholds.json」 | ③向け直す |
+| gen_acceptance.py | 571 | 読む | json の名前「observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 936 | 読む | json の名前「承認済みの型の表（signal_families.json の parts）に部品が在る、指標の種類。
     部品の名」 | ③向け直す |
-| gen_acceptance.py | 1794 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
-| gen_acceptance.py | 1794 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
-| gen_acceptance.py | 3235 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3240 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3241 | 直書き | POC | ③向け直す |
+| gen_acceptance.py | 1798 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 1798 | 読む | json の名前「scripts/priority_rebuild/recipes/search_limits.json」 | ③向け直す |
+| gen_acceptance.py | 3239 | 直書き | ADX | ③向け直す |
 | gen_acceptance.py | 3244 | 直書き | ADX | ③向け直す |
-| gen_acceptance.py | 3244 | 直書き | POC | ③向け直す |
-| gen_acceptance.py | 3244 | 直書き | 前日POC | ③向け直す |
-| gen_audit_docs.py | 3132 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_acceptance.py | 3245 | 直書き | POC | ③向け直す |
+| gen_acceptance.py | 3248 | 直書き | ADX | ③向け直す |
+| gen_acceptance.py | 3248 | 直書き | POC | ③向け直す |
+| gen_acceptance.py | 3248 | 直書き | 前日POC | ③向け直す |
+| gen_audit_docs.py | 3145 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
 | gen_audit_request.py | 0 | 読めない | ファイルが見つからない | — |
 | gen_composition_rules.py | 62 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_composition_rules.py | 63 | 読む | json の名前「search_limits.json」 | ③向け直す |
@@ -2711,7 +2711,7 @@
 | pre_audit_check.py | 115 | 読む | json の名前「/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/s」 | ③向け直す |
 | pre_audit_check.py | 116 | 読む | json の名前「/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/s」 | ③向け直す |
 | pre_audit_check.py | 117 | 読む | json の名前「/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget」 | ③向け直す |
-| pre_audit_check.py | 214 | 読む | json の名前「.claude/ratchet/indicator_switch.json」 | ③向け直す |
+| pre_audit_check.py | 217 | 読む | json の名前「.claude/ratchet/indicator_switch.json」 | ③向け直す |
 | precheck.py | 41 | 持つ | BANDS（名前 2・例 ADX, ATR%） | ①写す→②消す |
 | precheck.py | 54 | 直書き | ATR% | ③向け直す |
 | precheck.py | 54 | 読む | BANDS | ③向け直す |

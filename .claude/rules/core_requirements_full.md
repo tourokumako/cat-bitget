@@ -2,7 +2,7 @@
 # 要件定義と工事の流れ（全文・固定・消さない）
 
 ★この文書は、まこさんが OK した文を、プログラムが逐語のファイルから写した物です。見出しの3行と、この説明の4行だけが、プログラムの中の決まった文です。
-★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt／`.claude/state/verbatim/order-few-indicators-20261102/` の okd_order_few_20261102.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
+★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt／`.claude/state/verbatim/order-few-indicators-20261102/` の okd_order_few_20261102.txt／`.claude/state/verbatim/one-path-first-20261102/` の okd_one_path_20261102.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
 ★作り直し＝`python3 .claude/tools/gen_core_requirements.py --write`。検出＝`--verify`。
 ★毎回 載せる物は、この全文の要約（`.claude/rules/core_requirements.md`）です。設計書の監査の要件ごとの問いは、この全文から組みます。
 
@@ -170,3 +170,16 @@
 | ⑤ 指標を増やす（**1種ずつの作業**） | 残りの指標の役割・使い方・閾値を埋める。全指標で走らせて net を問う | 169・212・213・70・155 の残り・229 |
 
 まこさんの決定（逐語 2026-11-02）＝「「少数の指標で全工程を通してから、残りの指標を直して増やす」に変えてよい／よい。／一旦それで作って、ヌケモ手戻り修正があったとしても、指標の数が少ないので、今よりはスピーディーに進められるはずだよね。」
+
+# 工事の順番の2（2026-11-02 の決定・場面・売買スタイル・玉の向きも、指標と同じ考え方で後回しにする）
+
+| 軸 | 先に通す値 | 後で横展開する値 |
+|---|---|---|
+| 指標 | 7種 | 残りの指標 |
+| 場面 | レンジ | 上げ・下げ・スパイク |
+| 売買スタイル | スキャル | デイトレ |
+| 玉の向き（買い方） | ショート | ロング |
+
+横展開で作り直しが起きないように、**場面・売買スタイル・玉の向きの欄は、最初から構造に持たせます。埋める値だけを1通りに絞ります。**
+
+まこさんの決定（逐語 2026-11-02）＝「上記理解でOK／前回セッションで、実際に通るのかを確認しつつtodoをこなせば、ヌケモレが見つけやすく、効率的にengine_tunerの制作ができるというようなことを言っていたので、／todoには、機能構築後の確認を毎回入れるようにしてほしい／一旦前回セッションログ確認してみて」

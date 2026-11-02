@@ -24,7 +24,7 @@
 
 限り（正直に）
   ①割り当ての中身が正しいか（その工事で本当に要件が満たされるか）は見ない＝監査で確かめる（ToDo の207番）。
-  ②試験の「コマンド」が空のうちは、試験の名前が在ることしか言えない。コマンドは207番で書く。
+  ②試験のコマンドは check_one_path.py の口を指す。測る処理がまだ無い試験は「未作」と出る（作る ToDo で足す）。
   ③「読む範囲」の外の行は数えない。外した範囲は元データの「読まない範囲」に理由つきで書く。
 """
 from __future__ import annotations
@@ -46,6 +46,7 @@ M2_TODO = ROOT / "v3-bitget-api-sdk" / "bitget-python-sdk-api" / ".claude" / "ra
 HEAD = "<!-- REQ_TRACE gen_req_trace.py が作った＝手で書き換えない・元データ＝req_trace_src.json -->"
 GATE_FROM = 20261102                                   # この日より前の名前の工事は、門を掛けない（作り終えた工事を作り直せなくしないため）
 DONE = "済"                                            # 済んだ工事は「済＝161番」の形で書く（ToDo の表から消えているため）
+CHECK_WORD = "作った後の確認"                            # 機能を作る ToDo の行に必ず書く語
 
 
 def _norm(s: str) -> str:
@@ -120,9 +121,44 @@ def known_numbers(root: pathlib.Path = ROOT) -> set:
     return out
 
 
-def problems(src: dict, rows: list, known: set) -> list:
-    """止める理由を全部 返す（1つずつ当たらないように、一度に出す）。"""
+def todo_rows(root: pathlib.Path = ROOT) -> dict:
+    """いちばん新しいセッションの ToDo の行（無ければ next_step の表）。戻り＝{番号: 行の全文}。"""
+    sess = root / SESSIONS.relative_to(ROOT)
+    todos = sorted(sess.glob("*/session_todo.md"), key=lambda p: p.stat().st_mtime)
+    p = todos[-1] if todos else root / NEXT_STEP.relative_to(ROOT)
+    if not p.exists():
+        return {}
+    return {m.group(1): m.group(0) for m in re.finditer(r"^\|\s*\**(\d+)\**\s*\|.*$", p.read_text(encoding="utf-8"), flags=re.M)}
+
+
+def check_problems(src: dict, root: pathlib.Path = ROOT) -> list:
+    """作った後の確認の止める理由（まこさん 2026-11-02「todoには、機能構築後の確認を毎回入れるようにしてほしい」）。"""
     bad = []
+    tests, chk, skip = src.get("試験") or {}, src.get("確認") or {}, src.get("確認が要らない行") or {}
+    for no, line in todo_rows(root).items():
+        if "✅済" in line:
+            continue
+        if no in chk:
+            if CHECK_WORD not in line:
+                bad.append(f"ToDo {no} の行に「{CHECK_WORD}」の文が無い")
+        elif no not in skip:
+            bad.append(f"作った後の確認の無い機能の ToDo: {no}（元データの「確認」か「確認が要らない行」に書く）")
+    used = {t for v in chk.values() for t in v}
+    for no, ts in chk.items():
+        for t in ts:
+            if t not in tests:
+                bad.append(f"ToDo {no} の確認の試験 {t} が、元データの「試験」に無い")
+    if not src.get("試験のコマンド"):
+        bad.append("元データの「試験のコマンド」が空")
+    for t in tests:
+        if t not in used:
+            bad.append(f"試験 {t} が、どの ToDo の確認にも入っていない")
+    return bad
+
+
+def problems(src: dict, rows: list, known: set, root: pathlib.Path = ROOT) -> list:
+    """止める理由を全部 返す（1つずつ当たらないように、一度に出す）。"""
+    bad = check_problems(src, root)
     rules, tests = src.get("割り当て") or [], src.get("試験") or {}
     got, dead = assign(rows, rules)
     for r in rows:
@@ -158,8 +194,11 @@ def render(src: dict, rows: list) -> str:
          f"要件の行＝{len(rows)} 行。元データ＝`.claude/state/req_trace_src.json`。作り直し＝`python3 .claude/tools/gen_req_trace.py --write`。", "",
          "## 読まない範囲と理由", ""]
     L += [f"- {x}" for x in src.get("読まない範囲") or []]
-    L += ["", "## 試験の一覧（コマンドは207番で書く）", "", "| 番号 | 中身 | コマンド |", "|---|---|---|"]
-    L += [f"| {k} | {_cell(v['中身'])} | {_cell(v.get('コマンド') or 'まだ')} |" for k, v in tests.items()]
+    cmd, owner = src.get("試験のコマンド") or "まだ", src.get("試験を作る番号") or {}
+    L += ["", "## 試験の一覧", "", "| 番号 | 中身 | コマンド | 測る処理を作る ToDo |", "|---|---|---|---|"]
+    L += [f"| {k} | {_cell(v['中身'])} | {_cell(cmd.replace('{番号}', k))} | {_cell(owner.get(k) or '—')} |" for k, v in tests.items()]
+    L += ["", "## ToDo ごとの作った後の確認", "", "| ToDo | 走らせる試験 |", "|---|---|"]
+    L += [f"| {k} | {'・'.join(v)} |" for k, v in (src.get("確認") or {}).items()]
     by_w: dict = {}
     for r in rows:
         for w in rules[got[r["id"]]].get("工事") or []:
@@ -189,7 +228,7 @@ def design_gate(work: str, src_path: pathlib.Path = SRC, root: pathlib.Path = RO
         return []
     src = load_src(src_path)
     rows = extract(src["読む範囲"], root)
-    bad = problems(src, rows, known_numbers(root))
+    bad = problems(src, rows, known_numbers(root), root)
     nums = (src.get("工事の名前") or {}).get(work)
     if not nums:
         return bad + [f"対応表の元データの「工事の名前」に、この工事（{work}）が無い。どの ToDo の番号の工事かを書く"]
@@ -212,18 +251,33 @@ def selftest() -> int:
         (root / "a.md").write_text("# 要件\n\n## 節1\n\n- 行あ\n- 行い\n\n| 欄 | 中身 |\n|---|---|\n| か | き |\n\n# 次\n- 外\n", encoding="utf-8")
         sdir = root / ".claude" / "state" / "sessions" / "s1"
         sdir.mkdir(parents=True)
-        (sdir / "session_todo.md").write_text("| 番号 | やること |\n|---|---|\n| 7 | 何か |\n", encoding="utf-8")
+        (sdir / "session_todo.md").write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
         spec = [{"名前": "A", "ファイル": "a.md", "始まり": "# 要件", "終わり": "# 次"}]
         rows = extract(spec, root)
         t("T1 見出し・表の見出し・範囲の外を数えない（3行）", [r["文"] for r in rows] == ["- 行あ", "- 行い", "| か | き |"])
         tests = {"T": {"中身": "x"}}
         good = {"試験": tests, "割り当て": [{"語": "行あ", "工事": ["7"], "試験": ["T"]}, {"語": "行い", "工事": ["済＝1番"], "試験": ["T"]},
-                                          {"節": "節1", "対象外": "事実"}], "読む範囲": spec, "工事の名前": {"w-20261102": ["7"]}}
+                                          {"節": "節1", "対象外": "事実"}], "読む範囲": spec, "工事の名前": {"w-20261102": ["7"]},
+                "確認": {"7": ["T"]}, "確認が要らない行": {}, "試験のコマンド": "c {番号}"}
         known = known_numbers(root)
-        t("T2 全部に受け先が在れば通る", problems(good, rows, known) == [])
+        def problems_(s):
+            return problems(s, rows, known, root)
+        t("T2 全部に受け先が在れば通る", problems_(good) == [])
+        b = json.loads(json.dumps(good))
+        b["確認"] = {}
+        t("T14 確認の無い機能の ToDo で止まる", any("確認の無い機能の ToDo: 7" in x for x in problems_(b)))
+        b = json.loads(json.dumps(good))
+        b["確認"], b["確認が要らない行"] = {}, {"7": "文書だけ"}
+        t("T15 確認が要らない行は止まらないが、試験の行き先が無いと止まる", any("どの ToDo の確認にも" in x for x in problems_(b)) and not any("確認の無い" in x for x in problems_(b)))
+        b = json.loads(json.dumps(good))
+        b["試験のコマンド"] = ""
+        t("T16 試験のコマンドが空なら止まる", any("コマンド" in x for x in problems_(b)))
+        (sdir / "session_todo.md").write_text("| 番号 | やること |\n|---|---|\n| 7 | 何か |\n", encoding="utf-8")
+        t("T17 行に確認の文が無いと止まる", any("の文が無い" in x for x in problems_(good)))
+        (sdir / "session_todo.md").write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
         b = json.loads(json.dumps(good))
         b["割り当て"] = b["割り当て"][:2]
-        t("T3 割り当ての無い行で止まる", any("割り当てが無い" in x for x in problems(b, rows, known)))
+        t("T3 割り当ての無い行で止まる", any("割り当てが無い" in x for x in problems_(b)))
         b = json.loads(json.dumps(good))
         b["割り当て"][0]["試験"] = []
         t("T4 試験の無い割り当てで止まる", any("試験が無い" in x for x in problems(b, rows, known)))
