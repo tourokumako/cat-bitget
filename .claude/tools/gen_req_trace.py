@@ -195,8 +195,9 @@ def render(src: dict, rows: list) -> str:
          "## 読まない範囲と理由", ""]
     L += [f"- {x}" for x in src.get("読まない範囲") or []]
     cmd, owner = src.get("試験のコマンド") or "まだ", src.get("試験を作る番号") or {}
-    L += ["", "## 試験の一覧", "", "| 番号 | 中身 | コマンド | 測る処理を作る ToDo |", "|---|---|---|---|"]
-    L += [f"| {k} | {_cell(v['中身'])} | {_cell(cmd.replace('{番号}', k))} | {_cell(owner.get(k) or '—')} |" for k, v in tests.items()]
+    # ★2026-11-02（235番・まこさん「満たすと判定を出さないようにすべき」）＝試験の見方を出す。動かす以外は、要件を満たす判定にならない
+    L += ["", "## 試験の一覧", "", "| 番号 | 中身 | 見方 | コマンド | 測る処理を作る ToDo |", "|---|---|---|---|---|"]
+    L += [f"| {k} | {_cell(v['中身'])} | {_cell(v.get('見方') or '未作')} | {_cell(cmd.replace('{番号}', k))} | {_cell(owner.get(k) or '—')} |" for k, v in tests.items()]
     L += ["", "## ToDo ごとの作った後の確認", "", "| ToDo | 走らせる試験 |", "|---|---|"]
     L += [f"| {k} | {'・'.join(v)} |" for k, v in (src.get("確認") or {}).items()]
     by_w: dict = {}
@@ -212,6 +213,17 @@ def render(src: dict, rows: list) -> str:
         t = "・".join(rule.get("試験") or []) or f"対象外＝{rule.get('対象外')}"
         L.append(f"| {pathlib.Path(r['出どころ']).name}:{r['行']} | {_cell(r['節'][:40])} | {_cell(r['文'][:120])} | {w} | {_cell(t)} |")
     return "\n".join(L) + "\n"
+
+
+def rows_of_work(work: str, src: dict, root: pathlib.Path = ROOT) -> list:
+    """その工事の ToDo の番号が受ける要件の行（設計書の監査の依頼書に載せる・235番）。工事の名前が無ければ空。"""
+    nums = {str(n) for n in (src.get("工事の名前") or {}).get(work) or []}
+    if not nums:
+        return []
+    rows = extract(src["読む範囲"], root)
+    rules = src["割り当て"]
+    got, _ = assign(rows, rules)
+    return [r for r in rows if r["id"] in got and nums & {str(w) for w in rules[got[r["id"]]].get("工事") or []}]
 
 
 def load_src(path: pathlib.Path = SRC) -> dict:
@@ -299,6 +311,11 @@ def selftest() -> int:
         t("T10 登録の無い新しい工事は止まる", any("工事の名前" in x for x in design_gate("x-20261103", f, root)))
         t("T11 古い工事と日付の無い工事は見ない", design_gate("x-20261101", f, root) == [] and design_gate("work", f, root) == [])
         t("T12 表に要件の行が全部 出る", all(r["文"].replace("|", "／")[:10] in render(good, rows) for r in rows))
+        t("T18 工事が受ける行だけを返す（工事の名前に無ければ空）",
+          [r["文"] for r in rows_of_work("w-20261102", good, root)] == ["- 行あ"] and rows_of_work("無い工事", good, root) == [])
+        g2 = json.loads(json.dumps(good))
+        g2["試験"]["T"]["見方"] = "文字"
+        t("T19 試験の一覧に見方の欄が出る（無ければ未作）", "| T | x | 未作 |" in render(good, rows) and "| T | x | 文字 |" in render(g2, rows))
         try:
             extract([{"名前": "A", "ファイル": "a.md", "始まり": "# 無い", "終わり": "# 次"}], root)
             t("T13 範囲の語が無ければ止まる", False)

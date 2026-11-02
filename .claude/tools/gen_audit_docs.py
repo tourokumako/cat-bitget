@@ -153,6 +153,13 @@ GENERATED = {".claude/state/acceptance.md": "やることの表.md"}
 PLACE = "<監査が書く>"
 # 結果の骨組みに入れる、監査が埋める所の印の全部（form はどれが残っていても止める）
 PLACEHOLDERS = (PLACE, "<PASS / FAIL>", "<YES / NO>", "<GO / CONDITIONAL-GO / NO-GO>", "<件数>")
+# ★2026-11-02（235番・まこさん「監査の依頼の仕方と監査の確認方法が、要件を満たしているのかを確認できる依頼方法と、確認方法になっているのかが重要」）
+#   ＝設計書の監査の結果に、要件の行ごとの状態を書かせる。結論（Critical の有無）だけでは、要件を満たしたかが分からないため。
+REQ_STATE_HEAD = "### 要件の状態"
+REQ_STATES = ("満たす", "後の工事で受ける", "当たらない", "確かめられなかった")
+REQ_WAYS = ("動かした", "読んだだけ")
+# ★同日（まこさん「指標に関する工事（ほとんど該当しそうだが）に対しては、指標の構造の要件定義書との照らしを監査の依頼項目に入れてほしい」）
+STRUCT_REQ = "SDK/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の構造_要件定義書.md"
 MARK = "<!-- gen_audit_docs:"
 # ★2026-09-29＝request-design（設計書と元データから依頼書の元データを作る口）
 GEN_MARK = "<!-- gen_audit_docs request-design"
@@ -168,7 +175,8 @@ IMPL_QUESTIONS = (
     ("Q10", "A", "作った後の確認を走らせて通るか",
      "通らないのに進めると、抜けが後の工程まで残る",
      "次のコマンドを走らせてください。`python3 .claude/tools/check_one_path.py --work {iter}`\n"
-     "全部の試験が「通る」と出るかを確かめてください。「通らない」か「未作」の試験が在れば、その番号と理由を全部挙げてください。"),
+     "「通らない」か「未作」の試験が在れば、その番号と理由を全部挙げてください。"
+     "「見た範囲」と出た試験は、文字や数やハッシュ値を見ただけです。動きを確かめたとは読まないでください。"),
     ("Q1", "A", "実装の指示を当てた結果が、実装の後と1文字も同じか",
      "違えば、実装は設計書のとおりに作られていない",
      "設計書の 4-20 には、実装の指示が {ni} 件あります。\n"
@@ -199,7 +207,8 @@ IMPL_QUESTIONS = (
      "やることの表（`{todo}`）の一覧には、この工事でやることが書いてあります。\n"
      "実装の指示が、この一覧のやることを全部満たすかを確かめてください。\n"
      "一覧に在るのに実装の指示に無い物と、実装の指示に在るのに一覧に無い物を、全部挙げてください。"),
-    ("Q6", "B", "完成の条件が、実装の後に本当に成り立つか",
+    # ★2026-11-02（235番・まこさん「他の直し方はOK」）＝A にした。B のままだと、成り立たなくても結論に効かない
+    ("Q6", "A", "完成の条件が、実装の後に本当に成り立つか",
      "成り立たなければ、承認のときの「済」が根拠にならない",
      "設計書の完成の条件の表には、{nc} 行の条件が書いてあります。\n"
      "この条件が、実装の後に本当に成り立つかを確かめてください。\n"
@@ -563,8 +572,9 @@ def consistency_errors(src: dict) -> list:
         if ":" in ln:
             k, v = ln.split(":", 1)
             meta[k.strip()] = v.strip()
-    if meta.get("監査の種類", "") != KINDS["design"][0] and REQ_Q[0] not in ids:
-        errs.append(f"設計書の監査でない依頼に、要件定義を指す固定の問い {REQ_Q[0]}（{REQ_Q[3]}）が無い")
+    # ★2026-11-02（235番・まこさん「実装は基本要件は問わなくてよい」）＝実装の監査は R0 を出さない。手書きの依頼だけ見る
+    if meta.get("監査の種類", "") not in (KINDS["design"][0], KINDS["impl"][0]) and REQ_Q[0] not in ids:
+        errs.append(f"手書きの依頼に、要件定義を指す固定の問い {REQ_Q[0]}（{REQ_Q[3]}）が無い")
     if not src["外部検索"] and not (src["外の基準が無い理由"] or "").strip():
         errs.append("外部検索が0件なのに、「外の基準が無い理由」が無い（なぜ外で調べる物が無いかを書く）")
     for it in src["自己申告"]:
@@ -1056,6 +1066,8 @@ def need_reads(d: dict, ev: dict, kind: str, todos: list = ()) -> list:
                  ("SDK/.claude/ratchet/engine_tuner_milestones.md", "engine_tuner のマイルストーン（売買のロジックに触る工事）")]
     if any(str(t).startswith("M2-") for t in todos):
         docs.append(("SDK/.claude/ratchet/engine_tuner_milestones2.md", f"M2 のマイルストーン（やることの番号 {'・'.join(todos)}）"))
+    if kind != "impl" and ga.work_kind(d) == 1:          # ★2026-11-02（235番）＝設計書の監査の Q6 が照らす相手
+        docs.append((STRUCT_REQ, "指標の構造の要件定義書（設計書の監査の Q6 が照らす相手）"))
     for p, why in docs:
         out.append((p, why, False))
         seen.add(os.path.basename(p))
@@ -1761,6 +1773,26 @@ def _design_five_questions(d: dict, md: str, src_label: str, okd: str, engine: b
        "逐語のファイルが無いときは、修正の指示は書きません。足りないのは まこさんの発言で、監査人には書けないためです。",
        "4つ目に、設計書の「5 決めたことと理由」を読み、CC が、採った案より良い案を、理由なく捨てていないかを確かめてください。"],
       ["5", "any"])
+    # ── 6. 指標の構造の要件定義書との照らし（指標に関する工事だけ・2026-11-02・235番） ──
+    if ga.work_kind(d) == 1:
+        import gen_req_trace as grt
+        rows = grt.rows_of_work(d.get("iter", ""), grt.load_src())
+        body6 = [f"指標の構造の要件定義書（`{STRUCT_REQ}`）は、指標の工事で守る物を1本にまとめた文書です。"]
+        if rows:
+            body6 += ["対応表（`.claude/state/req_trace.md`）では、この工事が受ける要件の行は、次のとおりです。", "",
+                      "| 出どころ | 節 | 要件の行 |", "|---|---|---|"]
+            body6 += [f"| {os.path.basename(str(r['出どころ']))}:{r['行']} | {_cell(r['節'][:40])} | {_cell(r['文'][:120])} |" for r in rows]
+            body6.append("")
+        else:
+            body6.append("対応表の元データの「工事の名前」に、この工事がありません。そのため、受ける要件の行を載せられません。")
+        body6 += ["次の3つを確かめてください。",
+                  "1つ目に、上の行と、要件定義書の第1章〜第8章のうちこの工事に当たる箇所を、設計書と照らしてください。"
+                  f"答えは、結果の7節の「{REQ_STATE_HEAD[4:]}」の表に、行ごとに書いてください。"
+                  f"状態は、{'・'.join(REQ_STATES)} のどれかです。確かめ方は、{'・'.join(REQ_WAYS)} のどちらかです。",
+                  "2つ目に、「後の工事で受ける」とした行について、受ける工事が ToDo の行か、設計書のやらないことに在るかを確かめてください。",
+                  "3つ目に、この工事に当たるのに対応表で受けていない要件の行が在れば、全部挙げてください。"]
+        q("Q6", "指標の構造の要件定義書と違う設計のまま進むと、その上に積む工事が全部 作り直しになる",
+          "設計は、指標の構造の要件定義書のとおりか", body6, ["any"])
     return out
 
 
@@ -2209,10 +2241,6 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
                         "後の工事の設計書で上書きされることがあるので、比べる相手にしません）" if show_path else "いまの設計書"),
                 # 同じコマンドは1回だけ並べる（完成の条件の行ごとに同じコマンドが在ると、同じものが何回も並んだ）
                 "cmds": "・".join(dict.fromkeys(f"`{_one_line(r.get('コマンド'))}`" for r in conds)) or "（無い）"}
-        # ★2026-10-18（192回目・まこさん「OK」）＝実装の監査にも、要件定義を指す固定の問い R0 を出す（固定の文が使われるのは、問いが指すとき）
-        add(f"<!-- 項目: 問い 番号={REQ_Q[0]} 優先度={REQ_Q[1]} 理由={_attr(REQ_Q[2])} 名前={_attr(REQ_Q[3])} -->")
-        add("\n".join(REQ_Q[4]))
-        add("")
         for num, pr, name, why, body in IMPL_QUESTIONS:
             add(f"<!-- 項目: 問い 番号={num} 優先度={pr} 理由={_attr(why)} 名前={_attr(name)} -->")
             if num == "Q4" and not ev.get("archives"):
@@ -2509,6 +2537,16 @@ def sorted_questions(qs: list) -> list:
 
 # ───────────── 結果の骨組みを作る ─────────────
 
+def req_state_rows(req_path: str) -> list:
+    """結果の「要件の状態」の表の行の名前（設計書の監査だけ）。要件定義の番号と、問い Q6 の表の「ファイル:行」。"""
+    import gen_core_requirements as gcr
+    text = open(req_path, encoding="utf-8").read()
+    out = [f"要件定義の{no}番" for no, _nm in gcr.requirement_items(full=True)]
+    if "### Q6 — " in text:
+        out += re.findall(r"^\| (\S+?:\d+) \|", text.split("### Q6 — ", 1)[1].split("\n### ", 1)[0], re.M)
+    return out
+
+
 def build_result(req_path: str, out_path: str) -> int:
     info, errs = parse_request(req_path)
     names = result_names()
@@ -2555,6 +2593,10 @@ def build_result(req_path: str, out_path: str) -> int:
             # ★2026-10-18（192回目）＝「結論を決める問い」の段は無くした。結論は、重さ（Critical の有無）で決まる
             out += ["### 結論と件数", "", f"- 結論＝<GO / CONDITIONAL-GO / NO-GO>（根拠＝{PLACE}）"]
             out += [f"- {s}＝<件数>" for s in SEVERITY_FIX + SEVERITY_PROCESS]
+            if info["meta"].get("監査の種類") == KINDS["design"][0]:
+                out += ["", REQ_STATE_HEAD, "", f"状態＝{'・'.join(REQ_STATES)}。確かめ方＝{'・'.join(REQ_WAYS)}。", "",
+                        "| 要件の行 | 状態 | 確かめ方 |", "|---|---|---|"]
+                out += [f"| {r} | {PLACE} | {PLACE} |" for r in req_state_rows(req_path)]
         elif kind == "修正":
             for s in SEVERITY_FIX:
                 out += [f"### {s}", "", "（無ければ「なし」）", ""]
@@ -2621,6 +2663,10 @@ def check_lines(req_path: str, rtext: str) -> list:
     ok(s_got == info["searches"], f"外部検索の見出し＝依頼書の検索対象（{len(info['searches'])} 件）",
        f"依頼書＝{info['searches']} ／ 結果＝{s_got}")
     ok(bool(re.search(r"^- 結論＝", body_of("総合判定"), re.M)), "総合判定に「- 結論＝」の行が在る")
+    if info["meta"].get("監査の種類") == KINDS["design"][0]:
+        have = re.findall(r"^\| (\S+?) \|", body_of("総合判定").split(REQ_STATE_HEAD, 1)[-1], re.M)
+        lack = [r for r in req_state_rows(req_path) if r not in have]
+        ok(REQ_STATE_HEAD in body_of("総合判定") and not lack, "総合判定の要件の状態の表に、要件の行が全部在る", f"無い行＝{lack[:10]}")
     a_got = len(re.findall(r"^### 自己申告 \d+$", body_of("自己申告"), re.M))
     ok(a_got == info["self_n"], f"自己申告への答えの数＝依頼書の自己申告の数（{info['self_n']} 件）",
        f"結果＝{a_got} 件")
@@ -2747,6 +2793,13 @@ def form_errors(rtext: str) -> list:
             for c, yn in re.findall(r"^- (.+?) ＝ (\S+?)（", text, re.M):
                 if yn not in ("YES", "NO"):
                     errs.append(f"{n}. {name} の「{c}」の答えが YES / NO でない（{yn}）")
+            if REQ_STATE_HEAD in text:
+                for ln in text.split(REQ_STATE_HEAD, 1)[1].splitlines():
+                    cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+                    if not ln.startswith("|") or len(cells) != 3 or cells[0] == "要件の行" or set(cells[0]) <= {"-"}:
+                        continue
+                    if cells[1] not in REQ_STATES or cells[2] not in REQ_WAYS:
+                        errs.append(f"{n}. {name} の要件の状態の「{cells[0]}」が、決まった語でない（{cells[1]}・{cells[2]}）")
         if kind in ("所見", "修正", "プロセス"):
             for w in BANNED:
                 if w in text:
@@ -2756,6 +2809,12 @@ def form_errors(rtext: str) -> list:
             for num, block in zip(parts[1::2], parts[2::2]):
                 errs += item_errors(num, block)
     return errs
+
+
+def _impl_result_has_no_state(req_path: str, tmpd: str) -> bool:
+    """自己テスト用。実装の監査の結果の骨組みに、要件の状態の表が無いか。"""
+    out = os.path.join(tmpd, "result_impl_state.md")
+    return build_result(req_path, out) == 0 and REQ_STATE_HEAD not in open(out, encoding="utf-8").read()
 
 
 def selftest(keep: bool = False) -> int:
@@ -2855,8 +2914,9 @@ def selftest(keep: bool = False) -> int:
         rc_i = build_request(sp_i, op_i)
         req_i = open(op_i, encoding="utf-8").read() if os.path.isfile(op_i) else ""
         qs_i = re.findall(r"^### (\S+) — ", req_i, re.M)
-        case("実装の監査の依頼書が作れて、問いは R0・Q1〜Q6（要望が在れば Q7）と工事ごとの問い Q8〜 だけ（S・G・C・I・N・D・W は出さない）",
-             rc_i == 0 and qs_i == [REQ_Q[0]] + [q[0] for q in IMPL_QUESTIONS]
+        # ★2026-11-02（235番・まこさん「実装は基本要件は問わなくてよい」）＝R0 を出さない
+        case("実装の監査の依頼書が作れて、問いは Q1〜Q6（要望が在れば Q7）と工事ごとの問い Q8〜 だけ（R0・S・G・C・I・N・D・W は出さない）",
+             rc_i == 0 and qs_i == [q[0] for q in IMPL_QUESTIONS]
              + (["Q7"] if "### Q7 — まこさんの要望" in req_i else []) + ["Q8"])
         case("実装の監査の依頼書に、実装の指示の一覧と当てた記録の事実データが在る",
              "### 設計書の実装の指示の一覧" in req_i and "### 当てた記録" in req_i)
@@ -2933,11 +2993,11 @@ def selftest(keep: bool = False) -> int:
         # ★2026-10-01（工事 point5-q5label-20261001）＝節どうしの食い違いを道具自身が見る（いまは0件・壊すと見つける）
         src_i, _m_i, _e_i2 = parse_src(sp_i)
         ok_now = consistency_errors(src_i) == []
-        src_i["問い"] = [q for q in src_i["問い"] if q["attrs"].get("番号") != REQ_Q[0]]
-        broken = any(REQ_Q[0] in e for e in consistency_errors(src_i))
+        src_h = dict(src_i, メタ=(src_i["メタ"] or "").replace(KINDS["impl"][0], "手書きの依頼"))
+        broken = any(REQ_Q[0] in e for e in consistency_errors(src_h))
         src_i["問い"] = src_i["問い"] + src_i["問い"][-1:]
         broken2 = any("重なっている" in e for e in consistency_errors(src_i))
-        case("固定の問い R0 が無い・問いの番号が重なる実装の監査の元データを、道具自身が見つけて止める", ok_now and broken and broken2)
+        case("固定の問い R0 が無い手書きの依頼と、問いの番号が重なる実装の監査の元データを、道具自身が見つけて止める", ok_now and broken and broken2)
         # 【外部検索】が無ければ止まる＝src_from_work の戻りから外して試す（見本の逐語は書き替えない）
         orig_sfw = ga.src_from_work
         ga.src_from_work = lambda wk: {k: v for k, v in orig_sfw(wk).items() if k != "外部検索"}
@@ -3057,10 +3117,44 @@ def selftest(keep: bool = False) -> int:
         # ★同日（まこさん「こんなに質問項目が必要なの？」→ 5問の案に「よい」）＝新しい形の設計書の監査の問いは Q1〜Q5 の5問だけ。
         #   要件ごとの R・W・Q7・R0・F・C・K・手書きの Q8〜 の見出しは出さない（手書きの問いは Q2・Q3 の中、K は Q3 の中）
         _q2 = req_n.split("### Q2 — ", 1)[-1].split("\n### ", 1)[0] if "### Q2 — " in req_n else ""
-        case("新しい形の設計書の監査の依頼書の問いは Q1〜Q5 の5問だけで、Q2 の表に要件定義の全部の行が在り、手書きの問いは Q2 か Q3 の中に在る",
-             rc_n == 0 and qs_n == ["Q1", "Q2", "Q3", "Q4", "Q5"]
+        # ★2026-11-02（235番）＝指標に関する工事（種類①）は Q6（指標の構造の要件定義書との照らし）も出る
+        d_n = ga.src_from_work(work_n)
+        _q6_n = ["Q6"] if ga.work_kind(d_n) == 1 else []
+        case("新しい形の設計書の監査の依頼書の問いは Q1〜Q5（種類①は Q6 も）だけで、Q2 の表に要件定義の全部の行が在り、手書きの問いは Q2 か Q3 の中に在る",
+             rc_n == 0 and qs_n == ["Q1", "Q2", "Q3", "Q4", "Q5"] + _q6_n
              and all(f"| {no} |" in _q2 for no, _nm in gcr.requirement_items(full=True))
              and "**特に見てほしい点**" in req_n and "見本の問い" in req_n)
+        _nums = lambda dd: [x[0] for x in _design_five_questions(dd, "", "`見本`", "`見本`", False, [], [])]  # noqa: E731
+        _d1 = dict(d_n, TARGET=["scripts/priority_rebuild/observe_diag.py"], NEW_FILE=[])
+        _d2 = dict(d_n, TARGET=[".claude/tools/check_one_path.py"], NEW_FILE=[])
+        case("指標の構造の要件定義書の問い Q6 は、種類①の工事に出て、種類②の工事に出ない",
+             "Q6" in _nums(_d1) and "Q6" not in _nums(_d2))
+        import gen_req_trace as grt
+        _saved_rows = grt.rows_of_work
+        grt.rows_of_work = lambda *_a, **_k: [{"出どころ": "x/m.md", "行": 5, "節": "節", "文": "要件の見本"}]
+        try:
+            _q6_body = [x[4] for x in _design_five_questions(_d1, "", "`見本`", "`見本`", False, [], []) if x[0] == "Q6"][0]
+        finally:
+            grt.rows_of_work = _saved_rows
+        _p6 = os.path.join(tmpd, "req_q6.md")
+        open(_p6, "w", encoding="utf-8").write(f"### Q6 — 見本\n\n{_q6_body}\n")
+        case("Q6 に工事が受ける要件の行が載り、結果の要件の状態の行の名前になる",
+             "| m.md:5 | 節 | 要件の見本 |" in _q6_body and "m.md:5" in req_state_rows(_p6))
+        _rows_n = req_state_rows(op_n) if req_n else []
+        rp_s = os.path.join(tmpd, "result_state.md")
+        build_result(op_n, rp_s) if req_n else 1
+        res_s = open(rp_s, encoding="utf-8").read() if os.path.isfile(rp_s) else ""
+        _fill = "\n".join(f"| {r} | 満たす | 読んだだけ |" for r in _rows_n)
+        _tbl = res_s.split("|---|---|---|\n", 1)
+        _filled = (_tbl[0] + "|---|---|---|\n" + _fill + "\n" + re.sub(r"^(\| .* \|\n)+", "", _tbl[1], flags=re.M)) if len(_tbl) == 2 else ""
+        _state_errs = [e for e in form_errors(_filled) if "要件の状態" in e]
+        _bad_state = [e for e in form_errors(_filled.replace("| 満たす | 読んだだけ |", "| 通った | 読んだだけ |", 1)) if "要件の状態" in e]
+        _lack = _filled.replace(f"| {_rows_n[0]} | 満たす | 読んだだけ |\n", "", 1) if _rows_n else ""
+        case("設計書の監査の結果の骨組みに要件の状態の表が在り、決まった語でない行と、行の無い表で止まる",
+             res_s.count(REQ_STATE_HEAD) == 1 and _rows_n and not _state_errs and _bad_state
+             and any(x.startswith("❌ 総合判定の要件の状態") for x in check_lines(op_n, _lack))
+             and any(x.startswith("✅ 総合判定の要件の状態") for x in check_lines(op_n, _filled)))
+        case("実装の監査の結果の骨組みに要件の状態の表が出ない", _impl_result_has_no_state(op_i, tmpd))
         # ★2026-10-21（199回目・まこさん「監査が答えられない質問するな」）＝結果の骨組みに「特に見てほしい点」の欄が点ごとに出て、
         #   点の欄を消した結果は、照らしが ❌ を出す
         _pn = parse_request(op_n)[0]["points"] if req_n else {}

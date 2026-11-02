@@ -16,8 +16,10 @@
   python3 .claude/tools/check_one_path.py --selftest
 
 結果
-  ✅ 通る／❌ 通らない（理由つき）／⬜ 未作（測る処理がまだ無い。作る ToDo の番号つき）。
-  ★未作は通らないと数える。全部 通ったときだけ終了コード 0。
+  ✅ 通る／🔍 見た範囲／❌ 通らない（理由つき）／⬜ 未作（測る処理がまだ無い。作る ToDo の番号つき）。
+  ★「通る」は、元データの見方が「動かす」の試験だけに使う。文字・数・ハッシュ値だけの試験は「見た範囲」と出す
+    （まこさん 2026-11-02「要件を満たしていると判断できない検査にも関わらず、満たすと判定を出さないようにすべき」・235番）。
+  ★未作と通らないがあると終了コード 1。どちらも無ければ 0。
   試験を作る ToDo で、下の CHECKS に関数を足す。
 
 限り（正直に）
@@ -38,7 +40,8 @@ ROOT = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 SDK = ROOT / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
 SCRIPTS = SDK / "scripts" / "priority_rebuild"
 SRC = ROOT / ".claude" / "state" / "req_trace_src.json"
-PASS, FAIL, TODO = "通る", "通らない", "未作"
+PASS, FAIL, TODO, SEEN = "通る", "通らない", "未作", "見た範囲"
+RUN_WAY = "動かす"                                       # 「通る」と出してよい見方（元データの試験の「見方」）
 
 
 def load_src(path: pathlib.Path = SRC) -> dict:
@@ -149,8 +152,31 @@ def t28(src: dict) -> tuple:
     return PASS, out2.splitlines()[0][:100]
 
 
+def t30(src: dict) -> tuple:
+    """文字だけの試験と見方の無い試験は「通る」と出ない。要件の状態を埋めていない監査の結果は形の検査で止まる。"""
+    why = []
+    if run_test("T15", src)[0] == PASS:
+        why.append("文字だけの T15 が「通る」と出た")
+    CHECKS["_見本"] = lambda _s: (PASS, "見本")           # 測る処理が通っても、見方で結果が変わることを見る
+    try:
+        for way, want in (("文字", SEEN), (RUN_WAY, PASS), (None, FAIL)):
+            got = run_test("_見本", {"試験": {"_見本": {"中身": "見本", **({"見方": way} if way else {})}}})[0]
+            if got != want:
+                why.append(f"見方 {way} の結果が {got}（正しくは {want}）")
+    finally:
+        del CHECKS["_見本"]
+    sys.path.insert(0, str(ROOT / ".claude" / "tools"))
+    import gen_audit_docs as gad
+    head = f"## 7. 総合判定\n\n- 結論＝GO\n\n{gad.REQ_STATE_HEAD}\n\n| 要件の行 | 状態 | 確かめ方 |\n|---|---|---|\n"
+    if not any("要件の状態" in e for e in gad.form_errors(head + "| 要件定義の1番 | 通った | 読んだだけ |\n")):
+        why.append("監査の結果の要件の状態が、決まった語でなくても止まらない")
+    if any("要件の状態" in e for e in gad.form_errors(head + "| 要件定義の1番 | 満たす | 動かした |\n")):
+        why.append("正しい要件の状態で止まった")
+    return (PASS, "見本で止まる") if not why else (FAIL, "・".join(why))
+
+
 # 測る処理が在る試験。無い試験は「未作」と出す（作る ToDo で足す）
-CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T28": t28}
+CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T28": t28, "T30": t30}
 
 
 def run_test(no: str, src: dict) -> tuple:
@@ -160,18 +186,24 @@ def run_test(no: str, src: dict) -> tuple:
     fn = CHECKS.get(no)
     if fn is None:
         return TODO, f"測る処理がまだ無い（作る ToDo＝{(src.get('試験を作る番号') or {}).get(no) or '未定'}）"
-    return fn(src)
+    way = tests[no].get("見方")
+    if not way:
+        return FAIL, "元データの試験に「見方」が無い（fail-closed）"
+    st, why = fn(src)
+    if st == PASS and way != RUN_WAY:
+        return SEEN, f"{why}（見方＝{way}。要件を満たすかは監査で確かめる）"
+    return st, why
 
 
 def report(nos: list, src: dict) -> int:
-    marks = {PASS: "✅", FAIL: "❌", TODO: "⬜"}
-    count = {PASS: 0, FAIL: 0, TODO: 0}
+    marks = {PASS: "✅", SEEN: "🔍", FAIL: "❌", TODO: "⬜"}
+    count = {PASS: 0, SEEN: 0, FAIL: 0, TODO: 0}
     for no in nos:
         st, why = run_test(no, src)
         count[st] += 1
         print(f"{marks[st]} {no} {st}｜{src['試験'][no]['中身']}｜{why}")
-    print(f"通る {count[PASS]} 件・通らない {count[FAIL]} 件・未作 {count[TODO]} 件（全 {len(nos)} 件）")
-    return 0 if count[PASS] == len(nos) else 1
+    print(f"通る {count[PASS]} 件・見た範囲 {count[SEEN]} 件・通らない {count[FAIL]} 件・未作 {count[TODO]} 件（全 {len(nos)} 件）")
+    return 0 if count[FAIL] == 0 and count[TODO] == 0 else 1
 
 
 def tests_of_todo(no: str, src: dict) -> list:
@@ -192,6 +224,15 @@ def selftest() -> int:
     t("S1 測る処理の無い試験は未作", run_test("T00", src)[0] == TODO)
     t("S2 未作だけなら終了コード 1", report(["T00"], src) == 1)
     t("S3 ToDo の試験を読む", tests_of_todo("1", src) == ["T00"])
+    CHECKS["_S"] = lambda _s: (PASS, "見本")
+    src2 = {"試験": {"_S": {"中身": "見本", "見方": "文字"}}}
+    t("S6 文字だけの試験は「通る」と出ず、見た範囲になる", run_test("_S", src2)[0] == SEEN)
+    t("S7 見た範囲だけなら終了コード 0", report(["_S"], src2) == 0)
+    src2["試験"]["_S"]["見方"] = RUN_WAY
+    t("S8 動かす試験は「通る」と出る", run_test("_S", src2)[0] == PASS)
+    del src2["試験"]["_S"]["見方"]
+    t("S9 見方の無い試験は通らない", run_test("_S", src2)[0] == FAIL)
+    del CHECKS["_S"]
     for name, fn in (("S4 確認が要らない行は止まる", lambda: tests_of_todo("2", src)),
                      ("S5 一覧に無い試験は止まる", lambda: run_test("T99", src))):
         try:

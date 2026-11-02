@@ -288,7 +288,7 @@
 - gen_acceptance.py:1154-1200  build_laws  [読む]  機械が読む判定の「数える部品」
 - gen_acceptance.py:1203-1231  build_ranking  [読む]  成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位
 - gen_acceptance.py:1444-1486  build_stages  [読む]  §2.2 の段の材料（系統）・時間足・値の範囲
-- gen_audit_docs.py:1673-1694  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
+- gen_audit_docs.py:1677-1698  _design_five_questions（Q2）  [読む]  設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す
 - gen_audit_request.py:286-318  copy_all_laws  [読む]  法則の一覧
 - gen_exit_families.py:403-410  confirm_conditions  [読む]  確認の条件の材料・閾値
 - gen_indicator_switch.py:64-74  `ta_classes`  [読む]  ta のクラス
@@ -488,7 +488,7 @@
 | gen_acceptance.py | 1154-1200 | 読む | build_laws | 機械が読む判定の「数える部品」 | def build_laws(d: dict) -> str: | 振り分けが無い |
 | gen_acceptance.py | 1203-1231 | 読む | build_ranking | 成績表の役割ごと・"強さ"・先読みの列の本数と、分離力の上位 | def build_ranking(d: dict) -> str: | 振り分けが無い |
 | gen_acceptance.py | 1444-1486 | 読む | build_stages | §2.2 の段の材料（系統）・時間足・値の範囲 | def build_stages(d: dict) -> str: | 振り分けが無い |
-| gen_audit_docs.py | 1673-1694 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
+| gen_audit_docs.py | 1677-1698 | 読む | _design_five_questions（Q2） | 設計書の 4-6・4-21・4-7 の表（指標・閾値・パラメータ・時間足の扱い）を依頼書へ写す | t46 = _md_tables(_md_sec(md, "4-6")) | 振り分けが無い |
 | gen_audit_request.py | 286-318 | 読む | copy_all_laws | 法則の一覧 |  | 振り分けが無い |
 | gen_exit_families.py | 403-410 | 読む | confirm_conditions | 確認の条件の材料・閾値 | confirm_conditions=dict( | ③向け直す |
 | gen_indicator_switch.py | 64-74 | 読む | `ta_classes` | ta のクラス | def ta_classes() -> list[tuple[str, str]]: | ②消す（プログラムごと無くなる） |
@@ -1170,7 +1170,7 @@
 | gen_acceptance.py | 3248 | 直書き | ADX | ③向け直す |
 | gen_acceptance.py | 3248 | 直書き | POC | ③向け直す |
 | gen_acceptance.py | 3248 | 直書き | 前日POC | ③向け直す |
-| gen_audit_docs.py | 3145 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
+| gen_audit_docs.py | 3236 | 読む | json の名前「scripts/priority_rebuild/observe_config.json」 | ③向け直す |
 | gen_audit_request.py | 0 | 読めない | ファイルが見つからない | — |
 | gen_composition_rules.py | 62 | 読む | json の名前「signal_families.json」 | ③向け直す |
 | gen_composition_rules.py | 63 | 読む | json の名前「search_limits.json」 | ③向け直す |
