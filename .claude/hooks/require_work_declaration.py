@@ -256,6 +256,44 @@ def check_or_read(cmd: str) -> bool:
     return True
 
 
+# ★2026-11-02（240回目・まこさん「コミットに対して上記のような宣言は不要だよね？」「これは今修正できない？」「ok」）
+#   ＝コミットは、対象をお見せして まこさんの「コミットOK」をいただけば足りる。コミットはファイルの中身を変えないので、宣言を求めない。
+COMMIT_OK = re.compile(r"コミット\s*(?:OK|ok|Ok|ＯＫ)")
+COMMIT_SEG = re.compile(r"^git\s+(?:-C\s+\S+\s+)?(?:add|commit)(?:\s|$)")
+COMMIT_BAD = re.compile(r"\bgit\s+(?:-C\s+\S+\s+)?add\s+(?:-A|--all|\.)(?:\s|$)|--amend\b")
+
+
+def commit_only(cmd: str) -> bool:
+    """コマンドが git add と git commit と、読むだけの操作でできているか。
+    git add -A・git add .・--amend と、ファイルへの書き出しをつないだコマンドは、コミットだけと見ない。"""
+    c = re.sub(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n.*?^\1[ \t]*$", " ", str(cmd or ""), flags=re.S | re.M)   # ヒアドキュメントの中身は見ない
+    c = re.sub(r"'[^']*'|\"[^\"]*\"", "''", c)
+    if COMMIT_BAD.search(c) or re.search(r">(?!\s*/dev/null|&)", c.replace("2>&1", "")):
+        return False
+    found = False
+    for seg in re.split(r"&&|\|\||;|\||\n", c):
+        s = seg.strip()
+        if COMMIT_SEG.match(s):
+            found = True
+        elif s and not re.match(r"^cd\s+\S+$", s) and not bash_is_read(s):
+            return False
+    return found
+
+
+def last_user_ok_commit(path: pathlib.Path) -> bool:
+    """まこさんの直前の発言に「コミットOK」が在るか（hook の差し戻しと道具の結果は発言に数えない）。"""
+    last = ""
+    for o in rows(path):
+        if o.get("isSidechain") or o.get("type") != "user":
+            continue
+        c = (o.get("message") or {}).get("content")
+        texts = [c] if isinstance(c, str) else [b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"] if isinstance(c, list) else []
+        said = [t for t in texts if t.strip() and not t.lstrip().startswith(NOT_USER)]
+        if said:
+            last = "\n".join(said)
+    return bool(COMMIT_OK.search(last))
+
+
 def gate(d: dict):
     """止める理由（文）を返す。通すときは None。"""
     if d.get("agent_type"):
@@ -279,6 +317,8 @@ def gate(d: dict):
     #   見分け方は require_read_used._auditor_session と同じ（決まりを1か所にする）。
     if _auditor_session(list(rows(pathlib.Path(tp)))):
         return None
+    if name == "Bash" and commit_only(str(inp.get("command", ""))) and last_user_ok_commit(pathlib.Path(tp)):
+        return None                            # コミットだけで、直前の発言が「コミットOK」なら、宣言を求めない（2026-11-02）
     return check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
 
 
@@ -373,6 +413,15 @@ def selftest() -> int:
         run("T18 git -C の読む命令 → 通る", [_user("始めて")], None, False,
             bash("git -C /a/b log --oneline -3 && shasum -a 256 x.md"))
         run("T19 git check-ignore → 通る", [_user("始めて")], None, False, bash("git check-ignore -v a.md"))
+        commit = "git add a.py b.md && git commit -q -F - <<'EOF'\nchore: a > b と書いた文\n\nEOF\ngit log -1 --oneline"
+        run("C1 直前の発言が「コミットOK」で、コミットだけ → 通る", [_user("コミットOK")], None, False, bash(commit))
+        run("C2 「コミットOK」が無いコミット → 止まる", [_user("始めて")], None, True, bash(commit))
+        run("C3 コミットと一緒にファイルへ書き出す → 止まる", [_user("コミットOK")], None, True,
+            bash("git add a.py && echo x > b.txt && git commit -m 'x'"))
+        run("C4 前の発言の「コミットOK」で、直前の発言には無い → 止まる",
+            [_user("コミットOK"), _say("済みました"), _user("次へ")], None, True, bash(commit))
+        run("C5 git add -A → 止まる", [_user("コミットOK")], None, True, bash("git add -A && git commit -m 'x'"))
+        run("C6 --amend → 止まる", [_user("コミットOK")], None, True, bash("git commit --amend -m 'x'"))
         run("T20 time を付けた自己テスト → 通る", [_user("始めて")], None, False,
             bash("time python3 a.py --selftest 2>&1 | tail -3"))
         run("T21 最初の発言に依頼書のパス（監査のセッション）・ToDo が無い → 通る",
