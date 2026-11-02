@@ -977,7 +977,7 @@ def hidden_numbers(old: dict, sets: dict) -> tuple:
 
 # ══ 4 いまのカタログの列の並び（②-12・④-9）═══════════════════════════════════════════════════════════════════════
 def catalog_sets(old: dict) -> dict:
-    """記録 → {名前の型, 照らす形, 組, 並び, 出どころの鍵}。カタログの列（observe_diag.build_catalog）を上から順にたどる。"""
+    """記録 → {名前の型, 照らす形, 組, 並び, 出どころの鍵}。カタログの列（observe_diag._catalog_from_config＝写す元の関数・162番まで）を上から順にたどる。"""
     cfg = jload(PR / "observe_config.json")
     cat = od._catalog_from_config(cfg)                    # 写す元＝設定から列を作る関数（162番まで・161-2 のやることの表 F-4）
     reg2rec = {c["登録の名前"]: nm for nm, r in old.items() for c in r["計算の関数"] if c["登録の名前"]}

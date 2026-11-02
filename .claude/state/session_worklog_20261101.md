@@ -513,7 +513,7 @@
 ## §19 235回目＝161番（実装＝4-4 の3〜4・宣言に まこさん「よい」）
 - --rewrite（SDK の直下・97.0秒・rc 0）＝「写す元から作り直した物と違う所＝34 件」。設計書の見込み10か所より多いが、中身を git diff で全部見た＝①要素の定義表の ②-12・④-9 の「写す元」「読むプログラム」（2か所）②部品の記録8件の「作った元」（8か所）③「照らしと出どころ」「オン/オフと出どころ」の中の「置き場」の行番号（observe_diag.py:4983 → 5018 ほか・build_catalog の前に35行 足した分と gen_materials.py:908 → 911 の3行分）。置き場の行番号以外の変更は28行＝①②の10か所そのもの。列を作る組・並び・代表の値・範囲の変更は0件。指標の記録 306・使い方 16・部品 8・要素 47・組 652・軸 431（範囲 366＝253＋1点 113／まだ決めていない 65）・合わない値 オン 29（14種）＝161-1 の後と同じ。
 - 置き場の行番号が「違う所」に数えられたのは、記録が置き場を行番号で持つため（設計書の 4-10「変わるのは…10か所だけ」は、行番号の自動の更新を数えていなかった＝実装の監査の依頼書の自己申告に書く）。
-- --rewrite の最後の一覧の作り直し（直した道具）＝2,761行・写す行 732・拾えなかった 195・_v9_part_variants は 5891-5917。
+- 一覧は --rewrite の前の §18-2 の物のまま（18:48:56）＝2,761行・写す行 732・拾えなかった 195・_v9_part_variants は 5891-5917。新しい形の --rewrite は一覧を作り直さない（監査 CP97）。
 - --verify＝「✅ 違い 0 件」（97.6秒・rc 0・照らした①写す の行 762）。
 - G2（gen_signal_families.py --verify・75.1秒・rc 0）＝既知答え13件 期待どおり・表は正本と一致・対象40件・指紋 0697b60b…・入ったのは indicators/indicators.py だけ（CP96 の修正1 のとおり）。
 - H2（leak_causality_diag.py）を裏で走らせた（作業場 h2_161_2.txt）＝rc 0・5分17秒。注記なし未来参照 0件・打ち切り再現の食い違い 0件。h2_pass.json の指紋 a40f4008…・対象26件（indicators.json と indicators.py が入った）。
@@ -532,7 +532,7 @@
 ## §21 235回目＝161番（実装＝4-4 の6・宣言に まこさん「ok」）
 - Y-6 のインフラの直し＝.claude/tools/pre_audit_check.py の FINGERPRINT_FILES に "indicators/indicators.json"・"indicators/indicators.py" を足し、materials_fingerprint の読むファイルに PR/indicators の2本を足した（説明2行・足した行4行）。py_compile 通る。--selftest＝直す前も後も「NG P7-1（設計書の形の判定を呼んでいない）」の1件だけ＝前から在る件（next_step 4-1 の181・182回目の③）。
 - --run を作業場へのリダイレクトつきで打ち、土台ゲート（require_acceptance_before_impl）に止められた（L-694 の形の再演）→ block_repeat_kind・block_repeat_failure の求めで lessons.md と diagnosis.md を書き、リダイレクトの無い1本で裏で走らせた。
-- --run＝全部 rc=0（20:37 ごろ開始・約44分）。G2 71.1秒・H2 306.5秒・gen_materials --selftest 82.5秒・observe_diag --selftest 212.5秒・verify_design_contract --diff rc 0・check_indicator_sources は「既知」・材料の検査（--check-materials）rc 0・2080.4秒（34分40秒＝指紋が変わったので省略されずに走った）。⏸ 2件（型の表と出口の表の --write／--approve＝この道具は打たない作り・G2 の --verify が通ったので表は正本と一致）。記録 pre_audit_check.json の指紋 3b2257ff…。--verify＝「監査に出せます」。
+- --run＝rc=0（check_indicator_sources.py だけ rc=1＝分かっている食い違い。20:37 ごろ開始・少なくとも約47分＝監査 CP97）。G2 71.1秒・H2 306.5秒・gen_materials --selftest 82.5秒・observe_diag --selftest 212.5秒・verify_design_contract --diff rc 0・check_indicator_sources は「既知」・材料の検査（--check-materials）rc 0・2080.4秒（34分40秒＝指紋が変わったので省略されずに走った）。⏸ 2件（型の表と出口の表の --write／--approve＝この道具は打たない作り・G2 の --verify が通ったので表は正本と一致）。記録 pre_audit_check.json の指紋 3b2257ff…。--verify＝「監査に出せます」。
 - ★見込みの誤り（お詫びした）＝宣言で「約12分」と書いた。前の回（worklog 20261101:157）は材料の検査が「省略」の回だった。今回は指紋が変わるので材料の検査が走り、過去の実測（全体 45分33秒・約49分／材料の検査 34分39秒）どおりになった。宣言の前にこの記録を探さなかった（恒久62番）。「2倍の約24分を超えたら止めて報告する」も守れず、まこさんの問い「時間かかりすぎなのでは？」（41分の時点）で初めて気づいた。
 
 ## §22 235回目＝161番（4-4 の7 の走らせ直し・宣言に まこさん「ok」）

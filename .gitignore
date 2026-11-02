@@ -86,6 +86,17 @@ v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 !.claude/state/indicator_review/check_materials_known_ng.json
 !.claude/state/indicator_review/ss_impl.json
 !.claude/state/indicator_review/r1_role_map.json
+# ★監査 CP97（2026-11-01）＝写すプログラムが頼る道具と、列の比べの控え。消えると git から戻せないため。
+!.claude/state/indicator_review/gen_fix_inventory.py
+!.claude/state/indicator_review/gen_params_in_name.py
+!.claude/state/indicator_review/ss_outside_probe.py
+!.claude/state/indicator_review/col_snapshot.py
+!.claude/state/indicator_review/col_snapshot/
+.claude/state/indicator_review/col_snapshot/*
+!.claude/state/indicator_review/col_snapshot/before_20261024.json
+!.claude/state/indicator_review/readers_20261024/
+.claude/state/indicator_review/readers_20261024/*
+!.claude/state/indicator_review/readers_20261024/merge.md
 # ★2026-10-24 追加（210回目）＝指標の工事（m2c15-single-source-fix-20261023）の必読の3本。消えると git から戻せないため。
 #   要件定義書＝この修正を進める文章の資料の1本／fix_inventory＝直す相手の一覧／value_conflicts＝置き場どうしで値が違う物の一覧。
 !.claude/state/verbatim/m2c15-single-source-fix-20261023/
