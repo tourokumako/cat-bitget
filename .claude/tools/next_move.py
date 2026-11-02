@@ -15,7 +15,7 @@
 何をするか（★読むだけ・何も書かない）
   1. 工事の名前から、流れの印（読むもの宣言・工事のフォルダ・案の逐語・設計書・承認・当てた記録・監査依頼の手書きの文書・
      依頼書・見直し表・監査の結果・結果の修正）を、実物のファイルで1つずつ見る。
-  2. 最初に「まだ」の印が、いまの段。その段の「次の一手」を出す。
+  2. 済んだ段のうち最後の段の次が、いまの段（前の済んでいない段は「飛ばした」と出す）。その段の「次の一手」を出す。
   3. その段で まこさんにお願いする前に済ませる条件を、在る検査を呼んで ✅／❌ で出す。
   ★コマンドの文は、このプログラムに書いていない。各プログラムの頭の説明の行を、走るたびに読んで出す（usage）。
     読む先の行が無くなったら「使い方の行が見つからない」と出す（古い文を出さない）。
@@ -23,6 +23,8 @@
 使い方
   python3 .claude/tools/next_move.py --work <工事名> [--session <セッションの id>]
     終了コード＝0（出した）／2（工事の名前が無い・工事のフォルダが見つからない）
+  python3 .claude/tools/next_move.py --work <工事名> --must
+    いまの段の必読のファイルを出す（締めの tidy_next_step.py --todo-from --work が同じ関数を呼んで、next_step の必読の表を書き替える）
 
 限界（正直に）
   ・印は「ファイルが在るか・記録が在るか・検査が通るか」で見る。中身が正しいかは見ない（見直し表・監査・まこさんの目）。
@@ -386,6 +388,48 @@ def apply_preconditions(f: dict) -> list:
     return out
 
 
+def current_index(st: list):
+    """いまの段の番号（0 から）＝済んだ段のうち最後の段の次。無ければ None（最後の段まで済んでいる）。
+    ★2026-11-02（237回目・まこさん「Bの修正案は良さそう」）＝直す前は「最初の済んでいない段」を いまの段にしていた。そのため、
+      設計書の監査の修正が当てた記録に無いだけで段6 に止まり続け、段12 の次の一手（コミット → G2 → H2）が画面に出なかった（worklog 20261102 §2-2）。
+      判定はここ1か所（require_stage_conditions.stage_fails も呼ぶ）。"""
+    last_done = max((i for i, x in enumerate(st) if x[1]), default=-1)
+    return next((i for i, x in enumerate(st) if not x[1] and i > last_done), None)
+
+
+# ★2026-11-02（237回目・205番・まこさん「C は段ごとに絞る方向でよい」「OK」）＝段ごとの必読。CC が選ばず、ここが決める。
+#   なぜ要るか＝必読の表を CC が手で選ぶと、次の段で使わない文書を読むことになり（237回目の value_conflicts は約3万文字）、読んでも使われるとは限らない。
+#   WORK_DOCS は指標の工事の間の資料（外す条件＝指標の工事の実装の監査が済んだ後）。
+WORK_DOCS = (
+    (".claude/rules/core_requirements_full.md", "要件定義書の正本（まこさん「core_requirements_full.md こちらが正本」2026-10-24）"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md", "指標の工事の要件定義書"),
+    (".claude/state/indicator_review/fix_inventory_20261024.md", "直す相手の一覧（ファイル:行と①②③）"),
+    (".claude/state/indicator_review/value_conflicts_20261024.md", "置き場どうしで値が違う物の一覧"),
+)
+MUST_COND = "段が変わったとき（締めの --todo-from --work が書き替える）"
+
+
+def must_read_for(work: str, session: str = "") -> list:
+    """いまの段の必読＝[(ファイル, なぜ読むか, 外す条件)]。流れが最後まで済んでいれば空。在るファイルだけを返す。"""
+    f = facts(work, session)
+    cur = current_index(steps(f))
+    if cur is None:
+        return []
+    n = cur + 1                                               # 段の番号（steps の名前の頭の数字）
+    des, imp = f["audit"]["design"], f["audit"]["impl"]
+    logs = sorted(STATE.glob("session_worklog_[0-9]*.md"))
+    log = [(logs[-1], "その工事のいちばん新しい記録")] if logs else []
+    if n <= 5:
+        picks = [(ROOT / p, why) for p, why in WORK_DOCS]
+    elif n == 6:
+        picks = [(des["request"], "設計書の監査の依頼書（問いと自己申告を見てから結果を読む）"), (des["report"], "設計書の監査の結果")]
+    elif n <= 10:
+        picks = [(f["design"], "この工事の設計書")] + log
+    else:
+        picks = [(imp["request"], "実装の監査の依頼書（問いと自己申告を見てから結果を読む）"), (imp["report"], "実装の監査の結果")] + log
+    return [(rel(p), why, MUST_COND) for p, why in picks if p and Path(p).exists()]
+
+
 def main() -> int:
     argv = sys.argv[1:]
     work = argv[argv.index("--work") + 1] if "--work" in argv and argv.index("--work") + 1 < len(argv) else ""
@@ -398,12 +442,15 @@ def main() -> int:
     except Exception as e:                                    # noqa: BLE001
         print(f"❌ 工事の印を読めない＝{type(e).__name__} {e}")
         return 2
+    if "--must" in argv:
+        rows = must_read_for(work, session)
+        print(f"いまの段の必読 {len(rows)} 件")
+        for p, why, _c in rows:
+            print(f"  {p}（{why}）")
+        return 0
     st = steps(f)
-    # ★2026-11-02（237回目・まこさん「Bの修正案は良さそう」）＝直す前は「最初の済んでいない段」を いまの段にしていた。そのため、
-    #   設計書の監査の修正が当てた記録に無いだけで段6 に止まり続け、段12 の次の一手（コミット → G2 → H2）が画面に出なかった（worklog 20261102 §2-2）。
-    #   いまの段＝済んだ段のうち最後の段の次。それより前の済んでいない段は「飛ばした」と出す（消さない）。
+    cur = current_index(st)
     last_done = max((i for i, x in enumerate(st) if x[1]), default=-1)
-    cur = next((i for i, x in enumerate(st) if not x[1] and i > last_done), None)
     print(f"工事＝{work}（工事のフォルダ＝{rel(f['wdir'])}・{'作業中の置き場' if f['working'] else '承認の後の控えの置き場'}）")
     print("")
     print("流れの印（実物のファイルから読んだ）")

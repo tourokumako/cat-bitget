@@ -61,3 +61,21 @@
 - tidy_next_step.py --selftest＝29/29。bash -n reset_read_log.sh＝rc 0。
 - --todo-start を試しの id で走らせた＝21行・161番に ★いまここ。試しのフォルダは消した。実際のセッションの始めでは、まだ走らせていない（次のセッションで見る）。
 - next_move.py --work m2c15-indicator-redirect-20261031＝段6 が「⚠ 飛ばした」・段12 が「いまここ」・次の一手にコミット → G2 → H2 が出た。
+- commit 41b7b5c6（まこさん「コミットOK」）。205番の宣言の根拠の逐語を8字で書き、宣言の hook に止められた。★いまここ を204番に戻して commit し、205番へ移した。続けて同じ種類・同じ相手の hook に止められ、決まりと見立てを書いた。
+
+## §4 237回目＝205番（C と宣言の確かめ・宣言に まこさん「OK」）
+
+### 4-1 直した物（インフラの直し）
+- C＝next_move.py に must_read_for（段ごとの必読＝段1〜5 は要件定義の全文と指標の工事の資料3本／段6 は設計書の監査の依頼書と結果／段7〜10 は設計書と記録／段11・12 は実装の監査の依頼書と結果と記録）と旗 --must を足した。tidy_next_step.py の --todo-from に --work を足し、必読の表を書き替える（自己テスト T20）。締めの手順の文も直した。
+- 宣言の確かめ＝require_stage_conditions.py に decl_turn_problems を足した。ターンの終わりに、宣言の hook と同じ関数（decl_problems・must_problems）を呼ぶ。同じ発言につき2回まで止める（S7〜S10）。
+- 読んで分かった事＝require_stage_conditions.py:107 に「いまの段」の決め方の写しが在り、B の直しが届いていなかった。next_move.current_index の1か所にまとめた（同じ事実の写しを探さずに B を「直した」と報告した）。
+
+### 4-2 走らせた結果
+- tidy_next_step.py --selftest＝30/30。require_stage_conditions.py --selftest＝10/10。py_compile 通る。
+- next_move.py --must＝今の工事（段12）は依頼書・結果・worklog の3件。まだ始めていない工事の名前（段1）は4件。
+- require_stage_conditions.py --try＝いまの段 12・❌ 0件。
+
+### 4-3 17番へ送る物（まこさん「今課題に上がっている不備以外は」17番で別途まとめて対応）
+- コマンドの件の修正（修正3）が当てた記録に残らず、段12 が閉じないと見ている（未確認）。
+- 別の hook に止められた操作を失敗に数える連鎖（block_repeat_failure.py:81〜85）。Bash の相手の名前が、コマンドの中で最初に出てくる .sh になる件（:71〜73）。
+- 書いた直後の検査や Stop の hook が、同じ返信の中で打った自己テストを数えない件（見立て・未確認）。

@@ -834,10 +834,12 @@ def start_todo(next_path: pathlib.Path, sid: str) -> int:
     return 0
 
 
-def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None) -> int:
+def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None, work: str | None = None, must_fn=None) -> int:
     """そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（2026-10-12・まこさん「OK」）。
     なぜ要るか＝171回目の締めで、ToDo の流れの段を手で写さず、次の回が落とした（worklog 20261012 §29）。写した後に --write を打つ。
-    ★2026-11-01＝締めの行が「★いまここ」なら、決まった書き替えもして、締めの手順を画面に出す（close_steps）。"""
+    ★2026-11-01＝締めの行が「★いまここ」なら、決まった書き替えもして、締めの手順を画面に出す（close_steps）。
+    ★2026-11-02（237回目・205番・まこさん「C は段ごとに絞る方向でよい」「OK」）＝work（次の工事の名前）を渡すと、必読の表を、その工事のいまの段の
+      必読に書き替える（判定は next_move.must_read_for の1か所・CC がファイルを選ばない）。"""
     src_path = next_path.parent / SRC_NAME
     todo = next_path.parent / "sessions" / sid / "session_todo.md"
     if not src_path.exists() or not todo.exists():
@@ -868,6 +870,13 @@ def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None) -> in
     src = json.loads(src_path.read_text(encoding="utf-8"))
     done = False
     state_head_done = False
+    must = None
+    if work:
+        if must_fn is None:
+            import next_move
+            must_fn = next_move.must_read_for
+        must = must_fn(work)
+    must_done = False
     for sec in src["節"]:
         head = sec.get("見出し", "")
         if close_n is not None and head.startswith(STATE_SEC):
@@ -882,11 +891,20 @@ def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None) -> in
             if "表" in blk and blk["表"]["見出しの行"].strip() == TODO_HEAD:
                 blk["表"]["行"] = rows
                 done = True
+            elif must and "表" in blk and blk["表"]["見出しの行"].strip() == MUST_HEAD:
+                blk["表"]["行"] = [{"欄": [f" `{p}` ", f" {w} ", f" {c} "]} for p, w, c in must]
+                must_done = True
     if not done or not rows:
         print(f"❌ [tidy --todo-from] 写せない（表の見出しの行「{TODO_HEAD}」が元データに在るか＝{done}・済んでいない行＝{len(rows)}）")
         return 2
     _atomic_write(src_path, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
     print(f"✅ [tidy --todo-from] ToDo の済んでいない {len(rows)} 行を、元データの表に写した → 続けて --write を打つ")
+    if must_done:
+        print(f"   必読の表＝工事 {work} のいまの段の {len(must)} 件に書き替えた")
+    elif work:
+        print(f"   ⚠ 必読の表は書き替えていない（工事 {work} の流れが最後まで済んでいる、か、表が無い）")
+    else:
+        print("   ⚠ 必読の表は書き替えていない＝次の工事の名前を --work に付けて、もう1回 打つ")
     if close_n is None:
         print(f"   ⚠ 締めの行（「（N回目）の締め」で状態が「{HERE_MARK}」）が無い＝「2」の見出しの回目・締めの行・3-1 の見出しは書き替えていない")
     else:
@@ -910,7 +928,8 @@ def close_steps(next_path: pathlib.Path, src_path: pathlib.Path) -> list[str]:
     return [
         "[tidy --todo-from] 締めの手順（この後に CC がすること・上から順に）",
         f" 1. 手で書く所（元データ {SRC_NAME} の行）＝① 作る物 {at('**① 作る物**')}／② 最初にやる事 {at('2 最初にやる事の見出し')}"
-        f"／必読の表 {at(MUST_HEAD)}／④ この先の順番 {at('**④ この先の順番**')}／3-1 の本文と見出しの § の範囲 {at(STATE_SEC)}",
+        f"／④ この先の順番 {at('**④ この先の順番**')}／3-1 の本文と見出しの § の範囲 {at(STATE_SEC)}"
+        "。必読の表は手で書かない（--todo-from に --work <次の工事の名前> を付けると、段ごとの必読に書き替わる）",
         " 2. Edit は1本ずつ出す（並べて出すと、1本が hook に止められたとき、残りも同じ相手への失敗に数えられて止められる＝233回目に16本）",
         f" 3. 「2」の CC が書く行に、教訓の番号（L-NNN）と「★」を書かない（検査 (t)）。1行は {LINE_MAX} 字まで（検査 (p)）"
         f"・next_step 全体は {ALL_MAX} 行まで（検査 (q)・いまは {n_next} 行）",
@@ -1641,6 +1660,26 @@ def selftest() -> int:
                 and kept19 == "消さない\n"):
             ng.append(f"T19: --todo-start が違う／rc={rc19}・{got19}・{kept19!r}")
 
+    # T20（2026-11-02・237回目）＝--todo-from --work が、必読の表を書き替える。work が無ければ書き替えない
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td)
+        (tp / "next_step.md").write_text("x\n", encoding="utf-8")
+        old20 = {"欄": [" `古い.md` ", " 古い ", " 古い "]}
+        sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [
+            {"表": {"見出しの行": MUST_HEAD, "区切り": "|---|---|---|", "状態の欄": None, "行": [old20]}},
+            {"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": []}}]}]}
+        (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
+        (tp / "sessions" / "s2").mkdir(parents=True)
+        (tp / "sessions" / "s2" / "session_todo.md").write_text(f"{TODO_HEAD}\n|---|---|---|\n| 7 | 何か | まだ |\n", encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            copy_todo(tp / "next_step.md", "s2", today="2026-01-02")
+        no20 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))["節"][0]["塊"][0]["表"]["行"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            copy_todo(tp / "next_step.md", "s2", today="2026-01-02", work="w", must_fn=lambda w: [("新.md", "なぜ", "いつ")])
+        yes20 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))["節"][0]["塊"][0]["表"]["行"]
+        if no20 != [old20] or yes20 != [{"欄": [" `新.md` ", " なぜ ", " いつ "]}]:
+            ng.append(f"T20: --todo-from --work が違う／{no20}・{yes20}")
+
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
           "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
@@ -1648,10 +1687,10 @@ def selftest() -> int:
           "／T4b 印の時刻も照らす"
           "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
           "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない"
-          "／T18 --todo-from の決まった書き替え／T19 --todo-start")
+          "／T18 --todo-from の決まった書き替え／T19 --todo-start／T20 --todo-from --work")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 29
+    total = 30
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 
@@ -1673,6 +1712,7 @@ def main() -> int:
                          "締めの行が「★いまここ」なら、「2」の見出しの回目・締めの行・3-1 の見出しも書き、締めの手順を出す")
     ap.add_argument("--todo-start", dest="todo_start", metavar="セッションの id",
                     help="元データの「次のセッションでやること」の表から、そのセッションの ToDo を作る（在れば作らない・始めの表示が呼ぶ）")
+    ap.add_argument("--work", metavar="工事名", help="--todo-from と一緒に＝必読の表を、その工事のいまの段の必読に書き替える（判定は next_move.must_read_for）")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
@@ -1683,7 +1723,7 @@ def main() -> int:
     if a.todo_start:
         return start_todo(a.file, a.todo_start)
     if a.todo_from:
-        return copy_todo(a.file, a.todo_from)
+        return copy_todo(a.file, a.todo_from, work=a.work)
     if a.write:
         return do_write(a.file, a.archive, a.limit)
     if a.verify:

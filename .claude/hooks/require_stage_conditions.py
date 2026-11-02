@@ -104,7 +104,7 @@ def stage_fails(work: str, session: str, fix: bool = True) -> tuple:
     import next_move as nm
     f = nm.facts(work, session)
     st = nm.steps(f)
-    cur = next((i for i, x in enumerate(st) if not x[1]), None)
+    cur = nm.current_index(st)                               # ★2026-11-02＝いまの段の決め方は next_move の1か所
     if cur is None:
         return "", [], []
     fixed = auto_fix(f, cur) if fix else []
@@ -183,6 +183,24 @@ def _count(session: str, uid: str) -> int:
     return rec[uid]
 
 
+def decl_turn_problems(text: str, todo) -> list:
+    """★2026-11-02（237回目・205番・まこさん「これもよくやってるミスなんだが、今回で修正できるの？」「OK」）＝いまの返信に宣言が在れば、
+    宣言の hook（require_work_declaration）が まこさんの返事の後に見る物を、返事の前に見る。判定は書き写さない。
+    なぜ要るか＝根拠の不足が返事の後に分かり、宣言の出し直しと、まこさんの返事がもう1回 要った（直近8セッションのうち3セッションで7回）。"""
+    import pathlib
+    import require_work_declaration as rw
+    hits = list(rw.DECL_RE.finditer(text or ""))
+    if not hits:
+        return []
+    num = hits[-1].group(1)
+    todo = pathlib.Path(todo)
+    if not todo.exists():
+        return [f"このセッションの ToDo が無い（{todo}）"]
+    nums = rw.doing_numbers(todo.read_text(encoding="utf-8", errors="replace"))
+    probs = [] if nums == [num] else [f"宣言は {num} 番だが、ToDo の「{rw.DOING}」は {nums}（状態の欄はその文字だけにする）"]
+    return probs + (rw.decl_problems(text, num) or []) + rw.must_problems(todo, text)
+
+
 def hook() -> int:
     try:
         d = json.loads(sys.stdin.read() or "{}")
@@ -193,9 +211,6 @@ def hook() -> int:
     tp = d.get("transcript_path") or ""
     if not tp or not os.path.exists(tp):
         return 0
-    work = current_work()
-    if not work:
-        return 0
     session = d.get("session_id") or os.path.basename(tp)[:-6]
     import require_design_check_before_approval as rd
     from enforce_chat_writing import last_chat_text
@@ -205,6 +220,21 @@ def hook() -> int:
     if _auditor_session(rd._load_rows(tp)):
         return 0                                             # ★2026-10-17＝監査のセッションでは止めない（段は、メインの工事の物）
     text = rd._turn_text(d)
+    dp = decl_turn_problems(text, os.path.join(ROOT, ".claude/state/sessions", session, "session_todo.md"))
+    if dp:
+        _t, uid = last_chat_text(tp)
+        n = _count(session, uid or "")
+        if n > 2:
+            print(f"[宣言の確かめ] 同じ発言に対して {n} 回目＝通す（止まり続けない）。足りない所は残っている＝{' ／ '.join(dp)}", file=sys.stderr)
+            return 0
+        print("🔒 [宣言の確かめ] この宣言のままだと、まこさんの返事の後に宣言の hook が止める＝いまのうちに直して、宣言を出し直す", file=sys.stderr)
+        for b in dp:
+            print("   ❌ " + b, file=sys.stderr)
+        print(f"   （この止めは同じ発言につき2回まで＝いま {n} 回目）", file=sys.stderr)
+        return 2
+    work = current_work()
+    if not work:
+        return 0
     if not is_ask(text, work):
         return 0
     try:
@@ -283,6 +313,30 @@ def selftest() -> int:
         ("S6 最初の発言が「監査して」のセッション＝監査のセッション",
          _auditor_session([{"type": "user", "message": {"content": "監査して 実装の監査の依頼書 CP76"}}]), True),
     ]
+    # S7〜S10＝宣言の確かめ（★2026-11-02・237回目）。必読の一覧を一時の場所の見本に差し替えて試す
+    import pathlib
+    import tempfile
+    import require_work_declaration as rw
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td)
+        doc = tp / "doc.md"
+        doc.write_text("これは根拠に引く十文字以上の行です\n", encoding="utf-8")
+        (tp / "must.txt").write_text(str(doc) + "\n", encoding="utf-8")
+        (tp / "read_log.txt").write_text(str(doc) + "\n", encoding="utf-8")
+        todo = tp / "session_todo.md"
+        todo.write_text(f"| 番号 | やること | 状態 | 記録 |\n|---|---|---|---|\n| 9 | 何か | {rw.DOING} | |\n", encoding="utf-8")
+        keep, rw.MUST_FILE = rw.MUST_FILE, tp / "must.txt"
+        body = "【作業内容】八文字以上の作業の中身です【目的】八文字以上の目的の中身です【経緯】八文字以上の経緯の中身です【ゴール】八文字以上のゴールの中身です"
+        good = f"【宣言】ToDo の 9番\n{body}\ndoc.md:1「これは根拠に引く十文字以上の行です」"
+        try:
+            cases += [
+                ("S7 宣言が無い返信＝見ない", decl_turn_problems("報告だけの返信です", todo) == [], True),
+                ("S8 足りている宣言＝通す", decl_turn_problems(good, todo) == [], True),
+                ("S9 根拠の逐語が10字より短い宣言＝止める", bool(decl_turn_problems(f"【宣言】ToDo の 9番\n{body}\ndoc.md:1「これは根拠に引く」", todo)), True),
+                ("S10 ★いまここ と番号が違う宣言＝止める", bool(decl_turn_problems(good.replace("9番", "8番"), todo)), True),
+            ]
+        finally:
+            rw.MUST_FILE = keep
     ng = 0
     for name, got, want in cases:
         print(f"{'✅' if got == want else '❌'} {name}（期待 {want}・結果 {got}）")
