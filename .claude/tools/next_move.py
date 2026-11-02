@@ -399,12 +399,16 @@ def main() -> int:
         print(f"❌ 工事の印を読めない＝{type(e).__name__} {e}")
         return 2
     st = steps(f)
-    cur = next((i for i, x in enumerate(st) if not x[1]), None)
+    # ★2026-11-02（237回目・まこさん「Bの修正案は良さそう」）＝直す前は「最初の済んでいない段」を いまの段にしていた。そのため、
+    #   設計書の監査の修正が当てた記録に無いだけで段6 に止まり続け、段12 の次の一手（コミット → G2 → H2）が画面に出なかった（worklog 20261102 §2-2）。
+    #   いまの段＝済んだ段のうち最後の段の次。それより前の済んでいない段は「飛ばした」と出す（消さない）。
+    last_done = max((i for i, x in enumerate(st) if x[1]), default=-1)
+    cur = next((i for i, x in enumerate(st) if not x[1] and i > last_done), None)
     print(f"工事＝{work}（工事のフォルダ＝{rel(f['wdir'])}・{'作業中の置き場' if f['working'] else '承認の後の控えの置き場'}）")
     print("")
     print("流れの印（実物のファイルから読んだ）")
     for i, (name, done, ev, _n) in enumerate(st):
-        head = "✅ 済" if done else ("▶ いまここ" if i == cur else "・ まだ")
+        head = "✅ 済" if done else ("▶ いまここ" if i == cur else ("⚠ 飛ばした" if i < last_done else "・ まだ"))
         print(f"  {head}｜{name}｜{ev}")
     print("")
     if cur is None:

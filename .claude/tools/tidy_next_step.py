@@ -796,6 +796,44 @@ CLOSE_ROW_RE = re.compile(r"（(\d+)回目）の締め")                       #
 STATE_HEAD_RE = re.compile(r"^(### 3-1 いまの状態（)\d{4}-\d{2}-\d{2}・\d+回目の締め")   # 3-1 の見出しの日付と回目
 
 
+def start_todo(next_path: pathlib.Path, sid: str) -> int:
+    """元データの「次のセッションでやること」の表から、そのセッションの ToDo を作る（2026-11-02・237回目・まこさん「そこから読み込めばいいのでは？」）。
+    なぜ要るか＝締めの --todo-from が表に書くのに、読み込む口が無く、CC が毎回 表を手で打ち直していた（形の誤りで hook にも止められた）。
+    始めの表示（reset_read_log.sh）が呼ぶ。在る ToDo は上書きしない（再開したセッションの ToDo を消さないため）。
+    ★いまここ＝状態が「いまここ（次の回は、ここから）」か「まだ（途中」の最初の行。元の状態の文は「記録」の欄に移す（hook は欄が文字だけの行を数える）。"""
+    todo = next_path.parent / "sessions" / sid / "session_todo.md"
+    if todo.exists():
+        print(f"[ToDo] もう在るので作らない: {todo}")
+        return 0
+    src_path = next_path.parent / SRC_NAME
+    try:
+        src = json.loads(src_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        print(f"⚠️ [ToDo] 元データを読めない（{src_path}・{e}）＝ToDo を作っていない。next_step の③の表から書く")
+        return 2
+    head, rows = "", []
+    for sec in src.get("節", []):
+        if sec.get("見出し", "").startswith(NEXT_SEC):
+            head = sec["見出し"]
+            for blk in sec.get("塊", []):
+                if "表" in blk and blk["表"]["見出しの行"].strip() == TODO_HEAD:
+                    rows = [[x.strip() for x in r["欄"]] for r in blk["表"]["行"]]
+    if not rows:
+        print(f"⚠️ [ToDo] 元データに ToDo の表が無い＝ToDo を作っていない（{src_path}）")
+        return 2
+    here = next((i for i, r in enumerate(rows) if r[2].startswith(("いまここ", "まだ（途中"))), None)
+    m = re.search(r"（(\d+)回目）", head)
+    out = [f"# ToDo（{m.group(1) if m else '?'}回目・next_step の③の表からプログラムが作った）", "",
+           "| 番号 | やること | 状態 | 記録 |", "|---|---|---|---|"]
+    for i, r in enumerate(rows):
+        out.append(f"| {r[0]} | {r[1]} | {HERE_MARK} | 前の状態＝{r[2]} |" if i == here else f"| {r[0]} | {r[1]} | {r[2]} | |")
+    todo.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_write(todo, "\n".join(out) + "\n")
+    at = f"{rows[here][0]}番に {HERE_MARK} を付けた" if here is not None else f"{HERE_MARK} は付けていない（「いまここ」「まだ（途中」の行が無い）＝いまやる1件に付ける"
+    print(f"[ToDo] {len(rows)} 行を next_step の③の表から作った。{at}")
+    return 0
+
+
 def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None) -> int:
     """そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（2026-10-12・まこさん「OK」）。
     なぜ要るか＝171回目の締めで、ToDo の流れの段を手で写さず、次の回が落とした（worklog 20261012 §29）。写した後に --write を打つ。
@@ -1583,6 +1621,26 @@ def selftest() -> int:
         if not ok18:
             ng.append(f"T18: --todo-from の決まった書き替えが違う／{got[0][0]}・{r18[0]['見出し']}・{rows18}・{r18[1]['見出し']}")
 
+    # T19（2026-11-02・237回目）＝--todo-start。①表の行を写す ②「まだ（途中」の行だけ状態の欄が ★いまここ の文字だけ ③元の状態は記録の欄 ④在る ToDo は上書きしない
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td)
+        (tp / "next_step.md").write_text("x\n", encoding="utf-8")
+        sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": [
+            {"欄": [" 7 ", " 何か ", " 後で "]}, {"欄": [" 8 ", " 途中の物 ", " まだ（途中＝監査の結果から） "]}, {"欄": [" 9 ", " 次の物 ", " まだ（順＝8 の後） "]}]}}]}]}
+        (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            rc19 = start_todo(tp / "next_step.md", "s9")
+        t19 = tp / "sessions" / "s9" / "session_todo.md"
+        got19 = t19.read_text(encoding="utf-8").splitlines() if t19.exists() else []
+        t19.write_text("消さない\n", encoding="utf-8") if t19.exists() else None
+        with contextlib.redirect_stdout(io.StringIO()):
+            start_todo(tp / "next_step.md", "s9")
+        kept19 = t19.read_text(encoding="utf-8") if t19.exists() else ""
+        if not (rc19 == 0 and got19[0].startswith("# ToDo（5回目") and got19[4:] == [
+                "| 7 | 何か | 後で | |", f"| 8 | 途中の物 | {HERE_MARK} | 前の状態＝まだ（途中＝監査の結果から） |", "| 9 | 次の物 | まだ（順＝8 の後） | |"]
+                and kept19 == "消さない\n"):
+            ng.append(f"T19: --todo-start が違う／rc={rc19}・{got19}・{kept19!r}")
+
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
           "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
@@ -1590,10 +1648,10 @@ def selftest() -> int:
           "／T4b 印の時刻も照らす"
           "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
           "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない"
-          "／T18 --todo-from の決まった書き替え")
+          "／T18 --todo-from の決まった書き替え／T19 --todo-start")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 28
+    total = 29
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 
@@ -1613,6 +1671,8 @@ def main() -> int:
     ap.add_argument("--todo-from", dest="todo_from", metavar="セッションの id",
                     help="そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（続けて --write を打つ）。"
                          "締めの行が「★いまここ」なら、「2」の見出しの回目・締めの行・3-1 の見出しも書き、締めの手順を出す")
+    ap.add_argument("--todo-start", dest="todo_start", metavar="セッションの id",
+                    help="元データの「次のセッションでやること」の表から、そのセッションの ToDo を作る（在れば作らない・始めの表示が呼ぶ）")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
@@ -1620,6 +1680,8 @@ def main() -> int:
         return approve_fixed()
     if a.do_import:
         return import_src(a.file)
+    if a.todo_start:
+        return start_todo(a.file, a.todo_start)
     if a.todo_from:
         return copy_todo(a.file, a.todo_from)
     if a.write:
