@@ -10072,6 +10072,68 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.json",
    "at": "2026-11-03T19:24:01",
    "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/要件定義書_レベル4_指標の構造.md",
+   "at": "2026-11-03T21:35:06",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "8",
+   "file": ".claude/tools/gen_audit_docs.py",
+   "at": "2026-11-03T21:35:49",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-outside-record-20261102/okd_an4_20261103.txt",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-outside-record-20261102/okd_an4_20261103.txt",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-outside-record-20261102/okd_an4_20261103.txt",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-outside-record-20261102/okd_an3_20261103.txt",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-outside-record-20261102/okd_an_20261103.txt",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_outside_record_20261102_impl_cp99_audit_report.md",
+   "num": "6",
+   "file": ".claude/state/acceptance.md",
+   "at": "2026-11-03T21:36:21",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
   }
  ]
 }
