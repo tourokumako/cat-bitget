@@ -1,4 +1,4 @@
-# 依頼書｜指標データに要る項目を教科書で調べる・第1回（クラウドのセッション用）
+# 依頼書｜指標データに要る項目を教科書で調べる・第5回（クラウドのセッション用）
 
 ## この作業の目的
 
@@ -6,26 +6,64 @@ engine_tuner は、指標の役割・パラメータ・閾値を、教科書を�
 
 この作業は、後の工事（ToDo の169・212・213・70番）の材料を作ります。値は決めません。値を決めるのは、それぞれの工事の設計書と監査です。この作業は、「どのページに何と書いてあるか」だけを書きます。
 
-第1回の相手は10種です。かかる時間と、結果の形が使えるかを、この10種で確かめます。
+第5回の相手は42種です。第1回〜第4回の結果は、research/textbook-all-1〜4 ブランチの out_c1.json〜out_c4.json に在ります。
+
+この42種は、指標データではオフの指標で、資料の表3本に行がありません。下の表の「調べる相手」は、指標データの定義の文とライブラリとの対応から書きました。指標データの名前そのものを書いた文が無いときは、そのことを注の欄に書きます。
+
+名前が「比」「%」「傾き」で終わる指標は、指標データでは、元の指標を割って単位をそろえた物や、変化を取った物です。元の指標について Q1〜Q7 に答えます。割った形や傾きにした形を書いた文が無いときは、「見つからなかった」と書きます。
+
+res_hi・res_lo・sup_hi・sup_lo・mid の5種は、指標データでは値段の水準です。1時間足の確定した山と谷を束ねた帯から作ります。この名前そのものは教科書に無い見込みです。サポート帯とレジスタンス帯の作り方と使い方について答え、名前が無いことを注の欄に書きます。
 
 ## 調べる相手
 
 | 指標データの名前 | 調べる相手 |
 |---|---|
-| Stoch%K | Stochastic Oscillator の %K |
-| Stoch%D | Stochastic Oscillator の %D |
-| ROC | Rate of Change |
-| volume_ratio | 出来高を、その平均で割った比 |
-| CCI | Commodity Channel Index |
-| MFI | Money Flow Index |
-| CMF | Chaikin Money Flow |
-| OBV傾き | On Balance Volume と、その傾き |
-| AROONOSC | Aroon Oscillator |
-| UO | Ultimate Oscillator |
+| BOP | Balance of Power |
+| HA上ヒゲ比 | Heikin Ashi の上ヒゲを全幅で割った物 |
+| HA下ヒゲ比 | Heikin Ashi の下ヒゲを全幅で割った物 |
+| HA実体% | Heikin Ashi の実体を終値で割った物 |
+| QSTICK% | Qstick（Tushar Chande）を終値で割った物 |
+| TD_SEQ_DN | TD Sequential の下げ側（Tom DeMark） |
+| TD_SEQ_UP | TD Sequential の上げ側（Tom DeMark） |
+| body比 | ローソク足の実体 ÷ 高値と安値の幅 |
+| pinbar | Pin Bar。指標データは下ヒゲと上ヒゲの差 ÷ 全幅 |
+| 上ヒゲ比 | ローソク足の上ヒゲ ÷ 全幅 |
+| 下ヒゲ比 | ローソク足の下ヒゲ ÷ 全幅 |
+| 内側バー | Inside Bar（高値と安値が前の足の内側に収まる足） |
+| 包み足 | Engulfing Pattern |
+| 孕み足 | Harami Pattern |
+| 実体幅比 | ローソク足の実体 ÷ 直前 n 本の値幅の平均（十字線の判定の中身） |
+| 連続本数 | 同じ向きのローソク足が続いた本数 |
+| ADOSC比 | Chaikin A/D Oscillator を平均出来高で割った物 |
+| AOBV_LR | Archer On Balance Volume |
+| KVOシグナル比 | Klinger Volume Oscillator のシグナル線を平均出来高で割った物 |
+| KVO比 | Klinger Volume Oscillator を平均出来高で割った物 |
+| MARKETFI比 | Market Facilitation Index（Bill Williams） |
+| PVI傾き | Positive Volume Index |
+| PVOL比 | Price-Volume（値段 × 出来高）を n 本の平均で割った物 |
+| VFI | Volume Flow Indicator |
+| VOSC | Volume Oscillator |
+| WAD傾き | Williams Accumulation/Distribution |
+| 出来高変化率% | 出来高の n 本前からの変化率 |
+| CVI | Chaikin Volatility |
+| HT_DCPERIOD | Hilbert Transform の Dominant Cycle Period |
+| PDIST% | Price Distance を終値で割った物 |
+| RVI | Relative Volatility Index（Donald Dorsey）。RVGI とは別の物 |
+| SQZ% | TTM Squeeze（ライブラリの squeeze の1列目）を終値で割った物 |
+| SQZPRO_ON_NARROW | TTM Squeeze Pro（ライブラリの squeeze_pro）の NARROW の列 |
+| SQZPRO_ON_WIDE | TTM Squeeze Pro（ライブラリの squeeze_pro）の WIDE の列 |
+| THERMO比 | Elder Thermometer を、その EMA で割った物 |
+| kurtosis | 直近 n 本の終値の尖度（ライブラリの kurtosis） |
+| skew | 直近 n 本の終値の歪度（ライブラリの skew） |
+| res_hi | レジスタンス帯の上端（確定した山を束ねた帯） |
+| res_lo | レジスタンス帯の下端 |
+| sup_hi | サポート帯の上端（確定した谷を束ねた帯） |
+| sup_lo | サポート帯の下端 |
+| mid | レンジの中央（レジスタンス帯の下端とサポート帯の上端の中間） |
 
 ## やること
 
-10種のそれぞれについて、次の Q1〜Q7 に教科書で答えます。場面と売買スタイルは絞りません。
+42種のそれぞれについて、次の Q1〜Q7 に教科書で答えます。場面と売買スタイルは絞りません。
 
 | 番号 | 問い | 書く欄 |
 |---|---|---|
@@ -62,7 +100,7 @@ engine_tuner は、指標の役割・パラメータ・閾値を、教科書を�
 
 次の2つを確かめます。
 
-1. indicator_params_review.json に書いてある値と URL について、ページを開き、その値と逐語がページに在るかを確かめます。結果は「合う」「違う」「開けない」のどれかで書きます。
+1. indicator_params_review.json に行があるときは、書いてある値と URL についてページを開き、その値と逐語がページに在るかを確かめます。結果は「合う」「違う」「開けない」のどれかで書きます。行が無いときは、「資料の表の確認」を空の配列にします。今回の42種は、行が無い見込みです。
 2. 調べた値が indicators.json の値や定義の文と違うときは、違いを書きます。どちらが正しいかは決めません。
 
 ## 守ること
@@ -77,21 +115,22 @@ engine_tuner は、指標の役割・パラメータ・閾値を、教科書を�
 8. BTC や暗号資産について書いた資料は、注の欄に「暗号資産」と書きます。
 9. 「選ぶ語」に分けたのが調べた人の読みであるときは、注の欄に「調べた人の読み」と書きます。
 10. 開発者の原典と定番の教育サイトを先に使います。出どころの質を1件ごとに書きます。
-11. 乱数を使いません。プログラムを走らせる必要はありません。
-12. 下の「出す物」のほかに、ファイルを作らず、直しません。
-13. hook が止めたら、回り込まずに、止まった文を書いて作業を終えます。
+11. 乱数を使いません。
+12. リポジトリの中では、下の「出す物」のほかに、ファイルを作らず、直しません。ページの写しと短いスクリプトは、リポジトリの外の一時フォルダに置いてかまいません。
+13. ページが開けないときは、結果を「開けない」と書き、HTTP の番号を注の欄に書いて、次へ進みます。ChartSchool が開けないときも同じです。ChartSchool の分は、後で手元で確かめます。
+14. hook が止めたら、回り込まずに、止まった文を書いて作業を終えます。
 
 ## 出す物
 
-- ファイルを1本だけ作ります。置き場は .claude/state/indicator_review/research/out_c1.json です。
-- 中身は JSON の配列で、10種を1行ずつ入れます。形は下の見本のとおりにします。
+- ファイルを1本だけ作ります。置き場は .claude/state/indicator_review/research/out_c5.json です。
+- 中身は JSON の配列で、42種を1行ずつ入れます。形は下の見本のとおりにします。
 - 欄の名前を変えません。「種類」には、上の表の指標データの名前を、そのまま書きます。
 - 見つかった行は全部書きます。見本は、欄ごとの行数を絞ってあります。
-- 別のブランチにコミットします。ブランチの名前は research/textbook-all-1 です。master へは入れません。
+- 別のブランチにコミットします。ブランチの名前は research/textbook-all-5 です。master へは入れません。
 
 ### 見本（RSI の1行）
 
-RSI は第1回の相手ではありません。形を示すための物です。
+RSI は第5回の相手ではありません。形を示すための物です。
 
 ```json
 [
@@ -154,6 +193,7 @@ RSI は第1回の相手ではありません。形を示すための物です。
       "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
       "出どころの質": "定番の教育サイト",
       "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
       "確かめの強さ": "ページの文で確かめた",
       "指標データの定義の文との違い": "文の上では違わない。コードの計算は見ていない"
     },
@@ -293,7 +333,7 @@ RSI は第1回の相手ではありません。形を示すための物です。
 次の6つを出してください。
 
 1. 作ったファイルのパスと、ブランチの名前
-2. 10種の Q1〜Q7 の答えの1行ずつ
+2. 42種の Q1〜Q7 の答えの1行ずつ
 3. いまの値と違う所
 4. 分からなかったこと
 5. 開けなかったページ

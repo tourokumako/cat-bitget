@@ -20,7 +20,8 @@
   セッションの置き場（ToDo）・worklog・memory・計画のファイルへの書き込み／サブエージェント／記録が読めないとき／
   引き継ぎの文書の元データ（next_step_src.json）への書き込みと、next_step を作り直す操作（tidy_next_step.py）／
   ★2026-10-17 から＝監査のセッション（require_read_used._auditor_session で見分ける）／読むだけの調べ（作業場と /tmp への書き出し・
-  git -C の読む命令・git check-ignore）。検査だけの実行と読むだけの調べは、コマンドの区切りごとに見る（check_or_read）。
+  git -C の読む命令・git check-ignore）。検査だけの実行と読むだけの調べは、コマンドの区切りごとに見る（check_or_read）／
+  ★2026-11-04 から＝git fetch origin <ブランチ>／★いまここの行の やること が【派生】で始まるときの、依頼書の置き場（.claude/instructions/）への書き込み。
 
 なぜこの形か（worklog 20261001 §14）＝前の ToDo の hook（enforce_todo_declaration）は、7日で232回 止め、うち96回は同じ操作の繰り返しで通った。
   原因＝①全文を画面に出すために必ず1回 止まる ②同じ返信の中の貼り付けを、hook が読めないことが在る ③書き替えるたびに、貼る手続きと証拠のファイルが要る。
@@ -57,7 +58,10 @@ CHECK_ONLY = re.compile(r"--(?:selftest|verify|check|help|dry)(?=\s|$)|-m\s+py_c
 # ★2026-10-18（監査 CP79 の修正）＝旗は丸ごと一致で見る（--checkpoint-and-save の --check を検査の旗と見ていた）。
 #   旗の中身（その道具が本当に書かないか）は見ない＝防げない物（hook_inventory_src.json に書く）
 TMP_OUT = re.compile(r"\d?>>?\s*(/private)?/tmp/\S+")            # 作業場と /tmp への書き出し（2026-10-17）
-GIT_EXTRA = re.compile(r"^git\s+check-ignore(\s|$)")               # 無視される置き場かを見るだけ（2026-10-17）
+# ★2026-11-04（253番・まこさん「よい」）＝git fetch origin <ブランチ> も通す（作業中のファイルを変えない）。a:b の形はローカルのブランチを書くので通さない。
+GIT_EXTRA = re.compile(r"^git\s+check-ignore(\s|$)|^git\s+fetch\s+origin(\s+[\w./-]+)?(\s+2>&1)?\s*$")  # 無視される置き場かを見るだけ（2026-10-17）
+DERIVED = "【派生】"                            # ★2026-11-04（253番）＝まこさんが派生と言われた作業の印（ToDo の やること の先頭）
+DERIVED_FREE = "/.claude/instructions/"        # 派生の行で、宣言なしに書ける置き場（依頼書だけ）
 TOOL_CHECK = re.compile(r"^python[0-9.]*\s+\S*(try_hooks|next_move)\.py(\s|$)")  # 書き込まない道具（2026-10-17）
 MIN_BODY = 8                                   # 見出しの後の中身の字数の下限（見出しだけの宣言を通さない）
 FILE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
@@ -156,6 +160,21 @@ def doing_numbers(todo_text: str) -> list:
         if len(cells) >= 3 and re.fullmatch(r"\d+", cells[0]) and cells[2] == DOING:
             out.append(cells[0])
     return out
+
+
+def doing_is_derived(todo: pathlib.Path) -> bool:
+    """「★いまここ」の行がちょうど1つで、やることが【派生】で始まるか（読めなければ、派生でない扱い＝今までどおり止める）。"""
+    try:
+        text = todo.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    hits = []
+    for line in text.splitlines():
+        s = line.strip()
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if s.startswith("|") and len(cells) >= 3 and re.fullmatch(r"\d+", cells[0]) and cells[2] == DOING:
+            hits.append(cells[1])
+    return len(hits) == 1 and hits[0].startswith(DERIVED)
 
 
 def events(path: pathlib.Path) -> list:
@@ -317,6 +336,10 @@ def gate(d: dict):
     #   見分け方は require_read_used._auditor_session と同じ（決まりを1か所にする）。
     if _auditor_session(list(rows(pathlib.Path(tp)))):
         return None
+    # ★2026-11-04（253番・まこさん「このhookはここで対応しているような派生作業では免除できるようにならないか？」「よい」）
+    #   ＝★いまここの行が【派生】なら、依頼書の置き場への書き込みだけ、宣言を求めない。コードと設定と設計書は今までどおり止める。
+    if name in FILE_TOOLS and DERIVED_FREE in str(pathlib.Path(p).resolve()) and doing_is_derived(SESSIONS / sid / "session_todo.md"):
+        return None
     if name == "Bash" and commit_only(str(inp.get("command", ""))) and last_user_ok_commit(pathlib.Path(tp)):
         return None                            # コミットだけで、直前の発言が「コミットOK」なら、宣言を求めない（2026-11-02）
     return check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
@@ -361,7 +384,7 @@ def selftest() -> int:
              "【経緯】171回目に項目の表が固まり、172回目に続きを進める\n【ゴール】直す所の一覧を返信に出して止まる")
     todo3 = "| 番号 | やること | 状態 | 記録 |\n|---|---|---|---|\n| 2 | 前の件 | ✅済 | §1 |\n| 3 | いまの件 | ★いまここ | — |\n| 4 | 次の件 | まだ | — |\n"
     ng = 0
-    global MUST_FILE
+    global MUST_FILE, SESSIONS
     with tempfile.TemporaryDirectory() as td:
         tdp = pathlib.Path(td)
         tr, todo = tdp / "t.jsonl", tdp / "session_todo.md"
@@ -468,7 +491,32 @@ def selftest() -> int:
         log.write_text(str(doc) + "\n" + str(doc2) + "\n", encoding="utf-8")
         run("T35 必読の一覧に1本足す → 照らし直して止まる（足したファイルの根拠が無い）", [_say(good), _user("OK")], todo3, True)
         MUST_FILE = tdp / "must_none.txt"
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 35件のうち、期待と違う {ng} 件")
+        # ★2026-11-04（253番）＝git fetch と、派生の行の依頼書の置き場
+        real_sessions = SESSIONS
+        SESSIONS = tdp
+        (tdp / "x").mkdir()
+        todo_x = tdp / "x" / "session_todo.md"
+        head_x = "| 番号 | やること | 状態 | 記録 |\n|---|---|---|---|\n"
+        def edit(path):
+            return dict(base, tool_name="Edit", tool_input={"file_path": path})
+        run("T36 git fetch origin ブランチ（ToDo が無い）→ 通る", [_user("始めて")], None, False,
+            bash("git fetch origin research/textbook-all-5 2>&1 | tail -1"))
+        run("T37 git fetch origin a:b（ローカルのブランチを書く）→ 止まる", [_user("始めて")], None, True,
+            bash("git fetch origin a:b"))
+        todo_x.write_text(head_x + "| 3 | 【派生】調べの依頼書 | ★いまここ | |\n", encoding="utf-8")
+        run("T38 派生の行で、依頼書の置き場へ宣言なしで書く → 通る", [_user("始めて")], None, False,
+            edit("/a/.claude/instructions/x.md"))
+        run("T39 派生の行で、コードへ宣言なしで書く → 止まる", [_user("始めて")], None, True,
+            edit("/a/scripts/priority_rebuild/x.py"))
+        run("T40 派生の行で、../ で置き場の外へ出る → 止まる", [_user("始めて")], None, True,
+            edit("/a/.claude/instructions/../hooks/x.py"))
+        run("T41 派生の行で、依頼書の置き場を書き替える Bash → 止まる", [_user("始めて")], None, True,
+            bash("sed -i '' 's/a/b/' /a/.claude/instructions/x.md"))
+        todo_x.write_text(head_x + "| 3 | 調べの依頼書 | ★いまここ | |\n", encoding="utf-8")
+        run("T42 印の無い行で、依頼書の置き場へ宣言なしで書く → 止まる", [_user("始めて")], None, True,
+            edit("/a/.claude/instructions/x.md"))
+        SESSIONS = real_sessions
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 48件（T1〜T42・C1〜C6）のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 
