@@ -3627,8 +3627,14 @@
     "元の指標": "Cumulative Volume Delta（テイカー買い − テイカー売りの累積）",
     "教科書の役割": [
       {
-        "確かめの強さ": "見つからなかった",
-        "注": "CVD を書いた教科書のページを、開いたページの中に見つけられなかった"
+        "区分": "出来高",
+        "逐語": "The Cumulative Volume Delta indicator uses intrabar volume and price fluctuations to estimate the difference (delta) between buying and selling pressure within each chart bar,",
+        "URL": "https://www.tradingview.com/support/solutions/43000725058-cumulative-volume-delta/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
       }
     ],
     "値の読み方": [
@@ -3652,13 +3658,27 @@
       }
     ],
     "計算の式": {
-      "確かめの強さ": "見つからなかった",
-      "注": "式を書いた文は見つからなかった"
+      "逐語": [
+        "It considers the intrabar's volume positive and adds the value to the chart bar's total if the closing price exceeds the opening price.",
+        "Each new bar's volume delta adds to the cumulative value calculated on the previous bar."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000725058-cumulative-volume-delta/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "TradingView は、下の時間足の足の向き（終値が始値より上か下か）で出来高を買いと売りに分けて推定する。指標データは Binance の kline の『Taker buy base asset volume』（テイカーが買った量）を使い、推定しない"
     },
     "確定と期間": [
       {
-        "確かめの強さ": "見つからなかった",
-        "注": "確定に要る本数を書いた文は見つからなかった"
+        "確定に要る本数": "書いてない",
+        "逐語": "The running total resets to 0 each time a new period starts.",
+        "URL": "https://www.tradingview.com/support/solutions/43000725058-cumulative-volume-delta/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "期間の始めに 0 に戻る。指標データは戻すかを書いていない"
       }
     ],
     "パラメータの軸": [
@@ -3711,6 +3731,18 @@
     ],
     "今の値との違い": [
       {
+        "欄": "買いと売りの分け方",
+        "指標データ": "Binance の kline のテイカー買い量（Taker buy base asset volume）",
+        "教科書": "下の時間足の足の向きで推定（TradingView）",
+        "注": "どちらが正しいかは決めない"
+      },
+      {
+        "欄": "累積の始まり",
+        "指標データ": "書いてない",
+        "教科書": "期間ごとに 0 に戻す（TradingView）",
+        "注": "どちらが正しいかは決めない"
+      },
+      {
         "欄": "パラメータ",
         "指標データ": "パラメータを持たない",
         "教科書": "資料の表に行が無い",
@@ -3719,8 +3751,8 @@
     ],
     "資料の表の確認": [],
     "分からなかったこと": [
-      "CVD の定義を書いた定番の教育サイトの本文は開いていない",
-      "指標データが元にする Binance の kline の説明ページ（developers.binance.com）は 202 で本文が空だった"
+      "Binance の kline の列の説明は、GitHub の binance-spot-api-docs の rest-api.md で『Taker buy base asset volume』の列名だけを見た（逐語＝『// Taker buy base asset volume』）。Binance の開発者サイト（developers.binance.com）は HTTP 202 で本文が空だった",
+      "CVD を売買にどう使うかを書いた教科書の文は見つからなかった"
     ]
   },
   {
