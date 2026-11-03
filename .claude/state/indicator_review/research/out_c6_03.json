@@ -1,0 +1,5290 @@
+[
+  {
+    "種類": "S-Rタッチ確定1時間ATR",
+    "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）＋ ATR（Wilder の Average True Range・1時間足）",
+    "教科書の役割": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "支え・抵抗に触れた回数を数える、決まった式を持つ教科書の指標は見つからなかった（資料の表の『元の指標』も同じことを書く）"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "S-Rタッチ確定1時間ATR",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式を書いた文は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "n（過去の本数）・倍率（許容幅 ＝ 倍率 × 1時間足の ATR%）・ATR の期間",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              null,
+              null,
+              14
+            ],
+            "逐語": "Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              null,
+              null,
+              14
+            ],
+            "逐語": "The “parameters” box to the right of the indicator contains the default value, 14, for the number of periods used to smooth the data.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              null,
+              null,
+              14
+            ],
+            "逐語": "optInTimePeriod integer 14 1–100000 Smoothing period",
+            "URL": "https://ta-lib.org/functions/atr.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              null,
+              null,
+              14
+            ],
+            "逐語": "length (int): It's period. Default: 14",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/volatility/atr.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              null,
+              null,
+              "5〜14"
+            ],
+            "逐語": "Set the period of the ATR to a value that suits your scalping style (usually between 5 and 14 periods).",
+            "URL": "https://tradingbrokers.com/atr-scalping-strategy/",
+            "出どころの質": "ブログ（証券会社比較サイト）。逐語は WebFetch が返した引用",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の値で、ページの本文で照らせた物は無かった"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "8（Wilder がよく使った期間）",
+            "逐語": "In his work, Wilder often used an 8-period ATR.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 1–100000 Smoothing period",
+            "URL": "https://ta-lib.org/functions/atr.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 144〜288・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；m の範囲 0.5〜1.5・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；a の範囲 7〜21・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；k の範囲 まだ決めていない・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝[null, null, 14]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          null,
+          null,
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          null,
+          null,
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          null,
+          null,
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/atr.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          null,
+          null,
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/volatility/atr.py"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          null,
+          null,
+          "5〜10"
+        ],
+        "結果": "開けない",
+        "URL": "https://atrindicator.com/best-atr-settings/",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          null,
+          null,
+          "5〜10（10 が中心）"
+        ],
+        "結果": "開けない",
+        "URL": "https://atrindicator.com/atr-settings-5-minute-chart/",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          null,
+          null,
+          "5〜14"
+        ],
+        "結果": "合う",
+        "URL": "https://tradingbrokers.com/atr-scalping-strategy/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          null,
+          null,
+          "10〜14"
+        ],
+        "結果": "開けない",
+        "URL": "https://atrindicator.com/best-atr-settings/",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "範囲",
+        "値": "8（Wilder がよく使った期間）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr"
+      },
+      {
+        "欄": "範囲",
+        "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/atr.html"
+      }
+    ],
+    "分からなかったこと": [
+      "触れた回数の数え方と許容幅（1時間足の ATR から作る幅）を書いた教科書の文は見つからなかった"
+    ]
+  },
+  {
+    "種類": "S-Rタッチ確定数",
+    "元の指標": "支持線・抵抗線に触れた回数（決まった計算式と既定値を持つ教科書の指標は見つからなかった）",
+    "教科書の役割": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "支え・抵抗に触れた回数を数える、決まった式を持つ教科書の指標は見つからなかった（資料の表の『元の指標』も同じことを書く）"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "S-Rタッチ確定数",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式を書いた文は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "n（過去の本数）・許容幅（割合）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 144〜288・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；t の範囲 0.0015〜0.006・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；k の範囲 まだ決めていない・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "触れた回数の数え方と許容幅を書いた教科書の文は見つからなかった"
+    ]
+  },
+  {
+    "種類": "SQZ_ON",
+    "元の指標": "TTM Squeeze（John Carter・ボリンジャーバンドがケルトナーチャネルの内側か）",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "The volatility component of the TTM Squeeze indicator measures price compression using Bollinger Bands and Keltner Channels.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "ボリンジャーがケルトナーの内側に入ると、値動きが小さい（締まり）",
+        "向きを持つ": "書いてない",
+        "逐語": "If the Bollinger Bands are completely enclosed within the Keltner Channels, it indicates a low volatility period. This is known as the squeeze.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値域を書いた文は見つからなかった。指標データは 1 か 0"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "締まりの点（on/off）",
+        "組の相手": "勢いのヒストグラム",
+        "逐語": "There are two components of the TTM Squeeze indicator to calculate: the squeeze on/off dots and the momentum histogram.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "If the Bollinger Bands are completely enclosed within the Keltner Channels, it indicates a low volatility period. This is known as the squeeze."
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（ボリンジャーの上と下がケルトナーの内側なら締まり）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "bb_length・bb_stdev_mult・kc_length・kc_atr_mult",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "Length–Number of bars used in the indicator calculation; default is 20. nK–Sets the offset of the Keltner Channel; default is 1.5. nBB–Sets standard deviation of the Bollinger Bands; default is 2.",
+            "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+            "出どころの質": "開発者の原典（Simpler Trading＝John Carter の会社）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "By default, the indicator uses standard Bollinger Band (20,2.0) and original Keltner Channel (20,1.5,20) settings, as well as a 20-period momentum histogram, but the number of periods and other settings can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "bb_length (int): BB period. Default: ```20``` bb_std (float): BB Std. Dev. Default: ```2``` kc_length (int): KC period. Default: ```20``` kc_scalar (float): KC scalar. Default: ```1.5```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py",
+            "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（4行を空白でつないだ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              10,
+              1.5,
+              10,
+              1.0
+            ],
+            "逐語": "Short-period settings (10, 1.5, 1.0): Faster response for scalping and 1-5 minute chart trading.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box＝相場分析サービスの記事。並びは期間・BB倍率・KC倍率）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              20,
+              2.0,
+              20,
+              2.0
+            ],
+            "逐語": "Looser settings (20, 2.0, 2.0): The wider Keltner multiplier makes it easier for the Bollinger Bands to contract inside the Keltner Channels. This produces more frequent squeezes, including shallower compressions. Suitable for intraday traders on 5-minute or 15-minute charts who need more signals per session.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+            "逐語": "Tighter settings (20, 2.0, 1.0): The narrower Keltner multiplier makes it harder for the Bollinger Bands to contract inside the Keltner Channels.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box・広い側は上のデイトレの行の 2.0）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "持たない",
+        "値": null,
+        "意味": "閾値は無く、内側か外側かで決まる",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "If they are not both true (one or both Bollinger Bands fall outside of the Keltner Channel), then the squeeze is off for that period.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "TTM Squeeze is a volatility and momentum indicator introduced by John Carter of Trade the Markets (now Simpler Trading), which capitalizes on the tendency for price to break out strongly after consolidating in a tight trading range.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "書いてない",
+        "逐語": "Carter recommends buying on the first green dot after one or more red dots.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "ケルトナーの作り",
+        "指標データ": "20本・1.5倍（指標データの定義の文）",
+        "教科書": "Carter は Chester Keltner の原作の式を使う、と ChartSchool は書く",
+        "注": "指標データの式の ATR の作りは見ていない"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "bb_length の範囲 10〜20・代表の値 スキャル [20]／デイトレ [20]；bb_std の範囲 1.5〜2・代表の値 スキャル [2]／デイトレ [2]；kc_length の範囲 10〜20・代表の値 スキャル [20]／デイトレ [20]；kc_scalar の範囲 1.0〜2.0・代表の値 スキャル [1.5]／デイトレ [1.5]",
+        "教科書": "資料の表の既定＝[20, 2, 20, 1.5]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          10,
+          1.5,
+          10,
+          1.0
+        ],
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          20,
+          2.0,
+          20,
+          2.0
+        ],
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "SQZ_ON_Carter",
+    "元の指標": "TTM Squeeze（John Carter・ボリンジャーバンドがケルトナーチャネルの内側か）",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "The volatility component of the TTM Squeeze indicator measures price compression using Bollinger Bands and Keltner Channels.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "ボリンジャーがケルトナーの内側に入ると、値動きが小さい（締まり）",
+        "向きを持つ": "書いてない",
+        "逐語": "If the Bollinger Bands are completely enclosed within the Keltner Channels, it indicates a low volatility period. This is known as the squeeze.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値域を書いた文は見つからなかった。指標データは 1 か 0"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "締まりの点（on/off）",
+        "組の相手": "勢いのヒストグラム",
+        "逐語": "There are two components of the TTM Squeeze indicator to calculate: the squeeze on/off dots and the momentum histogram.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "If the Bollinger Bands are completely enclosed within the Keltner Channels, it indicates a low volatility period. This is known as the squeeze."
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（ボリンジャーの上と下がケルトナーの内側なら締まり）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "bb_length・bb_stdev_mult・kc_length・kc_atr_mult",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "Length–Number of bars used in the indicator calculation; default is 20. nK–Sets the offset of the Keltner Channel; default is 1.5. nBB–Sets standard deviation of the Bollinger Bands; default is 2.",
+            "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator",
+            "出どころの質": "開発者の原典（Simpler Trading＝John Carter の会社）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "By default, the indicator uses standard Bollinger Band (20,2.0) and original Keltner Channel (20,1.5,20) settings, as well as a 20-period momentum histogram, but the number of periods and other settings can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20,
+              2,
+              20,
+              1.5
+            ],
+            "逐語": "bb_length (int): BB period. Default: ```20``` bb_std (float): BB Std. Dev. Default: ```2``` kc_length (int): KC period. Default: ```20``` kc_scalar (float): KC scalar. Default: ```1.5```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py",
+            "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）（4行を空白でつないだ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              10,
+              1.5,
+              10,
+              1.0
+            ],
+            "逐語": "Short-period settings (10, 1.5, 1.0): Faster response for scalping and 1-5 minute chart trading.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box＝相場分析サービスの記事。並びは期間・BB倍率・KC倍率）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              20,
+              2.0,
+              20,
+              2.0
+            ],
+            "逐語": "Looser settings (20, 2.0, 2.0): The wider Keltner multiplier makes it easier for the Bollinger Bands to contract inside the Keltner Channels. This produces more frequent squeezes, including shallower compressions. Suitable for intraday traders on 5-minute or 15-minute charts who need more signals per session.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+            "逐語": "Tighter settings (20, 2.0, 1.0): The narrower Keltner multiplier makes it harder for the Bollinger Bands to contract inside the Keltner Channels.",
+            "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/",
+            "出どころの質": "証券会社・ブログ（Volatility Box・広い側は上のデイトレの行の 2.0）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "持たない",
+        "値": null,
+        "意味": "閾値は無く、内側か外側かで決まる",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "If they are not both true (one or both Bollinger Bands fall outside of the Keltner Channel), then the squeeze is off for that period.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "TTM Squeeze is a volatility and momentum indicator introduced by John Carter of Trade the Markets (now Simpler Trading), which capitalizes on the tendency for price to break out strongly after consolidating in a tight trading range.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "書いてない",
+        "逐語": "Carter recommends buying on the first green dot after one or more red dots.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "bb_length の範囲 10〜20・代表の値 スキャル [20]／デイトレ [20]；bb_std の範囲 1.5〜2・代表の値 スキャル [2]／デイトレ [2]；kc_length の範囲 10〜20・代表の値 スキャル [20]／デイトレ [20]；kc_scalar の範囲 1.0〜2.0・代表の値 スキャル [1.5]／デイトレ [1.5]",
+        "教科書": "資料の表の既定＝[20, 2, 20, 1.5]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://www.simplertrading.com/tutorials/squeeze-indicator"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20,
+          2,
+          20,
+          1.5
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/momentum/squeeze.py"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          10,
+          1.5,
+          10,
+          1.0
+        ],
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          20,
+          2.0,
+          20,
+          2.0
+        ],
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "KC 倍率 1.0〜2.0（期間 20・BB 2.0 のまま）",
+        "結果": "合う",
+        "URL": "https://volatilitybox.com/research/ttm-squeeze-indicator/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "STC",
+    "元の指標": "Schaff Trend Cycle（Doug Schaff）",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "MACD に2回ストキャスを掛けた周期の値。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "25 より下から上を向くと強気、75 より上から下を向くと弱気",
+        "向きを持つ": "持つ",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "0〜100",
+        "下限": 0,
+        "上限": 100,
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "STC",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half."
+      ],
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "fast・slow・cycle",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              23,
+              50,
+              10
+            ],
+            "逐語": "optInFastPeriod integer 23 2–100000 Period of the fast EMA / optInSlowPeriod integer 50 2–100000 Period of the slow EMA / optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+            "URL": "https://ta-lib.org/functions/stc.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。開発者側の原典を出典に挙げる＝'\"Releasing the Code to the Schaff Trend Cycle\" , FX-Strategy.com, published on FXStreet.com, February 15, 2008. The EasyLanguage source, and the 23/50/10 defaults.'",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+          },
+          {
+            "値": [
+              23,
+              50,
+              10
+            ],
+            "逐語": "What are the typical STC settings? The default settings include EMA periods of 23 and 50, as well as a stochastic indicator with a period of 10.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/schaff-trend-cycle/",
+            "出どころの質": "証券会社（LiteFinance）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              23,
+              50,
+              10
+            ],
+            "逐語": "– Sh: short-term Exponential Moving Average with a default period of 23 – Lg: long-term Exponential Moving Average with a default period of 50 – Cycle: set at half the cycle length with a default value of 10.",
+            "URL": "https://www.tradingpedia.com/forex-trading-indicators/schaff-trend-cycle/",
+            "出どころの質": "ブログ（Tradingpedia）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "23, 50, 10, 3（4つ目はならしの値）",
+            "逐語": "A widely used default is often described as 23, 50, 10, 3, which corresponds to fast EMA, slow EMA, cycle length L, and smoothing A.",
+            "URL": "https://trendsandbreakouts.com/schaff-trend-cycle",
+            "出どころの質": "ブログ（trendsandbreakouts.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              23,
+              50,
+              100
+            ],
+            "逐語": "The typical settings involve cycles of 23, 50 and 100, although these can be customised.",
+            "URL": "https://www.stockgro.club/blogs/stock-market-101/schaff-trend-cycle/",
+            "出どころの質": "ブログ（StockGro）。ほかの出どころ（3つ目＝10）と食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          25,
+          75
+        ],
+        "意味": "25 より下は売られ過ぎ寄り、75 より上は買われ過ぎ寄り",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "下側",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "25 より下から上を向く"
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "SHORT",
+        "向き": "上側",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "75 より上から下を向く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "tcl の範囲 10〜100・代表の値 スキャル [10]／デイトレ [10]；f_ の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；s_ の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；fac の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝[23, 50, 10]・\"23, 50, 10, 3（4つ目はならしの値）\"・[23, 50, 100]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          23,
+          50,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          23,
+          50,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/schaff-trend-cycle/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          23,
+          50,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingpedia.com/forex-trading-indicators/schaff-trend-cycle/"
+      },
+      {
+        "欄": "既定",
+        "値": "23, 50, 10, 3（4つ目はならしの値）",
+        "結果": "合う",
+        "URL": "https://trendsandbreakouts.com/schaff-trend-cycle"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          23,
+          50,
+          100
+        ],
+        "結果": "合う",
+        "URL": "https://www.stockgro.club/blogs/stock-market-101/schaff-trend-cycle/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "STCstoch",
+    "元の指標": "Schaff Trend Cycle の内部の1回目のストキャスティクス（ならした値）",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "MACD に2回ストキャスを掛けた周期の値。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "25 より下から上を向くと強気、75 より上から下を向くと弱気",
+        "向きを持つ": "持つ",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "0〜100",
+        "下限": 0,
+        "上限": 100,
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "STCstoch",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half."
+      ],
+      "URL": "https://ta-lib.org/functions/stc.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "fast・slow・cycle",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              23,
+              50,
+              10
+            ],
+            "逐語": "optInFastPeriod integer 23 2–100000 Period of the fast EMA / optInSlowPeriod integer 50 2–100000 Period of the slow EMA / optInCyclePeriod integer 10 2–100000 Window of both stochastic stages",
+            "URL": "https://ta-lib.org/functions/stc.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。ならしは 'Schaff Trend Cycle (Doug Schaff): a MACD line passed twice through a stochastic, each pass smoothed by half.' と書いている",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          25,
+          75
+        ],
+        "意味": "25 より下は売られ過ぎ寄り、75 より上は買われ過ぎ寄り",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "下側",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "25 より下から上を向く"
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "SHORT",
+        "向き": "上側",
+        "逐語": "Bounded 0 to 100, read against 25 and 75: turning up from below 25 is bullish, turning down from above 75 bearish.",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "75 より上から下を向く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "tcl の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；f_ の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；s_ の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；fac の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝[23, 50, 10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          23,
+          50,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/stc.html",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      }
+    ],
+    "分からなかったこと": [
+      "STC の中の1回目のストキャスだけの読み方を書いた文は見つからなかった。STC 全体の文を写した"
+    ]
+  },
+  {
+    "種類": "StochRSI%D",
+    "元の指標": "StochRSI（Chande と Kroll）",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "StochRSI has characteristics similar to most bound momentum oscillators.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "上限と下限のある勢いの振動子"
+      },
+      {
+        "区分": "行き過ぎ",
+        "逐語": "First, it can be used to identify overbought or oversold conditions. A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": ".80 より上は買われ過ぎ、.20 より下は売られ過ぎ",
+        "向きを持つ": "書いてない",
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "書いてない",
+        "下限": 0,
+        "上限": 1,
+        "逐語": "The result is an oscillator that fluctuates between 0 and 1.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "0〜1。TradingView などは 0〜100 で出す"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "StochRSI%D",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（指標データの素%K は 0〜100 にしている）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "n（RSI の本数とストキャスの本数）・%K の平滑・%D（%K の移動平均の本数）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "The “parameters” value specifies the number of periods used in the calculation (default is 14).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%K 3",
+            "逐語": "The time period to be used in calculating the %K. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（RSI の本数とストキャスの本数の既定の数はヘルプの文に書いていない）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%D 3",
+            "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "RSI 14・%K 5・%D 3",
+            "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+            "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              14,
+              14,
+              3,
+              3
+            ],
+            "逐語": "The Stochastics RSI values are generally a 14 period look back of the RSI and 3 period SMA. It is commonly referred to as the 14, 14, 3, 3 setting.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "StochRSI can be turbocharged for day trading as well. The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+            "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+            "出どころの質": "証券会社・ブログ（暗号資産の取引の記事・時間足の指定なし）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "(21, 5, 5)（日足で遅くする）",
+            "逐語": "Slower settings (21/5/5) work better on daily charts where you want to filter intraday noise.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          0.8,
+          0.2
+        ],
+        "意味": "上が買われ過ぎ、下が売られ過ぎ",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      },
+      {
+        "形": "値",
+        "値": 0.5,
+        "意味": "中央の線",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "As a bound oscillator, the centerline is at .50.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "When using the Stoch RSI, overbought and oversold work best when trading along with the underlying trend.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "大きな流れの向きに沿って使う"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル まだ決めていない／デイトレ [14]；k の範囲 3〜3・代表の値 スキャル まだ決めていない／デイトレ [3]；d_ の範囲 3〜3・代表の値 スキャル まだ決めていない／デイトレ [3]",
+        "教科書": "資料の表の既定＝[14]・\"%K 3\"・\"%D 3\"・\"RSI 14・%K 5・%D 3\"・[14, 14, 3, 3]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi"
+      },
+      {
+        "欄": "既定",
+        "値": "%K 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "%D 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "RSI 14・%K 5・%D 3",
+        "結果": "合う",
+        "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading"
+      },
+      {
+        "欄": "範囲",
+        "値": "(21, 5, 5)（日足で遅くする）",
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      }
+    ],
+    "分からなかったこと": [
+      "%D（%K をならした線）を書いた文は、開いたページの中で見つけなかった"
+    ]
+  },
+  {
+    "種類": "StochRSI%K",
+    "元の指標": "StochRSI（Chande と Kroll）",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "StochRSI has characteristics similar to most bound momentum oscillators.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "上限と下限のある勢いの振動子"
+      },
+      {
+        "区分": "行き過ぎ",
+        "逐語": "First, it can be used to identify overbought or oversold conditions. A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": ".80 より上は買われ過ぎ、.20 より下は売られ過ぎ",
+        "向きを持つ": "書いてない",
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "書いてない",
+        "下限": 0,
+        "上限": 1,
+        "逐語": "The result is an oscillator that fluctuates between 0 and 1.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "0〜1。TradingView などは 0〜100 で出す"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "StochRSI%K",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（指標データの素%K は 0〜100 にしている）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "n（RSI の本数とストキャスの本数）・%K の平滑・%D（%K の移動平均の本数）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "The “parameters” value specifies the number of periods used in the calculation (default is 14).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%K 3",
+            "逐語": "The time period to be used in calculating the %K. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（RSI の本数とストキャスの本数の既定の数はヘルプの文に書いていない）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%D 3",
+            "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "RSI 14・%K 5・%D 3",
+            "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+            "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              14,
+              14,
+              3,
+              3
+            ],
+            "逐語": "The Stochastics RSI values are generally a 14 period look back of the RSI and 3 period SMA. It is commonly referred to as the 14, 14, 3, 3 setting.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "StochRSI can be turbocharged for day trading as well. The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+            "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+            "出どころの質": "証券会社・ブログ（暗号資産の取引の記事・時間足の指定なし）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "(21, 5, 5)（日足で遅くする）",
+            "逐語": "Slower settings (21/5/5) work better on daily charts where you want to filter intraday noise.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          0.8,
+          0.2
+        ],
+        "意味": "上が買われ過ぎ、下が売られ過ぎ",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      },
+      {
+        "形": "値",
+        "値": 0.5,
+        "意味": "中央の線",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "As a bound oscillator, the centerline is at .50.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "When using the Stoch RSI, overbought and oversold work best when trading along with the underlying trend.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "大きな流れの向きに沿って使う"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル まだ決めていない／デイトレ [14]；k の範囲 まだ決めていない・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝[14]・\"%K 3\"・\"%D 3\"・\"RSI 14・%K 5・%D 3\"・[14, 14, 3, 3]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi"
+      },
+      {
+        "欄": "既定",
+        "値": "%K 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "%D 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "RSI 14・%K 5・%D 3",
+        "結果": "合う",
+        "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading"
+      },
+      {
+        "欄": "範囲",
+        "値": "(21, 5, 5)（日足で遅くする）",
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "StochRSI素%K",
+    "元の指標": "StochRSI（Chande と Kroll）",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "StochRSI has characteristics similar to most bound momentum oscillators.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "上限と下限のある勢いの振動子"
+      },
+      {
+        "区分": "行き過ぎ",
+        "逐語": "First, it can be used to identify overbought or oversold conditions. A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": ".80 より上は買われ過ぎ、.20 より下は売られ過ぎ",
+        "向きを持つ": "書いてない",
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "書いてない",
+        "下限": 0,
+        "上限": 1,
+        "逐語": "The result is an oscillator that fluctuates between 0 and 1.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "0〜1。TradingView などは 0〜100 で出す"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "StochRSI素%K",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（指標データの素%K は 0〜100 にしている）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "n（RSI の本数とストキャスの本数）・%K の平滑・%D（%K の移動平均の本数）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "The “parameters” value specifies the number of periods used in the calculation (default is 14).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%K 3",
+            "逐語": "The time period to be used in calculating the %K. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（RSI の本数とストキャスの本数の既定の数はヘルプの文に書いていない）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "%D 3",
+            "逐語": "The time period to be used in calculating the %D. 3 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "RSI 14・%K 5・%D 3",
+            "逐語": "fastk, fastd = STOCHRSI(close, timeperiod=14, fastk_period=5, fastd_period=3, fastd_matype=0)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+            "出どころの質": "ライブラリの説明（TA-Lib の Python 版の説明書）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              14,
+              14,
+              3,
+              3
+            ],
+            "逐語": "The Stochastics RSI values are generally a 14 period look back of the RSI and 3 period SMA. It is commonly referred to as the 14, 14, 3, 3 setting.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "On 5-minute and 15-minute charts, use StochRSI length 14 with %K smoothing 3 and %D smoothing 3.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ（5分足・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14,
+              3,
+              3
+            ],
+            "逐語": "StochRSI can be turbocharged for day trading as well. The best stochastic RSI settings typically use a 14-period base calculation with a 3-period smoothing for both %K and %D lines.",
+            "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+            "出どころの質": "証券会社・ブログ（暗号資産の取引の記事・時間足の指定なし）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "(21, 5, 5)（日足で遅くする）",
+            "逐語": "Slower settings (21/5/5) work better on daily charts where you want to filter intraday noise.",
+            "URL": "https://www.tradingsim.com/blog/stochastic-rsi",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          0.8,
+          0.2
+        ],
+        "意味": "上が買われ過ぎ、下が売られ過ぎ",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "A move above .80 is considered overbought, while a move below .20 is considered oversold.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      },
+      {
+        "形": "値",
+        "値": 0.5,
+        "意味": "中央の線",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "As a bound oscillator, the centerline is at .50.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "When using the Stoch RSI, overbought and oversold work best when trading along with the underlying trend.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "大きな流れの向きに沿って使う"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル まだ決めていない／デイトレ [14]",
+        "教科書": "資料の表の既定＝[14]・\"%K 3\"・\"%D 3\"・\"RSI 14・%K 5・%D 3\"・[14, 14, 3, 3]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochrsi"
+      },
+      {
+        "欄": "既定",
+        "値": "%K 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "%D 3",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502333-stochastic-rsi-stoch-rsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "RSI 14・%K 5・%D 3",
+        "結果": "合う",
+        "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          14,
+          3,
+          3
+        ],
+        "結果": "合う",
+        "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading"
+      },
+      {
+        "欄": "範囲",
+        "値": "(21, 5, 5)（日足で遅くする）",
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/stochastic-rsi"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "THERMO%",
+    "元の指標": "Elder の Market Thermometer",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "Elder's Thermometer measures price volatility.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "比の値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "THERMO",
+        "組の相手": "thermo_ma・thermo_long・thermo_short",
+        "逐語": "pd.DataFrame: thermo, thermo_ma, thermo_long, thermo_short columns.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "The THER is the highest absolute difference of either, the previous low minus the current low or, the current high minus the previous high."
+      ],
+      "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+      "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは THER をその 20本 EMA で割っている"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "ema_period",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              20
+            ],
+            "逐語": "//period = user defined, default is 20",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "チャートソフトの説明（MotiveWave）。この期間は温度計の値を平らにする EMA の期間",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              22
+            ],
+            "逐語": "You can configure the \"Explosive Move threshold\" (default: 3), \"Idle Market Threshold\" (default: 7) and \"Thermometer EMA length\" (default: 22) via Options page.",
+            "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+            "出どころの質": "TradingView の公開スクリプト（LazyBear）。★MotiveWave・pandas-ta の 20 と食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              20
+            ],
+            "逐語": "length (int): The period. Default: ```20```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+            "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "//period = user defined, default is 20",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 20,
+            "逐語": "length = int(length) if length and length > 0 else 20",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "buyFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "//buy factor = buyFac, user defined, default is 2",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 2,
+            "逐語": "long = float(long) if long and long > 0 else 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "sellFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.5,
+            "逐語": "//sell factor = sellFac, user defined, default is .5",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.5,
+            "逐語": "short = float(short) if short and short > 0 else 0.5",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "倍率",
+        "値": [
+          2,
+          0.5
+        ],
+        "意味": "THER が平均の何倍かで売り・買い（MotiveWave の書き方）",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "倍率の名前と向きの対応は、MotiveWave の文とライブラリで違う（ライブラリは thermo < 平均 × 2 を long、thermo > 平均 × 0.5 を short とする）。1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "THER ÷ 終値 × 100",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝[20]・[22]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          22
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第5回で同じ元の指標（THERMO比）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "THERMO_EMA%",
+    "元の指標": "Elder の Market Thermometer",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "Elder's Thermometer measures price volatility.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "比の値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "THERMO",
+        "組の相手": "thermo_ma・thermo_long・thermo_short",
+        "逐語": "pd.DataFrame: thermo, thermo_ma, thermo_long, thermo_short columns.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "The THER is the highest absolute difference of either, the previous low minus the current low or, the current high minus the previous high."
+      ],
+      "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+      "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは THER をその 20本 EMA で割っている"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（資料の表にパラメータの名前が無い）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "//period = user defined, default is 20",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 20,
+            "逐語": "length = int(length) if length and length > 0 else 20",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "buyFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "//buy factor = buyFac, user defined, default is 2",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 2,
+            "逐語": "long = float(long) if long and long > 0 else 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "sellFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.5,
+            "逐語": "//sell factor = sellFac, user defined, default is .5",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.5,
+            "逐語": "short = float(short) if short and short > 0 else 0.5",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "倍率",
+        "値": [
+          2,
+          0.5
+        ],
+        "意味": "THER が平均の何倍かで売り・買い（MotiveWave の書き方）",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "倍率の名前と向きの対応は、MotiveWave の文とライブラリで違う（ライブラリは thermo < 平均 × 2 を long、thermo > 平均 × 0.5 を short とする）。1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "THER の EMA ÷ 終値 × 100",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "ema_n の範囲 まだ決めていない・代表の値 スキャル [20]／デイトレ [20]",
+        "教科書": "資料の表の既定＝無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第5回で同じ元の指標（THERMO比）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "THERMO原作%",
+    "元の指標": "Elder の Market Thermometer",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "Elder's Thermometer measures price volatility.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "比の値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "THERMO",
+        "組の相手": "thermo_ma・thermo_long・thermo_short",
+        "逐語": "pd.DataFrame: thermo, thermo_ma, thermo_long, thermo_short columns.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "The THER is the highest absolute difference of either, the previous low minus the current low or, the current high minus the previous high."
+      ],
+      "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+      "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは THER をその 20本 EMA で割っている"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "ema_period",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              20
+            ],
+            "逐語": "//period = user defined, default is 20",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "チャートソフトの説明（MotiveWave）。この期間は温度計の値を平らにする EMA の期間",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              22
+            ],
+            "逐語": "You can configure the \"Explosive Move threshold\" (default: 3), \"Idle Market Threshold\" (default: 7) and \"Thermometer EMA length\" (default: 22) via Options page.",
+            "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/",
+            "出どころの質": "TradingView の公開スクリプト（LazyBear）。★MotiveWave・pandas-ta の 20 と食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              20
+            ],
+            "逐語": "length (int): The period. Default: ```20```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py",
+            "出どころの質": "ライブラリ（pandas-ta 0.4.71b0 のソースの説明文とコード。GitHub の原本は 404 だったため PyPI の配布物を開いた）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "//period = user defined, default is 20",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 20,
+            "逐語": "length = int(length) if length and length > 0 else 20",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "buyFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "//buy factor = buyFac, user defined, default is 2",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 2,
+            "逐語": "long = float(long) if long and long > 0 else 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "sellFac",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.5,
+            "逐語": "//sell factor = sellFac, user defined, default is .5",
+            "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+            "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.5,
+            "逐語": "short = float(short) if short and short > 0 else 0.5",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/volatility/thermo.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "倍率",
+        "値": [
+          2,
+          0.5
+        ],
+        "意味": "THER が平均の何倍かで売り・買い（MotiveWave の書き方）",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "倍率の名前と向きの対応は、MotiveWave の文とライブラリで違う（ライブラリは thermo < 平均 × 2 を long、thermo > 平均 × 0.5 を short とする）。1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "If the THER is more than MA times sellFac a sell signal is generated. Conversely, if the THER is less than the MA times buyFac a buy signal is given.",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm",
+        "出どころの質": "取引の道具の会社の説明（MotiveWave）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "原作の THER（内はらみ足は 0）÷ 終値 × 100",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝[20]・[22]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://www.motivewave.com/studies/elders_thermometer.htm"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          22
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/script/HqvTuEMW-Elder-s-Market-Thermometer-LazyBear/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/thermo.py"
+      }
+    ],
+    "分からなかったこと": [
+      "Elder の原作の本（Come Into My Trading Room）の本文は開いていない",
+      "教科書の欄の一部は、第5回で同じ元の指標（THERMO比）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "TR%",
+    "元の指標": "True Range（Wilder）",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "The Average True Range (ATR) is a tool used in technical analysis to measure volatility.",
+        "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "ATR の元の1本ぶんの値。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "TR%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "true range = max[(high - low), abs(high - previous close), abs (low - previous close)]"
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（資料の表にパラメータの名前が無い）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "真の値幅 ÷ 終値 × 100",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TRIX",
+    "元の指標": "TRIX（Jack Hutson）",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の大きさの読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "%",
+        "下限": null,
+        "上限": null,
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "TRIX",
+        "組の相手": "TRIX とシグナル線",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TRIX = 1-period percent change in Triple-Smoothed EMA"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period・signal",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The standard setting for TRIX is 15 for the triple smoothed EMA and 9 for the signal line.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "期間 18（シグナルは書かれていない）",
+            "逐語": "1. Single Smoothed EMA = 18 Period EMA of Closing Price.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+            "出どころの質": "定番の教育サイト（TradingView ヘルプ）の計算例。StockCharts の 15 と食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "期間 30（シグナルは出力に無い）",
+            "逐語": "optInTimePeriod integer 30 1–100000 EMA period used at each of the three smoothing passes",
+            "URL": "https://ta-lib.org/functions/trix.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。StockCharts の 15 と食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The common published defaults are a 15-period length for all three smoothing passes and a 9-period EMA of the TRIX line as the signal.",
+            "URL": "https://www.luxalgo.com/blog/trix-triple-exponential-moving-average-guide/",
+            "出どころの質": "ブログ（LuxAlgo）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "8〜12",
+            "逐語": "If you want something more sensitive to price movements for day trading, you can drop to the 8-12 period range.",
+            "URL": "https://howtotrade.com/indicators/trix-indicator/",
+            "出どころの質": "ブログ（howtotrade.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（day trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "敏感にするなら 5、鈍くするなら 45（既定 15 との比較）",
+            "逐語": "Chartists looking for more sensitivity should try a shorter timeframe (5 versus 15). This will make the indicator more volatile and better suited for centerline crossovers. Chartists looking for less sensitivity should try a longer timeframe (45 versus 15).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Signal line crossovers on the other hand, can signify an underlying change in momentum.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The key signals generated by TRIX are divergences and signal line crossovers.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線（EMA）",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル [15]／デイトレ [15]；g_ の範囲 9〜9・代表の値 スキャル [9]／デイトレ [9]",
+        "教科書": "資料の表の既定＝[15, 9]・\"期間 18（シグナルは書かれていない）\"・\"期間 30（シグナルは出力に無い）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      },
+      {
+        "欄": "既定",
+        "値": "期間 18（シグナルは書かれていない）",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/"
+      },
+      {
+        "欄": "既定",
+        "値": "期間 30（シグナルは出力に無い）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/trix.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/blog/trix-triple-exponential-moving-average-guide/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "8〜12",
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/trix-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "敏感にするなら 5、鈍くするなら 45（既定 15 との比較）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TRIX_EMAシグナル",
+    "元の指標": "TRIX のシグナル線",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の大きさの読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "%",
+        "下限": null,
+        "上限": null,
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "シグナル線",
+        "組の相手": "TRIX とシグナル線",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TRIX = 1-period percent change in Triple-Smoothed EMA"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period・signal",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (15,9). These parameters can be adjusted to increase or decrease sensitivity. The signal line default is 9, which can also be adjusted.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The indicator settings can be adjusted to suit individual preferences and trading styles , but traders commonly use the default settings of 15 for the triple-smoothed EMA and 9 for the TRIX signal line.",
+            "URL": "https://howtotrade.com/indicators/trix-indicator/",
+            "出どころの質": "ブログ（howtotrade.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Signal line crossovers on the other hand, can signify an underlying change in momentum.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The key signals generated by TRIX are divergences and signal line crossovers.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線（EMA）",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル [15]／デイトレ [15]；g_ の範囲 9〜9・代表の値 スキャル [9]／デイトレ [9]",
+        "教科書": "資料の表の既定＝[15, 9]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/trix-indicator/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TRIX_EMAヒスト",
+    "元の指標": "TRIX とシグナル線の差",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の大きさの読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "%",
+        "下限": null,
+        "上限": null,
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "ヒストグラム",
+        "組の相手": "TRIX とシグナル線",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TRIX = 1-period percent change in Triple-Smoothed EMA"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period・signal",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The standard setting for TRIX is 15 for the triple smoothed EMA and 9 for the signal line.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "期間 8〜12",
+            "逐語": "If you want something more sensitive to price movements for day trading, you can drop to the 8-12 period range.",
+            "URL": "https://howtotrade.com/indicators/trix-indicator/",
+            "出どころの質": "ブログ（howtotrade.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（day trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "敏感にするなら 5、鈍くするなら 45",
+            "逐語": "Chartists looking for more sensitivity should try a shorter timeframe (5 versus 15). This will make the indicator more volatile and better suited for centerline crossovers. Chartists looking for less sensitivity should try a longer timeframe (45 versus 15).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Signal line crossovers on the other hand, can signify an underlying change in momentum.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The key signals generated by TRIX are divergences and signal line crossovers.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線（EMA）",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル [15]／デイトレ [15]；g_ の範囲 9〜9・代表の値 スキャル [9]／デイトレ [9]",
+        "教科書": "資料の表の既定＝[15, 9]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "期間 8〜12",
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/trix-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "敏感にするなら 5、鈍くするなら 45",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TRIXシグナル",
+    "元の指標": "TRIX のシグナル線",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の大きさの読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "%",
+        "下限": null,
+        "上限": null,
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "シグナル線",
+        "組の相手": "TRIX とシグナル線",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TRIX = 1-period percent change in Triple-Smoothed EMA"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period・signal",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "Once the indicator is chosen from the dropdown list, the default parameter setting appears (15,9). These parameters can be adjusted to increase or decrease sensitivity. The signal line default is 9, which can also be adjusted.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The indicator settings can be adjusted to suit individual preferences and trading styles , but traders commonly use the default settings of 15 for the triple-smoothed EMA and 9 for the TRIX signal line.",
+            "URL": "https://howtotrade.com/indicators/trix-indicator/",
+            "出どころの質": "ブログ（howtotrade.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Signal line crossovers on the other hand, can signify an underlying change in momentum.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The key signals generated by TRIX are divergences and signal line crossovers.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線（EMA）",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "シグナル線の平均",
+        "指標データ": "単純移動平均（TRIXシグナル・TRIXヒスト）",
+        "教科書": "EMA（ChartSchool は 9本の EMA、TradingView は EMA と書く）",
+        "注": "どちらが正しいかは決めない"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル [15]／デイトレ [15]；g_ の範囲 9〜9・代表の値 スキャル [9]／デイトレ [9]",
+        "教科書": "資料の表の既定＝[15, 9]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/trix-indicator/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TRIXヒスト",
+    "元の指標": "TRIX とシグナル線の差",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の大きさの読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "%",
+        "下限": null,
+        "上限": null,
+        "逐語": "TRIX is a momentum oscillator that displays the percent rate of change of a triple exponentially smoothed moving average.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "ヒストグラム",
+        "組の相手": "TRIX とシグナル線",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TRIX = 1-period percent change in Triple-Smoothed EMA"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period・signal",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              15,
+              9
+            ],
+            "逐語": "The standard setting for TRIX is 15 for the triple smoothed EMA and 9 for the signal line.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "期間 8〜12",
+            "逐語": "If you want something more sensitive to price movements for day trading, you can drop to the 8-12 period range.",
+            "URL": "https://howtotrade.com/indicators/trix-indicator/",
+            "出どころの質": "ブログ（howtotrade.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（day trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "敏感にするなら 5、鈍くするなら 45",
+            "逐語": "Chartists looking for more sensitivity should try a shorter timeframe (5 versus 15). This will make the indicator more volatile and better suited for centerline crossovers. Chartists looking for less sensitivity should try a longer timeframe (45 versus 15).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Signal line crossovers on the other hand, can signify an underlying change in momentum.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The key signals generated by TRIX are divergences and signal line crossovers.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線（EMA）",
+        "逐語": "There is also typically a signal line which is an EMA of the TRIX line.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502331-trix/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "シグナル線の平均",
+        "指標データ": "単純移動平均（TRIXシグナル・TRIXヒスト）",
+        "教科書": "EMA（ChartSchool は 9本の EMA、TradingView は EMA と書く）",
+        "注": "どちらが正しいかは決めない"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜21・代表の値 スキャル [15]／デイトレ [15]；g_ の範囲 9〜9・代表の値 スキャル [9]／デイトレ [9]",
+        "教科書": "資料の表の既定＝[15, 9]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          15,
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "期間 8〜12",
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/trix-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "敏感にするなら 5、鈍くするなら 45",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/trix"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TSI",
+    "元の指標": "True Strength Index（William Blau）",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "Developed by William Blau and introduced in Stocks & Commodities Magazine, the True Strength Index (TSI) is a momentum oscillator based on a double smoothing of price changes.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "0 より上は勢いが上向き、下は下向き",
+        "向きを持つ": "持つ",
+        "逐語": "Zero is the reference line — positive means the smoothed momentum is net upward, negative net downward — and its crossings are the usual trade trigger.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値域は、銘柄の値動きと本数で変わる、と書く（決まった値域は書いてない）"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "TSI",
+        "組の相手": "TSI とシグナル線",
+        "逐語": "A signal line is not part of the output; apply EMA to outReal to obtain one, since no source",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TSI = 100 * EMA(EMA(m, firstPeriod), secondPeriod) / EMA(EMA(|m|, firstPeriod), secondPeriod)"
+      ],
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "first（長い方・先にならす）・second（短い方・後にならす）・signal",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "25, 13（シグナルは書かれていない）",
+            "逐語": "Second, calculate a 25-period EMA of this price change. Third, calculate a 13-period EMA of this 25-period EMA to create a double smoothing.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。計算の説明の値",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "25, 13（シグナルは出力に無い）",
+            "逐語": "optInFirstPeriod integer 25 2–100000 Period of the first smoothing, applied to the raw momentum / optInSecondPeriod integer 13 2–100000 Period of the second smoothing, applied to the first",
+            "URL": "https://ta-lib.org/functions/tsi.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。シグナルについては 'A signal line is not part of the output; apply EMA to outReal to obtain one, since no source agrees on its period.' と書く",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る。1サイトだけ"
+          },
+          {
+            "値": "25, 13, シグナル 7 または 13",
+            "逐語": "The classic settings are 25 for the long (first) smoothing, 13 for the short (second) smoothing, and a 7- or 13-period signal line.",
+            "URL": "https://www.tradingsim.com/blog/true-strength-index",
+            "出どころの質": "教育ブログ（TradingSim）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              25,
+              13,
+              7
+            ],
+            "逐語": "Standard settings for the TSI include smoothing periods of 25, 13, and 7.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/",
+            "出どころの質": "証券会社（LiteFinance）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "13 と 25（SMA と書いている）",
+            "逐語": "1. Launch your True Strength Index indicator below the price chart. The default settings are the 13-period and 25-period SMAs.",
+            "URL": "https://howtotrade.com/indicators/true-strength-index/",
+            "出どころの質": "ブログ（howtotrade.com）。ほかの出どころ（EMA）と平均の種類が食い違う",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              7,
+              4,
+              2
+            ],
+            "逐語": "Scalping on 1-minute to 5-minute charts requires even faster settings, but TSI's strength lies in longer-term analysis. Consider 7/4/2 for scalping, though you might prefer faster indicators like stochastic for very short-term trading.",
+            "URL": "https://indicator.trading/en/indicator/tsi",
+            "出どころの質": "ブログ（indicator.trading）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足〜5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5",
+            "逐語": "Scalping: FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5",
+            "URL": "https://www.mql5.com/en/market/product/145132",
+            "出どころの質": "MQL5 マーケットの製品の説明（低）。'FastEMAPeriod' は 'Length of the first (fast) EMA for smoothing MTM' と書かれ、順番の意味が Blau の 25/13 と逆",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（Scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              13,
+              7,
+              4
+            ],
+            "逐語": "For day trading on 15-minute to 1-hour charts, consider faster settings like 13/7/4 . This reduces lag while maintaining TSI's noise-filtering benefits.",
+            "URL": "https://indicator.trading/en/indicator/tsi",
+            "出どころの質": "ブログ（indicator.trading）",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足〜1時間足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              13,
+              8,
+              5
+            ],
+            "逐語": "Forex 15min–1H 13, 8, 5 Scalping & intraday",
+            "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/",
+            "出どころの質": "証券会社（Aron Groups）の解説の表の1行",
+            "読んだ日": "2026-11-03",
+            "時間足": "外国為替の15分足〜1時間足（原文の呼び名は Scalping & intraday）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7",
+            "逐語": "Day Trading: FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7",
+            "URL": "https://www.mql5.com/en/market/product/145132",
+            "出どころの質": "MQL5 マーケットの製品の説明（低）",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（Day Trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "シグナル 7〜12",
+            "逐語": "The True Strength Index indicator uses a single line, usually with a 7-12 ranged period EMA of the single line.",
+            "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+            "出どころの質": "定番の教育サイト（TradingView ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": 0,
+        "意味": "0 の線",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Zero is the reference line — positive means the smoothed momentum is net upward, negative net downward — and its crossings are the usual trade trigger.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      },
+      {
+        "形": "前提つき",
+        "値": null,
+        "意味": "買われ過ぎ・売られ過ぎの線は、値動きの大きさと本数で変わる",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Overbought and oversold levels for the True Strength Index vary based on a security's volatility and the indicator's period settings.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "The centerline crossover is the purest signal.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "0 の線のクロス"
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Extreme readings mark overbought and oversold conditions, and divergence against price is the classic Blau reading.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "上へ抜ける",
+        "値": 0,
+        "逐語": "The centerline crossover is the purest signal.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線",
+        "逐語": "As with MACD, a signal line can be applied to identify upturns and downturns.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "f_ の範囲 4〜13・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；s_ の範囲 7〜26・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；g_ の範囲 7〜12・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝\"25, 13（シグナルは書かれていない）\"・\"25, 13（シグナルは出力に無い）\"・\"25, 13, シグナル 7 または 13\"・[25, 13, 7]・\"13 と 25（SMA と書いている）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "25, 13（シグナルは書かれていない）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index"
+      },
+      {
+        "欄": "既定",
+        "値": "25, 13（シグナルは出力に無い）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "既定",
+        "値": "25, 13, シグナル 7 または 13",
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/true-strength-index"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          25,
+          13,
+          7
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "13 と 25（SMA と書いている）",
+        "結果": "合う",
+        "URL": "https://howtotrade.com/indicators/true-strength-index/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          7,
+          4,
+          2
+        ],
+        "結果": "合う",
+        "URL": "https://indicator.trading/en/indicator/tsi"
+      },
+      {
+        "欄": "スキャル",
+        "値": "FastEMAPeriod=5, SlowEMAPeriod=13, SignalEMAPeriod=5",
+        "結果": "合う",
+        "URL": "https://www.mql5.com/en/market/product/145132"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          13,
+          7,
+          4
+        ],
+        "結果": "合う",
+        "URL": "https://indicator.trading/en/indicator/tsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          13,
+          8,
+          5
+        ],
+        "結果": "合う",
+        "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "FastEMAPeriod=7, SlowEMAPeriod=14, SignalEMAPeriod=7",
+        "結果": "合う",
+        "URL": "https://www.mql5.com/en/market/product/145132"
+      },
+      {
+        "欄": "範囲",
+        "値": "シグナル 7〜12",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "TSIシグナル",
+    "元の指標": "True Strength Index のシグナル線",
+    "教科書の役割": [
+      {
+        "区分": "勢い",
+        "逐語": "Developed by William Blau and introduced in Stocks & Commodities Magazine, the True Strength Index (TSI) is a momentum oscillator based on a double smoothing of price changes.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "0 より上は勢いが上向き、下は下向き",
+        "向きを持つ": "持つ",
+        "逐語": "Zero is the reference line — positive means the smoothed momentum is net upward, negative net downward — and its crossings are the usual trade trigger.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値域は、銘柄の値動きと本数で変わる、と書く（決まった値域は書いてない）"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "シグナル線",
+        "組の相手": "TSI とシグナル線",
+        "逐語": "A signal line is not part of the output; apply EMA to outReal to obtain one, since no source",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TSI = 100 * EMA(EMA(m, firstPeriod), secondPeriod) / EMA(EMA(|m|, firstPeriod), secondPeriod)"
+      ],
+      "URL": "https://ta-lib.org/functions/tsi.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "first・second・signal",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "シグナル 7 または 13",
+            "逐語": "The classic settings are 25 for the long (first) smoothing, 13 for the short (second) smoothing, and a 7- or 13-period signal line.",
+            "URL": "https://www.tradingsim.com/blog/true-strength-index",
+            "出どころの質": "教育ブログ（TradingSim）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              25,
+              13,
+              7
+            ],
+            "逐語": "Standard settings for the TSI include smoothing periods of 25, 13, and 7.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/",
+            "出どころの質": "証券会社（LiteFinance）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "決まった値は無い",
+            "逐語": "A signal line is not part of the output; apply EMA to outReal to obtain one, since no source agrees on its period.",
+            "URL": "https://ta-lib.org/functions/tsi.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              7,
+              4,
+              2
+            ],
+            "逐語": "Consider 7/4/2 for scalping, though you might prefer faster indicators like stochastic for very short-term trading.",
+            "URL": "https://indicator.trading/en/indicator/tsi",
+            "出どころの質": "ブログ（indicator.trading）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足〜5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              13,
+              7,
+              4
+            ],
+            "逐語": "For day trading on 15-minute to 1-hour charts, consider faster settings like 13/7/4 .",
+            "URL": "https://indicator.trading/en/indicator/tsi",
+            "出どころの質": "ブログ（indicator.trading）",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足〜1時間足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              13,
+              8,
+              5
+            ],
+            "逐語": "Forex 15min–1H 13, 8, 5 Scalping & intraday",
+            "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/",
+            "出どころの質": "証券会社（Aron Groups）の解説の表の1行",
+            "読んだ日": "2026-11-03",
+            "時間足": "外国為替の15分足〜1時間足（原文の呼び名は Scalping & intraday）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "シグナル 7〜12",
+            "逐語": "The True Strength Index indicator uses a single line, usually with a 7-12 ranged period EMA of the single line.",
+            "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/",
+            "出どころの質": "定番の教育サイト（TradingView ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": 0,
+        "意味": "0 の線",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Zero is the reference line — positive means the smoothed momentum is net upward, negative net downward — and its crossings are the usual trade trigger.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      },
+      {
+        "形": "前提つき",
+        "値": null,
+        "意味": "買われ過ぎ・売られ過ぎの線は、値動きの大きさと本数で変わる",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Overbought and oversold levels for the True Strength Index vary based on a security's volatility and the indicator's period settings.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "The centerline crossover is the purest signal.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "0 の線のクロス"
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Extreme readings mark overbought and oversold conditions, and divergence against price is the classic Blau reading.",
+        "URL": "https://ta-lib.org/functions/tsi.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "上へ抜ける",
+        "値": 0,
+        "逐語": "The centerline crossover is the purest signal.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "形": "クロスの相手",
+        "値": "シグナル線",
+        "逐語": "As with MACD, a signal line can be applied to identify upturns and downturns.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/true-strength-index",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "f_ の範囲 4〜13・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；s_ の範囲 7〜26・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない；g_ の範囲 7〜12・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝\"シグナル 7 または 13\"・[25, 13, 7]・\"決まった値は無い\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "シグナル 7 または 13",
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/true-strength-index"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          25,
+          13,
+          7
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/true-strength-intex-tsi/"
+      },
+      {
+        "欄": "既定",
+        "値": "決まった値は無い",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/tsi.html"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          7,
+          4,
+          2
+        ],
+        "結果": "合う",
+        "URL": "https://indicator.trading/en/indicator/tsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          13,
+          7,
+          4
+        ],
+        "結果": "合う",
+        "URL": "https://indicator.trading/en/indicator/tsi"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          13,
+          8,
+          5
+        ],
+        "結果": "合う",
+        "URL": "https://arongroups.co/technical-analyze/true-strength-index-tsi/"
+      },
+      {
+        "欄": "範囲",
+        "値": "シグナル 7〜12",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000592290-true-strength-index/"
+      }
+    ],
+    "分からなかったこと": []
+  }
+]
