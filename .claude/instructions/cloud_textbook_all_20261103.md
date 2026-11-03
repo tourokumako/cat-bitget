@@ -1,4 +1,4 @@
-# 依頼書｜指標データに要る項目を教科書で調べる・第5回（クラウドのセッション用）
+# 依頼書｜指標データに要る項目を教科書で調べる・第6回（クラウドのセッション用・夜間の長い走行）
 
 ## この作業の目的
 
@@ -6,64 +6,60 @@ engine_tuner は、指標の役割・パラメータ・閾値を、教科書を�
 
 この作業は、後の工事（ToDo の169・212・213・70番）の材料を作ります。値は決めません。値を決めるのは、それぞれの工事の設計書と監査です。この作業は、「どのページに何と書いてあるか」だけを書きます。
 
-第5回の相手は42種です。第1回〜第4回の結果は、research/textbook-all-1〜4 ブランチの out_c1.json〜out_c4.json に在ります。
+第6回の相手は154種です。第1回〜第5回の結果は、research/textbook-all-1〜5 ブランチの out_c1.json〜out_c5.json に在ります。
 
-この42種は、指標データではオフの指標で、資料の表3本に行がありません。下の表の「調べる相手」は、指標データの定義の文とライブラリとの対応から書きました。指標データの名前そのものを書いた文が無いときは、そのことを注の欄に書きます。
+## 頼んだ人は寝ています
 
-名前が「比」「%」「傾き」で終わる指標は、指標データでは、元の指標を割って単位をそろえた物や、変化を取った物です。元の指標について Q1〜Q7 に答えます。割った形や傾きにした形を書いた文が無いときは、「見つからなかった」と書きます。
+この作業を頼んだ人は寝ていて、質問に答えられません。確認の質問をせず、最後まで進めます。
 
-res_hi・res_lo・sup_hi・sup_lo・mid の5種は、指標データでは値段の水準です。1時間足の確定した山と谷を束ねた帯から作ります。この名前そのものは教科書に無い見込みです。サポート帯とレジスタンス帯の作り方と使い方について答え、名前が無いことを注の欄に書きます。
+- 見込みの時間は2時間〜3時間です。
+- 20種ごとにファイルを作り、そのたびにコミットとプッシュをします。止まっても、そこまでの分が残ります。
+- 始めるときに、`git ls-remote origin research/textbook-all-6` でブランチが在るかを確かめます。在れば、そのブランチの続きから始めます。ブランチの中に在る out_c6_*.json の番号を飛ばします。
+- 会話の記録が要約に置き換わったときは、この依頼書の「守ること」と「出す物」を読み直します。作業の形が分からなくなったら、前に作ったファイルの1行と同じ形で書きます。
+- 始めた時刻と終えた時刻を `date -u` で測ります。
 
 ## 調べる相手
 
+154種は、指標データではオンの指標です。146種は資料の表に行があり、8種は行がありません。
+
+**行のある146種：** .claude/state/indicator_params_review.json の、同じ「種類」の行の「元の指標」の欄が、調べる相手です。
+
+**行の無い8種：**
+
 | 指標データの名前 | 調べる相手 |
 |---|---|
-| BOP | Balance of Power |
-| HA上ヒゲ比 | Heikin Ashi の上ヒゲを全幅で割った物 |
-| HA下ヒゲ比 | Heikin Ashi の下ヒゲを全幅で割った物 |
-| HA実体% | Heikin Ashi の実体を終値で割った物 |
-| QSTICK% | Qstick（Tushar Chande）を終値で割った物 |
-| TD_SEQ_DN | TD Sequential の下げ側（Tom DeMark） |
-| TD_SEQ_UP | TD Sequential の上げ側（Tom DeMark） |
-| body比 | ローソク足の実体 ÷ 高値と安値の幅 |
-| pinbar | Pin Bar。指標データは下ヒゲと上ヒゲの差 ÷ 全幅 |
-| 上ヒゲ比 | ローソク足の上ヒゲ ÷ 全幅 |
-| 下ヒゲ比 | ローソク足の下ヒゲ ÷ 全幅 |
-| 内側バー | Inside Bar（高値と安値が前の足の内側に収まる足） |
-| 包み足 | Engulfing Pattern |
-| 孕み足 | Harami Pattern |
-| 実体幅比 | ローソク足の実体 ÷ 直前 n 本の値幅の平均（十字線の判定の中身） |
-| 連続本数 | 同じ向きのローソク足が続いた本数 |
-| ADOSC比 | Chaikin A/D Oscillator を平均出来高で割った物 |
-| AOBV_LR | Archer On Balance Volume |
-| KVOシグナル比 | Klinger Volume Oscillator のシグナル線を平均出来高で割った物 |
-| KVO比 | Klinger Volume Oscillator を平均出来高で割った物 |
-| MARKETFI比 | Market Facilitation Index（Bill Williams） |
-| PVI傾き | Positive Volume Index |
-| PVOL比 | Price-Volume（値段 × 出来高）を n 本の平均で割った物 |
-| VFI | Volume Flow Indicator |
-| VOSC | Volume Oscillator |
-| WAD傾き | Williams Accumulation/Distribution |
-| 出来高変化率% | 出来高の n 本前からの変化率 |
-| CVI | Chaikin Volatility |
-| HT_DCPERIOD | Hilbert Transform の Dominant Cycle Period |
-| PDIST% | Price Distance を終値で割った物 |
-| RVI | Relative Volatility Index（Donald Dorsey）。RVGI とは別の物 |
-| SQZ% | TTM Squeeze（ライブラリの squeeze の1列目）を終値で割った物 |
-| SQZPRO_ON_NARROW | TTM Squeeze Pro（ライブラリの squeeze_pro）の NARROW の列 |
-| SQZPRO_ON_WIDE | TTM Squeeze Pro（ライブラリの squeeze_pro）の WIDE の列 |
-| THERMO比 | Elder Thermometer を、その EMA で割った物 |
-| kurtosis | 直近 n 本の終値の尖度（ライブラリの kurtosis） |
-| skew | 直近 n 本の終値の歪度（ライブラリの skew） |
-| res_hi | レジスタンス帯の上端（確定した山を束ねた帯） |
-| res_lo | レジスタンス帯の下端 |
-| sup_hi | サポート帯の上端（確定した谷を束ねた帯） |
-| sup_lo | サポート帯の下端 |
-| mid | レンジの中央（レジスタンス帯の下端とサポート帯の上端の中間） |
+| CVD | Cumulative Volume Delta。テイカー買い − テイカー売りの累積 |
+| L-S比 | Long/Short Ratio。ロング口座数 ÷ ショート口座数（Binance の先物のメトリクス） |
+| taker_ls | Taker Buy/Sell Volume Ratio。テイカー買い量 ÷ テイカー売り量（Binance の先物のメトリクス） |
+| W% | レンジの帯の幅。(レジスタンス帯の上端 − サポート帯の下端) ÷ 終値 × 100 |
+| 帯内位置% | 帯の上半分の中の位置。(終値 − レンジの中央) ÷ (レジスタンス帯の上端 − レンジの中央) |
+| 下半分位置 | 帯の下半分の中の位置。(終値 − レンジの中央) ÷ (レンジの中央 − サポート帯の下端) |
+| 時刻 | バーの開始時刻の時（0〜23・UTC）。相場の時間帯の話として調べる |
+| 曜日 | バーの曜日。相場の曜日の話として調べる |
+
+**名前の読み方：**
+
+- 「close vs ○○」は、指標データでは、終値と線 ○○ の距離です。元の線について Q1〜Q7 に答えます。
+- 名前が「比」「%」「傾き」で終わる指標は、指標データでは、元の指標を割って単位をそろえた物や、変化を取った物です。元の指標について答えます。
+- 割った形・距離にした形・傾きにした形を書いた文が無いときは、「見つからなかった」と書きます。
+- 指標データの名前そのものを書いた文が無いときは、そのことを注の欄に書きます。
+
+**ファイルごとの相手：**
+
+| ファイル | 相手 |
+|---|---|
+| out_c6_01.json | ABER位置・ABER原作位置・ADX・AO%・AROOND・AROONU・ATR%・BB%b・BB幅・CHOP・CVD・DI差・Donchian幅・ER・HT_DCPHASE・HWC位置・HWC幅%・KST・KSTシグナル・Keltner上 |
+| out_c6_02.json | Keltner下・L-S比・LeeMykland・LeeMykland_E36版・MACDシグナル線%・MACDヒスト%・MACD線%・MAD比・MASSI・MMI・POC・PPO・PPOシグナル・PPOヒスト・PSAR反転・PVT傾き・RCI・RSI・S-Rタッチ1時間ATR・S-Rタッチ数 |
+| out_c6_03.json | S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SQZ_ON・SQZ_ON_Carter・STC・STCstoch・StochRSI%D・StochRSI%K・StochRSI素%K・THERMO%・THERMO_EMA%・THERMO原作%・TR%・TRIX・TRIX_EMAシグナル・TRIX_EMAヒスト・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル |
+| out_c6_04.json | TSIヒスト・VAH・VAL・VHF・W%・WMA傾き%・close vs ABER_ZG%・close vs ACCBL%・close vs ACCBU%・close vs ALMA%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs DEMA%・close vs EMA・close vs FAMA%・close vs FAMA_HL%・close vs FWMA%・close vs HILO% |
+| out_c6_05.json | close vs HMA%・close vs HT_TRENDLINE%・close vs HT_TRENDLINE_HL%・close vs HWMA%・close vs JMA%・close vs KAMA%・close vs LINREG%・close vs LRb%・close vs MAMA%・close vs MAMA_HL%・close vs MCGD%・close vs MEDIAN%・close vs MIDPOINT%・close vs MIDPRICE%・close vs MMAR%・close vs PMAX%・close vs PSAR%・close vs PWMA%・close vs RAINBOW%・close vs RMA% |
+| out_c6_06.json | close vs SAREXT%・close vs SINWMA%・close vs SMA・close vs SSF%・close vs SSF平均%・close vs SWMA%・close vs T3%・close vs TEMA%・close vs TRIMA%・close vs TRIMA_TA%・close vs TSF%・close vs VIDYA%・close vs VIDYA_CMO%・close vs VWAP・close vs VWAP典型・close vs VWMA%・close vs WMA%・close vs ZLMA%・fib位置・fractal安値距離% |
+| out_c6_07.json | fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol・realized_vol_rv・swing安値距離・swing高値距離・taker_ls・下半分位置・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1 |
+| out_c6_08.json | 前週pivotS1・基準線・安値からの経過バー・安値切り上げ幅%・帯内位置%・当日POC・当日VAH・当日VAL・当日VWAP・時刻・曜日・構造破断距離%・高値からの経過バー・高値切り上げ幅% |
 
 ## やること
 
-42種のそれぞれについて、次の Q1〜Q7 に教科書で答えます。場面と売買スタイルは絞りません。
+154種のそれぞれについて、次の Q1〜Q7 に教科書で答えます。場面と売買スタイルは絞りません。
 
 | 番号 | 問い | 書く欄 |
 |---|---|---|
@@ -100,7 +96,7 @@ res_hi・res_lo・sup_hi・sup_lo・mid の5種は、指標データでは値段
 
 次の2つを確かめます。
 
-1. indicator_params_review.json に行があるときは、書いてある値と URL についてページを開き、その値と逐語がページに在るかを確かめます。結果は「合う」「違う」「開けない」のどれかで書きます。行が無いときは、「資料の表の確認」を空の配列にします。今回の42種は、行が無い見込みです。
+1. indicator_params_review.json に行があるときは、書いてある値と URL についてページを開き、その値と逐語がページに在るかを確かめます。結果は「合う」「違う」「開けない」のどれかで書きます。行が無いときは、「資料の表の確認」を空の配列にします。今回は146種に行が在り、8種に行がありません。同じ URL は、開いた本文を使い回してかまいません。
 2. 調べた値が indicators.json の値や定義の文と違うときは、違いを書きます。どちらが正しいかは決めません。
 
 ## 守ること
@@ -119,18 +115,24 @@ res_hi・res_lo・sup_hi・sup_lo・mid の5種は、指標データでは値段
 12. リポジトリの中では、下の「出す物」のほかに、ファイルを作らず、直しません。ページの写しと短いスクリプトは、リポジトリの外の一時フォルダに置いてかまいません。
 13. ページが開けないときは、結果を「開けない」と書き、HTTP の番号を注の欄に書いて、次へ進みます。ChartSchool が開けないときも同じです。ChartSchool の分は、後で手元で確かめます。
 14. hook が止めたら、回り込まずに、止まった文を書いて作業を終えます。
+15. 1つのページや1種に、時間を使いすぎません。開けないページや見つからない値は、記録して次へ進みます。
+16. 使用量の上限や時間切れで続けられないときも、作り終えたファイルをコミットとプッシュしてあれば、そのまま終えてかまいません。
 
 ## 出す物
 
-- ファイルを1本だけ作ります。置き場は .claude/state/indicator_review/research/out_c5.json です。
-- 中身は JSON の配列で、42種を1行ずつ入れます。形は下の見本のとおりにします。
-- 欄の名前を変えません。「種類」には、上の表の指標データの名前を、そのまま書きます。
+- 上の「ファイルごとの相手」の8本を、順に作ります。置き場は .claude/state/indicator_review/research/ です。
+- 中身は JSON の配列で、そのファイルの相手を1行ずつ入れます。形は下の見本のとおりにします。
+- 欄の名前を変えません。「種類」には、指標データの名前を、そのまま書きます。
 - 見つかった行は全部書きます。見本は、欄ごとの行数を絞ってあります。
-- 別のブランチにコミットします。ブランチの名前は research/textbook-all-5 です。master へは入れません。
+- 別のブランチにコミットします。ブランチの名前は research/textbook-all-6 です。master へは入れません。
+- 1本を作り終えるたびに、次の順に行います。
+  1. `jq length` で、JSON が読めることと、行の数が相手の数と同じことを確かめます。
+  2. そのファイルをコミットします。
+  3. リモートへプッシュします。プッシュが失敗したら、1回だけやり直し、それでも失敗したら次のファイルへ進みます。最後にもう一度プッシュします。
 
 ### 見本（RSI の1行）
 
-RSI は第5回の相手ではありません。形を示すための物です。
+RSI は第6回の相手です。見本は形を示すための物です。値を写さず、ほかの指標と同じようにページを開いて調べます。
 
 ```json
 [
@@ -330,11 +332,12 @@ RSI は第5回の相手ではありません。形を示すための物です。
 
 ## 終わりの報告
 
-次の6つを出してください。
+次の7つを出してください。答えの1行ずつの表は要りません。ファイルはプログラムで読みます。
 
-1. 作ったファイルのパスと、ブランチの名前
-2. 42種の Q1〜Q7 の答えの1行ずつ
-3. いまの値と違う所
+1. 作ったファイルのパスと、ブランチの名前と、最後のコミット
+2. 作り終えた本数と種類の数。作れなかった相手の名前
+3. いまの値と違う所のうち、主なもの
 4. 分からなかったこと
 5. 開けなかったページ
-6. 作業にかかった時間
+6. 作業にかかった時間（始めた時刻と終えた時刻）
+7. 途中で止まったときは、その理由と、続きを始める番号
