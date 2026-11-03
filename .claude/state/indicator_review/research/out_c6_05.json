@@ -1,0 +1,5630 @@
+[
+  {
+    "種類": "close vs HMA%",
+    "元の指標": "HMA（Hull Moving Average・Alan Hull）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "A Hull Moving Average (HMA) used to analyze a longer period may be best suited to identify a market trend.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589149-hull-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "線が上がっていて流れも上なら買い、下がっていて流れも下なら売り",
+        "向きを持つ": "持つ",
+        "逐語": "To further analyze, it can be determined that if the HMA value is rising and the trend is rising as well, then it would be ideal to enter long positions for your trade.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589149-hull-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "HMA",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Integer(SquareRoot(Period)) WMA [2 x Integer(Period/2) WMA(Price) – Period WMA(Price)]"
+      ],
+      "URL": "https://alanhull.com/hull-moving-average",
+      "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式（Alan Hull 本人）。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              20
+            ],
+            "逐語": "period:=Input(“period”,1,200,20);",
+            "URL": "https://alanhull.com/hull-moving-average",
+            "出どころの質": "開発者の原典（Alan Hull のサイトの MetaStock の式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20
+            ],
+            "逐語": "The default period of 20 is Alan Hull's own default.",
+            "URL": "https://ta-lib.org/functions/hma.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              20
+            ],
+            "逐語": "By default, the moving average is calculated with 20 periods, but the number of periods can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              9
+            ],
+            "逐語": "The default setting is 9 periods for the Hull MA.",
+            "URL": "https://www.tradingsim.com/blog/hull-ma",
+            "出どころの質": "教育サイト・ブログ（TradingSim）。同じ記事に \"The default setting in Tradingsim is 9.\"＝自社ソフトの既定",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              10
+            ],
+            "逐語": "length (int): It's period. Default: 10",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hma.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              "9 か 16"
+            ],
+            "逐語": "Best Settings for Hull MA Trading Style Recommended HMA Period Scalping / Intraday 9 or 16 HMA",
+            "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/",
+            "出どころの質": "ブログ（移動平均の解説サイト）。スキャルと日中を1行にまとめている",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              "9 か 16"
+            ],
+            "逐語": "Best Settings for Hull MA Trading Style Recommended HMA Period Scalping / Intraday 9 or 16 HMA",
+            "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/",
+            "出どころの質": "ブログ（移動平均の解説サイト）。スキャルと日中を1行にまとめている",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "1〜200",
+            "逐語": "period:=Input(“period”,1,200,20);",
+            "URL": "https://alanhull.com/hull-moving-average",
+            "出どころの質": "開発者の原典（MetaStock の入力の下限・上限・既定）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "長い期間の例 200",
+            "逐語": "In addition, HMAs with longer periods (e.g. 200-period HMA) can be used to identify the current overall trend.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "period:=Input(“period”,1,200,20);",
+            "URL": "https://alanhull.com/hull-moving-average",
+            "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "MetaStock の式の入力の既定。1サイトだけ"
+          },
+          {
+            "値": 10,
+            "逐語": "length (int): It's period. Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/hma.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "値": "1〜200（入力できる範囲）",
+            "逐語": "period:=Input(“period”,1,200,20);",
+            "URL": "https://alanhull.com/hull-moving-average",
+            "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "MetaStock の式で入力できる幅。勧める範囲ではない。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "A simple application for the HMA, given its superior smoothing, would be to employ the turning points as entry/exit signals.",
+        "URL": "https://alanhull.com/hull-moving-average",
+        "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "線の向きが変わる所を入りと出口に使う"
+      },
+      {
+        "使い方の種類": "出口の反転",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "A simple application for the HMA, given its superior smoothing, would be to employ the turning points as entry/exit signals.",
+        "URL": "https://alanhull.com/hull-moving-average",
+        "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "書いてない",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "However it shouldn’t be used to generate crossover signals as this technique relies on lag.",
+        "URL": "https://alanhull.com/hull-moving-average",
+        "出どころの質": "開発者の原典（Alan Hull 本人のサイト）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "クロスの合図には使わない、と書く"
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "上げ",
+        "玉の向き": "LONG",
+        "向き": "書いてない",
+        "逐語": "To further analyze, it can be determined that if the HMA value is rising and the trend is rising as well, then it would be ideal to enter long positions for your trade.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589149-hull-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "下げ",
+        "玉の向き": "SHORT",
+        "向き": "書いてない",
+        "逐語": "In contrast, if the HMA is falling and the trend is also falling, it would then be ideal to consider entering short positions.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589149-hull-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と HMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 1〜200・代表の値 スキャル [20]／デイトレ [20]",
+        "教科書": "資料の表の既定＝[20]・[9]・[10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://alanhull.com/hull-moving-average"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/hma.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          20
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          9
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/hull-ma"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hma.py"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "9 か 16"
+        ],
+        "結果": "合う",
+        "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          "9 か 16"
+        ],
+        "結果": "合う",
+        "URL": "https://movingaveragespro.com/hull-moving-average-hma-explained/"
+      },
+      {
+        "欄": "範囲",
+        "値": "1〜200",
+        "結果": "合う",
+        "URL": "https://alanhull.com/hull-moving-average"
+      },
+      {
+        "欄": "範囲",
+        "値": "長い期間の例 200",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/hull-moving-average-hma"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（HMA傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs HT_TRENDLINE%",
+    "元の指標": "HT_TRENDLINE（Ehlers の Hilbert Transform Instantaneous Trendline）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Ehlers' Hilbert Transform Instantaneous Trendline: a smoothed, low-lag overlay whose averaging window adapts to the dominant cycle period measured via Hilbert-transform quadrature (I/Q) analysis of price.",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "遅れの少ないトレンドの線。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Ehlers' Hilbert Transform Instantaneous Trendline: a smoothed, low-lag overlay whose averaging window adapts to the dominant cycle period",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "close vs HT_TRENDLINE%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式の中身を文で書いた教科書は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確定に要る本数": "書いてない",
+        "逐語": "Numerical Stability: Initial Unstable Period",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "助走の期間が在るとは書くが、本数は書いてない"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（資料の表にパラメータの名前が無い）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と HT_TRENDLINE の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "close vs HT_TRENDLINE_HL%",
+    "元の指標": "HT_TRENDLINE（Ehlers の Hilbert Transform Instantaneous Trendline）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Ehlers' Hilbert Transform Instantaneous Trendline: a smoothed, low-lag overlay whose averaging window adapts to the dominant cycle period measured via Hilbert-transform quadrature (I/Q) analysis of price.",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "遅れの少ないトレンドの線。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Ehlers' Hilbert Transform Instantaneous Trendline: a smoothed, low-lag overlay whose averaging window adapts to the dominant cycle period",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "close vs HT_TRENDLINE_HL%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式の中身を文で書いた教科書は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確定に要る本数": "書いてない",
+        "逐語": "Numerical Stability: Initial Unstable Period",
+        "URL": "https://ta-lib.org/functions/ht_trendline.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "助走の期間が在るとは書くが、本数は書いてない"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（資料の表にパラメータの名前が無い）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と、入力を（高値＋安値）÷ 2 にした HT_TRENDLINE の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "入力を（高値＋安値）÷ 2 にする形は、TA-Lib のページに書いてない"
+    ]
+  },
+  {
+    "種類": "close vs HWMA%",
+    "元の指標": "HWMA（Holt-Winters Moving Average）",
+    "教科書の役割": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "役割を書いた文は見つからなかった。ライブラリは『Holt-Winter Moving Average』と名前だけを書く"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "close vs HWMA%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "\"\"\"Indicator: Holt-Winter Moving Average\"\"\""
+      ],
+      "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py",
+      "出どころの質": "ライブラリのコード（GitHub）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "式の中身はコードだけで、文の説明は無い"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "na（平滑の係数）・nb（傾きの係数）・nc（季節の係数）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              0.2,
+              0.1,
+              0.1
+            ],
+            "逐語": "na (float): Smoothed series parameter (from 0 to 1). Default: 0.2\n    nb (float): Trend parameter (from 0 to 1). Default: 0.1\n    nc (float): Seasonality parameter (from 0 to 1). Default: 0.1",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "3つとも 0〜1",
+            "逐語": "The indicator has four input parameters: nA - parameter of the equation that describes a smoothed series (from 0 to 1); nB - parameter of the equation to assess the trend (from 0 to 1); nC - parameter of the equation to assess seasonality (from 0 to 1); Applied price - price used for calculations.",
+            "URL": "https://www.mql5.com/en/code/20856",
+            "出どころの質": "コード共有サイト（MQL5 CodeBase・ライブラリが出典に挙げるページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と HWMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "na の範囲 0〜1・代表の値 スキャル [0.2]／デイトレ [0.2]；nb の範囲 0〜1・代表の値 スキャル [0.1]／デイトレ [0.1]；nc の範囲 0〜1・代表の値 スキャル [0.1]／デイトレ [0.1]",
+        "教科書": "資料の表の既定＝[0.2, 0.1, 0.1]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          0.2,
+          0.1,
+          0.1
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/hwma.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "3つとも 0〜1",
+        "結果": "合う",
+        "URL": "https://www.mql5.com/en/code/20856"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "close vs JMA%",
+    "元の指標": "JMA（Jurik Moving Average）",
+    "教科書の役割": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "役割を書いた文は見つからなかった"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "close vs JMA%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "\"\"\"Jurik Moving Average per-bar recursion (volatility bands + 3-stage filter)."
+      ],
+      "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/jma.py",
+      "出どころの質": "ライブラリのコード（GitHub）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "式の中身はコードだけ"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）・phase",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              7,
+              0
+            ],
+            "逐語": "length (int): Period of calculation. Default: 7\n    phase (float): How heavy/light the average is [-100, 100]. Default: 0",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/jma.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "短い 7・中くらい 35・長い 175（比べるときの3つの長さ）",
+            "逐語": "What we mean by \"short, medium and long time frames\" is that the comparisons must include three separate JMA lengths: 7 (short), 35 (medium), 175 (long).",
+            "URL": "http://jurikres.com/faq1/faq_ama.htm",
+            "出どころの質": "開発者の原典（Jurik Research の FAQ）。足の時間ではなく JMA の長さの短・中・長",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と JMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 3〜80・代表の値 スキャル [7]／デイトレ [7]；phase の範囲 0〜0・代表の値 スキャル [0]／デイトレ [0]",
+        "教科書": "資料の表の既定＝[null, 0]・[7, 0]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          null,
+          0
+        ],
+        "結果": "開けない",
+        "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          7,
+          0
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/jma.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "length 3〜80",
+        "結果": "開けない",
+        "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "範囲",
+        "値": "phase -100〜+100",
+        "結果": "開けない",
+        "URL": "https://pdfcoffee.com/jurik1-pdf-free.html",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "範囲",
+        "値": "短い 7・中くらい 35・長い 175（比べるときの3つの長さ）",
+        "結果": "合う",
+        "URL": "http://jurikres.com/faq1/faq_ama.htm"
+      }
+    ],
+    "分からなかったこと": [
+      "Jurik の説明の PDF（pdfcoffee.com）は HTTP 403 で開けない"
+    ]
+  },
+  {
+    "種類": "close vs KAMA%",
+    "元の指標": "KAMA（Kaufman's Adaptive Moving Average）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Kaufman designed the indicator as a generalized trend-following solution based on the idea that faster averages are more useful for tracking trends when the market price is moving quickly in one direction, and slower averages are better for avoiding whipsaws during periods of choppiness and volatility.",
+        "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "調べた人の読み（trend-following を向きとした）"
+      },
+      {
+        "区分": "向き",
+        "逐語": "Reacts fast in trends and smooths in ranging markets.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "KAMA が平らなのはトレンドの無い場面",
+        "向きを持つ": "書いてない",
+        "逐語": "Flat KAMA = non-trending/ranging market.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "傾きが小さいことの読み方に当たる文。調べた人の読み"
+      },
+      {
+        "読み方": "KAMA が価格に近く付いていくのは効率のよいトレンド",
+        "向きを持つ": "書いてない",
+        "逐語": "KAMA tracking price closely = efficient trend.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "読み方": "KAMA の動きでトレンドと揉み合いを見分ける",
+        "向きを持つ": "書いてない",
+        "逐語": "Traders often analyze movements in KAMA to identify trends and choppy market conditions, and use the crossings between KAMA and price or other moving averages to find potential turning points and signals.",
+        "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "The output never leaves the range of the prices it has seen.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "KAMA そのものは値段の線。傾き（%）の単位と値域を書いた文は無い"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "KAMA傾き%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "KAMA を1本の線として書く。傾きを出力として書いた文は無かった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Change = Abs(Price − Price N bars ago)Volatility = Sum of Abs(Price − Price 1 bar ago) over N barsER = Change / Volatility",
+        "Slow SC = 2 / (Slow Length + 1)Fast SC = 2 / (Fast Length + 1)",
+        "SC = (ER × (Fast SC - Slow SC) + Slow SC)²",
+        "MA = SC × Price + (1 − SC) × Previous MA"
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "KAMA の部分は、指標データの照合の定義（KAMA の5本前からの変化率%）の KAMA と、文の上で違うかは見ていない（指標データの式の文は f(d, n, **kw) で、中の計算は書いてない）。指標データは、KAMA の slope_n 本前からの変化率%を出す。この傾きの形は教科書に無い。コードの計算は見ていない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（効率比の本数）・fast・slow",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              10,
+              2,
+              30
+            ],
+            "逐語": "Let's first start with the settings recommended by Perry Kaufman: KAMA(10,2,30).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool・Kaufman の推奨として）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              30,
+              2,
+              30
+            ],
+            "逐語": "optInTimePeriod integer 30 1–100000 Lookback window for the efficiency ratio",
+            "URL": "https://ta-lib.org/functions/kama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。式は \"SC = (ER*(2/3 - 2/31) + 2/31)^2\"＝速い 2・遅い 30 で固定",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の値で、ページの本文で照らせた物は無かった"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の値で、ページの本文で照らせた物は無かった"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "length は増やさず減らす・fast を上げて滑らかにする（例 KAMA(10,5,30)）",
+            "逐語": "The first parameter is for the Efficiency Ratio and chartists should refrain from increasing this number. Instead, chartists can decrease it to increase sensitivity. Chartists looking to smooth KAMA for longer-term trend analysis can increase the middle parameter incrementally.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n（効率比の本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 30,
+            "逐語": "optInTimePeriod integer 30 1–100000 Lookback window for the efficiency ratio",
+            "URL": "https://ta-lib.org/functions/kama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TA-Lib は fast 2・slow 30 を式の中で固定する（SC = (ER*(2/3 - 2/31) + 2/31)^2）。1サイトだけ"
+          },
+          {
+            "値": 30,
+            "逐語": "real = KAMA(close, timeperiod=30)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+            "出どころの質": "ライブラリの説明（TA-Lib の Python 版の関数一覧）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TA-Lib の Python 版。1サイトだけ"
+          },
+          {
+            "値": 10,
+            "逐語": "Ten is a common ER lookback; two and thirty are reference EMA lengths converted to coefficients before interpolation and squaring.",
+            "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+            "出どころの質": "ブログ（Pineify）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TA-Lib の 30 と違う。1サイトだけ"
+          },
+          {
+            "値": 10,
+            "逐語": "Pineify's visual KAMA configuration currently exposes Source and Length, with Close and 10 as defaults.",
+            "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+            "出どころの質": "ブログ（Pineify）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "Pineify の道具の既定。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "スキャルの値を書いたページは見つからなかった。資料の表の pineify の表（10,2,20）は、いまのページに無かった"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "デイトレの値を書いたページは見つからなかった。資料の表の pineify の文（7〜10）は、いまのページに無かった"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "1〜100000（入力できる範囲）",
+            "逐語": "optInTimePeriod integer 30 1–100000 Lookback window for the efficiency ratio",
+            "URL": "https://ta-lib.org/functions/kama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ライブラリが受け付ける値。売買の範囲ではない。1サイトだけ"
+          },
+          {
+            "値": "下げると最近の値動きだけに反応する",
+            "逐語": "Use a lower value to make the average's smoothing behavior change in response to only very recent price fluctuations, and a higher value to make the behavior responsive to fluctuations over a larger period.",
+            "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "数の範囲は書いてない。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "fast",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "The common reference lengths are fast 2 and slow 30.",
+            "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+            "出どころの質": "ブログ（Pineify）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 2,
+            "逐語": "SC = (ER*(2/3 - 2/31) + 2/31)^2",
+            "URL": "https://ta-lib.org/functions/kama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "2/3 は fast 2、2/31 は slow 30 に当たる（調べた人の読み）。TA-Lib では変えられない"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "slow",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 30,
+            "逐語": "The common reference lengths are fast 2 and slow 30.",
+            "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+            "出どころの質": "ブログ（Pineify）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 30,
+            "逐語": "SC = (ER*(2/3 - 2/31) + 2/31)^2",
+            "URL": "https://ta-lib.org/functions/kama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "調べた人の読み"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "slope_n（何本前と比べるか）",
+        "意味": "本数",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "傾きを何本前と比べて測るかを書いた教科書の文は見つからなかった"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "持たない",
+        "値": null,
+        "意味": "傾きの値に閾値を置く文は無い",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Flat KAMA = non-trending/ranging market.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "閾値の値を書いたページは見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Flat KAMA = non-trending/ranging market.",
+        "URL": "https://ta-lib.org/functions/kama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Traders often analyze movements in KAMA to identify trends and choppy market conditions, and use the crossings between KAMA and price or other moving averages to find potential turning points and signals.",
+        "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "Enter long after a completed close crosses above KAMA; model the next available fill.",
+        "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+        "出どころの質": "ブログ（Pineify）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "ページは『As an untested research baseline』と書く。1サイトだけ"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "価格かほかの移動平均",
+        "逐語": "Traders often analyze movements in KAMA to identify trends and choppy market conditions, and use the crossings between KAMA and price or other moving averages to find potential turning points and signals.",
+        "URL": "https://www.tradingview.com/support/solutions/43000773012-kaufman-s-adaptive-moving-average-kama/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "形": "続く本数",
+        "値": "足の確定を待つ（本数は書いてない）",
+        "逐語": "Enter long after a completed close crosses above KAMA; model the next available fill.",
+        "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+        "出どころの質": "ブログ（Pineify）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と KAMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 7〜30・代表の値 スキャル [10]／デイトレ [10]；fast の範囲 2〜2・代表の値 スキャル [2]／デイトレ [2]；slow の範囲 30〜30・代表の値 スキャル [30]／デイトレ [30]",
+        "教科書": "資料の表の既定＝[10, 2, 30]・[30, 2, 30]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          2,
+          30
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          30,
+          2,
+          30
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/kama.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          2,
+          30
+        ],
+        "結果": "違う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/kama.py",
+        "注": "ページの本文に見つからない部分＝「fast (int): Fast MA period. Default: 2」"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "5〜7",
+          2,
+          30
+        ],
+        "結果": "違う",
+        "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial",
+        "注": "ページの本文に見つからない部分＝「Trading Style ER Length Fast Length Slow Length Timeframe Scalping 5–7 2 30 1m – 5m」"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          "7〜10",
+          2,
+          30
+        ],
+        "結果": "違う",
+        "URL": "https://chartmini.com/blog/kaufman-adaptive-moving-average-kama-tradingview-tutorial",
+        "注": "ページの本文に見つからない部分＝「Day trading 7–10 2 30 5m – 1h」"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          "7〜10",
+          null,
+          null
+        ],
+        "結果": "違う",
+        "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+        "注": "ページの本文に見つからない部分＝「For day trading, try a shorter setting of 7 to 10 on 5-minute or hourly charts.」"
+      },
+      {
+        "欄": "範囲",
+        "値": "length 7〜10・fast 2・slow 20〜30",
+        "結果": "違う",
+        "URL": "https://pineify.app/resources/blog/master-the-kama-strategy-kaufmans-adaptive-moving-average-for-enhanced-trading-performance",
+        "注": "ページの本文に見つからない部分＝「Parameter Default Setting Recommended Range Purpose Length 10 periods 7-10 periods Determines ER calculation window Fastest EMA 2 periods 2 periods Maximum trend responsiveness Slowest EMA 30 periods 」"
+      },
+      {
+        "欄": "範囲",
+        "値": "length は増やさず減らす・fast を上げて滑らかにする（例 KAMA(10,5,30)）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/kaufmans-adaptive-moving-average-kama"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第2回で同じ元の指標（KAMA傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs LINREG%",
+    "元の指標": "線形回帰の線（Linear Regression Curve／Least Squares Moving Average・TA-Lib の LINEARREG）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "The Least Squares Moving Average can be used as a trend indicator and reversal indicator.",
+        "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "LINREG",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Least-squares straight-line fit over the last optInTimePeriod bars, reported as the fitted line value at the window endpoint (b + m*(period-1))."
+      ],
+      "URL": "https://ta-lib.org/functions/linearreg.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった。TA-Lib は『Numerical Stability: Start-Independent』と書く"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14
+            ],
+            "逐語": "Periods. The default setting is 14, but you can change it to any number of bars you wish to use to calculate LRF.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-forecast",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool・Linear Regression Forecast）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              25
+            ],
+            "逐語": "length = input(title=\"Length\", defval=25)",
+            "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプの Pine Script）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              14
+            ],
+            "逐語": "length (int): It's period.  Default: 14",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linreg.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 25,
+            "逐語": "length = input(title=\"Length\", defval=25)",
+            "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": 14,
+            "逐語": "length = int(length) if length and length > 0 else 14",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/linreg.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同じファイルの説明文は『length (int): It's period.  Default: 10』と書き、コードと食い違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（入力できる範囲）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Number of bars in each regression window",
+            "URL": "https://ta-lib.org/functions/linearreg.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力できる範囲。勧める範囲ではない。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The Least Squares Moving Average can be used as a trend indicator and reversal indicator.",
+        "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "トレンドと反転を見る、と書く"
+      },
+      {
+        "使い方の種類": "出口の反転",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The Least Squares Moving Average can be used as a trend indicator and reversal indicator.",
+        "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "調べた人の読み"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と LINREG の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 14〜200・代表の値 スキャル [14]／デイトレ [14]",
+        "教科書": "資料の表の既定＝[14]・[25]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/linearreg.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-forecast"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          25
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000599877-least-squares-moving-average/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linreg.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/linearreg.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（LINREG傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs LRb%",
+    "元の指標": "線形回帰の切片（Linear Regression Intercept・TA-Lib の LINEARREG_INTERCEPT）",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "Returns the y-intercept (b) of the least-squares regression line fitted over the last optInTimePeriod values.",
+        "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "直線あてはめの切片。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "LRb",
+        "組の相手": null,
+        "逐語": "outReal — Intercept b of the fitted line at each bar",
+        "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Fit y = b + m·x over the window with x = bars-ago (x=0 is the current bar, x=period-1 the oldest).",
+        "b = (SumY − m·SumX) / period ← output"
+      ],
+      "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった。TA-Lib は『Numerical Stability: Start-Independent』と書く"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "Periods. The default setting is 14, but you can change it to any number of bars you wish to use to calculate LR-I.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-intercept",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14
+            ],
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14
+            ],
+            "逐語": "length (int): Lookback period. Default: 14",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linregintercept.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 14,
+            "逐語": "length (int): Lookback period. Default: 14",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/linregintercept.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（入力できる範囲）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length of the regression",
+            "URL": "https://ta-lib.org/functions/linearreg_intercept.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力できる範囲。勧める範囲ではない。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と 直線あてはめの切片 の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 14〜200・代表の値 スキャル [14]／デイトレ [14]",
+        "教科書": "資料の表の既定＝[14]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/linear-regression-intercept"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/linearreg_intercept.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/linregintercept.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/linearreg_intercept.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（LRb傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs MAMA%",
+    "元の指標": "MAMA（Ehlers の MESA Adaptive Moving Average）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MAMA",
+        "組の相手": "FAMA",
+        "逐語": "Emits two lines, MAMA and its slower follower FAMA.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MAMA = alpha*price + (1-alpha)*MAMA_prev FAMA = (alpha/2)*MAMA + (1-alpha/2)*FAMA_prev"
+      ],
+      "URL": "https://ta-lib.org/functions/mama.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "FastLimit・SlowLimit",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              0.5,
+              0.05
+            ],
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              0.5,
+              0.05
+            ],
+            "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "MAMA と FAMA",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と MAMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "fastlimit の範囲 0.5〜0.5・代表の値 スキャル [0.5]／デイトレ [0.5]；slowlimit の範囲 0.05〜0.05・代表の値 スキャル [0.05]／デイトレ [0.05]",
+        "教科書": "資料の表の既定＝[0.5, 0.05]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "違う",
+        "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+        "注": "ページの本文に見つからない部分＝「The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05.」"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mama.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mama.html"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "close vs MAMA_HL%",
+    "元の指標": "MAMA（Ehlers の MESA Adaptive Moving Average）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MAMA",
+        "組の相手": "FAMA",
+        "逐語": "Emits two lines, MAMA and its slower follower FAMA.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MAMA = alpha*price + (1-alpha)*MAMA_prev FAMA = (alpha/2)*MAMA + (1-alpha/2)*FAMA_prev"
+      ],
+      "URL": "https://ta-lib.org/functions/mama.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "FastLimit・SlowLimit",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              0.5,
+              0.05
+            ],
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              0.5,
+              0.05
+            ],
+            "逐語": "fastlimit (float): Upper bound for the adaptive alpha. Default: 0.5\n    slowlimit (float): Lower bound for the adaptive alpha. Default: 0.05",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+            "逐語": "optInFastLimit real 0.5 0.01–0.99 Upper bound on the adaptive smoothing factor optInSlowLimit real 0.05 0.01–0.99 Lower bound on the adaptive smoothing factor",
+            "URL": "https://ta-lib.org/functions/mama.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "MAMA と FAMA",
+        "逐語": "MAMA crossing above FAMA is bullish; crossing below is bearish.",
+        "URL": "https://ta-lib.org/functions/mama.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と、入力を（高値＋安値）÷ 2 にした MAMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "fastlimit の範囲 0.5〜0.5・代表の値 スキャル [0.5]／デイトレ [0.5]；slowlimit の範囲 0.05〜0.05・代表の値 スキャル [0.05]／デイトレ [0.05]",
+        "教科書": "資料の表の既定＝[0.5, 0.05]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "違う",
+        "URL": "https://www.mesasoftware.com/papers/MAMA.pdf",
+        "注": "ページの本文に見つからない部分＝「The suggested maximum value is FastLimit = 0.5 and the suggested minimum is SlowLimit = 0.05.」"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mama.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.5,
+          0.05
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mama.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "どちらも 0.01〜0.99（ライブラリが受け付ける値）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mama.html"
+      }
+    ],
+    "分からなかったこと": [
+      "入力を（高値＋安値）÷ 2 にする形は、TA-Lib のページに書いてない"
+    ]
+  },
+  {
+    "種類": "close vs MCGD%",
+    "元の指標": "McGinley Dynamic（John McGinley）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "The McGinley Dynamic is a technical indicator based on a moving average that was initially designed to track market trends.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589175-mcginley-dynamic/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MCGD",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "denom = (constant * length * (series.iloc[1] / series.iloc[0]) ** 4)",
+        "series.iloc[1] = (series.iloc[0] + ((series.iloc[1] - series.iloc[0]) / denom))"
+      ],
+      "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mcgd.py",
+      "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式（ライブラリの説明文）。TradingView のページの式は数式の画像で、文字で取れなかった。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "N（本数）・c（分母の係数）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              14,
+              null
+            ],
+            "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator",
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14,
+              null
+            ],
+            "逐語": "The McGinley Dynamic has a single input: its length. It’s set to 14 by default, but you’re welcome to customise it to suit your preferences.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-the-mcginley-dynamic-indicator/",
+            "出どころの質": "証券会社（FXOpen）のブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              14,
+              null
+            ],
+            "逐語": "The default value is 14, but you can reduce it to 10 for more convenient intraday trading.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/",
+            "出どころの質": "証券会社（LiteFinance）のブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              10,
+              null
+            ],
+            "逐語": "It's often set to a default value of 10, but can be adjusted based on individual trading strategies and preferences.",
+            "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator",
+            "出どころの質": "証券会社（Capital.com）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              10,
+              1
+            ],
+            "逐語": "length (int): Indicator's period. Default: 10\n    offset (int): Number of periods to offset the result. Default: 0\n    c (float): Multiplier for the denominator, sometimes set to 0.6. Default: 1",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mcgd.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              10,
+              null
+            ],
+            "逐語": "When it comes to the McGinley dynamic indicator settings, a common choice is to set the period to 10 for short-term strategies, such as day trading.",
+            "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator",
+            "出どころの質": "証券会社（Capital.com）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              10,
+              null
+            ],
+            "逐語": "The default value is 14, but you can reduce it to 10 for more convenient intraday trading.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/",
+            "出どころの質": "証券会社（LiteFinance）のブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "まねる移動平均の本数の約 60%（例 20 本の平均に 12）",
+            "逐語": "McGinley suggests a period of about 60% of the simple moving average being emulated: a Dynamic of 12 to follow a 20-bar average.",
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）。McGinley の原典そのものは開けていない（Investopedia は WebFetch で開けなかった）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "まねる移動平均の本数の 60%",
+            "逐語": "McGinley states that N should be 60% of the moving average you wish to emulate.",
+            "URL": "https://sacredtraders.com/the-mcginley-dynamic-by-brian-twomey/",
+            "出どころの質": "ブログ（Brian Twomey の記事の転載）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 2–100000 The N of the step's denominator",
+            "URL": "https://ta-lib.org/functions/mcgd.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 10,
+            "逐語": "length (int): Indicator's period. Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mcgd.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "c",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 1,
+            "逐語": "c (float): Multiplier for the denominator, sometimes set to 0.6. Default: 1",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mcgd.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": 0.6,
+            "逐語": "c (float): Multiplier for the denominator, sometimes set to 0.6. Default: 1",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mcgd.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "既定ではない。0.6 にすることもある、と書く。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "書いてない",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "With it, the McGinley Dynamic can watch for high speeds or slowing speeds, which help identify the trends of a market.",
+        "URL": "https://www.tradingview.com/support/solutions/43000589175-mcginley-dynamic/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値動きの速さの変化に合わせる、と書く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と McGinley Dynamic の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 10〜200・代表の値 スキャル [10]／デイトレ [10]；c の範囲 1〜1・代表の値 スキャル [1]／デイトレ [1]",
+        "教科書": "資料の表の既定＝[14, null]・[10, null]・[10, 1]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mcgd.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-the-mcginley-dynamic-indicator/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          14,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          1
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mcgd.py"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          10,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://capital.com/en-int/learn/technical-analysis/mcginley-dynamic-indicator"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          10,
+          null
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/mcginley-dynamic-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "まねる移動平均の本数の約 60%（例 20 本の平均に 12）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mcgd.html"
+      },
+      {
+        "欄": "範囲",
+        "値": "まねる移動平均の本数の 60%",
+        "結果": "合う",
+        "URL": "https://sacredtraders.com/the-mcginley-dynamic-by-brian-twomey/"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/mcgd.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（MCGD傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs MEDIAN%",
+    "元の指標": "直近 n 本の終値の中央値（Rolling Median）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "A more robust estimate of the trend is the simple moving median over n time points:",
+        "URL": "https://en.wikipedia.org/wiki/Moving_average",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MEDIAN",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MEDIAN = close.rolling(length).median()"
+      ],
+      "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/statistics/median.py",
+      "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式（ライブラリ）。指標データの定義の文（直近 n 本の終値の中央値）と違わない。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              30
+            ],
+            "逐語": "optInTimePeriod | integer | 30 | 2–10000 | Number of trailing values in the window",
+            "URL": "https://ta-lib.org/functions/median.html",
+            "出どころの質": "ライブラリの説明（ta-lib.org の関数ページ。表の1行を、セルを ' | ' で区切って写した）。同じページに『Not to be confused with MEDPRICE, which is (High + Low) / 2 of one bar and is not an order statistic.』とある",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+          },
+          {
+            "値": [
+              30
+            ],
+            "逐語": "length (int): The period. Default: ```30```",
+            "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/statistics/median.py）",
+            "出どころの質": "ライブラリのソース（pandas-ta 0.4.71b0 の PyPI 配布物の中のソース）。出典に挙げている incrediblecharts の Median Price は (High+Low)/2 の別の指標",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "4〜200（刻み1）※推奨範囲。受け付ける値は 2〜10000",
+            "逐語": "static const TA_IntegerRange TA_DEF_MEDIAN_TimePeriod =\n{\n   2,\n   10000,\n   4,\n   200,\n   1\n};",
+            "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_m.c",
+            "出どころの質": "ライブラリのソース（TA-Lib の C ソースの表。suggested_start／suggested_end／suggested_increment は、ta_abstract.h に『used by Tech. Analysis software doing parameter \"optimization\"』と書いてある最適化用の推奨範囲）（並び＝min, max, suggested_start, suggested_end, suggested_increment）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 30,
+            "逐語": "length (int): It's period. Default: 30",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/statistics/median.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "書いてない",
+        "場面": "スパイク",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Statistically, the moving average is optimal for recovering the underlying trend of the time series when the fluctuations about the trend are normally distributed.",
+        "URL": "https://en.wikipedia.org/wiki/Moving_average",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "急な動き（まれな大きな外れ）に強いのは中央値の方だと続けて書く。調べた人の読み"
+      },
+      {
+        "使い方の種類": "書いてない",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The Moving Median is a more robust alternative to the Moving Average when it comes to estimating the underlying trend in a time series.",
+        "URL": "https://en.wikipedia.org/wiki/Moving_average",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と 移動中央値 の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 4〜200・代表の値 スキャル [30]／デイトレ [30]",
+        "教科書": "資料の表の既定＝[30]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          30
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/median.html",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          30
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/statistics/median.py）"
+      },
+      {
+        "欄": "範囲",
+        "値": "4〜200（刻み1）※推奨範囲。受け付ける値は 2〜10000",
+        "結果": "合う",
+        "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_m.c"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（MEDIAN傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs MIDPOINT%",
+    "元の指標": "MIDPOINT（n 本の終値の最高と最安の中央・TA-Lib の MIDPOINT）",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "MIDPOINT calculates the midpoint between the highest and lowest values of the close price over a specified period. This indicator helps identify the center of the price range and can be used to detect potential support and resistance levels.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/midpoint.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MIDPOINT",
+        "組の相手": null,
+        "逐語": "outReal — Midpoint of the period's high/low range",
+        "URL": "https://ta-lib.org/functions/midpoint.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MIDPOINT = (Highest(inReal, period) + Lowest(inReal, period)) / 2"
+      ],
+      "URL": "https://ta-lib.org/functions/midpoint.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった。TA-Lib は『Numerical Stability: Start-Independent』と書く"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              2
+            ],
+            "逐語": "length (int): Its period. Default: 2",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midpoint.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": 2,
+            "逐語": "length (int): Its period. Default: 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/midpoint.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（入力できる範囲）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/midpoint.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力できる範囲。勧める範囲ではない。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "This indicator helps identify the center of the price range and can be used to detect potential support and resistance levels.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/midpoint.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "支えと抵抗の水準を見る。調べた人の読み"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と MIDPOINT の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 2〜200・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝[14]・[2]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/midpoint.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          2
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midpoint.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/midpoint.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（MIDPOINT傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs MIDPRICE%",
+    "元の指標": "MIDPRICE（n 本の高値の最高と安値の最安の中央・TA-Lib の MIDPRICE）",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "This provides a measure of the center of the price range and is useful for identifying equilibrium levels.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/midprice.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "An overlap-study line plotted on price.",
+        "URL": "https://ta-lib.org/functions/midprice.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MIDPRICE",
+        "組の相手": null,
+        "逐語": "outReal — Midpoint of the period's high/low extremes",
+        "URL": "https://ta-lib.org/functions/midprice.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MIDPRICE = (Highest(High, N) + Lowest(Low, N)) / 2, over the N=optInTimePeriod bars ending at each index"
+      ],
+      "URL": "https://ta-lib.org/functions/midprice.html",
+      "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった。TA-Lib は『Numerical Stability: Start-Independent』と書く"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              2
+            ],
+            "逐語": "length (int): Its period. Default: 2",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midprice.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": 2,
+            "逐語": "length (int): Its period. Default: 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/midprice.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "値": "2〜100000（入力できる範囲）",
+            "逐語": "optInTimePeriod integer 14 2–100000 Window length over which the high/low extremes are taken",
+            "URL": "https://ta-lib.org/functions/midprice.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力できる範囲。勧める範囲ではない。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "書いてない",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "This is the Donchian Channel centerline: DONCHIAN emits this line as its middle output, alongside the two extrema.",
+        "URL": "https://ta-lib.org/functions/midprice.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Donchian の中央の線と同じ、と書く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と MIDPRICE の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 2〜200・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝[14]・[2]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/midprice.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          2
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/midprice.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/midprice.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（MIDPRICE傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs MMAR%",
+    "元の指標": "MMAR（Madrid Moving Average Ribbon・EMA の帯）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "The Madrid Moving Average Ribbon is a visual trend indicator that consists of multiple EMAs with incrementally increasing periods. It helps identify trend strength and direction through the spacing and alignment of the moving averages.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "強さ",
+        "逐語": "It helps identify trend strength and direction through the spacing and alignment of the moving averages.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "線どうしの間隔と並びで、トレンドの強さと向きを読む",
+        "向きを持つ": "書いてない",
+        "逐語": "It helps identify trend strength and direction through the spacing and alignment of the moving averages.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "MMAR",
+        "組の相手": "期間を少しずつ伸ばした EMA の束（既定 6 本）",
+        "逐語": "MMAR_10, MMAR_15, MMAR_20, MMAR_25, MMAR_30, MMAR_35",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "period = length + (i * step)",
+        "MMAR[i] = EMA(close, period)"
+      ],
+      "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+      "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データは束から1本（期間 k の EMA）だけを取り、その5本前からの変化率%にしている"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（帯の1本の EMA の本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": "最初 10・間隔 5・6本（10・15・20・25・30・35）",
+            "逐語": "length (int): Initial EMA period. Default: 10\n    step (int): Period increment between ribbons. Default: 5\n    num_ribbons (int): Number of EMA ribbons. Default: 6",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mmar.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る。1サイトだけ"
+          },
+          {
+            "値": "SMA 10本・間隔 5・20〜65（Madrid に限らない一般の移動平均の帯）",
+            "逐語": "By default, the overlay uses 10 SMAs, spaced 5 periods apart, ranging between 20 and 65 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "6〜8本・例 10・20・30・40・50・60（一般の移動平均の帯）",
+            "逐語": "A common setting for a Moving Average Ribbon is to use 6 to 8 moving averages of different lengths, such as 10, 20, 30, 40, 50, and 60 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "k",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 10,
+            "逐語": "length (int): Initial EMA period. Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "step",
+        "意味": "本数",
+        "既定": [
+          {
+            "値": 5,
+            "逐語": "step (int): Period increment between ribbons. Default: 5",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "num_ribbons",
+        "意味": "本数",
+        "既定": [
+          {
+            "値": 6,
+            "逐語": "num_ribbons (int): Number of EMA ribbons. Default: 6",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/mmar.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Moving averages of varying lengths can be used to compare long-term and short-term trends and attempt to predict possible chart movements based on its past performance.",
+        "URL": "https://www.tradingview.com/support/solutions/43000644913-moving-average-ribbon/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "TradingView の Moving Average Ribbon（Madrid の物ではない）の文"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と MMAR の線 の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "k の範囲 10〜35・代表の値 スキャル [10]／デイトレ [10]",
+        "教科書": "資料の表の既定＝\"5・10・15 … 90 の EMA 18本 と 100 の EMA\"・\"最初 10・間隔 5・6本（10・15・20・25・30・35）\"・\"SMA 10本・間隔 5・20〜65（Madrid に限らない一般の移動平均の帯）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "5・10・15 … 90 の EMA 18本 と 100 の EMA",
+        "結果": "違う",
+        "URL": "https://www.prorealcode.com/topic/conversion-of-madrid-moving-average-ribbon-from-tradingview/",
+        "注": "ページの本文に見つからない部分＝「study(title= Madrid Moving Average Ribbon , shorttitle= MMAR , overlay=true) exponential = input(true, title= Exponential MA ) src = close ma05 = exponential ? ema(src, 05) : sma(src, 05) ma10 = expon」"
+      },
+      {
+        "欄": "既定",
+        "値": "最初 10・間隔 5・6本（10・15・20・25・30・35）",
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/mmar.py",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "既定",
+        "値": "SMA 10本・間隔 5・20〜65（Madrid に限らない一般の移動平均の帯）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon"
+      },
+      {
+        "欄": "範囲",
+        "値": "6〜8本・例 10・20・30・40・50・60（一般の移動平均の帯）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/moving-average-ribbon"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（MMAR傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs PMAX%",
+    "元の指標": "PMax（Profit Maximizer。KivancOzbilgic が 2020 年に TradingView で公開。MOST と SuperTrend を合わせたもの）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Profit Maximizer - PMax tries to solve this problem. PMax combines the powerful sides of MOST (Moving Average Trend Changer) and SuperTrend (ATR price detection) in one indicator.",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+        "出どころの質": "ライブラリのコード（GitHub）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "トレンドの向きの線。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "close vs PMAX%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "The first parameter in the PMax indicator set by the three parameters is the period/length of ATR.",
+        "The second Parameter is the Multiplier of ATR which would be useful to set the value of distance from the built in Moving Average."
+      ],
+      "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+      "出どころの質": "ライブラリのコード（GitHub）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "式はコードで、文は作りの説明だけ"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "ATR Length・ATR Multiplier・Moving Average Length・Moving Average Type",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              "EMA"
+            ],
+            "逐語": "Built in Moving Average type defaultly set as EMA but users can choose from 8 different Moving Average types like:",
+            "URL": "https://www.tradingview.com/script/sU9molfV/",
+            "出どころの質": "開発者の原典（KivancOzbilgic が TradingView に公開したスクリプトの説明）。数の既定はこのページの本文から取れなかった（コードがページに入っていない）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              10,
+              3.0,
+              10,
+              "EMA"
+            ],
+            "逐語": "Periods = input(title=\"ATR Length\", type=input.integer, defval=10)\nMultiplier = input(title=\"ATR Multiplier\", type=input.float, step=0.1, defval=3.0)\nmav = input(title=\"Moving Average Type\", defval=\"EMA\", options=[\"SMA\", \"EMA\", \"WMA\", \"TMA\", \"VAR\", \"WWMA\", \"ZLEMA\", \"TSF\"])\nlength =input(10, \"Moving Average Length\", minval=1)",
+            "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+            "出どころの質": "戦略の共有サイト（FMZ）が原典のスクリプトを写したもの",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の値で、ページの本文で照らせた物は無かった"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "BUY when Moving Average crosses above PMax",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+        "出どころの質": "ライブラリのコード（GitHub）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "逐語": "SELL when Moving Average crosses under PMax",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+        "出どころの質": "ライブラリのコード（GitHub）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "It reduces the number of false signals in sideways and give more reliable trade signals.",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+        "出どころの質": "ライブラリのコード（GitHub）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "横ばいの嘘の合図が少ない、と書く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "移動平均と PMax の線",
+        "逐語": "BUY when Moving Average crosses above PMax",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md",
+        "出どころの質": "ライブラリのコード（GitHub）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と PMax の線の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "クロスの相手",
+        "指標データ": "終値",
+        "教科書": "移動平均（PMax の文は移動平均と PMax の線のクロスを書く）",
+        "注": "どちらが正しいかは決めない"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "length の範囲 まだ決めていない・代表の値 スキャル [10]／デイトレ [10]；multiplier の範囲 まだ決めていない・代表の値 スキャル [3.0]／デイトレ [3.0]",
+        "教科書": "資料の表の既定＝[\"EMA\"]・[10, 3.0, 10, \"EMA\"]・[10, 3.0, 10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          "EMA"
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/script/sU9molfV/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          3.0,
+          10,
+          "EMA"
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/fmzquant/strategies/blob/master/Profit-Maximizer-PMax.md"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10,
+          3.0,
+          10
+        ],
+        "結果": "開けない",
+        "URL": "https://usethinkscript.com/threads/profit-maximizer-for-thinkorswim.18652/",
+        "注": "HTTP 403"
+      },
+      {
+        "欄": "範囲",
+        "値": "ATR Length 1〜100、ATR Multiplier 0.1〜100、Moving Average Length 1〜100（画面で選べる範囲）",
+        "結果": "開けない",
+        "URL": "https://forum.amibroker.com/t/pmax-indicator-in-amibroker/30028",
+        "注": "HTTP 200"
+      }
+    ],
+    "分からなかったこと": [
+      "usethinkscript の PMax の掲示板は HTTP 403 で開けない"
+    ]
+  },
+  {
+    "種類": "close vs PSAR%",
+    "元の指標": "Parabolic SAR（Welles Wilder・1978年『New Concepts in Technical Trading Systems』）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Since it is time and price based it is not adept at measuring the actual strength of a trend, merely its direction and duration.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "向きと続いた時間を見て、強さは測れないと書く"
+      },
+      {
+        "区分": "向き",
+        "逐語": "Signals trend direction and trailing exit points.",
+        "URL": "https://ta-lib.org/functions/sar.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "書いてない",
+        "逐語": "The stop level increases speed based on an \"Acceleration Factor.\"",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "加速係数は、ストップの水準が近づく速さを決める（Fidelity）。選ぶ語に当たる語が無い"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "加速係数は、新しい極値が出るたびに増える",
+        "向きを持つ": "書いてない",
+        "逐語": "Each time the EP changes, the AF increases by 0.02 up to the maximum acceleration, 0.2 in Wilders' case.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "読み方": "加速係数は SAR の感度を決める",
+        "向きを持つ": "書いてない",
+        "逐語": "Multiply the difference by the AF (Acceleration Factor - determines the sensitivity of the SAR) and add the result to the current SAR to obtain the SAR for the next day.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "読み方": "反転すると初めの値に戻る",
+        "向きを持つ": "書いてない",
+        "逐語": "Upon a trend switch, the first SAR value for this new trend is set to the last EP recorded on the prior trend, EP is then reset accordingly to this period's maximum, and the acceleration factor is reset to its initial value of 0.02.",
+        "URL": "https://en.wikipedia.org/wiki/Parabolic_SAR",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "書いてない",
+        "下限": 0.02,
+        "上限": 0.2,
+        "逐語": "The AF used by Wilder is 0.02. This means move the stop 2 percent of distance between EP and the original stop.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "加速係数は、極値とストップの距離の割合。0.02 から始まり 0.2 で頭打ち（Wilder の値）。選ぶ語の単位に当たる語が無い"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "PSAR加速",
+        "組の相手": "SAR",
+        "逐語": "outReal — Parabolic SAR stop/reverse level per bar",
+        "URL": "https://ta-lib.org/functions/sar.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "教科書の出力は SAR の水準。加速係数そのものを出力として書いた文は無かった。指標データは pandas-ta の psar の3列目（加速係数）"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Current SAR = Prior SAR + Acceleration Factor (Prior Extreme Point – Prior SAR)",
+        "The AF used by Wilder is 0.02. This means move the stop 2 percent of distance between EP and the original stop. Each time the EP changes, the AF increases by 0.02 up to the maximum acceleration, 0.2 in Wilders' case."
+      ],
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+      "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では、指標データの照合の定義（加速係数は 0.02 ずつ増えて 0.2 で頭打ち）と違わない。TradingView は、反転のときの扱いと、始めの足の扱い（『we assume that the SAR value on the first bar cannot be calculated because there are no previous values』）を書く。コードの計算は見ていない"
+    },
+    "確定と期間": [
+      {
+        "確定に要る本数": 2,
+        "逐語": "On a second bar, we define if a trend is up or down, comparing the close values of the first and second bars.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "TradingView の作り方。1本目は計算できないと書く。Wilder の本には始めの作り方が無いとも書く"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "af0（初めの加速因数）・af（増やす幅）・max_af（上限）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              0.02,
+              0.2
+            ],
+            "逐語": "The Parabolic SAR can be found as an Overlay in SharpCharts. The default parameters are 0.02 for the Starting Step and 0.2 for the Maximum Step.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。同じページに、開発者 Wilder の 1978 年の本『New Concepts in Technical Trading Systems』が出どころだとある",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              0.02,
+              0.2
+            ],
+            "逐語": "Acceleration Factor (AF): Starting at .02, AF increases by .02 each time the extreme point makes a new high. AF can reach a maximum of .20, no matter how long the uptrend extends.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）の計算の説明",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              0.02,
+              0.2
+            ],
+            "逐語": "optInAcceleration | real | 0.02 | ≥ 0 | Step added to the acceleration factor on each new extreme point\noptInMaximum | real | 0.2 | ≥ 0 | Ceiling on the acceleration factor",
+            "URL": "https://ta-lib.org/functions/sar.html",
+            "出どころの質": "ライブラリの説明（ta-lib.org の関数ページ。表の1行を、セルを ' | ' で区切って写した）。なお Python 版の説明（https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html）は『real = SAR(high, low, acceleration=0, maximum=0)』と書いており、既定の表示が 0 で食い違う。C ソース（https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c）の既定は 0.02 と 0.2",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+          },
+          {
+            "値": [
+              0.02,
+              0.02,
+              0.2
+            ],
+            "逐語": "af0 (float): Initial Acceleration Factor. Default: ```0.02```\n        af (float): Acceleration Factor. Default: ```0.02```\n        max_af (float): Maximum Acceleration Factor. Default: ```0.2```",
+            "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）",
+            "出どころの質": "ライブラリのソース（pandas-ta 0.4.71b0 の PyPI 配布物の中のソース）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              0.02,
+              0.02,
+              0.2
+            ],
+            "逐語": "The initial factor is 0.02, the price step is also 0.02, and the maximum AF is 0.2. Most traders use these settings for the Parabolic. Wilder also used them.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社のブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              "AF 0.03〜0.04",
+              "max 0.25〜0.30"
+            ],
+            "逐語": "4. Scalping (Short Timeframes)\nSettings: AF = 0.03–0.04, max AF = 0.25–0.30.\nWhy: Higher settings make the SAR more responsive to rapid price changes on 1-minute or 5-minute charts.\nExample: On a 5-minute USD/JPY chart, use AF = 0.04, max AF = 0.30 for quick scalping trades.",
+            "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+            "出どころの質": "ブログ（PSAR の解説サイト parabolicsar.com）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              "Step 0.01",
+              "Maximum 0.1"
+            ],
+            "逐語": "Adjust the settings to a Step of 0.01 and Maximum of 0.1 to optimize for scalping.",
+            "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+            "出どころの質": "証券会社のブログ（Opofinance）。同じ記事に『traders tend to reduce the Step to 0.01 for more precise trend reversals』とあり、parabolicsar.com（Step を上げる）と向きが逆",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              "step 0.022"
+            ],
+            "逐語": "Scalping in the classic version, especially when it comes to trading on minute timeframes, requires the settings that are most sensitive to price changes. So it is best to set the largest value recommended by Wilder at 0.022.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社のブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              "step 0.021（M5）"
+            ],
+            "逐語": "For the M5 timeframe, I would stick to Wilder’s classic teachings and also use the Parabolic SAR setting with a step of 0.021 as the lowest price for the step.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社のブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              0.02,
+              0.01,
+              0.2
+            ],
+            "逐語": "The example above is Euro-Dollar on the 5 minute chart using PSAR settings 0.02, 0.01 (SAR Increment), and 0.2, with the 100-period exponential moving average acting as a trend filter.",
+            "URL": "https://alchemymarkets.com/education/indicators/parabolic-sar/",
+            "出どころの質": "証券会社の教育ページ（Alchemy Markets）。5分足の例で、推奨の値ではない",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              0.02,
+              0.02,
+              0.2
+            ],
+            "逐語": "The standard Parabolic SAR settings are quite applicable for classic intraday trading. In rare cases, when it comes to the timeframes M5 and M15 and the indicator needs higher sensitivity, the acceleration factor starts with a 0.021 step.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社のブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              "AF 0.01",
+              "max 0.08"
+            ],
+            "逐語": "3. Cryptocurrency Trading\nSettings: AF = 0.01, max AF = 0.08–0.10.\nWhy: Crypto markets like Bitcoin are highly volatile, so lower settings keep the SAR farther from the price, reducing whipsaws.\nExample: On a 1-hour Bitcoin chart, use AF = 0.01, max AF = 0.08 to trade pullbacks in trending markets.\nBest For: Scalping or day trading volatile assets.",
+            "URL": "https://parabolicsar.com/best-parabolic-sar-settings/",
+            "出どころの質": "ブログ（parabolicsar.com）。暗号資産向けの節で、例は BTC の1時間足",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "step 0.018〜0.021、maximum 0.018〜0.021",
+            "逐語": "In practice, traders often adjust these parameters in the range from 0.018 to 0.021 for the step and from 0.018 to 0.021 for the maximum acceleration factor.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社のブログ（LiteFinance）。maximum の範囲が step と同じ数で書かれており、同じ記事の既定（0.2）と合わない",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+            "逐語": "static const TA_RealRange TA_DEF_SAR_Acceleration =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.01,\n   0.2,\n   0.01\n};\n…\nstatic const TA_RealRange TA_DEF_SAR_Maximum =\n{\n   0.0,\n   TA_REAL_MAX,\n   4,\n   0.2,\n   0.4,\n   0.01\n};",
+            "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+            "出どころの質": "ライブラリのソース（TA-Lib の C ソースの表。suggested_start／suggested_end／suggested_increment は、ta_abstract.h に『used by Tech. Analysis software doing parameter \"optimization\"』と書いてある最適化用の推奨範囲）（並び＝min, max, precision, suggested_start, suggested_end, suggested_increment）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る。1サイトだけ"
+          },
+          {
+            "値": "Step 0.01〜0.03、Maximum Step 0.10〜0.20（感度の比べ方の例）",
+            "逐語": "Chart 6 shows IBM with SAR (0.01, 0.20). The step is 0.01 and the Maximum Step is 0.20. Chart 7 shows IBM with a higher Step (0.03).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）。調整の範囲としてでなく、感度の違いを見せる例として出している。同じページに Maximum Step 0.10 の例もある",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "af0（加速係数の始めの値）",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.02,
+            "逐語": "The starting value for the Acceleration Factor (.02 is the Default).",
+            "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.02,
+            "逐語": "optInAcceleration real 0.02 ≥ 0 Step added to the acceleration factor on each new extreme point",
+            "URL": "https://ta-lib.org/functions/sar.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TA-Lib は始めの値と増やす幅を1つの引数にする"
+          },
+          {
+            "値": 0.02,
+            "逐語": "The AF used by Wilder is 0.02.",
+            "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+            "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "開発者 Wilder の値として紹介"
+          },
+          {
+            "値": 0.02,
+            "逐語": "Usually, this is set initially to a value of 0.02, but can be chosen by the trader.",
+            "URL": "https://en.wikipedia.org/wiki/Parabolic_SAR",
+            "出どころの質": "百科事典（Wikipedia）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": [
+              0.02,
+              0.2
+            ],
+            "逐語": "The initial factor is 0.02, the price step is also 0.02, and the maximum AF is 0.2. Most traders use these settings for the Parabolic. Wilder also used them.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              0.01,
+              0.1
+            ],
+            "逐語": "Adjust the settings to a Step of 0.01 and Maximum of 0.1 to optimize for scalping.",
+            "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+            "出どころの質": "証券会社・ブログ（OpoFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足・3分足・5分足（scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま（増やす幅 0.01・上限 0.1）。1サイトだけ"
+          },
+          {
+            "値": "step 0.022",
+            "逐語": "Scalping in the classic version, especially when it comes to trading on minute timeframes, requires the settings that are most sensitive to price changes. So it is best to set the largest value recommended by Wilder at 0.022.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "分足（scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": "step 0.021（2本目は 0.04 刻み）",
+            "逐語": "For the M5 timeframe, I would stick to Wilder’s classic teachings and also use the Parabolic SAR setting with a step of 0.021 as the lowest price for the step. It is quite sensitive to fluctuations in five-minute charts. But the strategy using two Parabolics in a five-minute chart suggests adjusting one of the indicators in 0.04 increments.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              0.02,
+              0.2
+            ],
+            "逐語": "The standard Parabolic SAR settings are quite applicable for classic intraday trading. In rare cases, when it comes to the timeframes M5 and M15 and the indicator needs higher sensitivity, the acceleration factor starts with a 0.021 step.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "指定なし（classic intraday trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "step 0.018〜0.021・maximum 0.018〜0.021（原文の数字のまま）",
+            "逐語": "In practice, traders often adjust these parameters in the range from 0.018 to 0.021 for the step and from 0.018 to 0.021 for the maximum acceleration factor.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文の数字のまま（上限も 0.018〜0.021 と書いてある）。1サイトだけ"
+          },
+          {
+            "値": 0.01,
+            "逐語": "Generally, it is preferable in stocks trading to set the acceleration factor to 0.01, so that it is not too sensitive to local decreases. For commodity or currency trading, the preferred value is 0.02.",
+            "URL": "https://en.wikipedia.org/wiki/Parabolic_SAR",
+            "出どころの質": "百科事典（Wikipedia）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "株は 0.01、商品と通貨は 0.02 と書く。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "af（加速係数を増やす幅）",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.02,
+            "逐語": "The increment in which the Acceleration Factor will move (.02 is Default).",
+            "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.02,
+            "逐語": "Each time the EP changes, the AF increases by 0.02 up to the maximum acceleration, 0.2 in Wilders' case.",
+            "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+            "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "増やす幅だけを分けて書いたスキャルの値は無かった（OpoFinance の Step 0.01 は始めの値と幅を1つにしている）"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "max_af（加速係数の上限）",
+        "意味": "倍率",
+        "既定": [
+          {
+            "値": 0.2,
+            "逐語": "The maximum value of the Acceleration Factor (.20 is the Default)",
+            "URL": "https://www.tradingview.com/support/solutions/43000502597-parabolic-sar-sar/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.2,
+            "逐語": "optInMaximum real 0.2 ≥ 0 Ceiling on the acceleration factor",
+            "URL": "https://ta-lib.org/functions/sar.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.2,
+            "逐語": "To prevent it from getting too large, a maximum value for the acceleration factor is normally set to 0.20.",
+            "URL": "https://en.wikipedia.org/wiki/Parabolic_SAR",
+            "出どころの質": "百科事典（Wikipedia）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 0.2,
+            "逐語": "Important! Prior AF limit value can be changed in the LiteFinance web terminal and MT4. However, the author himself and his closest followers stick to the standard value of 0.2 when trading.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 0.1,
+            "逐語": "Maximum: 0.1 to reduce distance between the price and dots.",
+            "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/",
+            "出どころの質": "証券会社・ブログ（OpoFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足・3分足・5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "持たない",
+        "値": null,
+        "意味": "加速係数そのものに閾値を置く文は無い",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "af starts at Acceleration, += Acceleration each new EP, capped at Maximum.",
+        "URL": "https://ta-lib.org/functions/sar.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "閾値の値を書いたページは見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "Welles Wilder's Parabolic Stop and Reverse (SAR) is a trailing stop-based trading system; it is often used as an indicator as well.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "加速係数は SAR の水準の近づく速さ。調べた人の読み"
+      },
+      {
+        "使い方の種類": "出口の反転",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "When the stop is hit you close the current trade and initiate a new trade in the opposite direction.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": "レンジ",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "The Parabolic SAR may cause whipsaws during sideways or trendless markets.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/psar",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": "レンジ",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "Important! If the trending market price moves sideways, these SAR trading signals do not work. Avoid using PSAR in flat.",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/",
+        "出どころの質": "証券会社・ブログ（LiteFinance）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "合図が本物かを確かめる条件",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Therefore, Wilder recommends first establishing the direction or change in direction of the trend through the use of parabolic SAR, and then using a different indicator such as the Average Directional Index to determine the strength of the trend.",
+        "URL": "https://en.wikipedia.org/wiki/Parabolic_SAR",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "SAR の水準（価格が SAR を抜く）",
+        "逐語": "Price crossing SAR flips direction.",
+        "URL": "https://ta-lib.org/functions/sar.html",
+        "出どころの質": "ライブラリの説明（TA-Lib 公式の関数ページ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と Parabolic SAR の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "af0 の範囲 0.02〜0.02・代表の値 スキャル [0.02]／デイトレ [0.02]；af の範囲 0.01〜0.02・代表の値 スキャル [0.02]／デイトレ [0.02]；max_af の範囲 0.018〜0.2・代表の値 スキャル [0.2]／デイトレ [0.2]",
+        "教科書": "資料の表の既定＝[0.02, 0.2]・[0.02, 0.02, 0.2]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/sar.html",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.02,
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://files.pythonhosted.org/packages/95/6d/60b88a0334a8c6a5be114ed2c46c8f3e164127d0eccd9ff99b50773f2b20/pandas_ta-0.4.71b0.tar.gz （中の src/pandas_ta/trend/psar.py）"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          0.02,
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "AF 0.03〜0.04",
+          "max 0.25〜0.30"
+        ],
+        "結果": "合う",
+        "URL": "https://parabolicsar.com/best-parabolic-sar-settings/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "Step 0.01",
+          "Maximum 0.1"
+        ],
+        "結果": "合う",
+        "URL": "https://blog.opofinance.com/en/parabolic-sar-scalping-strategy/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "step 0.022"
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          "step 0.021（M5）"
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          0.02,
+          0.01,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://alchemymarkets.com/education/indicators/parabolic-sar/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          0.02,
+          0.02,
+          0.2
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          "AF 0.01",
+          "max 0.08"
+        ],
+        "結果": "合う",
+        "URL": "https://parabolicsar.com/best-parabolic-sar-settings/"
+      },
+      {
+        "欄": "範囲",
+        "値": "step 0.018〜0.021、maximum 0.018〜0.021",
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/parabolic-sar-indicator/"
+      },
+      {
+        "欄": "範囲",
+        "値": "Acceleration 0.01〜0.2（刻み0.01）、Maximum 0.2〜0.4（刻み0.01）※推奨範囲",
+        "結果": "合う",
+        "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_abstract/tables/table_s.c",
+        "注": "逐語は資料の表の写しで、表の区切り・省略・注を含む。切れ目の前後の文はそれぞれページに在る"
+      },
+      {
+        "欄": "範囲",
+        "値": "Step 0.01〜0.03、Maximum Step 0.10〜0.20（感度の比べ方の例）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/parabolic-sar.md"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第2回で同じ元の指標（PSAR加速）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs PWMA%",
+    "元の指標": "PWMA（Pascal's Weighted Moving Average・ライブラリの出典は Kevin Johnson）",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "Pascal's Weighted Moving Average is similar to a symmetric triangular window except PWMA's weights are based on Pascal's Triangle.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/pwma.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "重みがパスカルの三角形の移動平均。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "PWMA",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "triangle = utils.pascals_triangle(length + 1)",
+        "PWMA = close.rolling(length)_.apply(weights(triangle), raw=True)"
+      ],
+      "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/pwma.py",
+      "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式（ライブラリの説明文）。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              10
+            ],
+            "逐語": "length (int): It's period.  Default: 10",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/pwma.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。出典の欄は \"Source: Kevin Johnson\" だけで原典の数字は無い",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 10,
+            "逐語": "length (int): It's period.  Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/pwma.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と PWMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 10〜200・代表の値 スキャル [10]／デイトレ [10]",
+        "教科書": "資料の表の既定＝[10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/pwma.py"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（PWMA傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs RAINBOW%",
+    "元の指標": "Rainbow Charts（Mel Widner・Stocks & Commodities 1997年7月）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "This creates a \"rainbow\" effect that helps visualize trend strength and potential reversals.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "強さ",
+        "逐語": "This creates a \"rainbow\" effect that helps visualize trend strength and potential reversals.",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "虹の幅が広がると、いまのトレンドが続く",
+        "向きを持つ": "書いてない",
+        "逐語": "As the rainbow grows in width, the current trend gives signs of continuity,",
+        "URL": "https://www.prorealcode.com/prorealtime-indicators/rainbow-oscillator/",
+        "出どころの質": "利用者が作ったコードの説明（ProRealCode）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Rainbow Oscillator のページの文"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "RAINBOW",
+        "組の相手": "前の線に SMA を掛けた線の束（既定 10 本）",
+        "逐語": "num_ribbons (int): Number of rainbow bands. Default: 10",
+        "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+        "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "MA1 = SMA(close, length)",
+        "MA2 = SMA(MA1, length)",
+        "MA[n] = SMA(MA[n-1], length)"
+      ],
+      "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+      "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式。指標データは束の k 本目の線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "L（1回あたりの SMA の本数）・k（何回 重ねがけするか）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": [
+              2,
+              10
+            ],
+            "逐語": "The core of the Rainbow Charts is a 2-period Simple Moving Average to which recursive smoothing is applied. In this way, nine other moving averages are created, each new one based on the previous average.",
+            "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/",
+            "出どころの質": "ブログ（TradingPedia）。1本目＋9本＝10本",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              2,
+              10
+            ],
+            "逐語": "His construction starts from a two-period simple average of price and smooths it nine more times, so the inner lines hug price while the outer ones carry progressively longer effective lag.",
+            "URL": "https://www.luxalgo.com/library/concept/rainbow-ma-stack/",
+            "出どころの質": "指標の販売会社の解説（LuxAlgo）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": [
+              2,
+              10
+            ],
+            "逐語": "length (int): SMA period. Default: 2",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rainbow.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）。同じファイルに \"num_ribbons (int): Number of rainbow bands. Default: 10\"",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "L_",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "length (int): SMA period. Default: 2",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 2,
+            "逐語": "Length = 2",
+            "URL": "https://www.prorealcode.com/prorealtime-indicators/rainbow-oscillator/",
+            "出どころの質": "利用者が作ったコードの説明（ProRealCode）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      },
+      {
+        "名前": "k",
+        "意味": "本数",
+        "既定": [
+          {
+            "値": 10,
+            "逐語": "num_ribbons (int): Number of rainbow bands. Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rainbow.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": [
+          80,
+          20
+        ],
+        "意味": "Rainbow Oscillator が 80 より上・20 より下は急な反転が起きやすい",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "if the value of the oscillator goes beyond 80, the market becomes more and more unstable, being prone to a sudden reversal.",
+        "URL": "https://www.prorealcode.com/prorealtime-indicators/rainbow-oscillator/",
+        "出どころの質": "利用者が作ったコードの説明（ProRealCode）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Rainbow Oscillator（束から作る振動子）の閾値。束の線そのものの閾値ではない。1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "The safest bandwidth value where the market is stable is between 20 and 80, in the Rainbow Oscillator indicator value.",
+        "URL": "https://www.prorealcode.com/prorealtime-indicators/rainbow-oscillator/",
+        "出どころの質": "利用者が作ったコードの説明（ProRealCode）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Rainbow Oscillator の文"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と Rainbow の線 の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "L_ の範囲 2〜2・代表の値 スキャル [2]／デイトレ [2]；k の範囲 1〜10・代表の値 スキャル [10]／デイトレ [10]",
+        "教科書": "資料の表の既定＝[2, 10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          2,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://www.tradingpedia.com/forex-trading-indicators/rainbow-charts/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          2,
+          10
+        ],
+        "結果": "違う",
+        "URL": "https://docs.motivewave.com/studies/q-r#rainbow-c",
+        "注": "ページの本文に見つからない部分＝「Rainbow C was authored by Mel Widner in the Stocks and Commodities Magazine 07/1997. It is a colorful display of ten smoothed moving averages. Calculation //input = price, user defined, default is clo」"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          2,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/rainbow-ma-stack/"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          2,
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rainbow.py"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（RAINBOW傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "close vs RMA%",
+    "元の指標": "RMA（Wilder の平滑移動平均・SMMA）",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "The Wilder's Smoothing study is similar to the Exponential Moving Average with the difference that Wilder's Smoothing uses a smoothing factor of 1/length which makes it respond more slowly to price changes compared to other moving averages.",
+        "URL": "https://tlc.thinkorswim.com/center/reference/Tech-Indicators/studies-library/V-Z/WildersSmoothing",
+        "出どころの質": "証券会社のヘルプ（thinkorswim）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "ゆっくり動く平均。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった。元の線は値段の上に重ねる線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "RMA",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の線"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Wilder, however, uses an EMA% of 1/14 which equals 7.1%."
+      ],
+      "URL": "https://www.incrediblecharts.com/indicators/wilder_moving_average.php",
+      "出どころの質": "定番の教育サイト（Incredible Charts・Colin Twiggs）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "元の線の式（重み 1/n の EMA）。指標データはこの線の5本前からの変化率%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "length（本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              14
+            ],
+            "逐語": "Wilder's own writing uses a period of 14, and pandas-ta defaults to 10. The default here is the one the rest of the moving-average family carries, so a call that swaps one MA for another keeps its period.",
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）が Wilder の原典の値として書いたもの",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              30
+            ],
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor",
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              10
+            ],
+            "逐語": "length (int): It's period. Default: 10",
+            "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rma.py",
+            "出どころの質": "ライブラリのソース（このプロジェクトが使う pandas-ta-classic）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+            "逐語": "optInTimePeriod integer 30 1–100000 Number of bars in the seed window, and the reciprocal of the smoothing factor",
+            "URL": "https://ta-lib.org/functions/rma.html",
+            "出どころの質": "ライブラリの説明（TA-Lib 公式）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      },
+      {
+        "名前": "n",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 10,
+            "逐語": "length (int): It's period. Default: 10",
+            "URL": "https://files.pythonhosted.org/packages/96/88/439fb35fe42bf458623e21e4e7bc62408e4f0cd4cd9ac387806510db2e01/pandas_ta_classic-0.6.52-py3-none-any.whl#pandas_ta_classic/overlap/rma.py",
+            "出どころの質": "ライブラリのコード（pandas-ta-classic 0.6.52 の配布物の中のファイル・requirements.txt が指定する版）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          },
+          {
+            "値": 9,
+            "逐語": "The default setting for this indicator is a period of 9.",
+            "URL": "https://www.tradingview.com/support/solutions/43000591343-smoothed-moving-average/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TradingView の Smoothed Moving Average のページ。Wilder の平均と同じ物とはページに書いてない。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "書いてない",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "We recommend that users try shorter time periods when using one of the above indicators.",
+        "URL": "https://www.incrediblecharts.com/indicators/wilder_moving_average.php",
+        "出どころの質": "定番の教育サイト（Incredible Charts・Colin Twiggs）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じ本数なら標準の EMA より遅いので、短い本数を勧める、と書く"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と RMA の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 10〜200・代表の値 スキャル [10]／デイトレ [10]",
+        "教科書": "資料の表の既定＝[14]・[30]・[10]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          14
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/rma.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          30
+        ],
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/rma.html"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          10
+        ],
+        "結果": "合う",
+        "URL": "https://github.com/xgboosted/pandas-ta-classic/blob/main/pandas_ta_classic/overlap/rma.py"
+      },
+      {
+        "欄": "範囲",
+        "値": "1〜100000（ライブラリが受け付ける値。調整の推奨ではない）",
+        "結果": "合う",
+        "URL": "https://ta-lib.org/functions/rma.html"
+      }
+    ],
+    "分からなかったこと": [
+      "教科書の欄の一部は、第4回で同じ元の指標（RMA傾き%）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  }
+]
