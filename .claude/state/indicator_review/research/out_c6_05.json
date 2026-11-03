@@ -4072,7 +4072,7 @@
         "値": "ATR Length 1〜100、ATR Multiplier 0.1〜100、Moving Average Length 1〜100（画面で選べる範囲）",
         "結果": "開けない",
         "URL": "https://forum.amibroker.com/t/pmax-indicator-in-amibroker/30028",
-        "注": "HTTP 200"
+        "注": "HTTP 200 で返ったが、本文の文字が取れなかった（ページの中身が JavaScript で作られる見込み）"
       }
     ],
     "分からなかったこと": [
