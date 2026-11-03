@@ -2,7 +2,7 @@
 # 要件定義と工事の流れ（全文・固定・消さない）
 
 ★この文書は、まこさんが OK した文を、プログラムが逐語のファイルから写した物です。見出しの3行と、この説明の4行だけが、プログラムの中の決まった文です。
-★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt／`.claude/state/verbatim/order-few-indicators-20261102/` の okd_order_few_20261102.txt／`.claude/state/verbatim/one-path-first-20261102/` の okd_one_path_20261102.txt／`.claude/state/verbatim/nine-indicators-20261102/` の okd_nine_20261102.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
+★出どころ＝`.claude/state/verbatim/requirements-core-20261012/` の okd_requirements_core_20261012.txt・okd_work_flow_20261012.txt・okd_design_audit_scope_20261012.txt／`.claude/state/verbatim/design-audit-scope-20261020/` の okd_design_audit_scope_20261020.txt／`.claude/state/verbatim/order-few-indicators-20261102/` の okd_order_few_20261102.txt／`.claude/state/verbatim/one-path-first-20261102/` の okd_one_path_20261102.txt／`.claude/state/verbatim/nine-indicators-20261102/` の okd_nine_20261102.txt／`.claude/state/verbatim/law-place-20261103/` の okd_law_place_20261103.txt（記録の発言との照らし＝`python3 .claude/tools/gen_verbatim.py --verify <工事のフォルダ>/<名前>`）。
 ★作り直し＝`python3 .claude/tools/gen_core_requirements.py --write`。検出＝`--verify`。
 ★毎回 載せる物は、この全文の要約（`.claude/rules/core_requirements.md`）です。設計書の監査の要件ごとの問いは、この全文から組みます。
 
@@ -193,3 +193,9 @@
 | 3 | 7種だけで新しいルールを作る | 7種 | 指標は増えません。ただし、E38 の成績とは言えなくなります |
 
 まこさんの決定（逐語 2026-11-02）＝「1」
+
+# 法則の置き場（2026-11-03 の決定・上の 5 の「法則」の置き場の行を置き替える。laws.json を作る工事〔ToDo の209番〕が終わるまでは、いまの置き場のまま）
+
+4. **要件の文を変えてよいでしょうか。** core_requirements_full.md:76 の「法則の置き場＝regime_detection_kb.md の §11」を、「法則の置き場＝laws.json。文書 法則一覧.md はそこから作る」に変えます。
+
+まこさんの決定（逐語 2026-11-03）＝「１，GMOコインに変更、時期はトレードBOTの完成後でよい／Bitgetは日本居住区からの取引ができなくなったので、削除でよい／２，GMOコイン／３，OK／４，OK」

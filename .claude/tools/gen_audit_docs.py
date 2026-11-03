@@ -159,7 +159,7 @@ REQ_STATE_HEAD = "### 要件の状態"
 REQ_STATES = ("満たす", "後の工事で受ける", "当たらない", "確かめられなかった")
 REQ_WAYS = ("動かした", "読んだだけ")
 # ★同日（まこさん「指標に関する工事（ほとんど該当しそうだが）に対しては、指標の構造の要件定義書との照らしを監査の依頼項目に入れてほしい」）
-STRUCT_REQ = "SDK/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の構造_要件定義書.md"
+STRUCT_REQ = "SDK/.claude/rules/要件定義書_レベル4_指標の構造.md"
 MARK = "<!-- gen_audit_docs:"
 # ★2026-09-29＝request-design（設計書と元データから依頼書の元データを作る口）
 GEN_MARK = "<!-- gen_audit_docs request-design"

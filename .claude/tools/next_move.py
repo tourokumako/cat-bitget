@@ -402,7 +402,7 @@ def current_index(st: list):
 #   WORK_DOCS は指標の工事の間の資料（外す条件＝指標の工事の実装の監査が済んだ後）。
 WORK_DOCS = (
     (".claude/rules/core_requirements_full.md", "要件定義書の正本（まこさん「core_requirements_full.md こちらが正本」2026-10-24）"),
-    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-single-source-fix-20261023/m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md", "指標の工事の要件定義書"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/要件定義書_レベル4_指標の集約工事.md", "指標の工事の要件定義書"),
     (".claude/state/indicator_review/fix_inventory_20261024.md", "直す相手の一覧（ファイル:行と①②③）"),
     (".claude/state/indicator_review/value_conflicts_20261024.md", "置き場どうしで値が違う物の一覧"),
 )

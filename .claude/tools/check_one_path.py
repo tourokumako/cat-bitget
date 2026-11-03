@@ -35,6 +35,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 SDK = ROOT / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
@@ -175,8 +176,51 @@ def t30(src: dict) -> tuple:
     return (PASS, "見本で止まる") if not why else (FAIL, "・".join(why))
 
 
+def t36(_src: dict) -> tuple:
+    """要件定義書2本が新しい場所に在り、動かす前の場所に無く、現役の5本が前の名前を指していない（文字を見るだけ）。"""
+    rules = SDK / ".claude" / "rules"
+    old_dir = SDK / ".claude" / "ratchet" / "acceptance_archive" / "verbatim" / "m2c15-single-source-fix-20261023"
+    old_names = ("m2c15_指標の構造_要件定義書.md", "m2c15_指標の情報を1つのデータに集約する修正_要件定義書.md")
+    why = [f"新しい場所に無い: {n}" for n in ("要件定義書_レベル4_指標の構造.md", "要件定義書_レベル4_指標の集約工事.md")
+           if not (rules / n).exists()]
+    why += [f"前の場所に残っている: {n}" for n in old_names if (old_dir / n).exists()]
+    state, tools = ROOT / ".claude" / "state", ROOT / ".claude" / "tools"
+    for p in (tools / "gen_audit_docs.py", tools / "next_move.py", state / "req_trace_src.json",
+              state / "next_step_src.json", state / "must_read_now.txt"):
+        if any(n in p.read_text(encoding="utf-8") for n in old_names):
+            why.append(f"前の名前を指している: {p.name}")
+    return (PASS, "新しい場所に在り、現役の5本は前の名前を指していない") if not why else (FAIL, "・".join(why))
+
+
+def t43(_src: dict) -> tuple:
+    """sdk 直下の並びの見本で、役割の無いフォルダを足すと止まり、消すと通る。実物のフォルダには触らない。"""
+    sys.path.insert(0, str(ROOT / ".claude" / "tools"))
+    import gen_folder_map as gfm
+    real_bot = gfm.BOT
+    with tempfile.TemporaryDirectory() as td:
+        box = pathlib.Path(td)
+        for names, base in ((gfm.entries(real_bot), box), (gfm.entries(real_bot / "scripts"), box / "scripts")):
+            base.mkdir(exist_ok=True)
+            for n in names:
+                (base / n.rstrip("/")).mkdir(exist_ok=True) if n.endswith("/") else (base / n).touch()
+        gfm.BOT = box
+        try:
+            why = []
+            if gfm.verify():
+                why.append(f"実物と同じ並びで止まった: {gfm.verify()[0][:60]}")
+            (box / "_役割の無い見本").mkdir()
+            if not any("役割の書いていない" in x for x in gfm.verify()):
+                why.append("役割の無いフォルダで止まらない")
+            (box / "_役割の無い見本").rmdir()
+            if gfm.verify():
+                why.append("消しても止まったまま")
+        finally:
+            gfm.BOT = real_bot
+    return (PASS, "役割の無いフォルダで止まり、消すと通る") if not why else (FAIL, "・".join(why))
+
+
 # 測る処理が在る試験。無い試験は「未作」と出す（作る ToDo で足す）
-CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T28": t28, "T30": t30}
+CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T28": t28, "T30": t30, "T36": t36, "T43": t43}
 
 
 def run_test(no: str, src: dict) -> tuple:
