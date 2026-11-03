@@ -1,0 +1,3705 @@
+[
+  {
+    "種類": "前週pivotS1",
+    "元の指標": "Standard（Traditional・Floor）Pivot Points（もとは取引所のフロアトレーダーが使った。考案者の名前は出どころに無い）",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Support 1 (S1) = (P x 2) - High",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "前週pivotS1",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Pivot Point (P) = (High + Low + Close)/3",
+        "Support 1 (S1) = (P x 2) - High"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない"
+    },
+    "確定と期間": [
+      {
+        "確定に要る本数": "書いてない",
+        "逐語": "Once Pivot Points are set, they do not change and remain in play throughout the day.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "日中の足",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "前の日の値で決め、その日のあいだ動かない"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（資料の表にパラメータの名前が無い）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "前日の高値・安値・終値",
+            "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+            "逐語": "S1 = P * 2 - prevHigh",
+            "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "日足のチャートは前の月",
+            "逐語": "Pivot Points for daily charts use the prior month's data.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": "前日の高値・安値・終値",
+            "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（1・5・10・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1D（前日）",
+            "逐語": "1D for chart resolutions up to and including 15 min",
+            "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "前日の高値・安値・終値",
+            "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（15分足を含む 1・5・10・15分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "前週の高値・安値・終値",
+            "逐語": "Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）（30・60・120分足）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1D（前日）",
+            "逐語": "1D for chart resolutions up to and including 15 min",
+            "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足まで）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1W（前週）",
+            "逐語": "1W for chart resolutions greater than 15 min and less than 1 day",
+            "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）（自動の設定・15分足より上で日足より下）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "期間",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "Weekly（その週の始値と前の週の4本値）",
+            "逐語": "For example, if \"Weekly\" is chosen, the indicator uses the current week's open and the previous week's open, high, low, and close (OHLC) to calculate the pivot point levels, and as a result, the levels change once a week.",
+            "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+            "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と前の週の S1 の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝\"前日の高値・安値・終値\"・\"前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値\"・\"日足のチャートは前の月\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "前日の高値・安値・終値",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points"
+      },
+      {
+        "欄": "既定",
+        "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/"
+      },
+      {
+        "欄": "既定",
+        "値": "日足のチャートは前の月",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points"
+      },
+      {
+        "欄": "スキャル",
+        "値": "前日の高値・安値・終値",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points"
+      },
+      {
+        "欄": "スキャル",
+        "値": "1D（前日）",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "前日の高値・安値・終値",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "前週の高値・安値・終値",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "1D（前日）",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "1W（前週）",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "基準線",
+    "元の指標": "一目均衡表（細田悟一）",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "The Tenkan Sen is an indicator of the market trend.",
+        "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "勢い",
+        "逐語": "The Tenkan-sen mainly shows short-term bullish or bearish momentum.",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+        "出どころの質": "証券会社・ブログ（LiteFinance）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "位置",
+        "逐語": "Also called the conversion line (blue line), it is primarily used as a signal line and a minor support/resistance line.",
+        "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "支持線・抵抗線としても使う。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "線が上か下へ動けばトレンド、横ならレンジ",
+        "向きを持つ": "書いてない",
+        "逐語": "If the blue line is moving up or down, it indicates that the market is trending. If it moves horizontally, it signals that the market is ranging.",
+        "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "転換線そのものの向きの読み方。乖離%の読み方ではない"
+      },
+      {
+        "読み方": "転換線が基準線より上ならトレンドは上向き",
+        "向きを持つ": "持つ",
+        "逐語": "When the shorter term indicator, TenkanSen, rises above the longer term indicator, KijunSen, the securities trend is typically positive.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "読み方": "上げでは価格が転換線で跳ね返ることが多い",
+        "向きを持つ": "書いてない",
+        "逐語": "The Tenkan-sen also acts as short-term support, and in an uptrend, the price often bounces off it.",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+        "出どころの質": "証券会社・ブログ（LiteFinance）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Tenkan-sen (転換線) calculation: (highest high + lowest low)/2 for the last 9 periods.",
+        "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "転換線は値段の線。指標データの乖離%の単位と値域を書いた文は無い。調べた人の読み"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "転換線",
+        "組の相手": "基準線",
+        "逐語": "There are five plots that make up the Ichimoku Cloud indicator.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "一目均衡表は5本の線。転換線は基準線と組で読む（Fidelity）。指標データは終値との乖離の1本"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "TenkanSen (Conversion Line): (High + Low) / 2 default period = 9"
+      ],
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+      "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "転換線の部分は、指標データの式（t_ 本の最高値と最安値の中点）と文の上では違わない。指標データは、終値をその中点で割って 1 を引き、100 を掛けた乖離%を出す。この乖離の形は教科書に無い。コードの計算は見ていない"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった。式から読むと t_ 本の高値と安値が要る（調べた人の読み）"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "転換線の期間・基準線の期間・先行スパンBの期間",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": [
+              9,
+              26,
+              52
+            ],
+            "逐語": "The default setting for the Base Line is 26 periods and can be adjusted. On a daily chart, this line is the midpoint of the 26-day high-low range, which is almost one month.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              9,
+              26,
+              52
+            ],
+            "逐語": "Default settings are 9 for the Conversion Line, 26 for the Base Line and 52 for the Leading Span B.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+            "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              5,
+              13,
+              26
+            ],
+            "逐語": "Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社（LiteFinance）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足または5分足（原文の呼び名は Scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              12,
+              24,
+              120
+            ],
+            "逐語": "The best Ichimoku settings for scalping and 1-minute chart are 12-24-120, where 12 is for the Conversion Line ( Tenkan-sen), 24 for the Base Line (Kyun-sen ), and 120 for the Leading Span B (Senkou Span B).",
+            "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+            "出どころの質": "ブログ（forex.in.rs）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足（scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": [
+              9,
+              26,
+              52
+            ],
+            "逐語": "The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52, where nine is for the Conversion Line ( Tenkan-sen), 26 for the Base Line (Kyun-sen ), and 52 for the Leading Span B (Senkou Span B).",
+            "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+            "出どころの質": "ブログ（forex.in.rs）",
+            "読んだ日": "2026-11-03",
+            "時間足": "5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              5,
+              13,
+              26
+            ],
+            "逐語": "Is the Ichimoku 15-minute strategy good for day trading? Yes, the Ichimoku 15-min strategy can work for day trading, but it calls for caution. Market noise leads to more false signals on lower time frames. Use faster settings (5, 13, 26) and confirm entries with the Chikou Span and trading volume.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社（LiteFinance）の解説",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足（day trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ]
+      },
+      {
+        "名前": "t_（転換線の本数）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 9,
+            "逐語": "TenkanSen (Conversion Line): (High + Low) / 2 default period = 9",
+            "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+            "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": 9,
+            "逐語": "Tenkan-sen (転換線) calculation: (highest high + lowest low)/2 for the last 9 periods.",
+            "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+            "出どころの質": "百科事典（Wikipedia）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": ""
+          },
+          {
+            "値": [
+              9,
+              26,
+              52
+            ],
+            "逐語": "Best settings. Classic: 9, 26, 52. Scalping: 5, 13, 26. Swing trading: 9, 26, 52.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま（転換線・基準線・先行スパン B）。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": [
+              5,
+              13,
+              26
+            ],
+            "逐語": "Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足または5分足（原文の呼び名は Scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま。1サイトだけ"
+          },
+          {
+            "値": [
+              12,
+              24,
+              120
+            ],
+            "逐語": "The best Ichimoku settings for scalping and 1-minute chart are 12-24-120, where 12 is for the Conversion Line ( Tenkan-sen), 24 for the Base Line (Kyun-sen ), and 120 for the Leading Span B (Senkou Span B).",
+            "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+            "出どころの質": "ブログ（forex.in.rs）",
+            "読んだ日": "2026-11-03",
+            "時間足": "1分足（scalping）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま。1サイトだけ"
+          },
+          {
+            "値": [
+              9,
+              26,
+              52
+            ],
+            "逐語": "The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52, where nine is for the Conversion Line ( Tenkan-sen), 26 for the Base Line (Kyun-sen ), and 52 for the Leading Span B (Senkou Span B).",
+            "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+            "出どころの質": "ブログ（forex.in.rs）",
+            "読んだ日": "2026-11-03",
+            "時間足": "5分足",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま。同じページで『we saw that performance was worse on the 5-minute chart than on H4 or daily』とも書く。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": [
+              5,
+              13,
+              26
+            ],
+            "逐語": "Is the Ichimoku 15-minute strategy good for day trading? Yes, the Ichimoku 15-min strategy can work for day trading, but it calls for caution. Market noise leads to more false signals on lower time frames. Use faster settings (5, 13, 26) and confirm entries with the Chikou Span and trading volume.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "15分足（day trading）",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "組のまま。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "1時間足より上で使う",
+            "逐語": "The indicator works best on 1-hour time frames and above.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+            "出どころの質": "証券会社・ブログ（LiteFinance）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "値の範囲ではなく時間足の文。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "前提つき",
+        "値": "基準線",
+        "意味": "転換線が基準線より上か下か",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "When TenkanSen falls below KijunSen, the securities trend is typically negative.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "閾値の値は無い。基準線と比べる。1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "A crossover above the Base Line signals a buying opportunity, while a crossover below it signals a selling opportunity.",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+        "出どころの質": "証券会社・ブログ（LiteFinance）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "転換線と基準線のクロス"
+      },
+      {
+        "使い方の種類": "合図が本物かを確かめる条件",
+        "場面": "上げ",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "逐語": "A buy signal is reinforced when the Tenkan Sen crosses above the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all above the cloud.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "合図が本物かを確かめる条件",
+        "場面": "下げ",
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "逐語": "A sell signal is reinforced when the TenKan Sen crosses below the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all below the cloud.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": "レンジ",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "In sideways markets, though, the line often gives false signals, which is why traders use the cloud to filter them out.",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+        "出どころの質": "証券会社・ブログ（LiteFinance）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "揉み合いではだましが多い"
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "If it moves horizontally, it signals that the market is ranging.",
+        "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+        "出どころの質": "百科事典（Wikipedia）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "出口の反転",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "Use a clear exit rule: opposite Tenkan/Kijun cross, price closing inside the cloud, or your volatility‑based target being hit.",
+        "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+        "出どころの質": "ブログ（forex.in.rs）",
+        "読んだ日": "2026-11-03",
+        "時間足": "5分足",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "クロスの相手",
+        "値": "基準線（Kijun-sen）",
+        "逐語": "A buy signal is reinforced when the Tenkan Sen crosses above the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all above the cloud.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud",
+        "出どころの質": "定番の教育サイト（Fidelity の学習ページ・証券会社）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "k_ の範囲 13〜26・代表の値 スキャル まだ決めていない／デイトレ まだ決めていない",
+        "教科書": "資料の表の既定＝[9, 26, 52]",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": [
+          9,
+          26,
+          52
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud"
+      },
+      {
+        "欄": "既定",
+        "値": [
+          9,
+          26,
+          52
+        ],
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          5,
+          13,
+          26
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          12,
+          24,
+          120
+        ],
+        "結果": "合う",
+        "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/"
+      },
+      {
+        "欄": "スキャル",
+        "値": [
+          9,
+          26,
+          52
+        ],
+        "結果": "合う",
+        "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": [
+          5,
+          13,
+          26
+        ],
+        "結果": "合う",
+        "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/"
+      }
+    ],
+    "分からなかったこと": [
+      "第2回の 転換線 の行（一目均衡表の教科書の文）を写した。基準線だけの文は、その行の中の文で読む",
+      "教科書の欄の一部は、第2回で同じ元の指標（転換線）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "安値からの経過バー",
+    "元の指標": "Aroon（Tushar Chande）。Aroon-Up／Down は n 期間の最高値／最安値から何期間たったかを測る",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "The Aroon indicators measure the number of periods since price recorded an x-day high or low.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "高値・安値から何本たったか。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "経過の本数そのものの値域を書いた文は見つからなかった。Aroon は 0〜100"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "安値からの経過バー",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Aroon-Up = ((25 - Days Since 25-day High)/25) x 100"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "Aroon は経過の本数を 0〜100 にする。指標データは経過の本数そのもの"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 25,
+            "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 25,
+            "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 14,
+            "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 9,
+            "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": 14,
+            "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 288,
+            "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": 25,
+            "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "8〜10 より下にしない",
+            "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "調整可（数値の範囲は書いていない）",
+            "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "n 本の最安値から何本たったか（本数そのもの）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 9〜288・代表の値 スキャル [25]／デイトレ [25]",
+        "教科書": "資料の表の既定＝25・14",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon"
+      },
+      {
+        "欄": "既定",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "既定",
+        "値": 14,
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "スキャル",
+        "値": 9,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "スキャル",
+        "値": 14,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "デイトレ",
+        "値": 288,
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "デイトレ",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "範囲",
+        "値": "8〜10 より下にしない",
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "範囲",
+        "値": "調整可（数値の範囲は書いていない）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "安値切り上げ幅%",
+    "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "The Williams Fractal indicator aims to detect reversal points through highs and lows.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "反転の点（山と谷）の位置。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "安値切り上げ幅%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "It’s generally shown by five candlesticks or bars on the price chart with the third candlestick always presenting as the highest high or lowest low."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（前後2本・全部で5本）。指標データは前後 k 本で、k を変えられる"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "山・谷が確定する本数（前後2本の後＝2本あと）を文で書いた所は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "k（左右の本数・Periods）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+            "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+            "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+            "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "3・4・5",
+            "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "2〜3（短い保有）",
+            "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+            "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "According to Williams, the Fractal indicator should be used for trading strategies based on breakout of price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "前の山・谷の水準を抜けたら"
+      },
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "breaking them defines events like a break of structure,",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "As the raw material for structure maps: each confirmed swing is labeled against the previous swing of the same type to read trend as sequences of higher highs and higher lows, or lower highs and lower lows.",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "書いてない",
+        "値": "1ポイント",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "抜けとみなす幅"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "直近の谷と1つ前の谷の差（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "k の範囲 2〜3・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝2",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "3・4・5",
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜3（短い保有）",
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/"
+      }
+    ],
+    "分からなかったこと": [
+      "谷どうしの差を % にした形を書いた教科書の文は見つからなかった。LuxAlgo は『higher highs and higher lows』と並びを書くだけ"
+    ]
+  },
+  {
+    "種類": "帯内位置%",
+    "元の指標": "帯の上半分の中の位置（(終値 − レンジの中央) ÷ (レジスタンス帯の上端 − レンジの中央)）",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "A trading range is when prices move within a relatively tight range. This signals that the forces of supply and demand are evenly balanced.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "レンジの中の位置。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "レンジの中央の値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Support and resistance levels represent key junctures where supply and demand meet.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "mid",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "1本の値"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "レンジの中央を、レジスタンス帯の下端とサポート帯の上端の平均で作る式を書いた教科書は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（パラメータ無し）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "パラメータを持たない（指標データの式もパラメータを持たない）"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "When the price breaks out of the trading range, above or below, it signals that a winner has emerged.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/support-and-resistance",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "レンジを抜けると勝った側が決まる。中央の使い方ではない"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "(終値 − mid) ÷ (res_hi − mid)",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表に行が無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "帯の中の位置を数にした形を書いた教科書の文は見つからなかった。第5回の mid の行を写した",
+      "教科書の欄の一部は、第5回で同じ元の指標（mid）を調べた行から写した。逐語はその回にページの本文で照らした物"
+    ]
+  },
+  {
+    "種類": "当日POC",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "教科書の役割": [
+      {
+        "区分": "出来高",
+        "逐語": "Volume profile is an advanced charting indicator that displays trading activity over a specified time period at specified price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "位置",
+        "逐語": "Point of control (POC): The price level for the time period with the highest traded volume.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "その期間で最も出来高の多い値段",
+        "向きを持つ": "書いてない",
+        "逐語": "Point of control (POC): The price level for the time period with the highest traded volume.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Point of control (POC): The price level for the time period with the highest traded volume.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "当日POC",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Start at the Point of Control (POC) — the row with the highest total volume. Include the POC in the value area first and subtract its volume from the target volume.",
+        "Multiply the total volume by the chosen percentage (default 70%) to determine the target volume for the value area."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは水準からの終値の乖離%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "Value Area の割合・プロファイルの期間（Session／Fixed Range／Visible Range など）・行の数（Row Size）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "Value Area 70%",
+            "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+            "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Value Area 70%",
+            "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": "Visible Range の短い範囲（直近数時間）",
+            "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "5分足の Fixed Range（執行用）",
+            "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "当日と前日の Session／Fixed Range",
+            "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Session（毎日リセット）",
+            "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "15分足のプロファイルの POC",
+            "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "行の数 200〜400",
+            "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "行の数 100〜200（日中足 200・日足以上 100）",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う。1サイトだけ"
+          },
+          {
+            "値": "70% は慣習で必須ではない",
+            "逐語": "Seventy percent is a common convention; it is not mandatory.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": "70%",
+        "意味": "値の範囲（Value Area）に入れる出来高の割合",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Value area (VA): The range of price levels in which the specified percentage of all volume was traded during the time period. Typically, this percentage is set to 70%, however, it is up to the trader’s discretion.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と POC の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "rows の範囲 まだ決めていない・代表の値 スキャル [24]／デイトレ [24]",
+        "教科書": "資料の表の既定＝\"Value Area 70%\"・\"Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "スキャル",
+        "値": "Visible Range の短い範囲（直近数時間）",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "スキャル",
+        "値": "5分足の Fixed Range（執行用）",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "当日と前日の Session／Fixed Range",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "Session（毎日リセット）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "15分足のプロファイルの POC",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 200〜400",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 100〜200（日中足 200・日足以上 100）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "範囲",
+        "値": "70% は慣習で必須ではない",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      }
+    ],
+    "分からなかったこと": [
+      "出来高プロファイルの期間（その UTC の日の始まりから今の足まで）を書いた文は、TradingView のヘルプの一般の説明だけで、指標データの期間の作りとは照らしていない"
+    ]
+  },
+  {
+    "種類": "当日VAH",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "教科書の役割": [
+      {
+        "区分": "出来高",
+        "逐語": "Volume profile is an advanced charting indicator that displays trading activity over a specified time period at specified price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "位置",
+        "逐語": "Value area high (VAH): The highest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "出来高の決まった割合が入る値段の範囲の上端",
+        "向きを持つ": "書いてない",
+        "逐語": "Value area high (VAH): The highest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Value area high (VAH): The highest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "当日VAH",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Start at the Point of Control (POC) — the row with the highest total volume. Include the POC in the value area first and subtract its volume from the target volume.",
+        "Multiply the total volume by the chosen percentage (default 70%) to determine the target volume for the value area."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは水準からの終値の乖離%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "Value Area の割合・プロファイルの期間（Session／Fixed Range／Visible Range など）・行の数（Row Size）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "Value Area 70%",
+            "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+            "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Value Area 70%",
+            "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": "Visible Range の短い範囲（直近数時間）",
+            "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "5分足の Fixed Range（執行用）",
+            "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "当日と前日の Session／Fixed Range",
+            "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Session（毎日リセット）",
+            "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "15分足のプロファイルの POC",
+            "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "行の数 200〜400",
+            "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "行の数 100〜200（日中足 200・日足以上 100）",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う。1サイトだけ"
+          },
+          {
+            "値": "70% は慣習で必須ではない",
+            "逐語": "Seventy percent is a common convention; it is not mandatory.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": "70%",
+        "意味": "値の範囲（Value Area）に入れる出来高の割合",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Value area (VA): The range of price levels in which the specified percentage of all volume was traded during the time period. Typically, this percentage is set to 70%, however, it is up to the trader’s discretion.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と VAH の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "va_pct の範囲 まだ決めていない・代表の値 スキャル [0.7]／デイトレ [0.7]；rows の範囲 まだ決めていない・代表の値 スキャル [24]／デイトレ [24]",
+        "教科書": "資料の表の既定＝\"Value Area 70%\"・\"Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "スキャル",
+        "値": "Visible Range の短い範囲（直近数時間）",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "スキャル",
+        "値": "5分足の Fixed Range（執行用）",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "当日と前日の Session／Fixed Range",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "Session（毎日リセット）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "15分足のプロファイルの POC",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 200〜400",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 100〜200（日中足 200・日足以上 100）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "範囲",
+        "値": "70% は慣習で必須ではない",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      }
+    ],
+    "分からなかったこと": [
+      "出来高プロファイルの期間（その UTC の日の始まりから今の足まで）を書いた文は、TradingView のヘルプの一般の説明だけで、指標データの期間の作りとは照らしていない"
+    ]
+  },
+  {
+    "種類": "当日VAL",
+    "元の指標": "Volume Profile（POC・Value Area の VAH／VAL）",
+    "教科書の役割": [
+      {
+        "区分": "出来高",
+        "逐語": "Volume profile is an advanced charting indicator that displays trading activity over a specified time period at specified price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "区分": "位置",
+        "逐語": "Value area low (VAL): The lowest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "出来高の決まった割合が入る値段の範囲の下端",
+        "向きを持つ": "書いてない",
+        "逐語": "Value area low (VAL): The lowest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "Value area low (VAL): The lowest price level within the value area.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の水準。調べた人の読み"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "当日VAL",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Start at the Point of Control (POC) — the row with the highest total volume. Include the POC in the value area first and subtract its volume from the target volume.",
+        "Multiply the total volume by the chosen percentage (default 70%) to determine the target volume for the value area."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない。指標データは水準からの終値の乖離%"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "Value Area の割合・プロファイルの期間（Session／Fixed Range／Visible Range など）・行の数（Row Size）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "値": "Value Area 70%",
+            "逐語": "Typically, this percentage is set to 70%, however, it is up to the trader's discretion.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+            "逐語": "TradingView and Thinkorswim document 70% as a typical or default setting, while NinjaTrader defaults to 68%; all make it configurable.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Value Area 70%",
+            "逐語": "Keep Value Area at 70%, which is the convention every prop firm and institutional desk uses.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": "Visible Range の短い範囲（直近数時間）",
+            "逐語": "Scalpers can use VPVR on very short visible ranges (last few hours) to identify micro-value areas and thin zones that price accelerates through.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "5分足の Fixed Range（執行用）",
+            "逐語": "daily VP for structural bias, a 30-minute session profile for intraday context and a 5-minute fixed-range profile for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": "当日と前日の Session／Fixed Range",
+            "逐語": "Day traders should focus on Session Volume Profile and Fixed Range profiles for the current and previous session.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "Session（毎日リセット）",
+            "逐語": "The SVP is commonly used by day traders since a new profile is generated each day.",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "15分足のプロファイルの POC",
+            "逐語": "Show POC on the 15-minute profile and keep a 5-minute fixed-range VP for execution",
+            "URL": "https://npfinancials.com.au/volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "行の数 200〜400",
+            "逐語": "For most instruments, 200–400 rows balances detail and clarity.",
+            "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "行の数 100〜200（日中足 200・日足以上 100）",
+            "逐語": "Set Rows Layout to Number of Rows and use a row count between 100 and 200 (200 for intraday charts, 100 for daily and higher).",
+            "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う。1サイトだけ"
+          },
+          {
+            "値": "70% は慣習で必須ではない",
+            "逐語": "Seventy percent is a common convention; it is not mandatory.",
+            "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "形": "値",
+        "値": "70%",
+        "意味": "値の範囲（Value Area）に入れる出来高の割合",
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "逐語": "Value area (VA): The range of price levels in which the specified percentage of all volume was traded during the time period. Typically, this percentage is set to 70%, however, it is up to the trader’s discretion.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "1サイトだけ"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と VAL の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "va_pct の範囲 まだ決めていない・代表の値 スキャル [0.7]／デイトレ [0.7]；rows の範囲 まだ決めていない・代表の値 スキャル [24]／デイトレ [24]",
+        "教科書": "資料の表の既定＝\"Value Area 70%\"・\"Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502040-volume-profile/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%（TradingView・Thinkorswim）／68%（NinjaTrader）",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      },
+      {
+        "欄": "既定",
+        "値": "Value Area 70%",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "スキャル",
+        "値": "Visible Range の短い範囲（直近数時間）",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "スキャル",
+        "値": "5分足の Fixed Range（執行用）",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "当日と前日の Session／Fixed Range",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "Session（毎日リセット）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/"
+      },
+      {
+        "欄": "デイトレ",
+        "値": "15分足のプロファイルの POC",
+        "結果": "合う",
+        "URL": "https://npfinancials.com.au/volume-profile/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 200〜400",
+        "結果": "合う",
+        "URL": "https://www.quantum-algo.com/blog/volume-profile-trading-strategy-guide/"
+      },
+      {
+        "欄": "範囲",
+        "値": "行の数 100〜200（日中足 200・日足以上 100）",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/tradingview-volume-profile/",
+        "注": "末尾の句読点だけがページと違う"
+      },
+      {
+        "欄": "範囲",
+        "値": "70% は慣習で必須ではない",
+        "結果": "合う",
+        "URL": "https://www.tradingindepth.com/volume-profile-beginners-guide/"
+      }
+    ],
+    "分からなかったこと": [
+      "出来高プロファイルの期間（その UTC の日の始まりから今の足まで）を書いた文は、TradingView のヘルプの一般の説明だけで、指標データの期間の作りとは照らしていない"
+    ]
+  },
+  {
+    "種類": "当日VWAP",
+    "元の指標": "VWAP（出来高加重平均価格）。原典の形はセッションの始まりから積み上げてリセット。窓をずらす形は rolling VWAP",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "Chartists can assess the position of price relative to the VWAP line in order to determine the intraday trend,",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "日中の流れを見る"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "値段が VWAP より上なら日中は上がりやすく、下なら下がりやすい",
+        "向きを持つ": "持つ",
+        "逐語": "In general, intraday prices fall when below VWAP and rise when above VWAP.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "単位": "値段",
+        "下限": null,
+        "上限": null,
+        "逐語": "VWAP equals the dollar value of all trading periods divided by the total trading volume for the current day.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "値段の線"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "当日VWAP",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Compute the typical price for the intraday period. This is the average of the high, low, and close: (H+L+C)/3).",
+        "Create a running total of these values. This is also known as a cumulative total.",
+        "Create a running total of volume (cumulative volume)."
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "教科書の VWAP はその日の始まりから積み上げる。指標データの close vs VWAP・VWAP典型 は n 本の窓をずらす形（rolling VWAP）"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "Anchor Period（リセットの周期）／rolling の窓の長さ",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": "Session",
+            "逐語": "This is useful with the 'Session' Anchor Period, because VWAP makes sense only when the Anchor Period is higher than the chart timeframe.",
+            "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "Session",
+            "逐語": "Anchor: Session by default.",
+            "URL": "https://www.financialtechwiz.com/post/vwap-tradingview/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": "1日（寄り付きから引けまで）",
+            "逐語": "VWAP overlay is calculated using intraday data from a single market day, starting when trading opens and ending when it closes.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "Session, Week, Month, Quarter, Year, Decade, Century, Earnings, Dividends, Splits",
+            "逐語": "Possible values: Session, Week, Month, Quarter, Year, Decade, Century, Earnings (reset on earnings), Dividends (reset on dividends), Splits (reset on splits).",
+            "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1日 または 1週間（rolling の窓）",
+            "逐語": "Common choices wrap one trading day or one week of activity, matching the holding horizon the trader cares about. Treat the window like any moving-average length: a memory parameter to test on your market and timeframe",
+            "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "24時間・7日・N本（rolling の窓の例）",
+            "逐語": "A rolling VWAP is a volume-weighted average price computed over a sliding window of fixed length, such as the last 24 hours, the last 7 days, or the last N bars",
+            "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "1・5・10・15・30・60分足で使う（日足以上では定義しない）",
+            "逐語": "VWAP is not defined for daily, weekly, or monthly periods due to the nature of the calculation.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。末尾の句読点だけがページと違う。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "Despite this lag, you can compare VWAP with the current price to determine the general direction of intraday prices.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "VWAP will fall somewhere between the day's high-low range when prices are range-bound for the day.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と当日の VWAP の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "日の区切り",
+        "指標データ": "UTC の0時から積み上げる",
+        "教科書": "取引の始まりから積み上げる（ChartSchool は株の取引時間で書く）",
+        "注": "暗号資産は取引所に休みが無いので、日の区切りは指標データが決めている"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表の既定＝\"Session\"・\"1日（寄り付きから引けまで）\"",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": "Session",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/"
+      },
+      {
+        "欄": "既定",
+        "値": "Session",
+        "結果": "合う",
+        "URL": "https://www.financialtechwiz.com/post/vwap-tradingview/"
+      },
+      {
+        "欄": "既定",
+        "値": "1日（寄り付きから引けまで）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap"
+      },
+      {
+        "欄": "範囲",
+        "値": "Session, Week, Month, Quarter, Year, Decade, Century, Earnings, Dividends, Splits",
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000502018-volume-weighted-average-price-vwap/"
+      },
+      {
+        "欄": "範囲",
+        "値": "1日 または 1週間（rolling の窓）",
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/"
+      },
+      {
+        "欄": "範囲",
+        "値": "24時間・7日・N本（rolling の窓の例）",
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/rolling-vwap/"
+      },
+      {
+        "欄": "範囲",
+        "値": "1・5・10・15・30・60分足で使う（日足以上では定義しない）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/volume-weighted-average-price-vwap",
+        "注": "末尾の句読点だけがページと違う"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "時刻",
+    "元の指標": "バーの開始時刻の時（0〜23・UTC）。相場の時間帯の話",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "The hourly distribution of the daily returns is not uniform.",
+        "URL": "https://quantpedia.com/are-there-seasonal-intraday-or-overnight-anomalies-in-bitcoin/",
+        "出どころの質": "ブログ・その他（quantpedia.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "暗号資産。時間帯ごとの値動きの偏り。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "22時と23時（UTC）の上げが統計の上で目立つ",
+        "向きを持つ": "書いてない",
+        "逐語": "From both statistical and economic points of view, the returns 22:00 and 23:00 dominate.",
+        "URL": "https://quantpedia.com/are-there-seasonal-intraday-or-overnight-anomalies-in-bitcoin/",
+        "出どころの質": "ブログ・その他（quantpedia.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "暗号資産。Gemini の1時間足の2015〜2022年の調べ"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "時刻は 0〜23。単位の語は選ぶ語に無い"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "時刻",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式を書いた文は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（パラメータ無し）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "パラメータを書いた文は見つからなかった"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "For UTC +0, the NYSE is open during 14:30 and 21:00,",
+        "URL": "https://quantpedia.com/are-there-seasonal-intraday-or-overnight-anomalies-in-bitcoin/",
+        "出どころの質": "ブログ・その他（quantpedia.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "暗号資産。株の市場が開いている時間帯かで分けて調べている。調べた人の読み"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表に行が無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "時間帯の偏りを書いた資料は、暗号資産の調べ（Quantpedia）だけを開いた。サウサンプトン大学の論文のページは HTTP 403 で開けない"
+    ]
+  },
+  {
+    "種類": "曜日",
+    "元の指標": "バーの曜日。相場の曜日の話",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "Several interesting properties can be observed during weekends and holidays.",
+        "URL": "https://quantpedia.com/are-there-seasonal-intraday-or-overnight-anomalies-in-bitcoin/",
+        "出どころの質": "ブログ・その他（quantpedia.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "暗号資産。曜日（週末）ごとの値動きの違い。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "読み方": "週末と休日は日中の上げの比重が大きい",
+        "向きを持つ": "書いてない",
+        "逐語": "The weekends/holidays performance is driven mainly by the intraday’s component, and the overnight’s return is more volatile, at least from the US investor’s perspective.",
+        "URL": "https://quantpedia.com/are-there-seasonal-intraday-or-overnight-anomalies-in-bitcoin/",
+        "出どころの質": "ブログ・その他（quantpedia.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "暗号資産"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "曜日は 0（月）〜6（日）。単位の語は選ぶ語に無い"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "曜日",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "確かめの強さ": "見つからなかった",
+      "注": "式を書いた文は見つからなかった"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "（パラメータ無し）",
+        "意味": "書いてない",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "パラメータを書いた文は見つからなかった"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ],
+        "範囲": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": ""
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "パラメータ",
+        "指標データ": "パラメータを持たない",
+        "教科書": "資料の表に行が無い",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [],
+    "分からなかったこと": [
+      "曜日の偏りを書いたポルトガルの論文（Coimbra 大学）は HTTP 302 で本文に届かなかった"
+    ]
+  },
+  {
+    "種類": "構造破断距離%",
+    "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "The Williams Fractal indicator aims to detect reversal points through highs and lows.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "反転の点（山と谷）の位置。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "構造破断距離%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "It’s generally shown by five candlesticks or bars on the price chart with the third candlestick always presenting as the highest high or lowest low."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（前後2本・全部で5本）。指標データは前後 k 本で、k を変えられる"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "山・谷が確定する本数（前後2本の後＝2本あと）を文で書いた所は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "k（左右の本数・Periods）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+            "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+            "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+            "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "3・4・5",
+            "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "2〜3（短い保有）",
+            "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+            "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "According to Williams, the Fractal indicator should be used for trading strategies based on breakout of price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "前の山・谷の水準を抜けたら"
+      },
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "breaking them defines events like a break of structure,",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "As the raw material for structure maps: each confirmed swing is labeled against the previous swing of the same type to read trend as sequences of higher highs and higher lows, or lower highs and lower lows.",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "書いてない",
+        "値": "1ポイント",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "抜けとみなす幅"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "終値と1つ前に確定した谷の距離（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "k の範囲 2〜3・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝2",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "3・4・5",
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜3（短い保有）",
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/"
+      }
+    ],
+    "分からなかったこと": [
+      "Break of structure の距離を % にした形を書いた教科書の文は見つからなかった。LuxAlgo は『breaking them defines events like a break of structure』と書く"
+    ]
+  },
+  {
+    "種類": "高値からの経過バー",
+    "元の指標": "Aroon（Tushar Chande）。Aroon-Up／Down は n 期間の最高値／最安値から何期間たったかを測る",
+    "教科書の役割": [
+      {
+        "区分": "書いてない",
+        "逐語": "The Aroon indicators measure the number of periods since price recorded an x-day high or low.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "高値・安値から何本たったか。役割の語は書いてない"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "経過の本数そのものの値域を書いた文は見つからなかった。Aroon は 0〜100"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "高値からの経過バー",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "Aroon-Up = ((25 - Days Since 25-day High)/25) x 100"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+      "出どころの質": "定番の教育サイト（StockCharts の ChartSchool）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "Aroon は経過の本数を 0〜100 にする。指標データは経過の本数そのもの"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "確定に要る本数を書いた文は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "period",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 25,
+            "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 25,
+            "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 14,
+            "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 9,
+            "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": 14,
+            "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 288,
+            "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": 25,
+            "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "8〜10 より下にしない",
+            "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).",
+            "URL": "https://www.daytrading.com/aroon",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "調整可（数値の範囲は書いていない）",
+            "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "出どころの質": "定番の教育サイト",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "使い方を書いた文は見つからなかった"
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "合図の形の数を書いた文は見つからなかった"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "n 本の最高値から何本たったか（本数そのもの）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "n の範囲 9〜288・代表の値 スキャル [25]／デイトレ [25]",
+        "教科書": "資料の表の既定＝25・14",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon"
+      },
+      {
+        "欄": "既定",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "既定",
+        "値": 14,
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "スキャル",
+        "値": 9,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "スキャル",
+        "値": 14,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "デイトレ",
+        "値": 288,
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "デイトレ",
+        "値": 25,
+        "結果": "合う",
+        "URL": "https://www.tradingsim.com/blog/aroon-indicator"
+      },
+      {
+        "欄": "範囲",
+        "値": "8〜10 より下にしない",
+        "結果": "合う",
+        "URL": "https://www.daytrading.com/aroon"
+      },
+      {
+        "欄": "範囲",
+        "値": "調整可（数値の範囲は書いていない）",
+        "結果": "合う",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon"
+      }
+    ],
+    "分からなかったこと": []
+  },
+  {
+    "種類": "高値切り上げ幅%",
+    "元の指標": "Williams Fractal（Bill Williams）。前後 k 本より高い／安い中央の足",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "The Williams Fractal indicator aims to detect reversal points through highs and lows.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "反転の点（山と谷）の位置。調べた人の読み"
+      }
+    ],
+    "値の読み方": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の読み方を書いた文は見つからなかった"
+      }
+    ],
+    "値の単位と値域": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "値の単位を書いた文は見つからなかった"
+      }
+    ],
+    "出力": [
+      {
+        "名前": "高値切り上げ幅%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった"
+      }
+    ],
+    "計算の式": {
+      "逐語": [
+        "It’s generally shown by five candlesticks or bars on the price chart with the third candlestick always presenting as the highest high or lowest low."
+      ],
+      "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+      "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+      "読んだ日": "2026-11-03",
+      "時間足": "書いてない",
+      "確かめの強さ": "ページの文で確かめた",
+      "指標データの定義の文との違い": "文の上では違わない（前後2本・全部で5本）。指標データは前後 k 本で、k を変えられる"
+    },
+    "確定と期間": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "山・谷が確定する本数（前後2本の後＝2本あと）を文で書いた所は見つからなかった"
+      }
+    ],
+    "パラメータの軸": [
+      {
+        "名前": "k（左右の本数・Periods）",
+        "意味": "窓",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "Periods (default 2): bars required on each side of the candidate extreme. The default reproduces the classic five-bar fractal; raising it yields fewer, more significant swings that confirm proportionally later.",
+            "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides.",
+            "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The indicator is usually pre-set to show fractals based on the 5-candlestick rule.",
+            "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+            "出どころの質": "定番の教育サイト（プラットフォームの公式ヘルプ）",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          },
+          {
+            "値": 2,
+            "逐語": "The Williams Fractal's period defaults to 2. This represents two candles on either side.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "資料の表の文＝「無い」"
+          }
+        ],
+        "範囲": [
+          {
+            "値": "3・4・5",
+            "逐語": "You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.",
+            "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          },
+          {
+            "値": "2〜3（短い保有）",
+            "逐語": "Small strengths (two to three bars per side) catch minor structure and suit short holding periods; larger strengths isolate major turns for swing trading.",
+            "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+            "出どころの質": "証券会社・ブログ",
+            "読んだ日": "2026-11-03",
+            "時間足": "書いてない",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+          }
+        ]
+      }
+    ],
+    "閾値": [
+      {
+        "確かめの強さ": "見つからなかった",
+        "注": "閾値を書いた文は見つからなかった"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "書いてない",
+        "玉の向き": "両方",
+        "向き": "書いてない",
+        "逐語": "According to Williams, the Fractal indicator should be used for trading strategies based on breakout of price levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "前の山・谷の水準を抜けたら"
+      },
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "breaking them defines events like a break of structure,",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "書いてない",
+        "玉の向き": "書いてない",
+        "向き": "書いてない",
+        "逐語": "As the raw material for structure maps: each confirmed swing is labeled against the previous swing of the same type to read trend as sequences of higher highs and higher lows, or lower highs and lower lows.",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/",
+        "出どころの質": "ブログ・その他（www.luxalgo.com）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": ""
+      }
+    ],
+    "合図の形のパラメータ": [
+      {
+        "形": "書いてない",
+        "値": "1ポイント",
+        "逐語": "A breakout is indicated when price moves at least one point either above or below the previous fractal’s price level.",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/",
+        "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+        "読んだ日": "2026-11-03",
+        "時間足": "書いてない",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "抜けとみなす幅"
+      }
+    ],
+    "今の値との違い": [
+      {
+        "欄": "割った形・距離・傾き",
+        "指標データ": "直近の山と1つ前の山の差（%）",
+        "教科書": "見つからなかった（この形を書いた文は、開いたページのどれにも無かった）",
+        "注": "この形は本プロジェクトの流儀"
+      },
+      {
+        "欄": "パラメータ",
+        "指標データ": "k の範囲 2〜3・代表の値 スキャル [2]／デイトレ [2]",
+        "教科書": "資料の表の既定＝2",
+        "注": "どちらが正しいかは決めない"
+      }
+    ],
+    "資料の表の確認": [
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/indicator/williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.metatrader5.com/en/terminal/help/indicators/bw_indicators/fractals"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://www.tradingview.com/support/solutions/43000591663-williams-fractal/"
+      },
+      {
+        "欄": "既定",
+        "値": 2,
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "3・4・5",
+        "結果": "合う",
+        "URL": "https://fxopen.com/blog/en/how-to-trade-with-williams-fractals/"
+      },
+      {
+        "欄": "範囲",
+        "値": "2〜3（短い保有）",
+        "結果": "合う",
+        "URL": "https://www.luxalgo.com/library/concept/swing-high-low/"
+      }
+    ],
+    "分からなかったこと": [
+      "山どうしの差を % にした形を書いた教科書の文は見つからなかった"
+    ]
+  }
+]
