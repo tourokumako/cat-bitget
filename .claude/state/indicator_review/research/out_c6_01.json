@@ -2899,21 +2899,21 @@
         "値": "k 2.2（5分足）",
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "デイトレ",
         "値": "k 2.2（5分足）・2.1（15分足）・2.0（1時間足）",
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "デイトレ",
         "値": "n 20〜21（デイトレ）",
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "範囲",
@@ -2932,7 +2932,7 @@
         "値": "k 2.1・2.3（攻めた手法）",
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       }
     ],
     "分からなかったこと": []
@@ -3317,7 +3317,7 @@
         ],
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "デイトレ",
@@ -3327,7 +3327,7 @@
         ],
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "デイトレ",
@@ -3337,7 +3337,7 @@
         ],
         "結果": "開けない",
         "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
-        "注": "HTTP 000"
+        "注": "接続できなかった（HTTP の番号なし）"
       },
       {
         "欄": "範囲",
