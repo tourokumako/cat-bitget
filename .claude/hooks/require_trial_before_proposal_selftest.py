@@ -9,6 +9,7 @@
     「その文を消して案だけを出し直す・試しは走らせ直さない」と案内する（直す前は「下書きに足して試し直す」と案内し、
     案が変わっていないのに12〜17分の試しを走らせ直させた＝直近30日の止め15回のうち9回）。
   T5・T6 の後ろの文は、実際に止められた返信の文（2026-09-30 449d96d6・2026-10-13 8fbba705）。
+  ★2026-11-03（245回目・まこさん「では１と２両方ともOK」）＝止めの文に案の出し直しの指示が無いことを、全部の見本で見る（T14〜T19）。
 使い方＝python3 .claude/hooks/require_trial_before_proposal_selftest.py（全部 期待どおりなら exit 0）
 """
 import importlib.util
@@ -25,19 +26,21 @@ spec.loader.exec_module(mod)
 DRAFT = "【4-0 この仕組みは何か】\n本文の1行目\n本文の2行目\n【4-1 システムの境界】\n本文の3行目\n"
 SID = "_selftest"
 REDO = "試し直す"                 # 試しを走らせ直させる案内に入る語
-RESEND = "試しは走らせ直さない"    # 後ろの文を消して出し直させる案内に入る語
+RESEND = "試しは走らせ直さない"    # 案を出し直さずに --drop で外させる案内に入る語
+BANNED = ("もう一度出す", "全文）を1つの下書き", "1文字も変えずに出す")   # 案の全文の出し直しを指示する文（直す前の止めの文）
 
-# (名前, 返信の文, 試しの記録〔None＝無い〕, 期待＝"通す"／"記録が無い"／"検査に落ちた"／"試し直す"／"消して出し直す")
+# (名前, 返信の文, 試しの記録〔None＝無い〕, 期待＝"通す"／"記録が無い"／"検査に落ちた"／"試し直す"／"出し直さない"／"見出し")
+# 5つ目が在る見本は、その文字の並びを返信ごとの文（blocks）として渡す
 CASES = [
     ("T1 見出しの無い返信 → 通す", "次の1本へ進みます。", {"ok": True, "draft": DRAFT}, "通す"),
     ("T2 案が試した下書きと同じ → 通す", DRAFT, {"ok": True, "draft": DRAFT}, "通す"),
     ("T3 試しの記録が無い → 止める", DRAFT, None, "記録が無い"),
     ("T4 試しが検査に落ちている → 止める", DRAFT, {"ok": False, "draft": DRAFT, "a_bad": ["A9"]}, "検査に落ちた"),
-    ("T5 案の後ろに報告の文（2026-09-30 の実物）→ 消して出し直す",
-     DRAFT + "\nworklog 20261001 §1 に、案を出すまでの経緯を書きました。\n", {"ok": True, "draft": DRAFT}, "消して出し直す"),
-    ("T6 案の後ろに報告の文（2026-10-13 の実物）→ 消して出し直す",
+    ("T5 案の後ろに報告の文（2026-09-30 の実物）→ 出し直さない",
+     DRAFT + "\nworklog 20261001 §1 に、案を出すまでの経緯を書きました。\n", {"ok": True, "draft": DRAFT}, "出し直さない"),
+    ("T6 案の後ろに報告の文（2026-10-13 の実物）→ 出し直さない",
      DRAFT + "空白の抜けを直しました。同じ抜けがほかに無いかを確かめてから、案を組み立て直します（約4分半）。\n",
-     {"ok": True, "draft": DRAFT}, "消して出し直す"),
+     {"ok": True, "draft": DRAFT}, "出し直さない"),
     ("T7 案の途中の行が下書きと違う → 試し直す",
      DRAFT.replace("本文の2行目", "本文の2行目を書き替えた"), {"ok": True, "draft": DRAFT}, "試し直す"),
     ("T8 案の途中が違い、後ろにも文がある → 試し直す",
@@ -56,6 +59,18 @@ CASES = [
     ("T13 案の節の中に json の囲みがあり、下書きと同じ → 通す",
      "【4-20 実装の指示】\n```json\n[{\"番号\": 1}]\n```\n",
      {"ok": True, "draft": "【4-20 実装の指示】\n```json\n[{\"番号\": 1}]\n```\n"}, "通す"),
+    # ★2026-11-03（245回目）＝案より前の文は照らさない。設計書の見出しと読まれる行だけを止める
+    ("T14 案の前に報告の文（2026-11-03 の実物の形）→ 通す",
+     "受け取り方＝指示。\n\n**下の節で置き替えてよいでしょうか。**\n\n## 済んだこと\n- 28件を当てました。\n\n" + DRAFT,
+     {"ok": True, "draft": DRAFT}, "通す", ["受け取り方＝指示。\n\n**下の節で置き替えてよいでしょうか。**\n\n## 済んだこと\n- 28件を当てました。\n\n" + DRAFT]),
+    ("T15 案の前に宣言の見出し → 通す", "【いまの工程】208番\n【次】設計書を作る\n" + DRAFT, {"ok": True, "draft": DRAFT}, "通す",
+     ["【いまの工程】208番\n【次】設計書を作る\n" + DRAFT]),
+    ("T16 案の前に知らない見出し → 止める（出し直さない）", "【知らない見出し】本文\n" + DRAFT, {"ok": True, "draft": DRAFT}, "見出し",
+     ["【知らない見出し】本文\n" + DRAFT]),
+    ("T17 案の後ろの返信に試していない文 → 止める（出し直さない）", DRAFT, {"ok": True, "draft": DRAFT}, "出し直さない", [DRAFT, "別の返信の文です。"]),
+    ("T18 案の前の返信（道具を呼ぶ合間の文）は照らさない → 通す", DRAFT, {"ok": True, "draft": DRAFT}, "通す", ["合間の文です。", DRAFT]),
+    ("T19 案の節の行が1行違い、前に報告の文 → 試し直す", "報告の文です。\n" + DRAFT.replace("本文の3行目", "別の文"),
+     {"ok": True, "draft": DRAFT}, "試し直す", ["報告の文です。\n" + DRAFT.replace("本文の3行目", "別の文")]),
 ]
 
 
@@ -67,8 +82,10 @@ def kind(bad: list) -> str:
         return "記録が無い"
     if "検査を通っていない" in text:
         return "検査に落ちた"
+    if "見出しと読まれる行" in text:
+        return "見出し"
     if RESEND in text and REDO not in text:
-        return "消して出し直す"
+        return "出し直さない"
     if REDO in text:
         return "試し直す"
     return "（分からない止め）" + text[:60]
@@ -80,13 +97,14 @@ def main() -> int:
         mod.ROOT = td
         rp = pathlib.Path(td) / ".claude/state/sessions" / SID / "trial_last.json"
         rp.parent.mkdir(parents=True)
-        for name, text, rec, want in CASES:
+        for name, text, rec, want, *blocks in CASES:
             if rec is None:
                 rp.unlink(missing_ok=True)
             else:
                 rp.write_text(json.dumps(rec, ensure_ascii=False), encoding="utf-8")
-            got = kind(mod.check(text, SID))
-            ok = got == want
+            bad = mod.check(text, SID, blocks[0] if blocks else None)
+            got = kind(bad)
+            ok = got == want and not any(w in "\n".join(bad) for w in BANNED)
             bad_n += 0 if ok else 1
             print(f"{'✅' if ok else '❌'} {name}（結果 {got}・期待 {want}）")
     print(f"[selftest] {len(CASES) - bad_n}/{len(CASES)}")

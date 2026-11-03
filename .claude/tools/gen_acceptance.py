@@ -409,7 +409,13 @@ def src_from_work(work: str) -> dict:
         is_cc = set(metas[n].get("who") or []) == {"CC"}
         cur = None
         rows = []
+        drop = set(metas[n].get("drop") or [])             # ★2026-11-03（245回目・まこさん「では１と２両方ともOK」）＝--drop の行は節に写さない（案の後ろの文を、案を出し直さずに外す）
+        vi0 = 0
         for ln in (d_dir / f"{n}.txt").read_text(encoding="utf-8").splitlines():
+            vi0 += 1 if ln.strip() else 0
+            if is_cc and ln.strip() and f"V{vi0:02d}" in drop:
+                rows.append((ln, None))
+                continue
             km = KEY_RE.match(ln) if is_cc else None
             if km and km.group(1).split()[0] in DECL_HEADS:      # 宣言の見出しの下の行は、案に数えない（見出しの外の行と同じ扱い）
                 km, cur = None, None

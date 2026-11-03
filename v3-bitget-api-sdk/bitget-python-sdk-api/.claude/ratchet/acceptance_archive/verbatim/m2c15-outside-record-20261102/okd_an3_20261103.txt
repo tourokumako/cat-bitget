@@ -1,0 +1,93 @@
+受け取り方は相談（案の6節の置き替えの OK を伺う）です。範囲は、下の6節の案を出すところまでです。
+
+**下の6節で、前の案の同じ節を置き替えてよいでしょうか。** 設計は変えていません。試しの設計書の検査（trial_design.py）を、見直し表（A14）まで全部通した文です。設計書の全文も読みました。
+
+検査と見直しで見つけて直した物は、次のとおりです。
+
+- 新しく入る数字：前の返信の末尾の文が節に入り込んでいたので、取り除きました。
+- 4-12：laws/ フォルダをもう作ったので、mkdir の行を消しました。フォルダは当てる道具の検査が今の時点で求めるので、承認の後の予定を前へ動かしました。中身は空です。
+- 4-20：実装の指示の根拠を、当てる道具が読む形（ファイル名:行番号「逐語」）に直しました。要件定義書の :162 の「4つに分けて持つ」も直します。laws.json の ⑤-31 に残っていた使わない語も直しました。ハッシュ値が変わりました。
+- 確かめていないこと：件数の言い方を直しました。古くなった1行を消しました。
+- 7-8：関数の照合を実装の後に確定させると書き足しました。
+- 7-5：決まった20項目と同じ順の答えにしました。
+
+やることの表も直しました。
+
+- 2-1：コマンドを読むだけの形に、読み方を数字なしにしました。1行目は laws.json が無いことを測る形にしました。
+- 4-5：「使う区分」を止める物は、この工事にありません。7-6 が見ていないのに「7-6 の jq」と書いていたので直しました。止めるのは 209番の読むプログラムです。
+- 4-13：b213 の受け持ちを「162番」と書いていましたが、確かめていませんでした。「未定（まこさんに伺う）」に直しました。
+- 7-6：F-2 と F-3 のコマンドを、/bin/sh で動く形（一時ファイルを使う形）に直しました。
+
+目的の照合 purpose_check.md も、この工事の内容で書き直しました。目的2つと条件4つに ❌ はありません。
+
+承認の後を仮に通す検査（A12）も通りました。実装を当てる所、完成の条件のコマンド、壊すプログラム、自己テスト6本を、仮の走行で確かめる検査です。下の確かめていないことの上の5行は、本物に当てた後に改めて走らせます。
+
+【新しく入る数字と式の一覧】
+| 番号 | 数字か式 | 出どころ |
+|---|---|---|
+| 1 | 1・2・3・4・5・6・7・8・9・10・11・12・13・14・15・16・17・18・19・20・21・22・23・24・25・26・27・28・29・30・31・32・33・34・35・36・37・38・39・40・41・42・43・44・45・46 | 要素の番号（⑤-1〜⑤-46・②-13・③-13・③-14）と、写した10行の根拠の番号。計算には使わない |
+| 2 | 370・1881・1888・1896・1901・1963・2465・2506・2514・2519・2521・2526・2710・2711・131 | 写す元の行の番号（engine_tuner_exec.py・e38_logic_parts.py・identity_s1_legacy.json）。計算には使わない |
+| 3 | 75・92・93・96・102・186・187・204・549・195・208・209・210・211 | 要件の行の番号・worklog の行・ToDo の番号。計算には使わない |
+| 4 | 2026・08・11・03・20261029・20261030・20261031・20261102・20261103 | 日付と工事名。計算には使わない |
+| 5 | 0・99 | 自己テストの見本（②-99）と、数え始めの 0。計算の値ではない |
+| 6 | １・２ | 元データの出どころの文の中の、まこさんの発言「１，OK ２，OK 3,OK」の全角の数字。計算には使わない |
+
+【4-12 出る結果の姿】
+- 置き場のフォルダ scripts/priority_rebuild/laws は、空で作ってあります（当てる道具の決まり・apply_audit_fix.py:586）。
+- 7-6 の jq は全部 true を出します。indicators.py --selftest は 39/39 を出します。
+- python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/run_breaks.py --design は、壊すプログラム6本とも期待どおりです。
+- 当てた後に走らせる物：gen_req_trace.py --check と --write、gen_signal_families.py --verify（G2）、leak_causality_diag.py（H2）。
+- T44（法則の足す・止める・消す）は、209番で走らせます。
+
+【4-20 実装の指示】
+ファイル: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verbatim/m2c15-outside-record-20261102/impl_4-20_20261103.json sha256=0dec7c5ba429f24b71ec5b89c7470a6f9ffdb686f2ab6fe776dc058106cfaff5
+
+【確かめていないこと】
+| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |
+|---|---|---|
+| 直した読む口の自己テストが 39/39 で通ること | 作業場の写しは hook enforce_observe_diag_only が止める | 当てた後に python3 scripts/priority_rebuild/indicators/indicators.py --selftest |
+| 直した読む口が本物の indicators.json を読めること | 同じ理由 | 当てた後に python3 scripts/priority_rebuild/indicators/indicators.py --count |
+| check_one_path.py の直しが、ちょうど1か所に当たること | 写しに当てるコマンドを土台ゲートが止める。直す前の文字は実物の行から jq で切り出した | 当てるときの道具の検査 |
+| T23 と T24 が通ること | 測る処理を当てる前は走らない | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/check_one_path.py --todo 208 |
+| 壊すプログラム6本が決めた文で落ちること | 当てた後に作るファイル | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/run_breaks.py --design |
+| 売り方 S2〜S5 が法則の欄で書けること | S1 だけを照らした | M3 の工事で照らす |
+
+【7-8 プログラムが読む設定】
+```json
+{"MODEL": [".claude/breaks/b215_reader_off_element.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "scripts/priority_rebuild/observe_diag.py",
+                     "_impl_file の意味": "照らす相手は実在するファイル。材料の一覧の軽い口が在る、観察の道具を照らす。この工事は observe_diag.py を変えない。",
+                     "impl_functions": {},
+                     "no_impl_functions_reason": "この工事で直すコードは indicators.py と check_one_path.py で、observe_diag.py の関数は1つも触らない。触った関数が0件であることは、実装の後に照合 verify_design_contract.py --diff をかけて確かめる（実装の後に確定させる）。",
+                     "self_check_calls": ["selftest_catalog"],
+                     "_self_check_calls の意味": "observe_diag.py に在るはずの、材料の一覧の軽い口の関数の名前。",
+                     "must_use": {"selftest_catalog": ["build_catalog", "load_config", "find_material"]},
+                     "_must_use の意味": "軽い口が呼ぶ関数（前の工事の設計書の形を写した）。",
+                     "spec_lists": {},
+                     "no_spec_lists_reason": "この工事は、観察の道具の外から読む一覧の形を変えない。laws.json を読む本番のプログラムはまだ無い。",
+                     "generated_from": {"impl_functions": "空（理由＝no_impl_functions_reason）",
+                                        "must_use": "前の工事の設計書の形を写した",
+                                        "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【7-5 §4.6 の照合】
+- TARGET は一覧の「直す」の行のファイルです（設計書を作るプログラムが作る）。.py の本体は indicators.py で、ほかは設定・文書・道具です。
+- DESIGN_CONTRACT は【7-8】に書きます。impl_file は observe_diag.py で、この工事は observe_diag.py を変えないので impl_functions は空です。
+- NEW_FILE は laws.json と壊すプログラム6本です（一覧と 7-6 の欄からプログラムが作る）。MODEL は b215_reader_off_element.sh です。
+- 真因は【7-1】に書きました。
+- 期待値分解は【7-1】に書きました。
+- root か symptom かは【7-1】に書きました（root）。
+- ベースアップは【7-1】に書きました。
+- 1レバーです。法則の置き場と形を決めることだけで、売買の値は変えません。
+- 過去の失敗を再演しません。違反の記録 #25（設定に書いてあることを、読んでいると取り違えた）は、4-13 に engine_tuner が laws.json を読まないと書いて避けています。
+- 非該当です。案を作るプログラムに、新しい部品・前処理を足しません（直すファイルの一覧に engine_tuner_gen.py が無い）。
+- 直すファイルは engine_tuner_exec.py・engine_tuner_gen.py ではありません。この2本の行番号を指す文書は、この工事では動きません。indicators.json の行は動きますが、行番号で指す文は worklog とこの工事の設計書の元だけで、歴史の記録なので直しません。
+- 直すファイルの名前で .claude/breaks を grep すると16本が当たります（b211・b212・b213・b214・b215・b216・b219・b220・b224・b225・b226・ss1_f1・ss1_f2・ss1_f4・ss1_f6・ss1_f8）。外す名前（法則の種類・判定の型・法則が指せる物・法則の記録・変わり始め）を持つのは b213 の1本だけで、4-13 に書きました。ほかの15本は、中身を1本ずつは読んでいません。前の工事の分で、この工事の run_breaks の相手ではありません。
+- 壊すプログラムが測るのは jq と読む口の自己テストと確認の道具だけで、結果の置き場に書きません。壊すファイルは lib.sh の guard が控えを取り、必ず戻します。
+- 新しく足す関数は indicators.py の _check_styles と check_one_path.py の t23・t24 の3つです。どれも impl_file の外なので impl_functions は空で、理由を no_impl_functions_reason に書きます。must_use の名前は observe_diag.py の selftest_catalog の中のままです。
+- 新しく足すコマンドの旗・口は0件です。
+- 実装の後に設計書を作り直すときは、変わった手順を 4-4・やらないこと・4-13・4-19・見積もりに書き直してから作り直します。
+- 固定値ゼロの宣言は【7-2】に書きました。
+- ARC の行は、設計書を作るプログラムが入れます。
+- 1変更です（8つ目の答え）。過去の失敗は、9つ目の答えのとおり再演しません。
+- 自己検査は、完成の条件と壊すプログラム6本です。観察の道具の軽い口（selftest_catalog）は計算の口を通りますが、この工事は計算の口を直さないので変わりません。

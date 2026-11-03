@@ -141,6 +141,54 @@ def t19(src: dict) -> tuple:
     return (PASS, last) if rc == 0 else (FAIL, last)
 
 
+def t23(src: dict) -> tuple:
+    """本物の定義表に要素を1行足した写しを読んで、記録と列を作る組が変わらず、足した要素を読める。実物は書き替えない。"""
+    import copy
+    ind, r = _reader()
+    data = copy.deepcopy(r.data)
+    rows = data[ind.TABLE_KEY]["要素"]
+    rows.append(dict(rows[0], **{"番号": "②-99", "要素の名前": "足した要素", "無いときの扱い": "未設定"}))
+    r2 = ind.Indicators(data, timeframes=r.choices("時間足"))
+    why = []
+    if r2.element("RSI", "足した要素") != ind.UNDECIDED:
+        why.append("足した要素を読めない")
+    if r2.record("RSI") != r.record("RSI"):
+        why.append("記録が変わった")
+    if r2.column_sets() != r.column_sets():
+        why.append("列を作る組が変わった")
+    return (PASS, "要素を足しても、記録と列を作る組が同じ") if not why else (FAIL, "・".join(why))
+
+
+def t24(src: dict) -> tuple:
+    """売買スタイルが選べる値に在り、9種の代表の値の鍵がその名前と同じ。写しで、選べる値に無い鍵は止まり、選べる値に足すと読める。実物は書き替えない。"""
+    import copy
+    ind, r = _reader()
+    styles = r.choices("売買スタイル")
+    path = src["通す条件"]
+    why = [] if path["売買スタイル"] in styles else [f"通す条件の {path['売買スタイル']} が選べる値に無い"]
+    for nm in path["指標"]:
+        for ax in r.axes(nm) or []:
+            rep = ax.get("代表の値")
+            if isinstance(rep, dict) and set(rep) != set(styles):
+                why.append(f"{nm} の {ax.get('名前')} の鍵が売買スタイルと違う")
+    tf = r.choices("時間足")
+    data = copy.deepcopy(r.data)
+    data["指標の記録"]["RSI"]["パラメータの軸"][0]["代表の値"]["見本のスタイル"] = [7]
+    try:
+        ind.Indicators(copy.deepcopy(data), timeframes=tf)
+        why.append("選べる値に無い鍵で止まらない")
+    except ind.IndicatorsError:
+        pass
+    data[ind.TABLE_KEY]["選べる値"]["売買スタイル"].append("見本のスタイル")
+    try:
+        r2 = ind.Indicators(data, timeframes=tf)
+        if "見本のスタイル" not in r2.axes("RSI")[0]["代表の値"]:
+            why.append("足した売買スタイルの値を読めない")
+    except ind.IndicatorsError as e:
+        why.append(f"選べる値に足しても止まる: {e}")
+    return (PASS, f"売買スタイル {len(styles)} つで代表の値を引け、無い鍵で止まり、足すと読める") if not why else (FAIL, "・".join(why))
+
+
 def t28(src: dict) -> tuple:
     """確認の無い機能の ToDo で、対応表の道具が止まる形が動いている。"""
     tool = str(ROOT / ".claude/tools/gen_req_trace.py")
@@ -220,7 +268,7 @@ def t43(_src: dict) -> tuple:
 
 
 # 測る処理が在る試験。無い試験は「未作」と出す（作る ToDo で足す）
-CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T28": t28, "T30": t30, "T36": t36, "T43": t43}
+CHECKS = {"T02": t02, "T04": t04, "T05": t05, "T11": t11, "T15": t15, "T19": t19, "T23": t23, "T24": t24, "T28": t28, "T30": t30, "T36": t36, "T43": t43}
 
 
 def run_test(no: str, src: dict) -> tuple:

@@ -40,7 +40,7 @@ HERE = Path(__file__).resolve().parent
 JSON_PATH = HERE / "indicators.json"
 CONFIG_PATH = HERE.parent / "observe_config.json"            # 時間足の表（要素の定義表の「選べる値」の「時間足」が名前で指す）
 TABLE_KEY = "要素の定義表"
-RECORD_KINDS = ("指標の記録", "使い方の記録", "部品の記録")          # 法則の記録（⑤）は195番で作る
+RECORD_KINDS = ("指標の記録", "使い方の記録", "部品の記録")          # 法則の記録の形とデータは laws/laws.json（工事 m2c15-outside-record-20261102）
 TIMEFRAMES_TABLE = "observe_config.json の timeframes"
 UNDECIDED = "まだ決めていない"                                   # 決まり②＝未設定の要素は、この印を返す
 ANY = "両方"                                                    # 玉の向きの「両方」（選べる値「玉の向き」）
@@ -59,7 +59,7 @@ USE_FROM_NO = {"③-6": "②-4"}
 # ★要素の定義表の「形の決まり」の文からは決められない（②-7 教科書の役割の形の決まりは「選べる値から選ぶ」だけで、値は {区分・出どころ・札}
 #   の辞書＝2026-11-01 に写しで確かめた）ので、この対応はコードに残す（監査 CP94 の Q13 の2つ目＝8つの対応の中身は合う）。
 _CHOICE_FIELD = {"閾値の形": "形", "値の単位": "単位", "値の読み方の区分": "区分", "役割の区分": "区分", "場面": "場面",
-                 "軸の意味": "意味", "時間足": "時間足", "判定の型": "型"}
+                 "軸の意味": "意味", "時間足": "時間足"}
 
 
 class IndicatorsError(SystemExit):
@@ -179,7 +179,42 @@ class Indicators:
             _stop("「使い方の記録」は行の並びでない")
         for i, rec in enumerate(self.records["使い方の記録"]):
             self._check_record("使い方の記録", f"{i}", rec)
+        self._check_styles()
         self.column_sets()                                       # 並びの重なり・抜けも、読み込んだときに止める
+
+    def _check_styles(self) -> None:
+        """決まり④＝代表の値の鍵が売買スタイルに在り、確かめの強さが選べる値に在るか（工事 m2c15-outside-record-20261102）。"""
+        allowed = set(self.choices("売買スタイル"))
+        strong = set(self.choices("確かめの強さ"))
+
+        def keys_of(rep, where):
+            for k in (rep if isinstance(rep, dict) else {}):
+                if k not in allowed:                         # ★売買スタイルの照らし
+                    _stop(f"選べる値に無い値: {where} の代表の値の鍵 {k!r}（選べる値「売買スタイル」）")
+
+        def strength_of(row, where):
+            for v in (row.get("確かめの強さ"), (row.get("出どころ") or {}).get("確かめの強さ") if isinstance(row.get("出どころ"), dict) else None):
+                if v is not None and v not in strong:
+                    _stop(f"選べる値に無い値: {where} の確かめの強さ {v!r}（選べる値「確かめの強さ」）")
+
+        for kind in ("指標の記録", "部品の記録"):
+            ax_nm = self._el("パラメータの軸", kind)
+            for nm, rec in self.records[kind].items():
+                for ax in rec.get(ax_nm) or []:
+                    if isinstance(ax, dict):
+                        keys_of(ax.get("代表の値"), f"{kind}「{nm}」の軸")
+                        strength_of(ax, f"{kind}「{nm}」の軸")
+        for no, recs in (("③-5", self.records["使い方の記録"]), ("④-5", list(self.records["部品の記録"].values()))):
+            th = self.E.get(no)
+            for i, rec in enumerate(recs if th else []):
+                for row in rec.get(th) or []:
+                    if isinstance(row, dict):
+                        keys_of(row.get("代表の値"), f"{no} の {i} 行目の閾値")
+                        strength_of(row, f"{no} の {i} 行目の閾値")
+        th = self.E.get("③-6")
+        for i, rec in enumerate(self.records["使い方の記録"] if th else []):
+            for rep in (rec.get(th) or {}).values() if isinstance(rec.get(th), dict) else []:
+                keys_of(rep, f"③-6 の {i} 行目")
 
     # ── 読む口 ─────────────────────────────────────────────────────────────────────────────
     def names(self, kind: str = "指標の記録") -> list:
@@ -421,7 +456,7 @@ def _sample() -> dict:
                       row("④-9", "列を作る組", "部品の記録", "未設定")],
              "選べる値": {"使い方の種類": ["出口の反転", "前提崩れの印"], "閾値の形": ["値", "分位"],
                       "役割の区分": {"表": "役割の区分の表"}, "役割の区分の表": {"行き過ぎ": {"札": "オシレーター"}},
-                      "軸の意味": ["窓"], "玉の向き": ["SHORT", "LONG", "両方"], "時間足": {"表": TIMEFRAMES_TABLE}},
+                      "軸の意味": ["窓"], "玉の向き": ["SHORT", "LONG", "両方"], "時間足": {"表": TIMEFRAMES_TABLE}, "売買スタイル": ["スキャル", "デイトレ"], "確かめの強さ": ["ページの文で確かめた", "見つからなかった", "未確認"]},
              "この表で受けない要ること": {}, "読む口が守る決まり": ["見本"]}
     recs = {"RSI": {"名前": "RSI", "計算の関数": {"登録の名前": "RSI", "関数の名前": ["_rsi"], "式の文": "見本"},
                     "パラメータの軸": [{"名前": "n", "意味": "窓"}], "教科書の役割": {"区分": ["行き過ぎ"]},
@@ -519,6 +554,17 @@ def selftest() -> int:
     bad = copy.deepcopy(base)
     bad["使い方の記録"][0]["時間足"] = [["5m"]]
     t("決まり④: 入れ子の並びなら止まる（監査 CP94 の修正11）", stops(bad, "選べる値の形でない値"))
+    bad = copy.deepcopy(base)
+    bad["指標の記録"]["RSI"]["パラメータの軸"][0]["代表の値"] = {"知らない": [7]}
+    bad2 = copy.deepcopy(base)
+    bad2["使い方の記録"][0]["閾値"][0]["代表の値"] = {"知らない": 70}
+    bad3 = copy.deepcopy(base)
+    bad3["指標の記録"]["RSI"]["パラメータの軸"][0]["確かめの強さ"] = "知らない"
+    t("決まり④: 売買スタイルに無い値で止まる", stops(bad, "選べる値に無い値") and stops(bad2, "選べる値に無い値") and stops(bad3, "選べる値に無い値"))
+    more = copy.deepcopy(base)
+    more[TABLE_KEY]["要素"].append(dict(more[TABLE_KEY]["要素"][0], **{"番号": "②-99", "要素の名前": "足した要素", "無いときの扱い": "未設定"}))
+    rm = Indicators(more, timeframes=["5m", "15m"])
+    t("定義表に要素を足しても、記録を作り直さずに読める（T23）", rm.element("RSI", "足した要素") == UNDECIDED and rm.record("RSI") == r.record("RSI"))
     # ⑤指標がオフなら使い方と部品も返さない
     t("決まり⑤: オフの指標の使い方の記録を返さない", [u["指す物"]["指標の記録"] for u in r.usages()] == ["RSI"])
     t("決まり⑤: 使い方の記録そのもの（③-11）がオフなら返さない（監査 CP94 の修正11）", len(r.usages("RSI")) == 1)

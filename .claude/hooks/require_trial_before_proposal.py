@@ -10,16 +10,46 @@
 #   ①trial_design.py の記録（.claude/state/sessions/<セッション>/trial_last.json）が在る
 #   ②その記録が ok（試しの設計書が作れ、承認の前の検査の A群0件・古い事実の語0件）
 #   ③返信の案の節の行が全部、その記録の下書きに在る（試したものと違う案を出していない）
-#     ＋案の見出しが在る最初の返信から後ろの、全部の行が下書きに在る（2026-10-22＝案と同じ返信に、試していない文を混ぜない）
+#     ＋最初の案の見出しから後ろの、全部の行が下書きに在る（2026-10-22＝案と同じ返信に、試していない文を混ぜない）
 #   の3つがそろわなければ、ターンを終われない。
+# ★2026-11-03（245回目・まこさん「以下はよくやってるので絶対に今後二度とやらないでほしいので、今すぐ修正してほしい。」「では１と２両方ともOK」）
+#   ＝止めの文で、案の全文の出し直しを指示しない。hook は返信が画面に出た後に走るので、全文を出し直すと同じ案を2回読ませ、トークンを2倍使う。
+#   ①最初の案の見出しより前の文は照らさない。設計書を作るプログラムが節に写さないため（gen_acceptance.py の「【】の見出しの外の行」）。
+#     ただし、行の頭が【 で宣言の見出しでない行は止める（設計書を作るときに知らない見出しになる）。
+#   ②案の後ろの文は、出し直さず、逐語を作るときに --drop で外す（gen_acceptance.py は --drop の行を節に写さない）。
+#   ③案の行が下書きと違うときは、試し直して違う節だけを出す。
 # 限界（正直に）＝見出しの形（行の頭の【数字】）でしか案を見分けない。古い事実の語は私が選ぶ。中身の正しさは見ない。
+#   止めるのは返信が出た後。CC が自分から全文を出すことは、この hook では止められない。
 import json
 import re
 import sys
 from pathlib import Path
 
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
+TOOLS = str(Path(__file__).resolve().parent.parent / "tools")
 HEAD_RE = re.compile(r"^\s*【(\d+(?:-\d+[A-Za-z]?)?)\s[^】]*】\s*$")
+NO_RESEND = ("案を出し直さない（全文も節も）。試しは走らせ直さない。まこさんの OK の後に逐語を作るとき、その行を "
+             "gen_verbatim.py --write の --drop で外す（行の番号は --lines で見る）。今は案の見出しを書かない短い文だけを返す")
+
+
+def _first_head(rows: list) -> int:
+    """囲みの外で、最初の案の見出しの行の位置。無ければ行の数。"""
+    fence = False
+    for i, ln in enumerate(rows):
+        if ln.strip().startswith("```"):
+            fence = not fence
+        elif not fence and HEAD_RE.match(ln):
+            return i
+    return len(rows)
+
+
+def _unknown_head(ln: str) -> bool:
+    """設計書を作るプログラムが、知らない見出しと読む行か（読み方は gen_acceptance.py の KEY_RE と DECL_HEADS）。"""
+    if TOOLS not in sys.path:
+        sys.path.insert(0, TOOLS)
+    import gen_acceptance as ga
+    m = ga.KEY_RE.match(ln)
+    return bool(m) and m.group(1).split()[0] not in ga.DECL_HEADS
 
 
 def proposal_lines(text: str) -> list:
@@ -78,22 +108,28 @@ def check(text: str, sid: str, blocks: list | None = None) -> list:
         first = lines[miss[0]][:60]
         if trailing:
             bad.append(f"案の後ろに、試した下書きに無い文が {len(miss)} 行ある（最初＝「{first}」）。案の中身は試したとおり。"
-                       "後ろの文を消して、案だけをもう一度出す。試しは走らせ直さない（報告は案より前に書く。"
-                       "案の後ろの文は、設計書を作るプログラムがその節の中身として写す）")
+                       f"{NO_RESEND}（報告は案より前に書く。案の後ろの文は、設計書を作るプログラムがその節の中身として写す）")
         else:
-            bad.append(f"返信の案の行のうち {len(miss)} 行が、試した下書きに無い（最初＝「{first}」）。案を下書きに書いて試し直す: {how}")
-    # ★2026-10-22（204回目・まこさん「進めてよい」）＝案の見出しが在る最初の返信から後ろの、全部の行を照らす。
+            bad.append(f"返信の案の行のうち {len(miss)} 行が、試した下書きに無い（最初＝「{first}」）。"
+                       f"違う節を下書きで直して試し直す。出すのは違う節だけ（全文を出さない）: {how}")
+    # ★2026-10-22（204回目・まこさん「進めてよい」）＝案の見出しが在る最初の返信から後ろの行を照らす。
     #   直す前＝最初の案の見出しより前の行（いまの工程・報告）を照らさなかった。CC が同じ返信の先頭に【いまの工程】【次】を
     #   書き、gen_acceptance.py が OK の後に「知らない見出し」で止まった（まこさんの OK が1回むだになった）。
     #   それより前の返信（道具を呼ぶ合間の文）は、逐語に選ばないので照らさない。
+    # ★2026-11-03（245回目）＝最初の案の見出しより前は、知らない見出しになる行だけを止める（その行だけが設計書を作る所で止まる）。
     if blocks:
         k0 = next((i for i, b in enumerate(blocks) if proposal_lines(b)), None)
         inner = set(lines)
-        extra = [] if k0 is None else [ln.strip() for b in blocks[k0:] for ln in b.splitlines()
-                                       if ln.strip() and ln.strip() not in have and ln.strip() not in inner]
+        extra, heads = [], []
+        for j, b in enumerate(blocks[k0:] if k0 is not None else []):
+            rows = b.splitlines()
+            start = _first_head(rows) if j == 0 else 0
+            heads += [ln.strip() for ln in rows[:start] if _unknown_head(ln)]
+            extra += [ln.strip() for ln in rows[start:] if ln.strip() and ln.strip() not in have and ln.strip() not in inner]
+        if heads:
+            bad.append(f"案より前の文に、設計書の見出しと読まれる行が {len(heads)} 行ある（最初＝「{heads[0][:60]}」）。{NO_RESEND}")
         if extra:
-            bad.append(f"案と同じ返信の中に、試した下書きに無い文が {len(extra)} 行ある（最初＝「{extra[0][:60]}」）。"
-                       f"返信の全文（いまの工程・報告・案）を1つの下書きに書いて試し直し、通った下書きを1文字も変えずに出す: {how}")
+            bad.append(f"案の見出しより後ろに、試した下書きに無い文が {len(extra)} 行ある（最初＝「{extra[0][:60]}」）。{NO_RESEND}")
     return bad
 
 
