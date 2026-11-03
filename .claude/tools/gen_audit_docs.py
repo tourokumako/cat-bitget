@@ -1013,7 +1013,7 @@ HAND_FORM = """# 監査依頼の手書き（実装の監査）｜工事 <工事�
 | <まこさんの要望を CC がまとめた文（まこさんが OK）> | req_x_20260101:V04 |
 """
 # まこさんとのやり取りの逐語のファイルの名前（req_・ok_・okd_）。監査は逐語を読まない（設計書の監査の okd_ だけは問い W で照らす）
-VERBATIM_NAME_RE = re.compile(r"(?<![A-Za-z0-9_])(?:req|okd?)_[A-Za-z0-9]+(?:_\d{8})?")
+VERBATIM_NAME_RE = re.compile(r"(?<![A-Za-z0-9_])(?:req(?!_trace)|okd?)_[A-Za-z0-9]+(?:_\d{8})?")
 NEED_NAME = "必読に要るファイル（道具が設計書と実装から拾った）"
 READ_NAME_RE = re.compile(r"[A-Za-z0-9_./\-]+\.(?:json|jsonl|csv|parquet|py)\b")
 IMPORT_RE = re.compile(r"^\s*(?:from|import)\s+([A-Za-z_]\w*)", re.M)
