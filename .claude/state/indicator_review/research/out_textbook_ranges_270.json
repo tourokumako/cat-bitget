@@ -1,0 +1,271 @@
+{
+ "件": [
+  {
+   "番号": 1,
+   "指標": "RSI",
+   "探す物": "閾値の範囲（形＝値）",
+   "結果": "両端の文が在る",
+   "使った検索の語": [
+    "RSI overbought threshold range adjust between 70 and 80 scalping",
+    "RSI overbought level optimization range 65 to 85 backtest",
+    "RSI overbought oversold levels adjust 80 20 90 10（schwab・fidelity・babypips・stockcharts・tradingview・cmegroup に絞った）",
+    "RSI overbought level tested from 60 to 90 backtest results thresholds quantified",
+    "crypto bitcoin RSI 5 minute scalping overbought 75 85 levels short"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/RSI",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字）"
+    },
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 19847 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 10370 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/chart/BTCUSD/Mw0R8uur-RSI-MasterClass-Part-1-The-Overbought-Oversold-Trading-Strateg/",
+     "HTTP": 404,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 404／Chromium＝HTTP 404（本文 1772 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.mql5.com/en/blogs/post/774746",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5484 文字）"
+    },
+    {
+     "URL": "https://www.investopedia.com/terms/r/rsi.asp",
+     "HTTP": 402,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 402／Chromium＝HTTP 200（本文 20331 文字）"
+    },
+    {
+     "URL": "https://www.babypips.com/learn/forex/relative-strength-index",
+     "HTTP": 403,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 403／Chromium＝HTTP 403（本文 264 文字）／WebFetch も 403／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/ImVAOTyf-Modern-RSI/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 21624 文字）"
+    },
+    {
+     "URL": "https://github.com/toobrien/rsi",
+     "HTTP": 403,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 403／Chromium＝HTTP 200（本文 9276 文字）"
+    },
+    {
+     "URL": "https://stockbros.substack.com/p/does-the-relative-strength-index",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 9079 文字）"
+    },
+    {
+     "URL": "https://help.coinrule.com/articles/376756-rsi-top-scalper",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4775 文字）"
+    },
+    {
+     "URL": "https://forums.babypips.com/t/rsi-scalping/35996",
+     "HTTP": 403,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 403／Chromium＝HTTP 403（本文 267 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "For example, if a security is repeatedly reaching the overbought level of 70 you may want to adjust this level to 80.",
+     "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/RSI",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（Fidelity の学習の頁）",
+     "注": "70 を 80 に動かす例。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Raising the overbought threshold to 80 or lowering the oversold threshold to 20 could reduce the number of overbought/oversold readings.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Again, the higher high is usually just below overbought levels in the 50-70 area.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "範囲の形": "文に両端が在る",
+     "下の端": 50,
+     "上の端": 70,
+     "閾値の形": "前提つき",
+     "単位": "0〜100",
+     "話の相手": [
+      "ショート"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "Cardwell の弱気の反転の形の中で、RSI の高値が来る所。閾値を探す幅とは書いてない。「ショート」は弱気の反転の形の話であるため（文に short の語は無い）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "For example, someone might consider any number above 80 as overbought and anything below 20 as oversold.",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+     "注": "本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "In a falling market they shift down, so a market is only really oversold near 10 and can be considered overbought as early as 60.",
+     "URL": "https://www.mql5.com/en/blogs/post/774746",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（MQL5 の投稿・2026-08-25）",
+     "注": "前提＝下げ相場。下げ相場では 60 で買われ過ぎと見てよい、と書く。Constance Brown の本の読みとして書いている。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "In a rising market the useful thresholds shift up, toward roughly 40 and 90.",
+     "URL": "https://www.mql5.com/en/blogs/post/774746",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（MQL5 の投稿・2026-08-25）",
+     "注": "前提＝上げ相場。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "An overbought reading during a downtrend is also much lower than 70.",
+     "URL": "https://www.investopedia.com/terms/r/rsi.asp",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（Investopedia）",
+     "注": "curl は 402 で開けず、Chromium で開いた本文の文。前の文は Constance Brown の読みを紹介している。本文で照らした道具：Chromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Although the experimental group RSI trades were profitable at the most extreme levels (90 short, 10 long), they were substantially less profitable at the 70 and 30 levels most commonly used by traders, with a mean profit of 0.4% and 1.6%, respectively.",
+     "URL": "https://github.com/toobrien/rsi",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "ショート"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（GitHub の個人の調べ toobrien/rsi）",
+     "注": "curl は 403、Chromium で開いた本文の文。ショートで 70・80・90 を試した結果の文。数の範囲で探した文ではない。本文で照らした道具：Chromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "When using 75 RSI as the overbought level to short SPY, the strategy actually has a positive return despite shorting into uptrends.",
+     "URL": "https://stockbros.substack.com/p/does-the-relative-strength-index",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "ショート"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（StockBros の Substack）",
+     "注": "同じページで 70・75・80 の3つを試している（Timeframe: Daily と書いた節）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "The first condition will be met when the asset has an RSI of greater than 65, and is around the overbought region, in a 5-minute timeframe.",
+     "URL": "https://help.coinrule.com/articles/376756-rsi-top-scalper",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "5分足",
+      "ショート"
+     ],
+     "時間足": "5-minute timeframe",
+     "出どころの質": "ボットの説明書（Coinrule のヘルプ。暗号資産の取引の道具）",
+     "注": "ショートは、同じページの「In this strategy, we focus on short selling, the process of selling and buying back lower.」から読んだ。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "The default settings are: * RSI Length: 14; * Overbought Level: 80; * Oversold Level: 20; * Midpoint: 50.",
+     "URL": "https://www.tradingview.com/script/ImVAOTyf-Modern-RSI/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（Modern RSI）",
+     "注": "既定の値の列挙。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
+  }
+ ]
+}
