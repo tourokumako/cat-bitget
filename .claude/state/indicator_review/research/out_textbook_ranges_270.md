@@ -14,6 +14,7 @@
 | 2 | ADX | 閾値の範囲（形＝値） | 両端の文が在る | 2 | 12 | 14 | 掲示板の条件の帯（25〜40）と、ブログの「20-25 より上」。探す幅とは書いてない |
 | 3 | DI差 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 5 | 12 | — |
 | 4 | BB%b | 閾値の範囲（形＝値） | 両端の文が在る | 3 | 9 | 11 | StockSharp の戦略の例のコードの最適化の範囲（0.1〜0.3・0.7〜0.9・0.3〜0.7）。うち2つはロングだけの戦略 |
+| 5 | ATR% | 閾値の範囲（形＝値か倍率） | 両端の文が在る | 2 | 5 | 14 | 損切りの幅の ATR の倍率（1.5〜3.0・スキャル 1.0〜1.5）。ATR% の値の閾値の両端の文ではない |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -99,6 +100,22 @@
 | 8 | Exit Signal: Exit the position when the %b value closes above 0.8, signaling an overbought condition where the price is near the upper Bollinger Band.<br>https://www.tradingview.com/script/yXkWPSlU/ | 値を挙げただけ | None | None | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Larry Connors %b Strategy） | ロングの決済（探さない物に当たるが残した）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 9 | Sell: When %b crosses above 80 (approaching the upper band, signaling stretched conditions).<br>https://sentimentrader.com/education/technical-indicators/bollinger-b | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（SentimenTrader） | %b を 0〜100 の数で書いている（同じページの別の文は 0〜1 で書く）。ロングの決済の文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 
+### 5. ATR%｜閾値の範囲（形＝値か倍率）（結果：両端の文が在る）
+
+使った検索の語：
+- ATR percent threshold low volatility filter ATRP range value
+- ATR multiplier range 1.5 to 3 stop loss scalping
+- ATR percent of price volatility threshold screen（fidelity・stockcharts・schwab・tradingview に絞った）
+- NATR normalized ATR percent threshold minimum volatility filter crypto 0.5% 1%
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | The final scan clause excludes high-volatility stocks (those with average ATRP of more than 4% over the last year) from the results.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | 値を挙げただけ | None | None | 値 | % | 一般 | over the last year | 定番の教育サイト（StockCharts ChartSchool の ATRP） | 検索の例の 4%。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | A good ATR multiplier for stop losses typically ranges between 1.5x and 3.0x the current ATR value.<br>https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement | 文に両端が在る | 1.5 | 3.0 | 倍率 | ATR の倍数 | 一般 | 時間足は書いてない | 証券会社の解説（Traders Agency） | 損切りの幅の倍率。ATR% の値の閾値ではない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 3 | Aggressive Scalper 5 - 7 1.0x to 1.5x Exiting at the first sign of volatility reversal.<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | 文に両端が在る | 1.0 | 1.5 | 倍率 | ATR の倍数 | スキャル | 時間足は書いてない | ブログ（marketclutch） | 表の1行（Trader Profile・ATR Period・Multiplier・Logic の欄）。損切りの幅の倍率。同じ表に「Conservative Trend Follower 20 - 22 2.5x to 3.0x」が在る。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | Professional traders often switch to a higher multiplier (e.g., from 2x to 3x) in low-volatility environments to avoid being stopped out by random, low-volume "noise."<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | 値を挙げただけ | None | None | 倍率 | ATR の倍数 | 一般 | 時間足は書いてない | ブログ（marketclutch） | 前提＝値動きの小さい場面。本文で照らした道具：curl（空白の数だけそろえた） |
+| 5 | A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in.<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | 値を挙げただけ | None | None | 倍率 | ATR の倍数 | 5分足 | 5 minute ATR | ブログ（The Right Trader） | 損切りの幅。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -170,7 +187,26 @@
 | https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 7970 文字） |
 | https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 6784 文字） |
 
-開いたページは、件ごとに数えて 49 本（同じ URL を除くと 49 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
+### 5. ATR%｜閾値の範囲（形＝値か倍率）
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 7453 文字） |
+| https://in.tradingview.com/scripts/atrpercentage/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 5655 文字） |
+| https://www.tradingview.com/script/6aZViQvI-Volatility-Regime-Classifier-ATRP-Percentile-Zones/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 4011 文字） |
+| https://www.tradingview.com/script/IoGZmM1D-ATR-Volatility-Regime/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6782 文字） |
+| https://www.luxalgo.com/blog/how-to-use-atr-for-volatility-based-stop-losses/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 13386 文字） |
+| https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 19875 文字） |
+| https://therighttrader.com/learn/indicator-strategies/best-atr-settings | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 13443 文字） |
+| https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 7130 文字） |
+| https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 10281 文字） |
+| https://therighttrader.com/learn/indicators/normalized-atr | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 13889 文字） |
+| https://www.macroption.com/normalized-atr | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6260 文字） |
+| https://docs.skyrexio.com/strategy-builder/built-in-conditions/volatility-indicators/normalized-average-true-range-14 | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 12707 文字） |
+| https://www.tradingview.com/script/358ZxT4e-NATR-Normalized-ATR-Oscillator/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 4750 文字） |
+| https://ta-lib.org/functions/natr.html | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 1974 文字） |
+
+開いたページは、件ごとに数えて 63 本（同じ URL を除くと 63 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 

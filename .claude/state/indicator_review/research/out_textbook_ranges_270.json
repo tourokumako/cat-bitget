@@ -961,6 +961,195 @@
      "注": "%b を 0〜100 の数で書いている（同じページの別の文は 0〜1 で書く）。ロングの決済の文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 5,
+   "指標": "ATR%",
+   "探す物": "閾値の範囲（形＝値か倍率）",
+   "結果": "両端の文が在る",
+   "使った検索の語": [
+    "ATR percent threshold low volatility filter ATRP range value",
+    "ATR multiplier range 1.5 to 3 stop loss scalping",
+    "ATR percent of price volatility threshold screen（fidelity・stockcharts・schwab・tradingview に絞った）",
+    "NATR normalized ATR percent threshold minimum volatility filter crypto 0.5% 1%"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7453 文字）"
+    },
+    {
+     "URL": "https://in.tradingview.com/scripts/atrpercentage/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5655 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/6aZViQvI-Volatility-Regime-Classifier-ATRP-Percentile-Zones/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4011 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/IoGZmM1D-ATR-Volatility-Regime/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6782 文字）"
+    },
+    {
+     "URL": "https://www.luxalgo.com/blog/how-to-use-atr-for-volatility-based-stop-losses/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 13386 文字）"
+    },
+    {
+     "URL": "https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 19875 文字）"
+    },
+    {
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 13443 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7130 文字）"
+    },
+    {
+     "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 10281 文字）"
+    },
+    {
+     "URL": "https://therighttrader.com/learn/indicators/normalized-atr",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 13889 文字）"
+    },
+    {
+     "URL": "https://www.macroption.com/normalized-atr",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6260 文字）"
+    },
+    {
+     "URL": "https://docs.skyrexio.com/strategy-builder/built-in-conditions/volatility-indicators/normalized-average-true-range-14",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 12707 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/358ZxT4e-NATR-Normalized-ATR-Oscillator/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4750 文字）"
+    },
+    {
+     "URL": "https://ta-lib.org/functions/natr.html",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 1974 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "The final scan clause excludes high-volatility stocks (those with average ATRP of more than 4% over the last year) from the results.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "%",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "over the last year",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool の ATRP）",
+     "注": "検索の例の 4%。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "A good ATR multiplier for stop losses typically ranges between 1.5x and 3.0x the current ATR value.",
+     "URL": "https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement",
+     "範囲の形": "文に両端が在る",
+     "下の端": 1.5,
+     "上の端": 3.0,
+     "閾値の形": "倍率",
+     "単位": "ATR の倍数",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（Traders Agency）",
+     "注": "損切りの幅の倍率。ATR% の値の閾値ではない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Aggressive Scalper 5 - 7 1.0x to 1.5x Exiting at the first sign of volatility reversal.",
+     "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+     "範囲の形": "文に両端が在る",
+     "下の端": 1.0,
+     "上の端": 1.5,
+     "閾値の形": "倍率",
+     "単位": "ATR の倍数",
+     "話の相手": [
+      "スキャル"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（marketclutch）",
+     "注": "表の1行（Trader Profile・ATR Period・Multiplier・Logic の欄）。損切りの幅の倍率。同じ表に「Conservative Trend Follower 20 - 22 2.5x to 3.0x」が在る。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Professional traders often switch to a higher multiplier (e.g., from 2x to 3x) in low-volatility environments to avoid being stopped out by random, low-volume \"noise.\"",
+     "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "倍率",
+     "単位": "ATR の倍数",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（marketclutch）",
+     "注": "前提＝値動きの小さい場面。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in.",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "倍率",
+     "単位": "ATR の倍数",
+     "話の相手": [
+      "5分足"
+     ],
+     "時間足": "5 minute ATR",
+     "出どころの質": "ブログ（The Right Trader）",
+     "注": "損切りの幅。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }
