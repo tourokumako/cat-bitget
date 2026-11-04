@@ -7928,6 +7928,714 @@
     }
    ],
    "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸 t のスキャルの代表の値",
+   "いまの値": "まだ決めていない",
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 9 Q3（555行目））＝「帯の幅（このリポジトリの t）｜線のまわりの幅 t の値｜—｜✗ 見つからなかった（教科書のピボットの式に幅は無い）」"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸 t の範囲",
+   "いまの値": {
+    "kind": "float",
+    "lo": 0.0015,
+    "hi": 0.006,
+    "dec": 4
+   },
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 9 Q3（555行目））＝「帯の幅（このリポジトリの t）｜線のまわりの幅 t の値｜—｜✗ 見つからなかった（教科書のピボットの式に幅は無い）」"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸 期間（指標データに当たる軸が無い） の既定（スキャルの値が教科書に無いときに使う値・欄の外）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "前の日",
+     "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-, 5-, 10-, and 15-minute charts",
+     "名指し": [
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.1.既定.0",
+     "注": "前期間pivotR1 の行。調べの注：1サイトだけ"
+    },
+    {
+     "値": "前の月",
+     "逐語": "Pivot Points for daily charts use the prior month's data.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily charts",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.1.既定.1",
+     "注": "前期間pivotR1 の行。調べの注：1サイトだけ"
+    },
+    {
+     "値": "前の日",
+     "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-, 5-, 10-, and 15-minute charts",
+     "名指し": [
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.1.既定.0",
+     "注": "前期間pivotS1 の行。調べの注：1サイトだけ"
+    },
+    {
+     "値": "前の月",
+     "逐語": "Pivot Points for daily charts use the prior month's data.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily charts",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.1.既定.1",
+     "注": "前期間pivotS1 の行。調べの注：1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸（9種の文書の Q3・軸の名前は書いてない）（スキャル・範囲・既定と書いていない値）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "表示の本数 15",
+     "逐語": "\"the default “Number of Pivots Back” value of 15 means that the indicator displays pivots for each of the last 15 weeks.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q3（554行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸（資料の表にパラメータの名前が無い）（指標データに当たる軸が無い） のスキャルの代表の値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "前日の高値・安値・終値",
+     "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-, 5-, 10-, and 15-minute charts",
+     "名指し": [
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.0.スキャル.0",
+     "注": "前期間pivotR1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "1D（前日）",
+     "逐語": "1D for chart resolutions up to and including 15 min",
+     "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1D・up to and including 15 min",
+     "名指し": [
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.0.スキャル.1",
+     "注": "前期間pivotR1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "前日の高値・安値・終値",
+     "逐語": "Pivot Points for 1-, 5-, 10-, and 15-minute charts use the prior day's high, low, and close.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-, 5-, 10-, and 15-minute charts",
+     "名指し": [
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.0.スキャル.0",
+     "注": "前期間pivotS1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "1D（前日）",
+     "逐語": "1D for chart resolutions up to and including 15 min",
+     "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1D・up to and including 15 min",
+     "名指し": [
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.0.スキャル.1",
+     "注": "前期間pivotS1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-4 パラメータの軸（資料の表にパラメータの名前が無い）（指標データに当たる軸が無い） の既定（スキャルの値が教科書に無いときに使う値・欄の外）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "前日の高値・安値・終値",
+     "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.0.既定.0",
+     "注": "前期間pivotR1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+     "逐語": "R1 = P * 2 - prevLow",
+     "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.0.既定.1",
+     "注": "前期間pivotR1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "日足のチャートは前の月",
+     "逐語": "Pivot Points for daily charts use the prior month's data.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily charts",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の パラメータの軸.0.既定.2",
+     "注": "前期間pivotR1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "前日の高値・安値・終値",
+     "逐語": "At the beginning of the trading day, floor traders would look at the previous day's high, low, and close to calculate a Pivot Point for the current trading day.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.0.既定.0",
+     "注": "前期間pivotS1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "前の期間（Pivots Timeframe で選んだ時間足の前の足）の高値・安値・終値",
+     "逐語": "S1 = P * 2 - prevHigh",
+     "URL": "https://www.tradingview.com/support/solutions/43000521824-pivot-points-standard/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.0.既定.1",
+     "注": "前期間pivotS1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "日足のチャートは前の月",
+     "逐語": "Pivot Points for daily charts use the prior month's data.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily charts",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の パラメータの軸.0.既定.2",
+     "注": "前期間pivotS1 の行。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-10 値の単位と値域",
+   "いまの値": {
+    "値域": {
+     "有界": null,
+     "分位": null
+    }
+   },
+   "候補": [
+    {
+     "値": "{\"単位\": \"値段\", \"下限\": null, \"上限\": null}",
+     "逐語": "Resistance 1 (R1) = (P x 2) - Low",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の 値の単位と値域.0",
+     "注": ""
+    },
+    {
+     "値": "{\"単位\": \"値段\", \"下限\": null, \"上限\": null}",
+     "逐語": "Support 1 (S1) = (P x 2) - High",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の 値の単位と値域.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-11 値の読み方",
+   "いまの値": {
+    "区分": "状態量",
+    "読み方": "1 は前の日の R1 と S1 の間",
+    "向きを持つ": false,
+    "性質": [
+     "none"
+    ]
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels. In this regard, Pivot Points are predictive or leading indicators.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q1（532行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q1（533行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-12 教科書の役割",
+   "いまの値": {
+    "区分": [
+     "位置"
+    ],
+    "出どころ": "係の調べ（逐語✅）",
+    "札": "構造・位置"
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels. In this regard, Pivot Points are predictive or leading indicators.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q1（532行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q1（533行目）",
+     "注": ""
+    },
+    {
+     "値": "位置",
+     "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の 教科書の役割.0",
+     "注": ""
+    },
+    {
+     "値": "位置",
+     "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の 教科書の役割.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-5 閾値（形と代表の値）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "線で確かめる",
+     "逐語": "\"As with all indicators, confirming Pivot Point signals with other aspects of technical analysis is important. A bearish candlestick reversal pattern could confirm a reversal at second resistance.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q4（563行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "部品の記録（帯pivot）",
+   "使い方の種類": "",
+   "欄": "④-5 閾値（範囲）",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 9 Q4（564行目））＝「数の閾値｜R1・S1 からの距離の数｜—｜✗ 見つからなかった」"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "入る合図",
+     "逐語": "\"Similarly, if prices advance to resistance and stall, traders can look for a failure at resistance and decline. Again, look for a bearish chart pattern or indicator signal to confirm a downturn from resistance.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q2（541行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "入る合図",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "出口の水準を作る材料",
+     "逐語": "\"A move below the Pivot Point suggests weakness with a target to the first support level. A break below the first support level shows even more weakness with a target to the second support level.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 9 Q2（542行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "出口の水準を作る材料",
+     "逐語": "Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotR1 の 使い方.0",
+     "注": ""
+    },
+    {
+     "値": "出口の水準を作る材料",
+     "逐語": "Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_07.json の 前期間pivotS1 の 使い方.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "出口の水準を作る材料",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 9 Q2（545行目））＝「（レンジ）｜「range」「sideways」の語でピボットの使い方を書いた文｜—｜✗ 見つからなかった」"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 9 Q4（564行目））＝「数の閾値｜R1・S1 からの距離の数｜—｜✗ 見つからなかった」"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "帯pivot",
+   "記録": "使い方の記録（帯pivot を指す行）",
+   "使い方の種類": "書いてない",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
   }
  ]
 }
