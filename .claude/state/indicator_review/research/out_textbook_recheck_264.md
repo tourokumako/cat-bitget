@@ -422,9 +422,282 @@
 |---|---|---|---|---|---|---|---|---|
 | 1 | {"形": "上へ抜ける", "値": 70} | Second, RSI must cross above 70 to become overbought.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_02.json の RSI の 合図の形のパラメータ.0 |  |
 
+### ADX（欄 42・候補 39・候補が無い欄 31）
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n のスキャルの代表の値
+
+- いまの値：`[14]`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | デイトレ 14・5分足 7 か 10 | "Day traders keep 14 on a 15 minute or 1 hour chart. Period 7 or 10 on a 5 minute chart reacts faster and spikes more."<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | ページに在る | 15 minute・5 minute chart | 5分足・短い足 |  | 9種の文書 2 Q3（179行目） |  |
+| 2 | 5分足で 14 は 70分 | "On a 5 minute chart, period 14 is 70 minutes. That can work as a filter. If you need strength to show up inside a half hour, try period 10 or 7 and keep the 20 and 25 marks."<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | ページに在る | 5 minute chart | 5分足 |  | 9種の文書 2 Q3（180行目） |  |
+| 3 | 1分足で 14 は遅い | "14 Daily, 15 minute, 1 hour Wilder's default Late on a 1 minute chart"<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | ページに在る | Daily・15 minute・1 minute chart | 短い足 |  | 9種の文書 2 Q3（181行目） |  |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n の既定（スキャルの値が教科書に無いときに使う値・欄の外）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 既定 14 | "The calculation example below is based on a 14-period indicator setting, as recommended by Wilder."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q3（171行目） |  |
+| 2 | 既定 14 | "The time period to be used in calculating the ADX which has a smoothing component (14 is the Default)."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q3（172行目） |  |
+| 3 | [14] | The calculation example below is based on a 14-period indicator setting, as recommended by Wilder.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の パラメータの軸.0.既定.0 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 4 | [14] | The time period to be used in calculating the ADX which has a smoothing component (14 is the Default).<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の パラメータの軸.0.既定.1 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 5 | [14] | optInTimePeriod integer 14 2–100000 Smoothing/averaging period for DM, TR, and ADX<br>https://ta-lib.org/functions/adx.html | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の パラメータの軸.0.既定.2 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n の範囲
+
+- いまの値：`{"kind": "int", "lo": 7, "hi": 21}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 範囲 7〜21 | "The practical range for most systematic traders is 7 to 21, with 14 as the default starting point."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | 時間足は書いてない | レンジ | 文に両端が在る | 9種の文書 2 Q3（174行目） |  |
+| 2 | 7〜21 | The practical range for most systematic traders is 7 to 21, with 14 as the default starting point.<br>https://regimelab.io/blog/best-adx-settings | ページに在る | 時間足は書いてない | レンジ | 文に両端が在る | 全指標の調べ out_c6_01.json の ADX の パラメータの軸.0.範囲.0 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n（スキャル・範囲・既定と書いていない値）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Wilder の前提 | "Although Wilder designed his Directional Movement System with commodities and daily prices in mind, these indicators can also be applied to stocks."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | daily | 一般 |  | 9種の文書 2 Q3（173行目） |  |
+| 2 | 7 より下は乱れる | "Below period 7, ADX readings typically become too erratic to serve as a reliable regime classifier."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q3（175行目） |  |
+| 3 | 15分足 7〜14 | "15-minute charts: 7 to 14. At 14 periods, 15-minute ADX covers 3.5 hours of price data. Shorter periods (7 to 10) are common at this resolution because the full-cycle logic breaks down for intraday timeframes."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | 15-minute charts・15-minute・intraday timeframes | 短い足 |  | 9種の文書 2 Q3（176行目） |  |
+| 4 | 1時間足 10〜14 | "1-hour charts: 10 to 14."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | 1-hour | 一般 |  | 9種の文書 2 Q3（177行目） |  |
+
+#### 指標の記録｜—｜②-5 値の単位と値域
+
+- いまの値：`{"値域": {"有界": null, "分位": null}}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | {"単位": "0〜100", "下限": 0, "上限": 100} | DMI has a value between 0 and 100 and is used to measure the strength of the current trend.<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 値の単位と値域.0 |  |
+
+#### 指標の記録｜—｜②-6 値の読み方
+
+- いまの値：`{"区分": "状態量", "読み方": "大きいほどトレンドが強い（向きは持たない）", "向きを持つ": false, "性質": ["none"]}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "it measures the strength of the trend (regardless of direction) over time."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（149行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "The Average Directional Index (ADX) is used to measure the strength or weakness of a trend, not the actual direction."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（150行目） |  |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "ADX's purposes is to define whether or not there is a trend present. It does not take direction into account at all."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（151行目） |  |
+| 4 | {"読み方": "大きいほどトレンドが強い。向きは見ない", "向きを持つ": "書いてない"} | Higher values indicate a stronger trend (a common convention treats >25 as trending); says nothing about direction.<br>https://ta-lib.org/functions/adx.html | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 値の読み方.0 |  |
+
+#### 指標の記録｜—｜②-7 教科書の役割
+
+- いまの値：`{"区分": ["強さ"], "出どころ": "R-1（封つき r1_role_map.json・CC の調べ（cc_ans04・照らし一致））", "札": "強さ"}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "it measures the strength of the trend (regardless of direction) over time."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（149行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "The Average Directional Index (ADX) is used to measure the strength or weakness of a trend, not the actual direction."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（150行目） |  |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "ADX's purposes is to define whether or not there is a trend present. It does not take direction into account at all."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q1（151行目） |  |
+| 4 | 強さ | The Average Directional Index (ADX), shown in black in the chart above, is in turn derived from the smoothed averages of the difference between +DI and -DI; it measures the strength of the trend (regardless of direction) over time.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 教科書の役割.0 |  |
+
+#### 指標の記録｜—｜②-11 閾値の範囲
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 2 Q4（197行目））＝「閾値の範囲｜閾値の範囲を書いたページ｜—｜—｜✗ 見つからなかった（書いてある値は 15〜30。TRT-ADX は 15 と 30 を「動かすときの例」として書く）」
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 入ってはいけない場面を除く条件 | "ADX must be over 25 (strong trend. The value is determined by trader) " / "The -DI crosses above the +DI."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q2（161行目） | 9種の文書の書き込み「ショート」。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る |
+| 2 | 入ってはいけない場面を除く条件 | ADX must be over 25 (strong trend. The value is determined by trader)<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 使い方.1 |  |
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-5 閾値
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 逐語の数：25 | "ADX must be over 25 (strong trend. The value is determined by trader) " / "The -DI crosses above the +DI."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q2（161行目） | 値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ショート」。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る |
+| 2 | 逐語の数：25 | ADX must be over 25 (strong trend. The value is determined by trader)<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 使い方.1 | 値は逐語に在る数を写した（閾値かどうかの読みは入れていない） |
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-2 使い方の種類
+
+- いまの値：`["出口の反転"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-4 向き
+
+- いまの値：`["下側"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-5 閾値
+
+- いまの値：`[[{"形": "値", "代表の値": {"スキャル": 25.0, "デイトレ": 25.0}, "出どころ": "CONST_REGISTRY の ADX_TREND（Wilder 1978（technical KB §4）・ADX のトレンド成立の目安）"}]]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-2 使い方の種類
+
+- いまの値：`["前提崩れの印"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-4 向き
+
+- いまの値：`["上側"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-5 閾値
+
+- いまの値：`[[{"形": "値", "代表の値": {"スキャル": 25.0, "デイトレ": 25.0}, "出どころ": "CONST_REGISTRY の ADX_TREND（Wilder 1978（technical KB §4）・ADX のトレンド成立の目安）"}]]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 場面の判定 | "At its most basic, the Average Directional Index (ADX) can be used to determine if a security is trending or not. This determination helps traders choose between a trend-following system or a non-trend-following system."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q2（159行目） | 前の照らしの「指標データに行が無い使い方」に在る逐語 |
+| 2 | 場面の判定 | The Average Directional Index (ADX) is used to measure the strength or weakness of a trend, not the actual direction.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 使い方.0 |  |
+
+#### 使い方の記録｜場面の判定｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 2 Q2（163行目））＝「ショートで ADX の値のどちら側を使うか｜ADX の値をショート用に上と下で分けて書いたページ｜—｜✗ 見つからなかった（どのページも、ADX は向きを持たないと書く）」
+
+#### 使い方の記録｜書いてない｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-5 閾値
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 逐語の数：40 | "ADX at 40 with minus DI on top is a strong downtrend."<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q2（162行目） | 値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ADX は下げでも高い」 |
+| 2 | 25／20 | "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20. There appears to be a gray zone between 20 and 25."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q4（190行目） |  |
+| 3 | 20 | "Many technical analysts use 20 as the key level for ADX."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q4（191行目） |  |
+| 4 | 25／20 | "Wilder believed that a DMI reading above 25 indicated a strong trend, while a reading below 20 indicated a weak or non-existent trend."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q4（192行目） |  |
+| 5 | 銘柄で変わる | "What is truly a strong trend or a weak trend depends on the financial instrument being examined."<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q4（193行目） |  |
+| 6 | 15分足では 25 を直す | "The 25 threshold may also need recalibration: brief intraday directional moves can produce ADX readings above 25 that do not represent genuine trend conditions in the way a daily chart reading does."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | intraday・daily chart | 一般 |  | 9種の文書 2 Q4（194行目） |  |
+| 7 | 25 は日足から | "Wilder’s 25 level was derived from empirical observation of daily commodity charts using a 14-period calculation."<br>https://regimelab.io/blog/best-adx-settings | ページに在る | daily | 一般 |  | 9種の文書 2 Q4（195行目） |  |
+| 8 | 5分足でも 20 と 25 | "keep the 20 and 25 marks"<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 2 Q4（196行目） |  |
+| 9 | {"形": "値", "値": 25, "意味": "25 より上はトレンドとみなす"} | Higher values indicate a stronger trend (a common convention treats >25 as trending); says nothing about direction.<br>https://ta-lib.org/functions/adx.html | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 閾値.0 |  |
+| 10 | {"形": "前提つき", "値": 25, "意味": "DI のクロスは ADX が 25 より上のときだけ"} | ADX must be over 25 (strong trend. The value is determined by trader)<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ADX の 閾値.1 |  |
+
+#### 使い方の記録｜書いてない｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
 ## 4. 候補が1つも無い欄の一覧
 
-19 欄です。
+50 欄です。
 
 | 指標 | 記録 | 使い方の種類 | 欄 | 理由 |
 |---|---|---|---|---|
@@ -447,6 +720,37 @@
 | RSI | 使い方の記録 | 前提崩れの印 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | RSI | 使い方の記録 | 前提崩れの印 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | RSI | 使い方の記録 | 書いてない | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 指標の記録 | — | ②-11 閾値の範囲 | 9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 2 Q4（197行目））＝「閾値の範囲｜閾値の範囲を書いたページ｜—｜—｜✗ 見つからなかった（書いてある値は 15〜30。TRT-ADX は 15 と 30 を「動かすときの例」として書く）」 |
+| ADX | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-2 使い方の種類 | 9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 出口の反転 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-2 使い方の種類 | 9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 前提崩れの印 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 場面の判定 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 書いてない | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 2 Q2（163行目））＝「ショートで ADX の値のどちら側を使うか｜ADX の値をショート用に上と下で分けて書いたページ｜—｜✗ 見つからなかった（どのページも、ADX は向きを持たないと書く）」 |
+| ADX | 使い方の記録 | 書いてない | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 書いてない | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 書いてない | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ADX | 使い方の記録 | 書いてない | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 
 ## 5. 確かめられなかった物と、その理由
 
