@@ -1438,9 +1438,254 @@
 - いまの値：`null`
 - 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
 
+### ATR%（欄 35・候補 40・候補が無い欄 21）
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n のスキャルの代表の値
+
+- いまの値：`[14]`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 5分足・15分足 14、または 10 | "Day traders can use 14 on a 5 minute or 15 minute chart. Use 10 only when 14 feels like yesterday's range."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 5 minute・15 minute chart | 5分足・短い足・レンジ |  | 9種の文書 6 Q3（385行目） |  |
+| 2 | [5, 7] | Optimization for Scalpers: Settings 5 to 7  Scalpers operate on the shortest timeframes, such as the 1-minute or 5-minute charts.<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | ページに在る | shortest timeframes・1-minute・5-minute charts | スキャル・5分足・短い足 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.スキャル.0 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+| 3 | [7] | Standard Scalp (Period 7)  Primary Use: General intraday price action on 5-minute charts.<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | ページに在る | intraday・5-minute charts | スキャル・5分足 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.スキャル.1 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n の既定（スキャルの値が教科書に無いときに使う値・欄の外）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 既定 14 | "Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr | ページに在る | intraday・daily・weekly・monthly | レンジ |  | 9種の文書 6 Q3（381行目） |  |
+| 2 | 既定 14（ATRP） | "By default, the indicator is calculated using 14 periods."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q3（382行目） |  |
+| 3 | 既定 14 | "The time period to be used in calculating the Average True Range. 14 days is the default."<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q3（383行目） |  |
+| 4 | [14] | Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr | ページに在る | intraday・daily・weekly・monthly | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.0 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 5 | [14] | By default, the indicator is calculated using 14 periods.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.1 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 6 | [14] | The time period to be used in calculating the Average True Range. 14 days is the default.<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.2 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 7 | [14] | The look back period to use for the ATR is at the trader's discretion however 14 days is the most common.<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.3 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 8 | [14] | real = NATR(high, low, close, timeperiod=14)<br>https://ta-lib.github.io/ta-lib-python/func_groups/volatility_indicators.html | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.4 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 9 | [14] | length (int): The period. Default: ```14```<br>https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/atr.py | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.5 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした |
+| 10 | [20] | length (int): The period. Default: ```20```<br>https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.既定.6 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n の範囲
+
+- いまの値：`{"kind": "int", "lo": 5, "hi": 21}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 5〜21（スキャル 5・7／トレンド狙い 20・21） | Scalpers require the rapid response of a 5 or 7-period setting, while trend traders benefit from the smoothing of a 20 or 21-period lookback.<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | ページに在る | 時間足は書いてない | スキャル | 値を挙げただけ | 全指標の調べ out_c6_01.json の ATR% の パラメータの軸.0.範囲.0 | 調べの軸の名前：period。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 n（スキャル・範囲・既定と書いていない値）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 日足がふつう | "ATR can be used with varying periods (daily, weekly, intraday etc.) however daily is typically the period used."<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | daily・weekly・intraday | 一般 |  | 9種の文書 6 Q3（384行目） |  |
+| 2 | 7 は跳ねる | "If one news bar blows the distance out and you need it to fade faster, try period 10 and keep the multiple unchanged. Period 7 reacts even faster and will jump on a single spike."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q3（386行目） |  |
+
+#### 指標の記録｜—｜②-5 値の単位と値域
+
+- いまの値：`{"値域": {"有界": null, "分位": null}}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | {"単位": "%", "下限": null, "上限": null} | ATRP seeks to overcome this limitation by expressing the ATR value as a percentage of the price.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_01.json の ATR% の 値の単位と値域.0 |  |
+
+#### 指標の記録｜—｜②-6 値の読み方
+
+- いまの値：`{"区分": "ボラ量", "読み方": "大きいほど荒い", "向きを持つ": false, "性質": ["vol"]}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "It is important to remember that ATR doesn't indicate price direction, just volatility."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（360行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "The Average True Range Percent (ATRP) is an indicator that measures the volatility of a security."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q1（361行目） |  |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "The ATRP is calculated by dividing the ATR value by the closing price and multiplying the result by 100."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（362行目） |  |
+| 4 | （9種の文書の Q1 の行。値の欄は無い） | "ATRP seeks to overcome this limitation by expressing the ATR value as a percentage of the price."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（363行目） |  |
+| 5 | {"読み方": "レンジでは低く、大きく動くと高い", "向きを持つ": "書いてない"} | The ATRP is lower when the security is in a trading range, and moves higher during dramatic price changes in either direction.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の 値の読み方.0 |  |
+
+#### 指標の記録｜—｜②-7 教科書の役割
+
+- いまの値：`{"区分": null, "出どころ": "語の数だけ（弱い）", "札": "ボラ"}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "It is important to remember that ATR doesn't indicate price direction, just volatility."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（360行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "The Average True Range Percent (ATRP) is an indicator that measures the volatility of a security."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q1（361行目） |  |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "The ATRP is calculated by dividing the ATR value by the closing price and multiplying the result by 100."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（362行目） |  |
+| 4 | （9種の文書の Q1 の行。値の欄は無い） | "ATRP seeks to overcome this limitation by expressing the ATR value as a percentage of the price."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q1（363行目） |  |
+| 5 | 値動きの幅 | The Average True Range Percent (ATRP) is an indicator that measures the volatility of a security.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の 教科書の役割.0 |  |
+
+#### 指標の記録｜—｜②-11 閾値の範囲
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 6 Q4（397行目））＝「値の閾値｜ATR% の決まった数の閾値｜—｜✗ 見つからなかった」
+
+#### 使い方の記録｜出口の水準を作る材料｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 出口の水準を作る材料 | "A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 5 minute ATR | 5分足 |  | 前の照らしの結果 out_textbook_compare_222.json の 指標データに行が無い使い方 | 前の照らしの「指標データに行が無い使い方」の行（10番目）を、前の照らしの使い方の種類で載せた。前の照らしの「指標データに行が無い使い方」に在る逐語 |
+
+#### 使い方の記録｜出口の水準を作る材料｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の水準を作る材料｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の水準を作る材料｜③-5 閾値
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 逐語の数：1.5・2 | "A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 5 minute ATR | 5分足 |  | 前の照らしの結果 out_textbook_compare_222.json の 指標データに行が無い使い方 | 値は逐語に在る数を写した（閾値かどうかの読みは入れていない） |
+
+#### 使い方の記録｜出口の水準を作る材料｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の水準を作る材料｜③-7 時間足
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 5 minute ATR | "A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 5 minute ATR | 5分足 |  | 前の照らしの結果 out_textbook_compare_222.json の 指標データに行が無い使い方 |  |
+
+#### 使い方の記録｜出口の水準を作る材料｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 合図が本物かを確かめる条件 | "A bearish support break with increased ATR would show strong selling pressure and reinforce the support break."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr | ページに在る | 時間足は書いてない | ショート |  | 9種の文書 6 Q2（373行目） | 前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」 |
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 場面の判定 | "The ATRP is lower when the security is in a trading range, and moves higher during dramatic price changes in either direction."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q2（371行目） | 前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「レンジ」 |
+| 2 | 場面の判定 | "On the other hand, during periods of sustained sideways movement, volatility is frequently low. This could assist in the discovery of trading ranges."<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q2（372行目） | 前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「レンジ」 |
+| 3 | 場面の判定 | ATRP increases during strong moves and decreases during trading ranges.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の 使い方.0 |  |
+
+#### 使い方の記録｜場面の判定｜③-3 場面と型
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | レンジ（9種の文書の書き込み「レンジ」） | "The ATRP is lower when the security is in a trading range, and moves higher during dramatic price changes in either direction."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q2（371行目） | 9種の文書の書き込み「レンジ」 |
+| 2 | レンジ（9種の文書の書き込み「レンジ」） | "On the other hand, during periods of sustained sideways movement, volatility is frequently low. This could assist in the discovery of trading ranges."<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 6 Q2（372行目） | 9種の文書の書き込み「レンジ」 |
+| 3 | レンジ | ATRP increases during strong moves and decreases during trading ranges.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の 使い方.0 |  |
+
+#### 使い方の記録｜場面の判定｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-5 閾値
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 例 4%（検索の例） | "The final scan clause excludes high-volatility stocks (those with average ATRP of more than 4% over the last year) from the results."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 6 Q4（395行目） |  |
+| 2 | 倍率 1.5 か 2（止めの幅） | "A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in."<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | ページに在る | 5 minute ATR | 5分足 |  | 9種の文書 6 Q4（396行目） |  |
+| 3 | {"形": "持たない", "値": null, "意味": "閾値は無く、高いか低いかで読む"} | The way to interpret the Average True Range is that the higher the ATR value, then the higher the level of volatility.<br>https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/ | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_01.json の ATR% の 閾値.0 |  |
+
+#### 使い方の記録｜書いてない｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
 ## 4. 候補が1つも無い欄の一覧
 
-124 欄です。
+145 欄です。
 
 | 指標 | 記録 | 使い方の種類 | 欄 | 理由 |
 |---|---|---|---|---|
@@ -1568,6 +1813,27 @@
 | BB%b | 使い方の記録 | 書いてない | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | BB%b | 使い方の記録 | 書いてない | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | BB%b | 使い方の記録 | 書いてない | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 指標の記録 | — | ②-11 閾値の範囲 | 9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 6 Q4（397行目））＝「値の閾値｜ATR% の決まった数の閾値｜—｜✗ 見つからなかった」 |
+| ATR% | 使い方の記録 | 出口の水準を作る材料 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 出口の水準を作る材料 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 出口の水準を作る材料 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 出口の水準を作る材料 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 合図が本物かを確かめる条件 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 場面の判定 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 場面の判定 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 場面の判定 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 場面の判定 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 場面の判定 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 書いてない | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 書いてない | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 書いてない | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 書いてない | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| ATR% | 使い方の記録 | 書いてない | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 
 ## 5. 確かめられなかった物と、その理由
 
