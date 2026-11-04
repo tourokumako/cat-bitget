@@ -326,8 +326,29 @@ def commit_only(cmd: str) -> bool:
     return found
 
 
-def last_user_ok_commit(path: pathlib.Path) -> bool:
-    """まこさんの直前の発言に「コミットOK」が在るか（hook の差し戻しと道具の結果は発言に数えない）。"""
+# ★2026-11-04（まこさん「修正してくれ」）＝締めの処理は表の着手中の印を外すので、締めの後のプッシュが止まっていた。コミットと同じく、
+#   直前の発言の「プッシュOK」で通す。強制プッシュと、書き込みをつないだ形は通さない。
+PUSH_OK = re.compile(r"プッシュ\s*(?:OK|ok|Ok|ＯＫ)")
+PUSH_SEG = re.compile(r"^git\s+(?:-C\s+\S+\s+)?push\s+origin\s+[\w./-]+(?:\s+2>&1)?$")
+
+
+def push_only(cmd: str) -> bool:
+    """コマンドが git push origin <ブランチ> と、読むだけの操作でできているか。"""
+    c = re.sub(r"'[^']*'|\"[^\"]*\"", "''", str(cmd or ""))
+    if re.search(r">(?!\s*/dev/null|&)", c.replace("2>&1", "")):
+        return False
+    found = False
+    for seg in re.split(r"&&|\|\||;|\||\n", c):
+        s = seg.strip()
+        if PUSH_SEG.match(s):
+            found = True
+        elif s and not re.match(r"^cd\s+\S+$", s) and not bash_is_read(s):
+            return False
+    return found
+
+
+def last_user_ok_commit(path: pathlib.Path, ok: re.Pattern = COMMIT_OK) -> bool:
+    """まこさんの直前の発言に、コミットかプッシュの OK が在るか（hook の差し戻しと道具の結果は発言に数えない）。"""
     last = ""
     for o in rows(path):
         if o.get("isSidechain") or o.get("type") != "user":
@@ -337,7 +358,7 @@ def last_user_ok_commit(path: pathlib.Path) -> bool:
         said = [t for t in texts if t.strip() and not t.lstrip().startswith(NOT_USER)]
         if said:
             last = "\n".join(said)
-    return bool(COMMIT_OK.search(last))
+    return bool(ok.search(last))
 
 
 def gate(d: dict):
@@ -369,6 +390,8 @@ def gate(d: dict):
         return None
     if name == "Bash" and commit_only(str(inp.get("command", ""))) and last_user_ok_commit(pathlib.Path(tp)):
         return None                            # コミットだけで、直前の発言が「コミットOK」なら、宣言を求めない（2026-11-02）
+    if name == "Bash" and push_only(str(inp.get("command", ""))) and last_user_ok_commit(pathlib.Path(tp), PUSH_OK):
+        return None                            # プッシュも同じ（2026-11-04）
     return taken_problem(SESSIONS / sid / "session_todo.md", SRC_JSON, sid) or check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
 
 
@@ -555,11 +578,22 @@ def selftest() -> int:
         ok44 = taken_problem(todo43, src43, "abcdefgh-1") is not None
         ok45 = taken_problem(tdp / "無い.md", src43, "abcdefgh-1") is not None
     ok46 = check_or_read("bash -n .claude/hooks/a.sh") and not check_or_read("bash .claude/hooks/a.sh") and not check_or_read("bash -n a.sh && rm b")
+    ok47 = (push_only("git push origin b/c-1") and push_only("cd /x && git push origin b 2>&1 | tail -2")
+            and not push_only("git push --force origin b") and not push_only("git push -f origin b")
+            and not push_only("git push origin b && rm x") and not push_only("git commit -m x") and not push_only("git push origin b > /tmp/a"))
+    with tempfile.TemporaryDirectory() as td:
+        tr47 = pathlib.Path(td) / "t.jsonl"
+        tr47.write_text(_user("プッシュOK") + "\n", encoding="utf-8")
+        said47 = last_user_ok_commit(tr47, PUSH_OK) and not last_user_ok_commit(tr47)
+        tr47.write_text(_user("コミットOK") + "\n", encoding="utf-8")
+        said47 = said47 and last_user_ok_commit(tr47) and not last_user_ok_commit(tr47, PUSH_OK)
     for name43, cond43 in (("T43 取った行は通り、別のセッションの行は止まる", ok43), ("T44 手で印を付けた行は止まる", ok44), ("T45 行が無ければ止まる", ok45),
-                           ("T46 bash -n だけを読むだけに数える（走らせる形と、書き込みをつないだ形は止まる）", ok46)):
+                           ("T46 bash -n だけを読むだけに数える（走らせる形と、書き込みをつないだ形は止まる）", ok46),
+                           ("T47 プッシュOK で git push origin だけが通る（--force・-f・つないだ形は止まる）", ok47),
+                           ("T48 プッシュの OK とコミットの OK を取り違えない", said47)):
         print(f"  {'✅' if cond43 else '❌'} {name43}")
         ng += 0 if cond43 else 1
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 52件（T1〜T46・C1〜C6）のうち、期待と違う {ng} 件")
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 54件（T1〜T48・C1〜C6）のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 
