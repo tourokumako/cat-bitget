@@ -423,5 +423,1295 @@
    "注": "逐語は本文の表の1行（Parameter・Type・Default・Accepted values・Description の欄）。1–100000 は「Accepted values」（入力として受ける値）の欄の値。9種の文書の「DI の期間だけのスキャル・デイトレ・範囲は見つからなかった」は、勧める値の話。全指標の調べも注に「入力できる範囲。勧める範囲ではない」と書く。2つは、指す物が違う。前の照らしの書き込み：9種の文書＝DI の期間だけのスキャル・デイトレ・範囲は「✗ 見つからなかった」（3 Q3・233行目）／全指標の調べ＝範囲「1〜100000（入力できる範囲）」を TA-Lib の逐語つきで「ページの文で確かめた」で書く（注＝入力できる範囲。勧める範囲ではない）（out_c6_01.json の DI差のパラメータの軸 1）"
   }
  ],
- "候補": []
+ "候補": [
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n のスキャルの代表の値",
+   "いまの値": [
+    7
+   ],
+   "候補": [
+    {
+     "値": "5分足 9（または 14）",
+     "逐語": "\"The best RSI settings for a 5-minute chart are a 9-period RSI with bands at 75/25 for a faster read, or the 14-period default with bands widened to 80/20 if you want fewer signals.\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "5-minute chart",
+     "名指し": [
+      "5分足"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（109行目）",
+     "注": ""
+    },
+    {
+     "値": "5分足のスキャル 7〜9",
+     "逐語": "\"Faster 7 to 9 75/25 or 80/20 35 to 45 minutes Scalps and quick mean-reversion fades\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "スキャル"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（110行目）",
+     "注": ""
+    },
+    {
+     "値": "5分足のスキャル 7",
+     "逐語": "\"For 5-minute scalping, the 7-period RSI is usually the best choice.\"",
+     "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "5-minute scalping",
+     "名指し": [
+      "スキャル",
+      "5分足"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（112行目）",
+     "注": ""
+    },
+    {
+     "値": "1分足 2〜3",
+     "逐語": "\"When trading on a 1-minute chart, the best RSI setting is typically RSI 2 or 3.\"",
+     "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-minute chart",
+     "名指し": [
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（113行目）",
+     "注": ""
+    },
+    {
+     "値": "スキャル 5〜7・デイトレ 9〜10",
+     "逐語": "\"Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.\"",
+     "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "スキャル"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（114行目）",
+     "注": ""
+    },
+    {
+     "値": "5分足のスキャル 5",
+     "逐語": "\"Use a 5-period RSI with 80/20 thresholds to match the faster pace.\"",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（117行目）",
+     "注": ""
+    },
+    {
+     "値": "[2, 3]",
+     "逐語": "When trading on a 1-minute chart, the best RSI setting is typically RSI 2 or 3.",
+     "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "1-minute chart",
+     "名指し": [
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.スキャル.0",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "7〜9（5分足。または 14 のまま水準を 80/20 に広げる）",
+     "逐語": "Most intraday traders run 7 to 9 periods on a 5-minute chart, or stay on 14 and widen the bands to 80/20.",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "intraday・5-minute chart",
+     "名指し": [
+      "5分足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.スキャル.1",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "[5]",
+     "逐語": "RSI should be equally nimble here. Use a 5-period RSI with 80/20 thresholds to match the faster pace.",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.スキャル.2",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "5〜7（スキャル）／9〜10（デイトレ）。どちらも 5分足のページ",
+     "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+     "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "スキャル"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.スキャル.3",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n の既定（スキャルの値が教科書に無いときに使う値・欄の外）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "既定 14",
+     "逐語": "\"This RSI calculation is based on 14 periods, the default Wilder suggested in his book.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（103行目）",
+     "注": ""
+    },
+    {
+     "値": "既定 14",
+     "逐語": "\"The number of bars to be used in calculating the RSI. 14 bars is the default.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（104行目）",
+     "注": ""
+    },
+    {
+     "値": "[14]",
+     "逐語": "This RSI calculation is based on 14 periods, the default Wilder suggested in his book.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.既定.0",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[14]",
+     "逐語": "The number of bars to be used in calculating the RSI. 14 bars is the default.",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.既定.1",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[14]",
+     "逐語": "real = RSI(close, timeperiod=14)",
+     "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.既定.2",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n の範囲",
+   "いまの値": {
+    "kind": "int",
+    "lo": 2,
+    "hi": 21
+   },
+   "候補": [
+    {
+     "値": "2（短期のトレーダー。時間足の指定なし）",
+     "逐語": "Short-term traders sometimes use 2-period RSI to look for overbought readings above 80 and oversold readings below 20.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.範囲.0",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "14 から下げると敏感・上げると鈍感（数の範囲は書いていない）",
+     "逐語": "The default look-back period for RSI is 14, but you can lower it to increase sensitivity or raise it to decrease sensitivity.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.範囲.1",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    },
+    {
+     "値": "7〜9（日中の足のデイトレ）〜21（日足のスイング）",
+     "逐語": "Day traders commonly shorten the period to 7 to 9 on intraday charts, swing traders commonly keep 14 or stretch it to 21 on the daily, and traders in a strong trend commonly widen the bands to 80/20.",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "intraday charts・the daily",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "文に両端が在る",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の パラメータの軸.0.範囲.2",
+     "注": "調べの軸の名前：n（期間）。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n（スキャル・範囲・既定と書いていない値）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "下げると敏感",
+     "逐語": "\"The default look-back period for RSI is 14, but you can lower it to increase sensitivity or raise it to decrease sensitivity. A 10-day RSI is more likely to reach overbought or oversold levels than a 20-day RSI.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "10-day・20-day",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（105行目）",
+     "注": ""
+    },
+    {
+     "値": "2（短期の売買）",
+     "逐語": "\"Short-term traders sometimes use 2-period RSI to look for overbought readings above 80 and oversold readings below 20.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（106行目）",
+     "注": ""
+    },
+    {
+     "値": "時間足を選ばない",
+     "逐語": "\"the RSI can be added to many timeframes - daily, weekly, hourly, and minute charts.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily・weekly・hourly・minute charts",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（107行目）",
+     "注": ""
+    },
+    {
+     "値": "1時間足 14",
+     "逐語": "\"On the 1-hour, the classic 14-period works well with standard 70/30 levels.\"",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "the 1-hour",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q3（116行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-5 値の単位と値域",
+   "いまの値": {
+    "値域": {
+     "有界": [
+      0.0,
+      100.0
+     ],
+     "分位": null
+    }
+   },
+   "候補": [
+    {
+     "値": "{\"単位\": \"0〜100\", \"下限\": 0, \"上限\": 100}",
+     "逐語": "The RSI moves up and down (oscillates) between zero and 100.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 値の単位と値域.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-6 値の読み方",
+   "いまの値": {
+    "区分": "順張り値",
+    "読み方": "大きいほど上昇の勢い",
+    "向きを持つ": true,
+    "性質": [
+     "trend"
+    ]
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The RSI, a momentum oscillator developed by J. Welles Wilder, measures the speed and change of price movements.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（77行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"When the RSI is above 70, it generally indicates overbought conditions; when the RSI is below 30, it indicates oversold conditions.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（78行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The Relative Strength Index (RSI) is a well versed momentum based oscillator which is used to measure the speed (velocity) as well as the change (magnitude) of directional price movements.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（79行目）",
+     "注": ""
+    },
+    {
+     "値": "{\"読み方\": \"70 より上は買われ過ぎ、30 より下は売られ過ぎ\", \"向きを持つ\": \"書いてない\"}",
+     "逐語": "When the RSI is above 70, it generally indicates overbought conditions; when the RSI is below 30, it indicates oversold conditi",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 値の読み方.0",
+     "注": "逐語は文の途中で切れている（ページでは同じ語の続きが在る）"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-7 教科書の役割",
+   "いまの値": {
+    "区分": null,
+    "出どころ": "語の数だけ（弱い）",
+    "札": "オシレーター"
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The RSI, a momentum oscillator developed by J. Welles Wilder, measures the speed and change of price movements.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（77行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"When the RSI is above 70, it generally indicates overbought conditions; when the RSI is below 30, it indicates oversold conditions.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（78行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The Relative Strength Index (RSI) is a well versed momentum based oscillator which is used to measure the speed (velocity) as well as the change (magnitude) of directional price movements.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q1（79行目）",
+     "注": ""
+    },
+    {
+     "値": "勢い",
+     "逐語": "The RSI, a momentum oscillator developed by J. Welles Wilder, measures the speed and change of price movements.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 教科書の役割.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-11 閾値の範囲",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 1 Q4（137行目））＝「閾値の範囲｜閾値の範囲を1つの文で書いたページ｜—｜—｜✗ 見つからなかった（書いてある値は 60/40〜80/20）」"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "入る合図",
+     "逐語": "\"Like many momentum oscillators, overbought and oversold readings for RSI work best when prices move sideways within a range .\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（87行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語"
+    },
+    {
+     "値": "入る合図",
+     "逐語": "\"A bearish failure swing forms when RSI moves above 70, pulls back, bounces, fails to exceed 70, and then breaks its prior low.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（90行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "入る合図",
+     "逐語": "\"A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "5 minute chart",
+     "名指し": [
+      "5分足",
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（92行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "入る合図",
+     "逐語": "Like many momentum oscillators, overbought and oversold readings for RSI work best when prices move sideways within a range.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 使い方.0",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "レンジ",
+     "逐語": "Like many momentum oscillators, overbought and oversold readings for RSI work best when prices move sideways within a range.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 使い方.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "逐語の数：70・70",
+     "逐語": "\"A bearish failure swing forms when RSI moves above 70, pulls back, bounces, fails to exceed 70, and then breaks its prior low.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（90行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "逐語の数：70・70・30",
+     "逐語": "\"A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "5 minute chart",
+     "名指し": [
+      "5分足",
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（92行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ショート」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "5 minute chart",
+     "逐語": "\"A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "5 minute chart",
+     "名指し": [
+      "5分足",
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（92行目）",
+     "注": "9種の文書の書き込み「ショート」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-2 使い方の種類",
+   "いまの値": [
+    "出口の反転"
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-4 向き",
+   "いまの値": [
+    "下側"
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-5 閾値",
+   "いまの値": [
+    [
+     {
+      "形": "値",
+      "代表の値": {
+       "スキャル": 30.0,
+       "デイトレ": 30.0
+      },
+      "出どころ": "CONST_REGISTRY の RSI_OS（Wilder 1978（technical KB §4）・RSI の売られ過ぎ水準）",
+      "単位": "0〜100"
+     }
+    ]
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "出口の反転",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-2 使い方の種類",
+   "いまの値": [
+    "前提崩れの印",
+    "前提崩れの印"
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-3 場面と型",
+   "いまの値": [
+    {
+     "場面": "レンジ",
+     "型": "flat_up"
+    }
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-4 向き",
+   "いまの値": [
+    "上側",
+    "上側"
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-5 閾値",
+   "いまの値": [
+    [
+     {
+      "形": "値",
+      "代表の値": {
+       "スキャル": 70.0,
+       "デイトレ": 70.0
+      },
+      "出どころ": "CONST_REGISTRY の RSI_OB（Wilder 1978（technical KB §4）・RSI の買われ過ぎ水準）",
+      "単位": "0〜100"
+     }
+    ],
+    [
+     {
+      "形": "値",
+      "代表の値": {
+       "スキャル": 75.0
+      },
+      "出どころ": "identity_s1_legacy.json:48",
+      "単位": "0〜100"
+     }
+    ]
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": [
+    {
+     "n": {
+      "スキャル": [
+       9
+      ]
+     }
+    }
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-7 時間足",
+   "いまの値": [
+    [
+     "15m"
+    ]
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "前提崩れの印",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "レンジ（9種の文書の書き込み「レンジ」）",
+     "逐語": "\"In a range-bound market , tighter levels like 60/40 can catch more of the smaller swings.\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（93行目）",
+     "注": "9種の文書の書き込み「レンジ」"
+    },
+    {
+     "値": "レンジ（9種の文書の書き込み「レンジ・5分足」）",
+     "逐語": "\"Default 14 70/30 70 minutes Ranging sessions only; trends pin it at the band\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（94行目）",
+     "注": "9種の文書の書き込み「レンジ・5分足」"
+    },
+    {
+     "値": "レンジ（9種の文書の書き込み「レンジ」）",
+     "逐語": "\"In ranging markets: Tighten RSI to 7 periods, use 75/25 levels\"",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（95行目）",
+     "注": "9種の文書の書き込み「レンジ」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "逐語の数：13.5・21・70・30",
+     "逐語": "\"The chart below shows MEMC Electronics (WFR) trading between 13.5 and 21 from April to September 2009. The stock peaked soon after RSI reached 70 and bottomed soon after the stock reached 30.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（88行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）"
+    },
+    {
+     "値": "逐語の数：20・70",
+     "逐語": "\"This scan reveals stocks that are in a downtrend with overbought RSI turning down. First, stocks must be below their 200-day moving average to be in an overall downtrend. Second, RSI must cross above 70 to become overbought.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "200-day",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（89行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "逐語の数：10・60・50・60",
+     "逐語": "\"On the flip side, RSI tends to fluctuate between 10 and 60 in a bear market (downtrend) with the 50-60 zone acting as resistance.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（91行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "逐語の数：60・40",
+     "逐語": "\"In a range-bound market , tighter levels like 60/40 can catch more of the smaller swings.\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（93行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「レンジ」"
+    },
+    {
+     "値": "逐語の数：14・70・30・7",
+     "逐語": "\"Default 14 70/30 70 minutes Ranging sessions only; trends pin it at the band\"",
+     "URL": "https://bullynx.com/blog/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（94行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「レンジ・5分足」"
+    },
+    {
+     "値": "逐語の数：75・25",
+     "逐語": "\"In ranging markets: Tighten RSI to 7 periods, use 75/25 levels\"",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（95行目）",
+     "注": "値は逐語に在る数を写した（閾値かどうかの読みは入れていない）。9種の文書の書き込み「レンジ」"
+    },
+    {
+     "値": "70／30",
+     "逐語": "\"Wilder considered RSI overbought above 70 and oversold below 30.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（126行目）",
+     "注": ""
+    },
+    {
+     "値": "70／30",
+     "逐語": "\"According to Wilder, any number above 70 should be considered overbought and any number below 30 should be considered oversold.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（127行目）",
+     "注": ""
+    },
+    {
+     "値": "50（向きなし）",
+     "逐語": "\"An RSI between 30 and 70 was to be considered neutral and an RSI around 50 signified “no trend”.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（128行目）",
+     "注": ""
+    },
+    {
+     "値": "80／20",
+     "逐語": "\"Raising the overbought threshold to 80 or lowering the oversold threshold to 20 could reduce the number of overbought/oversold readings.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（129行目）",
+     "注": ""
+    },
+    {
+     "値": "80／20",
+     "逐語": "\"For example, someone might consider any number above 80 as overbought and anything below 20 as oversold. This is entirely at the trader’s discretion.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（130行目）",
+     "注": ""
+    },
+    {
+     "値": "上げ相場 40〜90・下げ相場 10〜60（前提つき）",
+     "逐語": "\"RSI tends to fluctuate between 40 and 90 in a bull market (uptrend) with the 40–50 zones acting as support.\" / \"RSI tends to fluctuate between 10 and 60 in a bear market (downtrend) with the 50-60 zone acting as resistance.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（131行目）",
+     "注": "逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "上げ相場 40〜80・下げ相場 20〜60（前提つき）",
+     "逐語": "\"Constance Brown discussed a range shift in Technical Analysis for the Trading Professional (1999): bull markets often hold RSI between 40 and 80, and bear markets between 20 and 60.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（132行目）",
+     "注": ""
+    },
+    {
+     "値": "30〜50・50〜70（反転の形）",
+     "逐語": "\"This lower low is not at oversold levels but is usually between 30 and 50.\" / \"the higher high is usually just below overbought levels in the 50-70 area.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（133行目）",
+     "注": "逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "5分足 75／25",
+     "逐語": "\"Using 75 for overbought and 25 for oversold conditions filters out market noise while maintaining sensitivity to genuine momentum changes.\"",
+     "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（135行目）",
+     "注": ""
+    },
+    {
+     "値": "5分足 30／70 から始め、20／80 へ",
+     "逐語": "\"Keep 30 and 70 at first. If 7 tags 70 on every small push, you can move the lines to 20 and 80.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q4（136行目）",
+     "注": ""
+    },
+    {
+     "値": "{\"形\": \"値\", \"値\": [70, 30], \"意味\": \"上が買われ過ぎ、下が売られ過ぎ\"}",
+     "逐語": "When the RSI is above 70, it generally indicates overbought conditions; when the RSI is below 30, it indicates oversold conditi",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 閾値.0",
+     "注": "逐語は文の途中で切れている（ページでは同じ語の続きが在る）"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "逐語の期間：7",
+     "逐語": "\"In ranging markets: Tighten RSI to 7 periods, use 75/25 levels\"",
+     "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（95行目）",
+     "注": "9種の文書の書き込み「レンジ」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "200-day",
+     "逐語": "\"This scan reveals stocks that are in a downtrend with overbought RSI turning down. First, stocks must be below their 200-day moving average to be in an overall downtrend. Second, RSI must cross above 70 to become overbought.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "200-day",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 1 Q2（89行目）",
+     "注": "9種の文書の書き込み「ショート」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "RSI",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "{\"形\": \"上へ抜ける\", \"値\": 70}",
+     "逐語": "Second, RSI must cross above 70 to become overbought.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_02.json の RSI の 合図の形のパラメータ.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  }
+ ]
 }
