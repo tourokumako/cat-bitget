@@ -1683,9 +1683,330 @@
 - いまの値：`null`
 - 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
 
+### 基準線（欄 49・候補 40・候補が無い欄 32）
+
+#### 指標の記録｜—｜②-4 パラメータの軸 k_ のスキャルの代表の値
+
+- いまの値：`"まだ決めていない"`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | スキャル (5, 13, 26) | "Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 15-minute・5-minute charts | スキャル・5分足・短い足 |  | 9種の文書 7 Q3（435行目） | 値は3つの数の組。どれが基準線の本数かは、この逐語には書いてない |
+| 2 | 1時間足より上が向く | "Best settings. Classic: 9, 26, 52. Scalping: 5, 13, 26. Swing trading: 9, 26, 52. The indicator works best on 1-hour time frames and above."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 1-hour・time frames and above | スキャル |  | 9種の文書 7 Q3（436行目） |  |
+| 3 | 5分足 (9, 26, 52) | "The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52"<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 5 min chart | 5分足 |  | 9種の文書 7 Q3（437行目） | 値は3つの数の組。どれが基準線の本数かは、この逐語には書いてない |
+| 4 | 1分足 (12, 24, 120) | "The best Ichimoku settings for scalping and 1-minute chart are 12-24-120"<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 1-minute chart | スキャル・短い足 |  | 9種の文書 7 Q3（438行目） | 値は3つの数の組。どれが基準線の本数かは、この逐語には書いてない |
+| 5 | 5分足の成績は悪い | "However, we saw that performance was worse on the 5-minute chart than on H4 or daily."<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 5-minute chart・daily | 5分足 |  | 9種の文書 7 Q3（439行目） |  |
+| 6 | [5, 13, 26] | Scalping. Shorter periods like 5, 13, and 26 produce more signals, but also more false ones. They are best suited to 15-minute or even 5-minute charts.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 15-minute・5-minute charts | スキャル・5分足・短い足 |  | 全指標の調べ out_c6_08.json の 基準線 の パラメータの軸.0.スキャル.0 | 調べの軸の名前：転換線の期間・基準線の期間・先行スパンBの期間。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+| 7 | [12, 24, 120] | The best Ichimoku settings for scalping and 1-minute chart are 12-24-120, where 12 is for the Conversion Line ( Tenkan-sen), 24 for the Base Line (Kyun-sen ), and 120 for the Leading Span B (Senkou Span B).<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 1-minute chart | スキャル・短い足 |  | 全指標の調べ out_c6_08.json の 基準線 の パラメータの軸.0.スキャル.1 | 調べの軸の名前：転換線の期間・基準線の期間・先行スパンBの期間。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+| 8 | [9, 26, 52] | The best settings for the Ichimoku 5 min chart are standard default settings 9-26-52, where nine is for the Conversion Line ( Tenkan-sen), 26 for the Base Line (Kyun-sen ), and 52 for the Leading Span B (Senkou Span B).<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 5 min chart | 5分足 |  | 全指標の調べ out_c6_08.json の 基準線 の パラメータの軸.0.スキャル.2 | 調べの軸の名前：転換線の期間・基準線の期間・先行スパンBの期間。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 k_ の既定（スキャルの値が教科書に無いときに使う値・欄の外）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 既定 (9, 26, 52) | "Default settings are 9 for the Conversion Line, 26 for the Base Line and 52 for the Leading Span B."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q3（433行目） | 値は3つの数の組。どれが基準線の本数かは、この逐語には書いてない |
+| 2 | [9, 26, 52] | The default setting for the Base Line is 26 periods and can be adjusted. On a daily chart, this line is the midpoint of the 26-day high-low range, which is almost one month.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | daily chart・26-day | レンジ |  | 全指標の調べ out_c6_08.json の 基準線 の パラメータの軸.0.既定.0 | 調べの軸の名前：転換線の期間・基準線の期間・先行スパンBの期間。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+| 3 | [9, 26, 52] | Default settings are 9 for the Conversion Line, 26 for the Base Line and 52 for the Leading Span B.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_08.json の 基準線 の パラメータの軸.0.既定.1 | 調べの軸の名前：転換線の期間・基準線の期間・先行スパンBの期間。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ |
+
+#### 指標の記録｜—｜②-4 パラメータの軸 k_ の範囲
+
+- いまの値：`{"kind": "int", "lo": 13, "hi": 26}`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 7 Q3（440行目））＝「デイトレの値・範囲｜「デイトレ」と名指しした値と、基準線の期間の範囲｜—｜✗ 見つからなかった（資料の表の「デイトレ (5,13,26)・15分足」は、LF-ICHI の今のページには「day trading」の語が無く、「Scalping」の行として書かれている）」
+
+#### 指標の記録｜—｜②-4 パラメータの軸 k_（スキャル・範囲・既定と書いていない値）
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 変えてよい | "These numbers can be adjusted to suit individual trading and investing styles."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q3（434行目） |  |
+
+#### 指標の記録｜—｜②-5 値の単位と値域
+
+- いまの値：`{"値域": {"有界": null, "分位": null}}`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 指標の記録｜—｜②-6 値の読み方
+
+- いまの値：`{"区分": "順張り値", "読み方": "", "向きを持つ": true, "性質": ["trend"]}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "The default setting for the Base Line is 26 periods and can be adjusted. On a daily chart, this line is the midpoint of the 26-day high-low range, which is almost one month."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | daily chart・26-day | レンジ |  | 9種の文書 7 Q1（409行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "Price Moves above the Base Line (momentum)" / "Price Moves below Base Line (momentum)"<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（410行目） | 逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "The trend-following signals focus on the cloud, while the momentum signals focus on the Conversion and Base Lines."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（411行目） |  |
+| 4 | （9種の文書の Q1 の行。値の欄は無い） | "It serves as a slower indicator and reflects the medium-term market trend."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（412行目） |  |
+| 5 | （9種の文書の Q1 の行。値の欄は無い） | "If the market price is above the Kijun-sen, this confirms an uptrend. And if it is below the Kijun-sen, it confirms a downtrend."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（413行目） |  |
+| 6 | {"読み方": "転換線が基準線より上ならトレンドは上向き", "向きを持つ": "持つ"} | When the shorter term indicator, TenkanSen, rises above the longer term indicator, KijunSen, the securities trend is typically positive.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_08.json の 基準線 の 値の読み方.1 |  |
+
+#### 指標の記録｜—｜②-7 教科書の役割
+
+- いまの値：`{"区分": null, "出どころ": "語の数だけ（弱い）", "札": "トレンド"}`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | （9種の文書の Q1 の行。値の欄は無い） | "The default setting for the Base Line is 26 periods and can be adjusted. On a daily chart, this line is the midpoint of the 26-day high-low range, which is almost one month."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | daily chart・26-day | レンジ |  | 9種の文書 7 Q1（409行目） |  |
+| 2 | （9種の文書の Q1 の行。値の欄は無い） | "Price Moves above the Base Line (momentum)" / "Price Moves below Base Line (momentum)"<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（410行目） | 逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る |
+| 3 | （9種の文書の Q1 の行。値の欄は無い） | "The trend-following signals focus on the cloud, while the momentum signals focus on the Conversion and Base Lines."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（411行目） |  |
+| 4 | （9種の文書の Q1 の行。値の欄は無い） | "It serves as a slower indicator and reflects the medium-term market trend."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（412行目） |  |
+| 5 | （9種の文書の Q1 の行。値の欄は無い） | "If the market price is above the Kijun-sen, this confirms an uptrend. And if it is below the Kijun-sen, it confirms a downtrend."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q1（413行目） |  |
+
+#### 指標の記録｜—｜②-11 閾値の範囲
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 7 Q4（450行目））＝「乖離の大きさの閾値｜値段と基準線の離れ具合（%）の閾値｜—｜✗ 見つからなかった（LF-ICHI は "When the price moves far away from this line, it is likely to return to this level." と書くが、数は書いてない）」
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 入ってはいけない場面を除く条件 | "In sideways markets, though, the line often gives false signals, which is why traders use the cloud to filter them out."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 7 Q2（425行目） | 9種の文書の書き込み「レンジ」 |
+| 2 | 入ってはいけない場面を除く条件 | In sideways markets, though, the line often gives false signals, which is why traders use the cloud to filter them out.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.3 |  |
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-3 場面と型
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | レンジ（9種の文書の書き込み「レンジ」） | "In sideways markets, though, the line often gives false signals, which is why traders use the cloud to filter them out."<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | レンジ |  | 9種の文書 7 Q2（425行目） | 9種の文書の書き込み「レンジ」 |
+| 2 | レンジ | In sideways markets, though, the line often gives false signals, which is why traders use the cloud to filter them out.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.3 |  |
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜入ってはいけない場面を除く条件｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 出口の反転 | Use a clear exit rule: opposite Tenkan/Kijun cross, price closing inside the cloud, or your volatility‑based target being hit.<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.5 | 前の照らしの「指標データに行が無い使い方」に在る逐語 |
+
+#### 使い方の記録｜出口の反転｜③-3 場面と型
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜出口の反転｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-2 使い方の種類
+
+- いまの値：`["前提崩れの印"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-3 場面と型
+
+- いまの値：`[{"場面": "レンジ", "型": "flat_up"}]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-4 向き
+
+- いまの値：`["上側"]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-5 閾値
+
+- いまの値：`[[{"形": "値", "代表の値": {"スキャル": 0.283351853801863}, "出どころ": "identity_s1_legacy.json:79", "単位": "%"}]]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-6 パラメータの代表の値
+
+- いまの値：`[{"k_": {"スキャル": [26]}}]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-7 時間足
+
+- いまの値：`[["5m"]]`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜前提崩れの印｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 合図が本物かを確かめる条件 | A sell signal is reinforced when the TenKan Sen crosses below the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all below the cloud.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | ショート |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.2 |  |
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-3 場面と型
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 下げ | A sell signal is reinforced when the TenKan Sen crosses below the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all below the cloud.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | ショート |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.2 |  |
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-4 向き
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 下へ抜ける | A sell signal is reinforced when the TenKan Sen crosses below the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all below the cloud.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | ショート |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.2 |  |
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜合図が本物かを確かめる条件｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-2 使い方の種類
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 場面の判定 | If it moves horizontally, it signals that the market is ranging.<br>https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.4 |  |
+
+#### 使い方の記録｜場面の判定｜③-3 場面と型
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | レンジ | If it moves horizontally, it signals that the market is ranging.<br>https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D | ページに在る | 時間足は書いてない | レンジ |  | 全指標の調べ out_c6_08.json の 基準線 の 使い方.4 |  |
+
+#### 使い方の記録｜場面の判定｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-5 閾値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-7 時間足
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜場面の判定｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-3 場面と型
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | レンジ（9種の文書の書き込み「レンジ」） | "First, the trend is up when prices are above the cloud, down when prices are below the cloud, and flat when prices are in the cloud."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 9種の文書 7 Q2（423行目） | 9種の文書の書き込み「レンジ」 |
+| 2 | レンジ（9種の文書の書き込み「レンジ・5分足」） | "Avoid relying on Ichimoku for scalping or in tight, choppy ranges — on very short timeframes the indicator is often whipsawed and produces many low‑quality signals. If price is inside a flat, narrow cloud or the market shows no directional momentum, stand aside or switch to oscillators better suited for range trading."<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | short timeframes | スキャル・レンジ・ショート |  | 9種の文書 7 Q2（424行目） | 9種の文書の書き込み「レンジ・5分足」 |
+
+#### 使い方の記録｜書いてない｜③-4 向き
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-5 閾値
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 交差（前提つき） | "Conversion-Base Line Crossovers During an uptrend, a bullish signal is triggered when the Conversion Line crosses above the Base Line. Similarly, the Conversion Line crossing below the Base Line during a downtrend is a bearish signal."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | ショート |  | 9種の文書 7 Q4（448行目） |  |
+| 2 | 前提 | "Bearish signals are reinforced when prices are below the cloud, and the cloud is red."<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | ページに在る | 時間足は書いてない | ショート |  | 9種の文書 7 Q4（449行目） |  |
+| 3 | {"形": "前提つき", "値": "基準線", "意味": "転換線が基準線より上か下か"} | When TenkanSen falls below KijunSen, the securities trend is typically negative.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_08.json の 基準線 の 閾値.0 |  |
+
+#### 使い方の記録｜書いてない｜③-6 パラメータの代表の値
+
+- いまの値：`null`
+- 候補：無い。理由＝9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）
+
+#### 使い方の記録｜書いてない｜③-7 時間足
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | short timeframes | "Avoid relying on Ichimoku for scalping or in tight, choppy ranges — on very short timeframes the indicator is often whipsawed and produces many low‑quality signals. If price is inside a flat, narrow cloud or the market shows no directional momentum, stand aside or switch to oscillators better suited for range trading."<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | ページに在る | short timeframes | スキャル・レンジ・ショート |  | 9種の文書 7 Q2（424行目） | 9種の文書の書き込み「レンジ・5分足」 |
+
+#### 使い方の記録｜書いてない｜③-9 合図の形のパラメータ
+
+- いまの値：`null`
+
+| # | 値 | 逐語 | ページの確かめ | 時間足 | 名指し | 範囲の形 | 出どころ | 注 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | {"形": "クロスの相手", "値": "基準線（Kijun-sen）"} | A buy signal is reinforced when the Tenkan Sen crosses above the Kijun Sen while the Tenkan Sen, Kijun Sen, and price are all above the cloud.<br>https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/ichimoku-cloud | ページに在る | 時間足は書いてない | 一般 |  | 全指標の調べ out_c6_08.json の 基準線 の 合図の形のパラメータ.0 |  |
+
 ## 4. 候補が1つも無い欄の一覧
 
-145 欄です。
+177 欄です。
 
 | 指標 | 記録 | 使い方の種類 | 欄 | 理由 |
 |---|---|---|---|---|
@@ -1834,6 +2155,38 @@
 | ATR% | 使い方の記録 | 書いてない | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | ATR% | 使い方の記録 | 書いてない | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 | ATR% | 使い方の記録 | 書いてない | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 指標の記録 | — | ②-4 パラメータの軸 k_ の範囲 | 9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 7 Q3（440行目））＝「デイトレの値・範囲｜「デイトレ」と名指しした値と、基準線の期間の範囲｜—｜✗ 見つからなかった（資料の表の「デイトレ (5,13,26)・15分足」は、LF-ICHI の今のページには「day trading」の語が無く、「Scalping」の行として書かれている）」 |
+| 基準線 | 指標の記録 | — | ②-5 値の単位と値域 | 9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 指標の記録 | — | ②-11 閾値の範囲 | 9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 7 Q4（450行目））＝「乖離の大きさの閾値｜値段と基準線の離れ具合（%）の閾値｜—｜✗ 見つからなかった（LF-ICHI は "When the price moves far away from this line, it is likely to return to this level." と書くが、数は書いてない）」 |
+| 基準線 | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 入ってはいけない場面を除く条件 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 出口の反転 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-2 使い方の種類 | 9種の文書と全指標の調べに、この使い方を書いた逐語が無い（指標データの行は、教科書でない出どころから写した物）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-3 場面と型 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 前提崩れの印 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 合図が本物かを確かめる条件 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 合図が本物かを確かめる条件 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 合図が本物かを確かめる条件 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 合図が本物かを確かめる条件 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 場面の判定 | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 場面の判定 | ③-5 閾値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 場面の判定 | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 場面の判定 | ③-7 時間足 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 場面の判定 | ③-9 合図の形のパラメータ | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 書いてない | ③-4 向き | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
+| 基準線 | 使い方の記録 | 書いてない | ③-6 パラメータの代表の値 | 9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった） |
 
 ## 5. 確かめられなかった物と、その理由
 
