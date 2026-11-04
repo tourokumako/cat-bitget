@@ -1734,12 +1734,266 @@ def selftest() -> int:
     return 0 if n_ng == 0 else 1
 
 
+def try_textbook(path: str) -> int:
+    """見本の教科書1種を、一時の写しの指標データに入れ、読む口が同じ値を返すかを試す（本物の indicators.json は書かない・ToDo の273番）。
+    見本の形＝{名前, 指標の記録: {要素: 値}, 使い方の記録: [行]}。読むのは読む口だけ（要件 R5）。わざと壊した見本で止まることも試す。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("indicators_reader", PR / "indicators" / "indicators.py")
+    ind = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ind)
+    tb = jload(Path(path))
+    name = tb["名前"]
+    base = ind.load().data                                     # 本物は読む口で読むだけ
+
+    def src(c):                                                # 候補の出どころの欄（値を除く）
+        return {k: v for k, v in c.items() if k not in ("値", "区分", "挙げた値")}
+
+    def pick(rows):                                            # 代表の値の選び方の③＝決まった規則で1つ（最初の候補・engine_tuner_requirements.md:107）
+        return rows[0]["値"] if rows else None
+
+    def span(rows):                                            # 範囲＝候補に在る値の最小〜最大（案・engine_tuner_requirements.md:153 の未決）
+        vals = [v for c in rows for v in c.get("挙げた値", [])]
+        return (min(vals), max(vals)) if vals else (None, None)
+
+    def to_box(t) -> tuple:
+        """候補の形の教科書 → 箱の形（指標の記録の要素と、使い方の記録の行）。"""
+        old = base["指標の記録"][name]
+        axes = []
+        for a in t["パラメータの軸"]:
+            sc, dt = a.get("スキャル") or [], a.get("デイトレ") or []
+            vals = [c["値"] for c in (a.get("既定") or []) + sc + dt]
+            lo0, hi0 = span(a.get("範囲の文") or [])
+            lo = min([x for x in vals + [lo0] if x is not None])
+            hi = max([x for x in vals + [hi0] if x is not None])
+            axes.append({"名前": a["名前"], "意味": a["意味"], "種類": a["種類"], "範囲": {"kind": "int", "lo": lo, "hi": hi},
+                         "代表の値": {"スキャル": [pick(sc) if sc else pick(a["既定"])], "デイトレ": [pick(dt) if dt else pick(a["既定"])]},
+                         "確かめの強さ": "ページの文で確かめた",
+                         "出どころ": {"既定": a.get("既定"), "スキャル": sc, "デイトレ": dt, "範囲の文": a.get("範囲の文")}})
+        role_old = old.get("教科書の役割") or {}
+        u = t["値の単位と値域"]
+        lo_t, hi_t = span(t.get("閾値の範囲の文") or [])
+        read_old = old.get("値の読み方") or {}
+        rd = t["値の読み方"]
+        fin = t["確定と期間"]
+        refs = dict(old.get("照らしと出どころ") or {})
+        refs["教科書の計算の式"] = t.get("計算の式")
+        refs["元の指標"] = t.get("元の指標")
+        recs = {"パラメータの軸": axes,
+                "教科書の役割": {"区分": [c["区分"] for c in t["教科書の役割"]], "出どころ": [src(c) for c in t["教科書の役割"]], "札": role_old.get("札")},
+                "値の単位と値域": {"単位": u["単位"], "値域": {"有界": [u["下限"], u["上限"]], "分位": None}, "出どころ": src(u)},
+                "値の読み方": {"区分": read_old.get("区分"), "読み方": rd["読み方"], "向きを持つ": read_old.get("向きを持つ") if rd.get("向きを持つ") is None else rd["向きを持つ"],
+                             "性質": read_old.get("性質"), "出どころ": src(rd)},
+                "出力": t["出力"],
+                "確定と期間": {"確定に要る本数": fin["確定に要る本数"], "出どころ": src(fin)},
+                "照らしと出どころ": refs,
+                "閾値の範囲": [{"形": "値", "単位": u["単位"], "範囲": {"kind": "float", "lo": lo_t, "hi": hi_t},
+                               "確かめの強さ": "ページの文で確かめた", "出どころ": t.get("閾値の範囲の文")}]}
+        uses = []
+        for x in t["使い方"]:
+            th = x["閾値"]
+            row = {"指す物": {"指標の記録": name}, "使い方の種類": x["使い方の種類"], "玉の向き": x["玉の向き"], "向き": x["向き"], "時間足": x["時間足"],
+                   "前処理": x.get("前処理") or [], "合図の形のパラメータ": x.get("合図の形のパラメータ") or [], "使える条件の形": x.get("使える条件の形") or [],
+                   "閾値": [],
+                   "オン/オフと出どころ": {"状態": "オン", "出どころ": x["根拠"]}}
+            if x.get("場面"):
+                row["場面と型"] = {"場面": x["場面"]}
+            if x.get("パラメータの代表の値"):
+                row["パラメータの代表の値"] = {k: {st: [pick(v[st])] for st in v} for k, v in x["パラメータの代表の値"].items()}
+            if th["スキャル"] or th["デイトレ"]:
+                rep = {st: pick(th[st]) for st in ("スキャル", "デイトレ") if th[st]}
+                row["閾値"] = [{"形": th["形"], "単位": th["単位"], "代表の値": rep, "確かめの強さ": (th["スキャル"] or th["デイトレ"])[0]["確かめの強さ"],
+                              "出どころ": {"スキャル": th["スキャル"], "デイトレ": th["デイトレ"]}}]
+            uses.append(row)
+        return recs, uses
+
+    def filled(recs, rows) -> dict:
+        d = copy.deepcopy(base)
+        d["指標の記録"][name].update(recs)
+        d["使い方の記録"] = d["使い方の記録"] + rows
+        return d
+
+    def read(d, sub):
+        p = Path(tmp) / sub
+        p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        return ind.load(p)
+
+    ng = 0
+    recs, uses = to_box(tb)
+    with tempfile.TemporaryDirectory() as tmp:
+        r = read(filled(recs, uses), "ok.json")
+        for k, v in recs.items():
+            same = r.element(name, k) == v
+            ng += 0 if same else 1
+            print(("✅" if same else "❌"), f"指標の記録の {k}：読む口の値と箱の値が", "同じ" if same else "違う")
+        for a in r.element(name, "パラメータの軸"):
+            print("   パラメータ", a["名前"], "範囲", a["範囲"]["lo"], "〜", a["範囲"]["hi"], "代表の値", a["代表の値"])
+        for t_ in r.element(name, "閾値の範囲"):
+            print("   閾値の範囲", t_["形"], t_["範囲"]["lo"], "〜", t_["範囲"]["hi"])
+        got = r.usages(name)
+        for i, u in enumerate(uses):
+            same = u in got
+            ng += 0 if same else 1
+            print(("✅" if same else "❌"), f"使い方の記録 {i} 行目（{u['使い方の種類']}）：読む口が", "返した" if same else "返さない",
+                  "閾値の代表の値", u["閾値"][0]["代表の値"] if u["閾値"] else "空（見つからなかった）")
+        print(f"読む口の {name} の使い方の行数＝{len(got)}（本物 {len(ind.load().usages(name))} 行＋見本 {len(uses)} 行）")
+        # 法則の読む口（laws.py）で、役割と使い方の種類と場面と玉の向きで、見本の行が見つかるか
+        sl = importlib.util.spec_from_file_location("laws_reader", PR / "laws" / "laws.py")
+        lw = importlib.util.module_from_spec(sl)
+        sl.loader.exec_module(lw)
+        la = lw.Laws(jload(PR / "laws" / "laws.json"), reader=r)
+        for role in ("行き過ぎ", "勢い"):
+            hit = la._usages_of({"指す物": {"使い方の種類": "入る合図", "教科書の役割": role, "場面": "レンジ", "時間足": "5m"}}, {"SHORT"}, [])
+            ok = any((h.get("指す物") or {}).get("指標の記録") == name for h in hit)
+            ng += 0 if ok else 1
+            print(("✅" if ok else "❌"), f"laws.py：役割「{role}」・入る合図・レンジ・5m・SHORT で {name} の行が", "見つかった" if ok else "見つからない")
+        # 要件 4-1 の順＝法則 → 役割 → 指標 → 使い方の行 → 代表の値 → 計算 → 条件（読む口だけを通す。engine_tuner は通らない）
+        import pandas as pd
+        h = [x for x in la._usages_of({"指す物": {"使い方の種類": "入る合図", "教科書の役割": "行き過ぎ", "場面": "レンジ"}}, {"SHORT"}, [])
+             if (x.get("指す物") or {}).get("指標の記録") == name][0]
+        th_v = h["閾値"][0]["代表の値"]["スキャル"]
+        sp = ((h.get("パラメータの代表の値") or {}).get("n") or {}).get("スキャル")
+        n_v = sp[0] if sp else r.element(name, "パラメータの軸")[0]["代表の値"]["スキャル"][0]
+        bars = pd.read_csv(SDK / od.BARS_CSV).tail(5000)
+        vals = r.value(name, bars, n_v)
+        fired = int(((vals.shift(1) >= th_v) & (vals < th_v)).sum())
+        print("--- 使い方の道（読む口だけ・engine_tuner は通らない）")
+        print(f"法則の条件＝役割「行き過ぎ」・入る合図・レンジ・SHORT → 指標 {name} → 向き {h['向き']} → 閾値 {th_v}（スキャル）→ n={n_v}（使い方の代表の値）")
+        print(f"実データの5分足 最後の {len(bars)} 本で、{name}{n_v} を計算＝値の最小 {float(vals.min()):.1f}・最大 {float(vals.max()):.1f}。{th_v} を下へ抜けた回数＝{fired} 回")
+        # 繋げるかのテスト＝読む口の値で条件を1本作り、engine_tuner の条件の計算（engine_tuner_exec._eval_cond）へ渡す。読む口の計算と突き合わせる
+        import engine_tuner_exec as ex
+        b2 = pd.read_csv(SDK / od.BARS_CSV, parse_dates=["timestamp"]).tail(5000).reset_index(drop=True)
+        b2["ts"] = b2["timestamp"]
+        cond = {"form": "level", "side": "below", "value": {"n": float(th_v)}, "material": [{"family": name, "param": n_v, "tf": "5m"}]}
+        got_ex = ex._eval_cond(cond, b2, {}, "legacy", None)
+        got_rd = (r.value(name, b2, n_v) < th_v).to_numpy()
+        same_n = int((got_ex == got_rd).sum())
+        print(f"engine_tuner_exec._eval_cond：{name}{n_v} 5m が {th_v} より下＝成立 {int(got_ex.sum())} 本／読む口の計算＝成立 {int(got_rd.sum())} 本／一致 {same_n}/{len(b2)} 本")
+        ng += 0 if same_n == len(b2) else 1
+        # 法則で繋ぐテスト＝R5（強さが弱ければレンジ寄り）× C4（上位足が許可・下位足が入る）。時間足を変えて、値と条件がどう変わるかを出す
+        roles, weak = la._role_of(r.record("ADX"))
+        adx_n = r.element("ADX", "パラメータの軸")[0]["代表の値"]["スキャル"][0]
+        adx_th = [u for u in r.usages("ADX") if u.get("使い方の種類") == "出口の反転"][0]["閾値"][0]["代表の値"]["スキャル"]
+        print("--- 法則 R5 × C4：役割", roles, "（札から引いた＝" + str(weak) + "）→ ADX", adx_n, "・閾値", adx_th)
+        for tf in ("5m", "15m", "1h", "4h"):
+            mt = {"family": "ADX", "param": adx_n, "tf": tf}
+            va = ex._col_array(b2, mt, {}, "legacy")
+            s_a = pd.Series(va)
+            ch = s_a.ne(s_a.shift(1)) & s_a.notna() & s_a.shift(1).notna()
+            mins = sorted(set(pd.to_datetime(b2.loc[ch, "ts"]).dt.minute.tolist()))[:8]
+            allow = ex._eval_cond({"form": "level", "side": "below", "value": {"n": float(adx_th)}, "material": [mt]}, b2, {}, "legacy", None)
+            both = allow & got_ex
+            print(f"  ADX{adx_n} {tf}：値が変わったバー {int(ch.sum())} 本（分＝{mins}）／{adx_th} より下 {int(allow.sum())} 本／かつ 5m の RSI{n_v} が {th_v} より下＝{int(both.sum())} 本")
+        # 通しのテスト＝読む口の値で入口を作り、engine_tuner の売買のループ（run_recipe）で回して net を出す。出口は S2 の恒等レシピのまま。値決め窓の1か月だけ
+        import tuner_adapters.e38 as ad
+        # 本物の法則の行が、本物の指標データで使い方の行を見つけられるか（laws.json の全部の行）
+        la0 = lw.Laws(jload(PR / "laws" / "laws.json"), reader=ind.load())
+        cnt = {"見つかった": 0, "使える物が無い": 0, "候補が複数": 0}
+        lost = []
+        for row_ in la0.rows():
+            s_ = la0.solve(row_["番号"])
+            cnt["見つかった"] += len(s_["使い方の行"])
+            cnt["使える物が無い"] += len(s_["使える物が無い"])
+            cnt["候補が複数"] += len(s_["候補が複数"])
+            lost += [(row_["番号"], w) for w in s_["使える物が無い"]]
+        print("--- 本物の法則の行 × 本物の指標データ：", cnt)
+        for x_ in lost[:6]:
+            print("   見つからない：", x_[0], json.dumps(x_[1], ensure_ascii=False)[:120])
+        # 行の値だけで条件を作る（向き・形・足・閾値・パラメータを手で書かない）
+        SIDE = {"上側": "above", "下側": "below"}
+        CROSS = {"上へ抜ける": "up", "下へ抜ける": "down"}
+        r3 = read(filled(recs, uses + tb["_テスト用の別の指標の行"]), "ok3.json")
+        la3 = lw.Laws(jload(PR / "laws" / "laws.json"), reader=r3)
+
+        def cond_from(want, role):
+            rows = la3._usages_of({"指す物": want}, {"SHORT"}, [])
+            if len(rows) != 1:
+                raise SystemExit(f"❌ 指す物 {want} の行が {len(rows)} 本（1本でない）")
+            u = rows[0]
+            nm = u["指す物"]["指標の記録"]
+            sp_ = ((u.get("パラメータの代表の値") or {}).get("n") or {}).get("スキャル")
+            par = sp_[0] if sp_ else r3.element(nm, "パラメータの軸")[0]["代表の値"]["スキャル"][0]
+            v_ = float(u["閾値"][0]["代表の値"]["スキャル"])
+            mat = {"family": nm, "param": par, "tf": want["時間足"]}
+            if u["向き"] in SIDE:
+                return {"role": role, "form": "level", "side": SIDE[u["向き"]], "value": {"legacy": v_}, "material": [mat]}
+            return {"role": role, "form": "cross", "value": {"direction": CROSS[u["向き"]], "th": {"legacy": v_}}, "material": [mat]}
+
+        c_env = cond_from({"使い方の種類": "場面の判定", "教科書の役割": "強さ", "場面": "レンジ", "時間足": "15m"}, "env")
+        c_trg = cond_from({"使い方の種類": "入る合図", "教科書の役割": "行き過ぎ", "場面": "レンジ", "時間足": "5m"}, "trigger")
+        rec = jload(PR / "recipes/identity_s2_legacy.json")
+        rec["entry"]["connective"] = {"all": [c_env, c_trg]}
+        win = (pd.Timestamp("2025-07-01"), pd.Timestamp("2025-08-01"))
+        dfw = ad.load_windows([win], pd.Timedelta(days=60))[0]
+        tr, _rep = ex.run_recipe(ex.attach_recipe_columns(dfw, rec), rec)
+        t_df = pd.DataFrame(tr)
+        print(f"--- 通し（法則の指す物 → 使い方の行 → 条件 → run_recipe・{win[0].date()}〜{win[1].date()}・出口は S2 の恒等レシピ）")
+        print("場面の判定の条件＝", json.dumps(c_env, ensure_ascii=False))
+        print("入る合図の条件＝", json.dumps(c_trg, ensure_ascii=False))
+        print(f"売買 {len(t_df)} 件")
+        if len(t_df):
+            print("net 合計", round(float(t_df["net_usd"].sum()), 2), "決済の理由", t_df["exit_reason"].value_counts().to_dict() if "exit_reason" in t_df else list(t_df.columns)[:12])
+        # 形のテスト＝値の閾値でない形（分位・倍率・クロス・閾値なし・部品）が、箱に入り、読む口を通り、engine_tuner の計算で動くか。
+        def usage(kind_, nm_, use_, side_, dire_, th_=None, **kw_):
+            row_ = {"指す物": {kind_: nm_}, "使い方の種類": use_, "玉の向き": side_, "向き": dire_, "閾値": [th_] if th_ else [],
+                    "オン/オフと出どころ": {"状態": "オン", "出どころ": "形のテスト"}}
+            row_.update(kw_)
+            return row_
+        cases = [
+            ("ATR% 分位の閾値", usage("指標の記録", "ATR%", "場面の判定", "両方", "下側", {"形": "分位", "単位": "分位", "代表の値": {"スキャル": 50.0}}, 場面と型={"場面": "レンジ"}, 時間足=["15m"]),
+             {"form": "level", "side": "below", "value": {"threshold_q": "q50"}, "material": [{"family": "ATR%", "param": 14, "tf": "15m"}]}),
+            ("ATR% 倍率の閾値（出口の水準）", usage("指標の記録", "ATR%", "出口の水準を作る材料", "SHORT", "上側", {"形": "倍率", "単位": "ATR の倍数", "代表の値": {"スキャル": 2.0}}, 時間足=["5m"]), None),
+            ("MACD 線どうしのクロス", usage("指標の記録", "MACD線%", "入る合図", "SHORT", "下へ抜ける", None, 場面と型={"場面": "レンジ"}, 時間足=["5m"], 使える条件の形=["cross"], 合図の形のパラメータ=[{"名前": "組の相手", "代表の値": "MACDシグナル線%"}]),
+             {"form": "cross", "value": {"direction": "down"}, "material": [{"family": "MACD線%", "param": [12, 26], "tf": "5m"}, {"family": "MACDシグナル線%", "param": [12, 26, 9], "tf": "5m"}]}),
+            ("MACD ゼロ線のクロス", usage("指標の記録", "MACD線%", "入る合図", "SHORT", "下へ抜ける", {"形": "値", "単位": "%", "代表の値": {"スキャル": 0.0}}, 時間足=["5m"]),
+             {"form": "cross", "value": {"direction": "down", "th": {"legacy": 0.0}}, "material": [{"family": "MACD線%", "param": [12, 26], "tf": "5m"}]}),
+            ("包み足 パラメータなし", usage("指標の記録", "包み足", "合図が本物かを確かめる条件", "SHORT", "下側", {"形": "値", "代表の値": {"スキャル": 0.0}}, 時間足=["5m"]),
+             {"form": "level", "side": "below", "value": {"legacy": 0.0}, "material": [{"family": "包み足", "tf": "5m"}]}),
+            ("帯pivot 部品", usage("部品の記録", "帯pivot", "場面の判定", "両方", "上側", {"形": "値", "代表の値": {"スキャル": 0.5}}, 場面と型={"場面": "レンジ"}, 時間足=["15m"]),
+             {"form": "level", "side": "above", "value": {"legacy": 0.5}, "material": [{"family": "帯pivot", "param": 0.003, "tf": "15m"}]}),
+        ]
+        print("--- 形のテスト（箱に入れ、読む口を通し、engine_tuner_exec で計算する）")
+        for label, row_, cond_ in cases:
+            d4 = filled(recs, uses + [row_])
+            d4["指標の記録"]["包み足"]["オン/オフ"]["状態"] = "オン"     # 194番の決定（写しの中だけ）
+            nm4 = row_["指す物"].get("指標の記録") or row_["指す物"].get("部品の記録")
+            try:
+                r4 = read(d4, f"f{cases.index((label, row_, cond_))}.json")
+                in_box = row_ in r4.usages(nm4)
+                if cond_ is None:
+                    print(f"  {label}：読む口＝{'返した' if in_box else '返さない'}／条件の計算は出口の水準なので今回は試さない")
+                    ng += 0 if in_box else 1
+                    continue
+                qt = None
+                if "threshold_q" in cond_["value"]:
+                    k_ = ex._mat_key(cond_["material"][0], "legacy")
+                    qt = {k_: {"q50": float(pd.Series(ex._col_array(b2, cond_["material"][0], {}, "legacy")).median())}}
+                out_ = ex._eval_cond(cond_, b2, {}, "legacy", qt)
+                print(f"  {label}：読む口＝{'返した' if in_box else '返さない'}／条件の成立 {int(out_.sum())}/{len(b2)} 本")
+                ng += 0 if in_box else 1
+            except (Exception, SystemExit) as e_:                # noqa: BLE001
+                ng += 1
+                print(f"  ❌ {label}：止まった：{e_}")
+        bad = copy.deepcopy(uses)
+        bad[0]["向き"] = "書いてない"
+        try:
+            read(filled(recs, bad), "bad.json")
+            ng += 1
+            print("❌ 向き「書いてない」の見本で、読む口が止まらなかった")
+        except ind.IndicatorsError as e:
+            print("✅ 向き「書いてない」の見本で、読む口が止まった：", e)
+    print("結果：" + ("通った" if not ng else f"通らない（{ng} 件）"), "／本物の indicators.json は書いていない")
+    return 0 if not ng else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--rewrite", action="store_true")
+    ap.add_argument("--try-textbook", metavar="見本のパス")
     a = ap.parse_args()
+    if a.try_textbook:
+        return try_textbook(a.try_textbook)
     if a.selftest:
         return selftest()
     if a.verify:

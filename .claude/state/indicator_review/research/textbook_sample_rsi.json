@@ -1,0 +1,398 @@
+{
+  "名前": "RSI",
+  "元の指標": "RSI（Relative Strength Index・Wilder）",
+  "_注": "全要素の見本。値と逐語は 264番・270番・out_c6_02 と、2026-11-04 の Web の確かめから写した。確かめの強さの『未確認』は、検索の要約の文でページを開けていない行。",
+  "教科書の役割": [
+    {
+      "区分": "勢い",
+      "逐語": "The RSI, a momentum oscillator developed by J. Welles Wilder, measures the speed and change of price movements.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "区分": "行き過ぎ",
+      "逐語": "Wilder considered RSI overbought above 70 and oversold below 30.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+      "確かめの強さ": "ページの文で確かめた"
+    }
+  ],
+  "値の単位と値域": {
+    "単位": "0〜100",
+    "下限": 0,
+    "上限": 100,
+    "逐語": "The RSI moves up and down (oscillates) between zero and 100.",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+    "確かめの強さ": "ページの文で確かめた"
+  },
+  "値の読み方": {
+    "読み方": "70 より上は買われ過ぎ、30 より下は売られ過ぎ",
+    "向きを持つ": null,
+    "逐語": "According to Wilder, any number above 70 should be considered overbought and any number below 30 should be considered oversold.",
+    "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+    "確かめの強さ": "ページの文で確かめた"
+  },
+  "出力": [
+    {
+      "名前": "RSI",
+      "組の相手": null,
+      "確かめの強さ": "見つからなかった"
+    }
+  ],
+  "確定と期間": {
+    "確定に要る本数": 250,
+    "逐語": "SharpCharts uses at least 250 data points before the starting date of any chart (assuming th",
+    "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+    "確かめの強さ": "ページの文で確かめた",
+    "注": "逐語は元の調べで文の途中で切れている"
+  },
+  "計算の式": {
+    "確かめの強さ": "見つからなかった"
+  },
+  "パラメータの軸": [
+    {
+      "名前": "n",
+      "資料の表の名前": "n（期間）",
+      "意味": "窓",
+      "種類": "整数",
+      "既定": [
+        {
+          "値": 14,
+          "逐語": "This RSI calculation is based on 14 periods, the default Wilder suggested in his book.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 14,
+          "逐語": "The number of bars to be used in calculating the RSI. 14 bars is the default.",
+          "URL": "https://www.tradingview.com/support/solutions/43000502338-relative-strength-index-rsi/",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 14,
+          "逐語": "real = RSI(close, timeperiod=14)",
+          "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+          "確かめの強さ": "ページの文で確かめた"
+        }
+      ],
+      "スキャル": [
+        {
+          "値": 7,
+          "文の時間足": "5m",
+          "逐語": "For 5-minute scalping, the 7-period RSI is usually the best choice.",
+          "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 9,
+          "文の時間足": "5m",
+          "逐語": "The best RSI settings for a 5-minute chart are a 9-period RSI with bands at 75/25 for a faster read, or the 14-period default with bands widened to 80/20 if you want fewer signals.",
+          "URL": "https://bullynx.com/blog/best-rsi-settings",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 5,
+          "文の時間足": "5m",
+          "逐語": "Use a 5-period RSI with 80/20 thresholds to match the faster pace.",
+          "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 2,
+          "文の時間足": "1m",
+          "逐語": "When trading on a 1-minute chart, the best RSI setting is typically RSI 2 or 3.",
+          "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 3,
+          "文の時間足": "1m",
+          "逐語": "When trading on a 1-minute chart, the best RSI setting is typically RSI 2 or 3.",
+          "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+          "確かめの強さ": "ページの文で確かめた"
+        }
+      ],
+      "デイトレ": [
+        {
+          "値": 14,
+          "文の時間足": "15m",
+          "逐語": "On a 15-minute chart the 14-period default holds up well and is what most platforms leave in place.",
+          "URL": "https://bullynx.com/blog/best-rsi-settings",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "値": 9,
+          "文の時間足": "15m",
+          "逐語": "For 15-minute charts, try a 9-period RSI with 75/25 thresholds. On the 1-hour, the classic 14-period works well with standard 70/30 levels.",
+          "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+          "確かめの強さ": "ページの文で確かめた"
+        }
+      ],
+      "範囲の文": [
+        {
+          "挙げた値": [
+            2
+          ],
+          "範囲の形": "値を挙げただけ",
+          "逐語": "Short-term traders sometimes use 2-period RSI to look for overbought readings above 80 and oversold readings below 20.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+          "挙げた値": [
+            7,
+            21
+          ],
+          "範囲の形": "文に両端が在る",
+          "逐語": "Day traders commonly shorten the period to 7 to 9 on intraday charts, swing traders commonly keep 14 or stretch it to 21 on the daily, and traders in a strong trend commonly widen the bands to 80/20.",
+          "URL": "https://bullynx.com/blog/best-rsi-settings",
+          "確かめの強さ": "ページの文で確かめた"
+        }
+      ]
+    }
+  ],
+  "閾値の範囲の文": [
+    {
+      "形": "値",
+      "単位": "0〜100",
+      "挙げた値": [
+        70,
+        80
+      ],
+      "範囲の形": "値を挙げただけ",
+      "逐語": "For example, if a security is repeatedly reaching the overbought level of 70 you may want to adjust this level to 80.",
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/RSI",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "形": "値",
+      "単位": "0〜100",
+      "挙げた値": [
+        20,
+        80
+      ],
+      "範囲の形": "値を挙げただけ",
+      "逐語": "Raising the overbought threshold to 80 or lowering the oversold threshold to 20 could reduce the number of overbought/oversold readings.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "形": "前提つき",
+      "単位": "0〜100",
+      "挙げた値": [
+        10,
+        60
+      ],
+      "範囲の形": "値を挙げただけ",
+      "逐語": "In a falling market they shift down, so a market is only really oversold near 10 and can be considered overbought as early as 60.",
+      "URL": "https://www.mql5.com/en/blogs/post/774746",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "形": "前提つき",
+      "単位": "0〜100",
+      "挙げた値": [
+        40,
+        90
+      ],
+      "範囲の形": "値を挙げただけ",
+      "逐語": "In a rising market the useful thresholds shift up, toward roughly 40 and 90.",
+      "URL": "https://www.mql5.com/en/blogs/post/774746",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "形": "値",
+      "単位": "0〜100",
+      "挙げた値": [
+        65
+      ],
+      "範囲の形": "値を挙げただけ",
+      "文の時間足": "5m",
+      "逐語": "The first condition will be met when the asset has an RSI of greater than 65, and is around the overbought region, in a 5-minute timeframe.",
+      "URL": "https://help.coinrule.com/articles/376756-rsi-top-scalper",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    {
+      "形": "値",
+      "単位": "0〜100",
+      "挙げた値": [
+        60,
+        40
+      ],
+      "範囲の形": "値を挙げただけ",
+      "逐語": "In a range-bound market , tighter levels like 60/40 can catch more of the smaller swings.",
+      "URL": "https://bullynx.com/blog/best-rsi-settings",
+      "確かめの強さ": "ページの文で確かめた"
+    }
+  ],
+  "使い方": [
+    {
+      "使い方の種類": "入る合図",
+      "場面": "レンジ",
+      "玉の向き": "SHORT",
+      "向き": "下へ抜ける",
+      "時間足": [
+        "5m"
+      ],
+      "前処理": [],
+      "使える条件の形": [
+        "level",
+        "within_n"
+      ],
+      "パラメータの代表の値": {
+        "n": {
+          "スキャル": [
+            {
+              "値": 7,
+              "逐語": "In ranging markets: Tighten RSI to 7 periods, use 75/25 levels",
+              "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+              "確かめの強さ": "ページの文で確かめた"
+            }
+          ]
+        }
+      },
+      "合図の形のパラメータ": [],
+      "閾値": {
+        "形": "値",
+        "単位": "0〜100",
+        "スキャル": [
+          {
+            "値": 75,
+            "文の時間足": "5m",
+            "逐語": "Using 75 for overbought and 25 for oversold conditions filters out market noise while maintaining sensitivity to genuine momentum changes.",
+            "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 80,
+            "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+            "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 70,
+            "文の時間足": "5m",
+            "逐語": "A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 70,
+            "文の時間足": "15m",
+            "逐語": "Use a 14‑period RSI with 70/30 overbought/oversold levels to balance sensitivity and reliability on 15‑minute charts, catching momentum shifts early without excessive false signals.",
+            "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-15-minute-chart/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 75,
+            "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+            "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ]
+      },
+      "根拠": {
+        "逐語": "A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.",
+        "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      "型": null
+    },
+    {
+      "使い方の種類": "出口の反転",
+      "場面": null,
+      "玉の向き": "SHORT",
+      "向き": "下側",
+      "時間足": [],
+      "前処理": [],
+      "使える条件の形": [
+        "level"
+      ],
+      "合図の形のパラメータ": [],
+      "閾値": {
+        "形": "値",
+        "単位": "0〜100",
+        "スキャル": [
+          {
+            "値": 50,
+            "逐語": "Enter a short position if the RSI crosses the upper threshold (standard value of 70) downwards; exit the position when the RSI becomes smaller than 50.",
+            "URL": "https://www.packtpub.com/en-us/product/python-for-finance-cookbook-2-9781789618518/chapter/technical-analysis-in-python/calculating-the-relative-strength-index-and-testing-a-long-short-strategy",
+            "確かめの強さ": "未確認",
+            "注": "ページは 403。検索の要約の文。スキャルの名指しは無い"
+          },
+          {
+            "値": 30,
+            "逐語": "take profit when RSI reaches the opposite extreme zone: above 70 for long positions, below 30 for short positions",
+            "URL": "https://journalplus.co/strategies/rsi-trading-strategy",
+            "確かめの強さ": "未確認",
+            "注": "ページは転送の繰り返しで開けない。検索の要約の文"
+          }
+        ],
+        "デイトレ": []
+      },
+      "根拠": {
+        "逐語": "Enter a short position if the RSI crosses the upper threshold (standard value of 70) downwards; exit the position when the RSI becomes smaller than 50.",
+        "URL": "https://www.packtpub.com/en-us/product/python-for-finance-cookbook-2-9781789618518/chapter/technical-analysis-in-python/calculating-the-relative-strength-index-and-testing-a-long-short-strategy",
+        "確かめの強さ": "未確認"
+      },
+      "型": null
+    },
+    {
+      "使い方の種類": "前提崩れの印",
+      "場面": null,
+      "玉の向き": "SHORT",
+      "向き": null,
+      "時間足": [],
+      "前処理": [],
+      "使える条件の形": [],
+      "合図の形のパラメータ": [],
+      "閾値": {
+        "形": "値",
+        "単位": "0〜100",
+        "スキャル": [],
+        "デイトレ": []
+      },
+      "根拠": {
+        "確かめの強さ": "見つからなかった",
+        "注": "RSI の値で玉を切る文は、確かめられた行に無い"
+      },
+      "型": null
+    },
+    {
+      "使い方の種類": "合図が本物かを確かめる条件",
+      "場面": null,
+      "玉の向き": "LONG",
+      "向き": "下側",
+      "時間足": [
+        "1h"
+      ],
+      "前処理": [],
+      "使える条件の形": [
+        "level"
+      ],
+      "合図の形のパラメータ": [],
+      "閾値": {
+        "形": "値",
+        "単位": "0〜100",
+        "スキャル": [
+          {
+            "値": 45,
+            "文の時間足": "1h",
+            "逐語": "H1 RSI < 45 (below midline, not overbought)",
+            "URL": "https://www.mql5.com/en/blogs/post/767332",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "買いの3時間足の条件の1つ（M15<30・M30<35・H1<45）"
+          }
+        ],
+        "デイトレ": []
+      },
+      "根拠": {
+        "逐語": "I weight H1 at 50% because the higher timeframe trend is the most important filter",
+        "URL": "https://www.mql5.com/en/blogs/post/767332",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      "型": null
+    }
+  ]
+}
