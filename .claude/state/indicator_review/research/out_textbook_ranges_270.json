@@ -560,6 +560,180 @@
      "注": "curl は 403、Chromium で開いた本文の文。「a value above 20-25」＝閾値を 20〜25 のどこかに置く、という書き方。本文で照らした道具：Chromium（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 3,
+   "指標": "DI差",
+   "探す物": "閾値の範囲（形＝値）",
+   "結果": "値を挙げた文だけ在る",
+   "使った検索の語": [
+    "DI difference threshold +DI minus -DI spread value filter",
+    "+DI -DI spread difference threshold strong directional trend value（fidelity・stockcharts・schwab・tradingview・babypips に絞った）",
+    "\"DI+\" \"DI-\" difference greater than 5 10 20 points trend filter"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 8433 文字）"
+    },
+    {
+     "URL": "https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4390 文字）"
+    },
+    {
+     "URL": "https://doc.stocksharp.com/en/designer-gallery/Adx_Di_Crossover",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 3188 文字）"
+    },
+    {
+     "URL": "https://sites.google.com/view/indicatorsoftrades/adx-with-di-crossover-filter-rules",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 3778 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/EEF5Zj7D/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 9162 文字）"
+    },
+    {
+     "URL": "https://in.tradingview.com/script/6uSfABUE-ADX-DI",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 3359 文字）"
+    },
+    {
+     "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字）"
+    },
+    {
+     "URL": "https://www.investopedia.com/terms/d/dmi.asp",
+     "HTTP": 402,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 402／Chromium＝HTTP 403（本文 0 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://deepvue.com/?p=12526",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6485 文字）"
+    },
+    {
+     "URL": "https://madbomber.github.io/sqa-tai/indicators/momentum/adx",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 25178 文字）"
+    },
+    {
+     "URL": "https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5664 文字）"
+    },
+    {
+     "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 3637 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "Adjust the minimum value for DI Difference depending on whether large or small cap stocks: At least 20 for the S&P 500 or ASX 200 At least 30 for the broader Russell 3000 or ASX",
+     "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（Incredible Charts）",
+     "注": "DI Difference＝DI+ − DI−（同じページの「Calculates the difference between current DI+ and DI- values.」）。同じページの初めに「a time period of 13 weeks」と書く＝週足の13本の話。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "We ran a higher Minimum of 40 (on DI Difference) for the Russell 3000 to reduce the number of stocks returned:",
+     "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（Incredible Charts）",
+     "注": "銘柄を減らすために 40 を使った、と書く。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Try the following values: A Minimum of 20 or 25 for the S&P 500 or ASX 200 A higher Minimum of 30 or 40 for faster-moving small caps in the Russell 3000 or ASX.",
+     "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（Incredible Charts の銘柄選びの道具の説明）",
+     "注": "DI Difference の最小値として 20 か 25、30 か 40。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Long when |+DI - ADX| ≥ LongDifference and |-DI - ADX| ≥ LongDifference with ADX between +DI and -DI.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例）",
+     "注": "DI と ADX の差の閾値で、DI差（+DI − −DI）ではない。既定は「LongDifference = 10 ShortDifference = 10」（同じページ）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "A general interpretation would be that during a strong trend (ADX above 25 but dependent on the analyst's interpretation), when the +DI is above the -DI, then a Bullish Market is defined.",
+     "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+     "注": "数は ADX の 25 だけ。DI差の数の閾値は書いてない（+DI と −DI の上下だけ）。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }

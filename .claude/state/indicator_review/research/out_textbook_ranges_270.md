@@ -12,6 +12,7 @@
 |---|---|---|---|---|---|---|---|
 | 1 | RSI | 閾値の範囲（形＝値） | 両端の文が在る | 1 | 11 | 12 | Cardwell の弱気の反転の形で RSI が来る所（50-70）。閾値を探す幅とは書いてない |
 | 2 | ADX | 閾値の範囲（形＝値） | 両端の文が在る | 2 | 12 | 14 | 掲示板の条件の帯（25〜40）と、ブログの「20-25 より上」。探す幅とは書いてない |
+| 3 | DI差 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 5 | 12 | — |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -63,6 +64,21 @@
 | 11 | Dovrebbe darmi solo i valori compresi tra 25 e 40 e non tutti quelli sopra 25 e tutti quelli sotto 40.<br>https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/ | 文に両端が在る | 25 | 40 | 値 | 0〜100 | 一般 | 時間足は書いてない | 掲示板（ProRealCode の投稿・イタリア語・2017-10-02） | ADX が 25 から 40 の間のときだけを取る条件を書いた投稿。探す幅とは書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 12 | To reduce the likelihood of false signals, look for the ADX line above a certain threshold; commonly, a value above 20-25 suggests a stronger trend.<br>https://www.liberatedstocktrader.com/adx-indicator/ | 文に両端が在る | 20 | 25 | 値 | 0〜100 | 一般 | 時間足は書いてない | ブログ（Liberated Stock Trader） | curl は 403、Chromium で開いた本文の文。「a value above 20-25」＝閾値を 20〜25 のどこかに置く、という書き方。本文で照らした道具：Chromium（空白の数だけそろえた） |
 
+### 3. DI差｜閾値の範囲（形＝値）（結果：値を挙げた文だけ在る）
+
+使った検索の語：
+- DI difference threshold +DI minus -DI spread value filter
+- +DI -DI spread difference threshold strong directional trend value（fidelity・stockcharts・schwab・tradingview・babypips に絞った）
+- "DI+" "DI-" difference greater than 5 10 20 points trend filter
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Adjust the minimum value for DI Difference depending on whether large or small cap stocks: At least 20 for the S&P 500 or ASX 200 At least 30 for the broader Russell 3000 or ASX<br>https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（Incredible Charts） | DI Difference＝DI+ − DI−（同じページの「Calculates the difference between current DI+ and DI- values.」）。同じページの初めに「a time period of 13 weeks」と書く＝週足の13本の話。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | We ran a higher Minimum of 40 (on DI Difference) for the Russell 3000 to reduce the number of stocks returned:<br>https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（Incredible Charts） | 銘柄を減らすために 40 を使った、と書く。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 3 | Try the following values: A Minimum of 20 or 25 for the S&P 500 or ASX 200 A higher Minimum of 30 or 40 for faster-moving small caps in the Russell 3000 or ASX.<br>https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（Incredible Charts の銘柄選びの道具の説明） | DI Difference の最小値として 20 か 25、30 か 40。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | Long when \|+DI - ADX\| ≥ LongDifference and \|-DI - ADX\| ≥ LongDifference with ADX between +DI and -DI.<br>https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例） | DI と ADX の差の閾値で、DI差（+DI − −DI）ではない。既定は「LongDifference = 10 ShortDifference = 10」（同じページ）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 5 | A general interpretation would be that during a strong trend (ADX above 25 but dependent on the analyst's interpretation), when the +DI is above the -DI, then a Bullish Market is defined.<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | 値を挙げただけ | None | None | 前提つき | 0〜100 | 一般 | 時間足は書いてない | 定番の教育サイト（TradingView のヘルプ） | 数は ADX の 25 だけ。DI差の数の閾値は書いてない（+DI と −DI の上下だけ）。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -101,7 +117,24 @@
 | https://landing-page-2ml.pages.dev/docs/indicators/adx/strategy-templates | 開けない | curl＝HTTP 404／Chromium＝HTTP 404（本文 140 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
 | https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 2319 文字） |
 
-開いたページは、件ごとに数えて 26 本（同じ URL を除くと 26 本）です。開けなかったページは、件ごとに 9 本（同じ URL を除くと 9 本）です。
+### 3. DI差｜閾値の範囲（形＝値）
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 8433 文字） |
+| https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4390 文字） |
+| https://doc.stocksharp.com/en/designer-gallery/Adx_Di_Crossover | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 3188 文字） |
+| https://sites.google.com/view/indicatorsoftrades/adx-with-di-crossover-filter-rules | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 3778 文字） |
+| https://www.tradingview.com/script/EEF5Zj7D/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 9162 文字） |
+| https://in.tradingview.com/script/6uSfABUE-ADX-DI | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 3359 文字） |
+| https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi | 無い | curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字） |
+| https://www.investopedia.com/terms/d/dmi.asp | 開けない | curl＝HTTP 402／Chromium＝HTTP 403（本文 0 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://deepvue.com/?p=12526 | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6485 文字） |
+| https://madbomber.github.io/sqa-tai/indicators/momentum/adx | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 25178 文字） |
+| https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 5664 文字） |
+| https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 3637 文字） |
+
+開いたページは、件ごとに数えて 38 本（同じ URL を除くと 38 本）です。開けなかったページは、件ごとに 10 本（同じ URL を除くと 10 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 
