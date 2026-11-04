@@ -734,6 +734,233 @@
      "注": "数は ADX の 25 だけ。DI差の数の閾値は書いてない（+DI と −DI の上下だけ）。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 4,
+   "指標": "BB%b",
+   "探す物": "閾値の範囲（形＝値）",
+   "結果": "両端の文が在る",
+   "使った検索の語": [
+    "Bollinger %B threshold 0.8 0.2 overbought oversold range adjust 0.9 0.1",
+    "Bollinger %b overbought oversold levels 0.8 0.2 1.0（fidelity・stockcharts・bollingerbands・schwab・tradingview に絞った）",
+    "%b Bollinger strategy entry threshold 0.05 0.1 0.95 optimize short"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 9006 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5670 文字）"
+    },
+    {
+     "URL": "https://fxreplay.com/indicators/bollinger-bands-b-25fa9",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5092 文字）"
+    },
+    {
+     "URL": "https://www.luxalgo.com/library/indicator/percent-b/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7421 文字）"
+    },
+    {
+     "URL": "https://www.barchart.com/education/technical-indicators/bollinger_bands_percent",
+     "HTTP": 202,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 202／Chromium＝HTTP 202（本文 13959 文字）"
+    },
+    {
+     "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-b",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7046 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/yXkWPSlU/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7267 文字）"
+    },
+    {
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 5572 文字）"
+    },
+    {
+     "URL": "https://www.investopedia.com/terms/p/percentb.asp",
+     "HTTP": 402,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 402／Chromium＝HTTP 404（本文 576 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 7970 文字）"
+    },
+    {
+     "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6784 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "_lowPercentB = Param(nameof(LowPercentB), 0.2m) .SetDisplay(\"Low %B\", \"Lower threshold for %B\", \"Signals\") .SetOptimize(0.1m, 0.3m, 0.05m);",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB",
+     "範囲の形": "文に両端が在る",
+     "下の端": 0.1,
+     "上の端": 0.3,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例・Larry Connors %B）",
+     "注": "コードの中の最適化の範囲（SetOptimize の両端と刻み 0.05）。この戦略は「Long/Short: Long only.」で、ロングの入る閾値（探さない物に当たるが、両端の書き方の例として残した）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "_highPercentB = Param(nameof(HighPercentB), 0.8m) .SetDisplay(\"High %B\", \"Upper threshold for %B to exit\", \"Signals\") .SetOptimize(0.7m, 0.9m, 0.05m);",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB",
+     "範囲の形": "文に両端が在る",
+     "下の端": 0.7,
+     "上の端": 0.9,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例・Larry Connors %B）",
+     "注": "ロングの決済の閾値（上と同じ注）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Param(nameof(ExitValue), 0.5m).SetRange(0m, 1m) .SetDisplay(\"Exit %B Value\", \"Exit threshold for %B\", \"Exit\") .SetOptimize(0.3m, 0.7m, 0.1m);",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+     "範囲の形": "文に両端が在る",
+     "下の端": 0.3,
+     "上の端": 0.7,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例・Bollinger Percent B Reversion）",
+     "注": "決済の閾値の最適化の範囲 0.3〜0.7（刻み 0.1）。同じ行の SetRange(0m, 1m) は入力できる範囲。この戦略は「Direction: Both」「CandleType = TimeSpan.FromMinutes(5)」（同じページ）＝両方の向き・既定は5分足。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Buys when %B < 0 (below lower band), sells when %B > 1 (above upper band).",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "ショート"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例・Bollinger Percent B Reversion）",
+     "注": "売りは %B が 1 より上。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "In a strong downtrend, %B can be considered overbought when it approaches or exceeds 1.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "前提＝強い下げトレンド。264番でも見つかった文。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Downtrends are identified when %B is below 0.20 and MFI(10) is below 20.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "前提つき",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "Bollinger の %B と MFI の組。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Use %B crossovers of 0.5 or custom thresholds (e.g., 0.8 / 0.2) to filter trend strength.",
+     "URL": "https://fxreplay.com/indicators/bollinger-bands-b-25fa9",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（FX Replay）",
+     "注": "。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Exit Signal: Exit the position when the %b value closes above 0.8, signaling an overbought condition where the price is near the upper Bollinger Band.",
+     "URL": "https://www.tradingview.com/script/yXkWPSlU/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまる語が無い（%B の値・0〜1 の目盛り）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（Larry Connors %b Strategy）",
+     "注": "ロングの決済（探さない物に当たるが残した）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Sell: When %b crosses above 80 (approaching the upper band, signaling stretched conditions).",
+     "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-b",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（SentimenTrader）",
+     "注": "%b を 0〜100 の数で書いている（同じページの別の文は 0〜1 で書く）。ロングの決済の文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }

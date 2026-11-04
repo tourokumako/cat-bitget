@@ -13,6 +13,7 @@
 | 1 | RSI | 閾値の範囲（形＝値） | 両端の文が在る | 1 | 11 | 12 | Cardwell の弱気の反転の形で RSI が来る所（50-70）。閾値を探す幅とは書いてない |
 | 2 | ADX | 閾値の範囲（形＝値） | 両端の文が在る | 2 | 12 | 14 | 掲示板の条件の帯（25〜40）と、ブログの「20-25 より上」。探す幅とは書いてない |
 | 3 | DI差 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 5 | 12 | — |
+| 4 | BB%b | 閾値の範囲（形＝値） | 両端の文が在る | 3 | 9 | 11 | StockSharp の戦略の例のコードの最適化の範囲（0.1〜0.3・0.7〜0.9・0.3〜0.7）。うち2つはロングだけの戦略 |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -79,6 +80,25 @@
 | 4 | Long when \|+DI - ADX\| ≥ LongDifference and \|-DI - ADX\| ≥ LongDifference with ADX between +DI and -DI.<br>https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例） | DI と ADX の差の閾値で、DI差（+DI − −DI）ではない。既定は「LongDifference = 10 ShortDifference = 10」（同じページ）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 5 | A general interpretation would be that during a strong trend (ADX above 25 but dependent on the analyst's interpretation), when the +DI is above the -DI, then a Bullish Market is defined.<br>https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/ | 値を挙げただけ | None | None | 前提つき | 0〜100 | 一般 | 時間足は書いてない | 定番の教育サイト（TradingView のヘルプ） | 数は ADX の 25 だけ。DI差の数の閾値は書いてない（+DI と −DI の上下だけ）。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 
+### 4. BB%b｜閾値の範囲（形＝値）（結果：両端の文が在る）
+
+使った検索の語：
+- Bollinger %B threshold 0.8 0.2 overbought oversold range adjust 0.9 0.1
+- Bollinger %b overbought oversold levels 0.8 0.2 1.0（fidelity・stockcharts・bollingerbands・schwab・tradingview に絞った）
+- %b Bollinger strategy entry threshold 0.05 0.1 0.95 optimize short
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | _lowPercentB = Param(nameof(LowPercentB), 0.2m) .SetDisplay("Low %B", "Lower threshold for %B", "Signals") .SetOptimize(0.1m, 0.3m, 0.05m);<br>https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB | 文に両端が在る | 0.1 | 0.3 | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Larry Connors %B） | コードの中の最適化の範囲（SetOptimize の両端と刻み 0.05）。この戦略は「Long/Short: Long only.」で、ロングの入る閾値（探さない物に当たるが、両端の書き方の例として残した）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | _highPercentB = Param(nameof(HighPercentB), 0.8m) .SetDisplay("High %B", "Upper threshold for %B to exit", "Signals") .SetOptimize(0.7m, 0.9m, 0.05m);<br>https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB | 文に両端が在る | 0.7 | 0.9 | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Larry Connors %B） | ロングの決済の閾値（上と同じ注）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 3 | Param(nameof(ExitValue), 0.5m).SetRange(0m, 1m) .SetDisplay("Exit %B Value", "Exit threshold for %B", "Exit") .SetOptimize(0.3m, 0.7m, 0.1m);<br>https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion | 文に両端が在る | 0.3 | 0.7 | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Bollinger Percent B Reversion） | 決済の閾値の最適化の範囲 0.3〜0.7（刻み 0.1）。同じ行の SetRange(0m, 1m) は入力できる範囲。この戦略は「Direction: Both」「CandleType = TimeSpan.FromMinutes(5)」（同じページ）＝両方の向き・既定は5分足。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | Buys when %B < 0 (below lower band), sells when %B > 1 (above upper band).<br>https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion | 値を挙げただけ | None | None | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | ショート | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Bollinger Percent B Reversion） | 売りは %B が 1 より上。本文で照らした道具：curl（空白の数だけそろえた） |
+| 5 | In a strong downtrend, %B can be considered overbought when it approaches or exceeds 1.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator | 値を挙げただけ | None | None | 前提つき | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | 定番の教育サイト（StockCharts ChartSchool） | 前提＝強い下げトレンド。264番でも見つかった文。本文で照らした道具：curl（空白の数だけそろえた） |
+| 6 | Downtrends are identified when %B is below 0.20 and MFI(10) is below 20.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator | 値を挙げただけ | None | None | 前提つき | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | 定番の教育サイト（StockCharts ChartSchool） | Bollinger の %B と MFI の組。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 7 | Use %B crossovers of 0.5 or custom thresholds (e.g., 0.8 / 0.2) to filter trend strength.<br>https://fxreplay.com/indicators/bollinger-bands-b-25fa9 | 値を挙げただけ | None | None | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | 証券会社の解説（FX Replay） | 。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 8 | Exit Signal: Exit the position when the %b value closes above 0.8, signaling an overbought condition where the price is near the upper Bollinger Band.<br>https://www.tradingview.com/script/yXkWPSlU/ | 値を挙げただけ | None | None | 値 | 当てはまる語が無い（%B の値・0〜1 の目盛り） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Larry Connors %b Strategy） | ロングの決済（探さない物に当たるが残した）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 9 | Sell: When %b crosses above 80 (approaching the upper band, signaling stretched conditions).<br>https://sentimentrader.com/education/technical-indicators/bollinger-b | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（SentimenTrader） | %b を 0〜100 の数で書いている（同じページの別の文は 0〜1 で書く）。ロングの決済の文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -134,7 +154,23 @@
 | https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 5664 文字） |
 | https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 3637 文字） |
 
-開いたページは、件ごとに数えて 38 本（同じ URL を除くと 38 本）です。開けなかったページは、件ごとに 10 本（同じ URL を除くと 10 本）です。
+### 4. BB%b｜閾値の範囲（形＝値）
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 9006 文字） |
+| https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 5670 文字） |
+| https://fxreplay.com/indicators/bollinger-bands-b-25fa9 | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 5092 文字） |
+| https://www.luxalgo.com/library/indicator/percent-b/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 7421 文字） |
+| https://www.barchart.com/education/technical-indicators/bollinger_bands_percent | 無い | curl＝HTTP 202／Chromium＝HTTP 202（本文 13959 文字） |
+| https://sentimentrader.com/education/technical-indicators/bollinger-b | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 7046 文字） |
+| https://www.tradingview.com/script/yXkWPSlU/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 7267 文字） |
+| https://www.bollingerbands.com/bollinger-band-rules | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 5572 文字） |
+| https://www.investopedia.com/terms/p/percentb.asp | 開けない | curl＝HTTP 402／Chromium＝HTTP 404（本文 576 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 7970 文字） |
+| https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 6784 文字） |
+
+開いたページは、件ごとに数えて 49 本（同じ URL を除くと 49 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 
