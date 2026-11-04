@@ -101,3 +101,17 @@ engine_tuner のコードと指標データは直していない。net は動か
 - 修正の分＝laws.json・indicators.json・法則一覧.md・要件定義書 レベル4 指標の構造・next_move.py・applied_fixes.json・next_step.md と next_step_src.json（H2 の記録の節）。
 - 監査の分＝結果ファイル CP101・作業場の cp101_result.md・q11_check.py・q12_fix_try.py・cp101_result.review.md。q1_applied の18本の git からの外し。
 - decisions.md は前から変更ありで、この回の作業ではない。
+- 上の一覧は コミット f3761f4d に入れた（まこさん「コミットOK」）。
+
+## §5 248回目の続き＝検査の無駄を減らす（ToDo の254番・256番）
+
+- 254番＝pre_audit_check.py の --run で、入力が前回の成功と同じ H2・G2・自己テスト2本を省く形にした。--full で省かずに走らせる。見本 S1〜S10 は通った。
+- ★私の誤り＝254番を確かめるために、本物の --run を「約5分の見込み」で走らせた。この中の材料の検査（注記に約35分）を数えておらず、18分28秒 走らせた（材料の検査だけで12分46秒）。確かめたい事と無関係で、15分を超える走行の OK も取っていなかった。まこさん「遅くないか？動いてる？」「なんで材料の検査してる？必要なの？」「早く止めて」「無駄な検査は走らせるな」。止めた。記録ファイルは書き替わっていない。記憶 feedback_no_wasteful_checks を足した。
+- 説明の誤り＝「12分」が2つ在り（前のセッションのチェック一式 12分00秒／今日の材料の検査 12分46秒）、混ぜて書いた。「前回」も2つの意味で書いた。まこさん「言ってること違うよね」。
+- 256番＝まこさん「無駄な検査を走らせるhookは修正しろ」「無駄なら直して。その直しかたを間違うな」。A＝require_selftest_after_source_edit.py のターンの終わりの止めを外した（知らせは残す）。B＝pre_audit_check.py の材料の検査のハッシュ値から、indicators.json の出どころの文字の欄を除いた。--full で材料の検査も走る形にした。
+- 案から変えた所＝.py の範囲を import の鎖へ狭める案は取り下げた。材料の検査が、import していないファイルも grep で読むため（observe_diag.py:5531〜5541）。
+- 確かめ＝hook の自己テスト 14/14・省くかの見本 S1〜S15（本物の indicators.json と指紋の計算を含む）。本物の --run での省略は未確認（次のチェックで見る）。
+- 次のチェックの予告＝ハッシュ値の作り方を変えたので、次の --run では材料の検査が1回 走る（約35分）。依頼書を作る前にだけ走らせる。
+- 捨てた物＝A：読む道具のうち、チェックの一覧に無い物は、自己テストが落ちても気づくのが遅れる（L-604 と同じ形）。
+- 変えたファイル＝.claude/hooks/require_selftest_after_source_edit.py・.claude/tools/pre_audit_check.py・hook_inventory_src.json・hook_inventory.md。engine_tuner_milestones2.md は検査済みの記録のハッシュ値2か所だけ変わった。コミットはまだ。
+- 残り＝255番（手書きの問いの重なり）。

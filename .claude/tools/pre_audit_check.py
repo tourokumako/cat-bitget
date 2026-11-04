@@ -10,7 +10,9 @@
   ③その1枚が無い・古い・rc が0でないなら監査依頼書を書けなくする（hook 側＝部品2）。
 
 使い方:
-  python3 .claude/tools/pre_audit_check.py --run       # 決まった順番で走らせ、結果を json に書く
+  python3 .claude/tools/pre_audit_check.py --run       # 決まった順番で走らせ、結果を json に書く（入力が前回の成功と同じ重い検査4本は省く）
+  python3 .claude/tools/pre_audit_check.py --run --full  # 省かずに全部 走らせる
+  python3 .claude/tools/pre_audit_check.py --selftest-skip  # 省くかの判定の見本だけを走らせる
   python3 .claude/tools/pre_audit_check.py --verify    # その json が在る・新しい・全部 rc=0 かを確かめる（違えば exit 1）
   python3 .claude/tools/pre_audit_check.py --selftest  # 番人 P1〜P8
 
@@ -214,6 +216,33 @@ def _v9_sources() -> list:
     return []
 
 
+# ★2026-11-04（ToDo の256番・まこさん「無駄なら直して。その直しかたを間違うな」）＝indicators.json の出どころの文字の欄を、材料の検査の指紋から除く。
+#   なぜ＝出どころの行番号4か所を直しただけで、材料の検査（約35分）が走り直した。指標の計算と材料の検査は、この文字を読まない
+#   （2026-11-04 に indicators.py と scripts/priority_rebuild 直下の .py を grep で確かめた）。
+#   除かない物＝辞書の形の出どころ（indicators.py:196 が中の「確かめの強さ」を照らす）。
+#   ★.py の範囲は狭めない＝材料の検査は、import していないファイル（e37_range_scalp.py ほか）も grep で読むため（observe_diag.py:5531〜5541）。
+def _drop_text_source(o):
+    """中身から、出どころの文字の欄だけを除いた写しを返す。"""
+    if isinstance(o, dict):
+        return {k: _drop_text_source(v) for k, v in o.items() if not (k == "出どころ" and isinstance(v, str))}
+    if isinstance(o, list):
+        return [_drop_text_source(v) for v in o]
+    return o
+
+
+def _materials_bytes(p: pathlib.Path) -> bytes:
+    """指紋に入れる中身。indicators.json だけ、出どころの文字の欄を除く。読めなければ中身のまま（省かない側へ倒す）。"""
+    if not p.exists():
+        return b"<no file>"
+    raw = p.read_bytes()
+    if p != PR / "indicators/indicators.json":
+        return raw
+    try:
+        return json.dumps(_drop_text_source(json.loads(raw)), ensure_ascii=False, sort_keys=True).encode()
+    except ValueError:
+        return raw
+
+
 def materials_fingerprint() -> str:
     """材料の検査が読むファイルの指紋（中身と、V9 の3本の最後のコミット）。"""
     h = hashlib.sha256()
@@ -224,7 +253,7 @@ def materials_fingerprint() -> str:
              + [SDK / rel for rel in v9])
     for p in files:
         h.update(str(p).encode())
-        h.update(p.read_bytes() if p.exists() else b"<no file>")
+        h.update(_materials_bytes(p))
     for rel in v9:
         last = subprocess.run(["git", "-C", str(SDK), "log", "-1", "--format=%H", "--", rel], capture_output=True, text=True).stdout.strip()
         h.update(f"{rel}:{last}".encode())
@@ -238,8 +267,8 @@ def materials_fingerprint() -> str:
     return h.hexdigest()
 
 
-def materials_row(cmd: str) -> tuple[str, dict]:
-    """材料の検査の行＝①一覧の sha256 を照らす ②指紋が前回 rc 0 と同じなら走らせない ③走らせて rc 0 なら指紋を記録する。戻り＝(画面の1行, 記録の行)。"""
+def materials_row(cmd: str, full: bool = False) -> tuple[str, dict]:
+    """材料の検査の行＝①一覧の sha256 を照らす ②指紋が前回 rc 0 と同じなら走らせない（full なら走らせる）③走らせて rc 0 なら指紋を記録する。戻り＝(画面の1行, 記録の行)。"""
     t0 = time.time()
     kp = known_materials_problem()
     if kp:
@@ -249,7 +278,7 @@ def materials_row(cmd: str) -> tuple[str, dict]:
         last = json.loads(MATERIALS_PASS.read_text(encoding="utf-8")) if MATERIALS_PASS.exists() else {}
     except ValueError:
         last = {}
-    if last.get("fingerprint") == fp and last.get("rc") == 0:
+    if not full and last.get("fingerprint") == fp and last.get("rc") == 0:
         note = f"走らせていない＝検査の読むファイルの指紋が、前回 rc 0 で通ったとき（{last.get('at')}）と同じ"
         return f"  省略 {cmd}  rc=0（{note}）", dict(cmd=cmd, kind="check", rc=0, skipped=True, note=note)
     rc = _run(cmd)
@@ -275,9 +304,145 @@ def known_ng(cmd: str, rc: int, out: str) -> bool:
     return bool(k) and rc != 0 and hashlib.sha256(out.encode("utf-8")).hexdigest() == k["sha"]
 
 
-def run(design: str | None = None) -> int:
-    """決まった順番で走らせ、結果を json に書く。"""
+# ★2026-11-04（ToDo の254番・まこさん「このあとすぐに修正してほしい」）＝入力が前回の成功と同じ重い検査4本は走らせない。
+#   なぜ＝文字2行の直しで12分00秒かかった。内訳＝H2 350.0秒・observe_diag の自己テスト 208.9秒・gen_materials の自己テスト 81.5秒・G2 73.8秒。
+#   G2 と H2＝検査済みの記録の対象のファイルのハッシュ値が、記録と同じなら省く（hook enforce_g2_pass・enforce_h2_pass が走行を通す条件と同じ）。
+#   自己テスト2本＝input_fingerprint が、前回 rc 0 のときと同じなら省く。
+#   限界＝ライブラリの版が変わってもハッシュ値は変わらない。入力の範囲の外を読むようになった変化は見つけられない。省きたくないときは --full。
+PASS_RECORDS = {"gen_signal_families.py --verify": ROOT / ".claude/state/g2_pass.json",
+                "leak_causality_diag.py": ROOT / ".claude/state/h2_pass.json"}
+INPUT_FP_CHECKS = ("observe_diag.py --selftest", "gen_materials.py --selftest")
+LAWS_FILES = ("laws/laws.json", "laws/laws.py")
+
+
+def _pass_fingerprint(files: list, root: pathlib.Path = ROOT) -> str:
+    """検査済みの記録のハッシュ値と同じ計算（leak_causality_diag.h2_fingerprint・enforce_g2_pass.fingerprint と同じ）。"""
+    h = hashlib.sha256()
+    for rel in sorted(files):
+        p = root / rel
+        h.update(rel.encode())
+        h.update(hashlib.sha256(p.read_bytes()).digest() if p.exists() else b"<missing>")
+    return h.hexdigest()
+
+
+def pass_record_time(path: pathlib.Path, root: pathlib.Path = ROOT) -> str | None:
+    """検査済みの記録が在り、対象のファイルが全部在り、ハッシュ値が同じなら、記録の時刻を返す。違えば None。"""
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    files = d.get("files") or []
+    if not files or d.get("missing") or any(not (root / rel).exists() for rel in files):
+        return None
+    return str(d.get("when")) if d.get("fingerprint") == _pass_fingerprint(files, root) else None
+
+
+def _reads_laws(texts) -> bool:
+    """プログラムの文の中に、法則のデータの読む口を呼ぶ書き方が在るか。"""
+    return any(w in t for t in texts for w in ("laws/laws", "import laws", "from laws"))
+
+
+def input_fingerprint() -> str:
+    """重い自己テスト2本の入力のハッシュ値。laws.json は、直下のプログラムが読み始めたら自動で入れる。"""
+    h = hashlib.sha256(materials_fingerprint().encode())
+    ratchet = sorted(p for p in (SDK / ".claude/ratchet").iterdir() if p.is_file() and p.name != "decisions.md")
+    extra = [SDK / ".claude/memory/regime_detection_kb.md", PR / "indicators/indicators.json"]   # 自己テストの側は、出どころの文字も入力に数える（省く側を広げない）
+    if _reads_laws(p.read_text(encoding="utf-8", errors="replace") for p in PR.glob("*.py")):
+        extra += [PR / rel for rel in LAWS_FILES]
+    for p in ratchet + extra:
+        h.update(str(p).encode())
+        h.update(p.read_bytes() if p.exists() else b"<no file>")
+    return h.hexdigest()
+
+
+def skip_note(cmd: str, last_rows: list, fp: str | None = None, records: dict | None = None,
+              root: pathlib.Path = ROOT) -> str | None:
+    """この検査を省けるなら、記録に書く理由を返す。省けないなら None。"""
+    records = PASS_RECORDS if records is None else records
+    if cmd in records:
+        when = pass_record_time(records[cmd], root)
+        return f"走らせていない＝検査済みの記録（{when}）の対象のファイルが、記録と同じ" if when else None
+    if cmd in INPUT_FP_CHECKS:
+        last = next((r for r in last_rows if r.get("cmd") == cmd), None)
+        if fp and last and last.get("rc") == 0 and last.get("input_fp") == fp:
+            return "走らせていない＝入力のハッシュ値が、前回 rc 0 のときと同じ"
+    return None
+
+
+def _last_rows() -> list:
+    """前回のチェックの行。読めなければ空＝何も省かない。"""
+    try:
+        return json.loads(OUT.read_text(encoding="utf-8")).get("rows") or []
+    except (OSError, ValueError):
+        return []
+
+
+def skip_selftest() -> list:
+    """省くかの判定の見本（本物のファイルに触らない）。戻り＝落ちた見本の説明。"""
+    import tempfile
+    ng = []
+    with tempfile.TemporaryDirectory() as td:
+        root = pathlib.Path(td)
+        (root / "a.py").write_text("1", encoding="utf-8")
+        rec = root / "pass.json"
+        cmd = "見本の検査"
+        rs = {cmd: rec}
+
+        def write_rec(files: list, fp: str, missing: list) -> None:
+            rec.write_text(json.dumps(dict(files=files, fingerprint=fp, missing=missing, when="見本の時刻"), ensure_ascii=False),
+                           encoding="utf-8")
+
+        good = _pass_fingerprint(["a.py"], root)
+        write_rec(["a.py"], good, [])
+        if not skip_note(cmd, [], records=rs, root=root):
+            ng.append("S1: 対象のファイルが記録と同じなのに省かない")
+        (root / "a.py").write_text("2", encoding="utf-8")
+        if skip_note(cmd, [], records=rs, root=root):
+            ng.append("S2: 対象のファイルを変えたのに省く")
+        (root / "a.py").write_text("1", encoding="utf-8")
+        write_rec(["a.py"], good, ["b.py"])
+        if skip_note(cmd, [], records=rs, root=root):
+            ng.append("S3: 記録に無いファイルが在るのに省く")
+        rec.unlink()
+        if skip_note(cmd, [], records=rs, root=root):
+            ng.append("S4: 記録が無いのに省く")
+    if skip_note("gen_materials.py --verify", [dict(cmd="gen_materials.py --verify", rc=0, input_fp="x")], fp="x"):
+        ng.append("S5: 省く一覧に無い検査を省く")
+    c = INPUT_FP_CHECKS[0]
+    if not skip_note(c, [dict(cmd=c, rc=0, input_fp="x")], fp="x"):
+        ng.append("S6: 入力が前回の成功と同じなのに省かない")
+    if skip_note(c, [dict(cmd=c, rc=0, input_fp="x")], fp="y"):
+        ng.append("S7: 入力が変わったのに省く")
+    if skip_note(c, [dict(cmd=c, rc=1, input_fp="x")], fp="x"):
+        ng.append("S8: 前回が失敗なのに省く")
+    if skip_note(c, [], fp="x"):
+        ng.append("S9: 前回の記録が無いのに省く")
+    if not _reads_laws(["from laws import x"]) or _reads_laws(["regime_laws.json"]):
+        ng.append("S10: 法則のデータを読むプログラムの見分けが違う")
+    # ★S11〜S14（ToDo の256番）＝材料の検査の指紋から除くのは、出どころの文字の欄だけ
+    base = {"閾値": {"代表の値": 70}, "出どころ": "a.json:69", "オン/オフと出どころ": {"状態": "オン", "出どころ": "a.json:69"}}
+    moved = {"閾値": {"代表の値": 70}, "出どころ": "a.json:70", "オン/オフと出どころ": {"状態": "オン", "出どころ": "a.json:70"}}
+    if _drop_text_source(base) != _drop_text_source(moved):
+        ng.append("S11: 出どころの文字だけの直しで、指紋の中身が変わる")
+    if _drop_text_source(base) == _drop_text_source({**base, "閾値": {"代表の値": 75}}):
+        ng.append("S12: 閾値を直しても、指紋の中身が変わらない")
+    if _drop_text_source({"出どころ": {"確かめの強さ": "強"}}) == _drop_text_source({"出どころ": {"確かめの強さ": "弱"}}):
+        ng.append("S13: 辞書の形の出どころ（確かめの強さ）を直しても、指紋の中身が変わらない")
+    if _drop_text_source({"オン/オフと出どころ": {"状態": "オン"}}) == _drop_text_source({"オン/オフと出どころ": {"状態": "オフ"}}):
+        ng.append("S14: オン/オフを直しても、指紋の中身が変わらない")
+    # S15＝本物の indicators.json を読めて、出どころの文字の欄が除かれている（読めないと中身のままになり、指紋は動くが省けない）
+    _ind = PR / "indicators/indicators.json"
+    if _materials_bytes(_ind) == _ind.read_bytes() or '"出どころ": "identity_s1_legacy.json:70"' in _materials_bytes(_ind).decode():
+        ng.append("S15: 本物の indicators.json から、出どころの文字の欄を除けていない")
+    if len(materials_fingerprint()) != 64:
+        ng.append("S15: 本物のファイルで材料の検査の指紋を作れない")
+    return ng
+
+
+def run(design: str | None = None, full: bool = False) -> int:
+    """決まった順番で走らせ、結果を json に書く。full＝入力が同じでも省かずに走らせる。"""
     rows = []
+    last_rows = [] if full else _last_rows()
     print("=" * 70)
     print("監査に出す前のチェック（決まった順番で走らせます）")
     print("=" * 70)
@@ -291,6 +456,11 @@ def run(design: str | None = None) -> int:
             print(f"       python3 scripts/priority_rebuild/{cmd.split()[0]} --approve")
             rows.append(dict(cmd=cmd, kind=kind, rc=None, note="まこさんの承認が要る"))
             continue
+        skip = None if full else skip_note(cmd, last_rows)
+        if skip:
+            print(f"  省略 {cmd}  rc=0（{skip}）")
+            rows.append(dict(cmd=cmd, kind=kind, rc=0, skipped=True, note=skip))
+            continue
         t0 = time.time()
         rc = _run(cmd)
         print(f"  {'OK' if rc == 0 else 'NG'} {cmd}  rc={rc}（{time.time() - t0:.1f}秒）")
@@ -299,9 +469,15 @@ def run(design: str | None = None) -> int:
     for cmd in checks_for(design):
         t0 = time.time()
         if cmd == MATERIALS_CHECK:                       # ★2026-10-23（監査 CP86 の修正7・8）＝一覧の sha256 を照らし、指紋が同じなら省く
-            line, row = materials_row(cmd)
+            line, row = materials_row(cmd, full)
             print(line)
             rows.append(row)
+            continue
+        fp_in = input_fingerprint() if cmd in INPUT_FP_CHECKS else None
+        skip = None if full else skip_note(cmd, last_rows, fp_in)
+        if skip:
+            print(f"  省略 {cmd}  rc=0（{skip}）")
+            rows.append(dict(cmd=cmd, kind="check", rc=0, skipped=True, input_fp=fp_in, note=skip))
             continue
         if cmd in KNOWN_NG:
             rc, out = _run_out(cmd)
@@ -313,7 +489,7 @@ def run(design: str | None = None) -> int:
         else:
             rc = _run(cmd)
         print(f"  {'OK' if rc == 0 else 'NG'} {cmd}  rc={rc}（{time.time() - t0:.1f}秒）")
-        rows.append(dict(cmd=cmd, kind="check", rc=rc, note="監査に出す前の検査"))
+        rows.append(dict(cmd=cmd, kind="check", rc=rc, note="監査に出す前の検査", **({"input_fp": fp_in} if fp_in else {})))
     data = dict(_これは何か="監査に出す前のチェックの結果（pre_audit_check.py が書く＝手で書き換えない）",
                 at=time.strftime("%Y-%m-%d %H:%M:%S"), fingerprint=code_fingerprint(),
                 design=os.path.abspath(design) if design else DEFAULT_DESIGN, rows=rows)
@@ -451,6 +627,8 @@ def selftest() -> int:
         for _m in _MUST_IN_CHECKS:
             if _m not in CHECKS:
                 ng.append(f"P8: 監査の前に走らせる一覧から外されている: {_m}")
+        # ★P11（2026-11-04・ToDo の254番）＝省くかの判定の見本
+        ng += skip_selftest()
         # ★P9（2026-10-20）＝照らした設計書が問われた設計書と違えば止まり、同じなら通る。一覧の照合の行だけが替わる
         _other = str(ROOT / ".claude/state/_selftest_other_design.md")
         OUT.write_text(ok_json, encoding="utf-8")            # 記録に設計書の名前が無い＝acceptance.md を照らした記録
@@ -707,8 +885,14 @@ def main() -> int:
     if _dz and not os.path.isfile(_dz):
         print(f"❌ --design の設計書が無い: {_dz}")
         return 2
+    if "--selftest-skip" in a:
+        _ng = skip_selftest()
+        for _x in _ng:
+            print("  NG " + _x)
+        print(("❌" if _ng else "✅") + f" --selftest-skip: 省くかの判定の見本（S1〜S15・落ちた {len(_ng)} 件）")
+        return 1 if _ng else 0
     if "--run" in a:
-        return run(_dz)
+        return run(_dz, "--full" in a)
     if "--verify" in a:
         return verify(_dz, "--before-impl" in a)
     if "--check-indicator-sources" in a:

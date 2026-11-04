@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""require_selftest_after_source_edit.py — テンプレや元データを書き替えたら、それを読む道具の自己テストを走らせるまでターンを終われなくする。
+"""require_selftest_after_source_edit.py — テンプレや元データを書き替えたら、それを読む道具の自己テストの一覧を知らせる（止めない）。
 
 まこさん指示 2026-09-16（逐語）＝「この３つのミスを繰り返さない仕組みを作れ」。
 next_step §0-2 の仕組み2・教訓 L-604。
@@ -19,9 +19,8 @@ next_step §0-2 の仕組み2・教訓 L-604。
   stop（Stop）
     ③ 記録の道具ごとに、書き替えた時刻より後に「その道具の名前と --selftest を含む Bash のコマンド」を
        私が打ったかを、やり取りの記録（transcript）から探す。打っていれば記録から消す。
-    ④ 1本でも残っていれば、打つコマンドの一覧を出してターンを終われなくする（rc=2）。
-       ★落ちた自己テストでも「打った」は数える＝落ちたまま終われなくなる行き止まりは作らない。
-         落ちた結果を報告するのは私の仕事（ここは見ない）。
+    ④ 残っていても止めない（rc=0・2026-11-04 の256番）。走らせるかは、今回の直しに関わるかで私が決める。
+       この判断は hook に見えない。どれかが落ちていても、監査に出す前のチェックの一覧に無い道具なら、気づくのが遅れる。
 
 テンプレか元データ（is_source）
   名前に template を含む（.py・.sh を除く）／または .json（.claude/state/sessions の中と settings*.json を除く）。
@@ -162,13 +161,13 @@ def post(data: dict) -> int:
         e = d.get(r) or {"sources": [], "since": t}
         if fp not in e["sources"]:
             e["sources"].append(fp)
-        e["since"] = t                             # 書き替えるたびに、その後の走行を求め直す（止めは今までどおり）
+        e["since"] = t                             # 書き替えるたびに、その後の走行を数え直す
         d[r] = e
     save(p, d)
     if not new:
         return 0
     print(f"📋 [自己テストを求める記録] {Path(fp).name} を読む道具のうち、自己テストを持つもの {len(new)} 本を記録しました"
-          "（まこさん指示 2026-09-16・L-604）。ターンを終える前に、全部 走らせてください:", file=sys.stderr)
+          "（まこさん指示 2026-09-16・L-604）。止めません。今回の直しに関わる物だけを走らせてください:", file=sys.stderr)
     for r in new:
         print(f"   python3 {r} --selftest", file=sys.stderr)
     return 2
@@ -211,16 +210,10 @@ def stop(data: dict) -> int:
             continue
         left[r] = e
     save(p, left)
-    if not left:
-        return 0
-    print("🔒 [自己テストを走らせるゲート] テンプレや元データを書き替えたのに、それを読む道具の自己テストをまだ走らせていません"
-          "（まこさん指示 2026-09-16「この３つのミスを繰り返さない仕組みを作れ」・L-604）。", file=sys.stderr)
-    for r, e in left.items():
-        srcs = "・".join(Path(s).name for s in e.get("sources", []))
-        print(f"   ❌ python3 {r} --selftest   （書き替えたもの: {srcs}）", file=sys.stderr)
-    print("   ＝全部 走らせてから終えてください。落ちたら、その結果を報告してください（落ちても「走らせた」は数えます）。",
-          file=sys.stderr)
-    return 2
+    # ★2026-11-04（ToDo の256番・まこさん「無駄な検査を走らせるhookは修正しろ」「無駄なら直して」）＝ターンの終わりの止めをやめた。
+    #   直す前は、.json を1つ Edit すると、読む道具の自己テストを全部 走らせるまで終われなかった（直す前の行は git の commit f3761f4d に在る）。
+    #   いま＝post の知らせだけ。この関数は「走らせた道具を記録から消す」ことだけをする（消えた道具は、次に書き替えたときにまた知らせる）。
+    return 0
 
 
 def main(mode: str, raw: str) -> int:
@@ -293,6 +286,9 @@ def selftest() -> int:
             third = post(data)
         ok("P2 新しく加わった道具が在る → その道具だけ知らせる（rc=2）",
            (third, r0 in buf.getvalue(), sum(1 for r in d if r in buf.getvalue())), (2, True, 0))
+        kept = load(pend)
+        ok("S0 自己テストを走らせていなくても、ターンの終わりで止めない（rc=0）", stop({"session_id": sid, "transcript_path": ""}), 0)
+        ok("S1 走らせていない道具は、記録に残す", set(load(pend)) == {r for r in kept if Path(r).is_file()}, True)
     finally:
         shutil.rmtree(pend.parent, ignore_errors=True)
     print(f"自己テスト {total - bad}/{total}")
