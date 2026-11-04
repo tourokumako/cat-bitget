@@ -16,6 +16,7 @@
 | 4 | BB%b | 閾値の範囲（形＝値） | 両端の文が在る | 3 | 9 | 11 | StockSharp の戦略の例のコードの最適化の範囲（0.1〜0.3・0.7〜0.9・0.3〜0.7）。うち2つはロングだけの戦略 |
 | 5 | ATR% | 閾値の範囲（形＝値か倍率） | 両端の文が在る | 2 | 5 | 14 | 損切りの幅の ATR の倍率（1.5〜3.0・スキャル 1.0〜1.5）。ATR% の値の閾値の両端の文ではない |
 | 6 | 基準線 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 4 | 10 | — |
+| 7 | DI差 | パラメータ n の範囲 | 両端の文が在る | 4 | 8 | 10 | DMI の期間の両端（5〜7・10〜14・20〜30・7〜10） |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -131,6 +132,23 @@
 | 3 | MaFilterPips 6 Minimum LWMA-to-Kijun distance in pips.<br>https://doc.stocksharp.com/en/api-examples/2527_Kijun_Sen_Robot | 値を挙げただけ | None | None | 値 | 値段 | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Kijun Sen Robot） | 単位が値段かドル（pips）。線形加重の移動平均と基準線の離れで、終値と基準線の離れではない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 4 | When the price moves far away from this line, it is likely to return to this level.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | 書いてない | None | None | 値 | % | 一般 | 時間足は書いてない | 証券会社の解説（LiteFinance） | 数が書いてない。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 
+### 7. DI差｜パラメータ n の範囲（結果：両端の文が在る）
+
+使った検索の語：
+- DMI period setting range 7 to 21 short-term traders directional movement index length
+- DMI directional movement index period length shorter longer settings（fidelity・stockcharts・schwab・tradingview・babypips に絞った）
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Optimal Period for DMI: A shorter period, like 5 to 7 days, is more responsive to price movements.<br>https://www.brokercheck.co.za/?p=17435 | 文に両端が在る | 5 | 7 | 値 | 当てはまらない（パラメータの本数） | 一般 | days | ブログ（brokercheck.co.za） | DMI の期間。同じページに 10〜14 と 20〜30 の文が在る（下の2行）。本文で照らした道具：Chromium（空白の数だけそろえた） |
+| 2 | Optimal Period for DMI: A moderate period, such as 10 to 14 days, balances responsiveness with reliability.<br>https://www.brokercheck.co.za/?p=17435 | 文に両端が在る | 10 | 14 | 値 | 当てはまらない（パラメータの本数） | 一般 | days | ブログ（brokercheck.co.za） | 本文で照らした道具：Chromium（空白の数だけそろえた） |
+| 3 | Optimal Period for DMI: A longer period, like 20 to 30 days, reduces sensitivity to short-term price fluctuations.<br>https://www.brokercheck.co.za/?p=17435 | 文に両端が在る | 20 | 30 | 値 | 当てはまらない（パラメータの本数） | 一般 | days | ブログ（brokercheck.co.za） | 本文で照らした道具：Chromium（空白の数だけそろえた） |
+| 4 | Shorter Periods (like 7-10): Using a shorter lookback makes the DMI much more sensitive to recent price swings.<br>https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index | 文に両端が在る | 7 | 10 | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ブログ（ChartsWatcher） | 同じページに「A longer period, like 21 or 28, smooths everything out」が在る（値を挙げただけ）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 5 | A longer period, like 21 or 28, smooths everything out, giving you more reliable signals but getting you into trends a bit later.<br>https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ブログ（ChartsWatcher） | 本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 6 | optInTimePeriod integer 14 1–100000 Wilder smoothing period<br>https://ta-lib.org/functions/plus_di.html | 入力できる範囲 | 1 | 100000 | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ライブラリの説明書（TA-Lib の PLUS_DI） | 264番でも見つかった文。MINUS_DI の頁にも同じ行が在る。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 7 | Lower values (e.g., 7): more sensitive, more signals Higher values (e.g., 21): more stable, less noise<br>https://in.tradingview.com/script/FstitqUD/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Average Directional Index info） | ADX の平滑化の期間（Smoothing）の文。DI の長さ（Indicator Length）の既定は同じ行の後ろの 14。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 8 | Period 21 is the slower alternative when one day dominates the reading.<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ブログ（The Right Trader） | DI と ADX の期間の話（同じページの「set both to 14」）。同じページに「Dropping the period to 7 on daily crypto makes ADX shout on one wide day.」が在る。本文で照らした道具：curl（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -236,7 +254,22 @@
 | https://articles.stockcharts.com/article/stockcharts-insider-a-practical-guide-to-the-ichimoku-kijun-sen-pullback/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 9228 文字） |
 | https://www.tradingview.com/script/9FGkF2Pq-Ichimoku-With-Grading/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6212 文字） |
 
-開いたページは、件ごとに数えて 73 本（同じ URL を除くと 73 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
+### 7. DI差｜パラメータ n の範囲
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 25897 文字） |
+| https://trendspider.com/learning-center/a-comprehensive-guide-to-the-directional-movement-index-dmi-for-traders/ | 開けない | curl＝HTTP 応答なし／Chromium＝HTTP 502（本文 23 文字）／WebFetch は本文が空／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://tabtrader.com/helpcenter/ios/technical-analysis-and-indicators/dmi | 開けない | curl＝HTTP 応答なし／Chromium＝error: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://tabtrader.com/helpcenter（本文 0 文字）／WebFetch はこのセッションで名前を引けない（ENOTFOUND）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://tradersunion.com/interesting-articles/forex-indicators-for-traders/dmi-indicator | 無い | curl＝HTTP 403／Chromium＝HTTP 403（本文 22121 文字） |
+| https://www.brokercheck.co.za/?p=17435 | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 20069 文字） |
+| https://ta-lib.org/functions/plus_di.html | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 2103 文字） |
+| https://ta-lib.org/functions/minus_di.html | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 2095 文字） |
+| https://www.babypips.com/learn/forex/average-directional-index | 開けない | curl＝HTTP 403／Chromium＝HTTP 403（本文 264 文字）／WebFetch も 403／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi | 無い | curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字） |
+| https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 在る | curl＝HTTP 200／Chromium＝HTTP 503（本文 0 文字） |
+
+開いたページは、件ごとに数えて 83 本（同じ URL を除くと 80 本）です。開けなかったページは、件ごとに 14 本（同じ URL を除くと 13 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 
