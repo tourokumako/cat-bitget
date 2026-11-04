@@ -101,7 +101,7 @@ ROLES = {
 #   ＝.claude/state の直下に在ってよい物の表。表に無いファイルやフォルダが増えると --verify が止める（Stop hook が呼ぶ＝ターンを終われない）。
 #   プログラムが作った物もシェルで作った物も、在れば見つかる。足すのは まこさんの OK の後だけ。
 STATE_ROLES = (
-    ("引き継ぎ（次にやること）", ("next_step.md", "next_step_src.json", "next_step_fixed.md", "next_step_fixed_approved.json",
+    ("引き継ぎ（次にやること）", ("todo.md", "next_step.md", "next_step_src.json", "next_step_fixed.md", "next_step_fixed_approved.json",
                                  "next_step_reference.md", "next_step_archive_*.md", "next_step_history_*.md", "must_read_now.txt")),
     ("日付ごとの作業の記録", ("session_worklog_*.md",)),
     ("設計書と承認", ("acceptance.md", "acceptance.approved", "design_approved.json", "design_read_plan.md", "design_read_plan_posted",

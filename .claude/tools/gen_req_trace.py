@@ -110,7 +110,9 @@ def known_numbers(root: pathlib.Path = ROOT) -> set:
     out: set = set()
     p = root / NEXT_STEP.relative_to(ROOT)
     if p.exists():
-        out |= set(re.findall(r"^\|\s*\**(\d+)\**\s*\|", p.read_text(encoding="utf-8"), flags=re.M))
+        out |= set(todo_rows(root))                     # ★2026-11-04（268番）＝表の左端は「順」なので、番号は元データから読む
+        if not (p.parent / "next_step_src.json").exists():
+            out |= set(re.findall(r"^\|\s*\**(\d+)\**\s*\|", p.read_text(encoding="utf-8"), flags=re.M))
     m2 = root / M2_TODO.relative_to(ROOT)
     if m2.exists():
         for t in json.loads(m2.read_text(encoding="utf-8")).get("やること") or []:
@@ -126,6 +128,18 @@ def todo_rows(root: pathlib.Path = ROOT) -> dict:
         return {}
     text = p.read_text(encoding="utf-8")
     m3 = re.search(r"^\*\*③ ToDo の表\*\*.*?(?=^\*\*④ )", text, flags=re.M | re.S)
+    # ★2026-11-04（268番）＝next_step.md の ToDo の表は、左端が上から数えた「順」の短い形で出す。番号と全文は元データから読む。
+    src_p = p.parent / "next_step_src.json"
+    if src_p.exists():
+        rows = {}
+        for sec in json.loads(src_p.read_text(encoding="utf-8")).get("節", []):
+            for blk in sec.get("塊", []):
+                t = blk.get("表") if isinstance(blk, dict) else None
+                if t and t.get("見出しの行", "").strip().startswith("| 番号 | やること | 状態"):
+                    for r in t.get("行", []):
+                        if "欄" in r:
+                            rows[r["欄"][0].strip()] = "|" + "|".join(r["欄"]) + "|"
+        return rows
     return {m.group(1): m.group(0) for m in re.finditer(r"^\|\s*\**(\d+)\**\s*\|.*$", m3.group(0) if m3 else text, flags=re.M)}
 
 

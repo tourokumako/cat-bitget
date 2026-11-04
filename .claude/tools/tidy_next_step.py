@@ -693,11 +693,84 @@ def render(src: dict) -> str:
                 out.extend(_core_lines())
             else:
                 t = blk["表"]
+                if t["見出しの行"].strip() == TODO_HEAD:
+                    out.extend(_todo_view(t["行"]))
+                    continue
                 out.append(t["見出しの行"])
                 out.append(t["区切り"])
                 for r in t["行"]:
                     out.append("|" + "|".join(r["欄"]) + "|" if "欄" in r else r["生"])
     return "\n".join(out) + ("\n" if src.get("末尾の改行", True) else "")
+
+
+# ★2026-11-04（268番・まこさん「見辛い」「認識できない」「汚い」「クラウドセッションに依頼するのと、わけたり」）
+#   ＝next_step.md の ToDo の表は、読むための短い形で出す。工事・クラウドへの依頼・後で の3つに分ける。
+#     全文は元データに残す（--todo-show <番号> で出す）。元データの並びは変えない。
+TODO_VIEW_MAX = 44
+
+
+def _todo_short(text: str) -> str:
+    head = text.strip().split("。")[0]
+    s = head.split("（")[0].strip()
+    if len(s) < 14:                                      # 括弧で切ると短すぎて中身が分からない行（②レベル2（…）の情報を整理する ほか）
+        s = head.strip()
+    for mark in ("クラウド｜", "後｜"):                   # 表の区切りの行で分かるので、頭の印は出さない
+        s = s.removeprefix(mark)
+    return s if len(s) <= TODO_VIEW_MAX else s[:TODO_VIEW_MAX - 1] + "…"
+
+
+def _todo_state_short(state: str) -> str:
+    s = state.strip()
+    return s.split("／")[0].strip() if s.startswith(TAKEN) else s.split("（")[0].strip()
+
+
+def _todo_view(rows: list) -> list:
+    """next_step.md には ToDo の一覧の置き場だけを書く（節に分けると、全体の行数の上限 250 に入らない）。"""
+    return [f"一覧＝`.claude/state/{TODO_FILE}`（{sum(1 for r in rows if '欄' in r)}行・節ごとに上から順。行の元データ＝`next_step_src.json`。足す＝--todo-add・全文＝--todo-show）。"]
+
+
+# ★2026-11-04（268番・まこさん「これみたいに整理してほしい」＝248回目の session_todo.md の形）
+#   ＝ToDo の一覧を、節に分けた読むための文書にする。プログラムが元データから作る（手で書き替えない・(g) が照らす）。
+TODO_FILE = "todo.md"
+TODO_SECTIONS = (("クラウドのセッションに頼む物（上から順に1本ずつ）", "クラウド｜"), ("1. データの形を直す", "②"), ("2. 9種の値を埋める", "③"),
+                 ("3. 9種で最初から最後まで通す", "④"), ("4. 残りの指標や場面に広げる", "⑤"),
+                 ("時期が決まっていないもの", "未定"), ("後でやるもの", "後で"), ("セッションの終わり", "締め"))
+
+
+def _todo_section(cells: list) -> str:
+    """行の節。文の頭の印で決まる。印の無い行は、締め・後で・未定 に分ける。"""
+    for _t, mark in TODO_SECTIONS[:5]:
+        if cells[1].startswith(mark):
+            return mark
+    if CLOSE_ROW_RE.search(cells[1]):
+        return "締め"
+    return "後で" if cells[2].startswith("後で") else "未定"
+
+
+def todo_list_text(src: dict) -> str | None:
+    """ToDo の一覧の文書の全文（ToDo の表が無ければ None）。"""
+    rows = _todo_table(src)
+    if rows is None:
+        return None
+    plain = [r for r in rows if "欄" in r]
+    out = ["# ToDo（next_step_src.json の ToDo の行からプログラムが作った＝手で書き替えない）", "",
+           "上の節から順に進めます。番号の順ではありません。番号は、作業の記録が行を指す名前です。節の中は上から順です。",
+           "行を足す＝`tidy_next_step.py --todo-add`（番号はプログラムが振る）。"]
+    for title, mark in TODO_SECTIONS:
+        mine = [r for r in plain if _todo_section(_cells(r)) == mark]
+        if not mine:
+            continue
+        out += ["", f"## {title}", "", "| 番号 | やること | 状態 |", "|---|---|---|"]
+        out += [f"| {_cells(r)[0]} | {r.get('短い名前') or _todo_short(_cells(r)[1])} | {_todo_state_short(_cells(r)[2])} |" for r in mine]
+    out += ["", "## 詳しい中身", "", "| 番号 | 元の文 |", "|---|---|"]
+    out += [f"| {_cells(r)[0]} | {_cells(r)[1]} ／ 状態＝{_cells(r)[2]} |" for r in plain]
+    return "\n".join(out) + "\n"
+
+
+def _write_todo_list(next_path: pathlib.Path, src: dict) -> None:
+    text = todo_list_text(src)
+    if text is not None:
+        _atomic_write(next_path.parent / TODO_FILE, text)
 
 
 def strip_gen_head(text: str) -> tuple[str, str | None]:
@@ -864,6 +937,7 @@ def _save_todo(next_path: pathlib.Path, src: dict) -> None:
     _atomic_write(next_path.parent / SRC_NAME, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
     main_part, _ = split_ref(render(src))
     _atomic_write(next_path, gen_head(main_part) + main_part)
+    _write_todo_list(next_path, src)
 
 
 def start_todo(next_path: pathlib.Path, sid: str) -> int:
@@ -886,6 +960,7 @@ def start_todo(next_path: pathlib.Path, sid: str) -> int:
             print(f"[ToDo] {flow}の次＝{fl[0][0]}番（{fl[0][1].split('。')[0][:40]}）")
     print(f"[ToDo] 行の置き場は next_step の③の表だけ。取る＝工事のセッションは tidy_next_step.py --todo-take 工事 --session {sid}"
           f"／クラウドへの依頼のセッションは --todo-take クラウド --session {sid}")
+    print("[ToDo] 行を足す＝番号を手で決めない。tidy_next_step.py --todo-add \"<文>\" [--state <状態>] [--before <番号>] --check <試験> か --no-check <理由>（複数のセッションが同時に動いても重ならない）。1行の全文＝--todo-show <番号>")
     return 0
 
 
@@ -924,6 +999,90 @@ def take_todo(next_path: pathlib.Path, sid: str, what: str, resume: bool = False
         _save_todo(next_path, src)
     print(f"✅ [ToDo] {no}番を取った（{text.split('。')[0][:40]}）")
     return 0
+
+
+# ★2026-11-04（268番・まこさん「セッション複数同時で動いてるから、todo番号の付け方どうにかしてくれ」）
+#   ＝番号をプログラムが出す。直す前は、セッションごとに手で番号を決めて元データへ足し、同じ267番が2つできた。
+#     次の番号を元データに持ち、順番待ちの中で振る＝同時に足しても重ならず、済んで表から消えた番号も使い回さない。
+NEXT_NO_KEY = "ToDo の次の番号"
+
+
+def todo_number_problems(src: dict) -> list:
+    """(u) 番号の重なりと、--todo-add を通さずに足した行を見つける。"""
+    rows = _todo_table(src)
+    if rows is None:
+        return []
+    nums = [_cells(r)[0] for r in rows]
+    ng = []
+    dup = sorted({n for n in nums if nums.count(n) > 1})
+    if dup:
+        ng.append(f"(u) ToDo の番号が重なっている＝{'・'.join(dup)}。行は手で足さず、tidy_next_step.py --todo-add で足す")
+    nxt = src.get(NEXT_NO_KEY)
+    if isinstance(nxt, int):
+        over = [n for n in nums if n.isdigit() and int(n) >= nxt]
+        if over:
+            ng.append(f"(u) 次の番号 {nxt} 以上の行が在る＝{'・'.join(over)}。--todo-add を通さずに足した行。元データの行を消して --todo-add で足す")
+    return ng
+
+
+def add_todo(next_path: pathlib.Path, text: str, state: str = "まだ", before: str | None = None,
+             no_check: str | None = None, check: str | None = None) -> int:
+    """ToDo の行を足す。番号はここで振る。置き場＝--before の行の前／無ければ同じ流れの最後／流れの無い行は流れの行の前。"""
+    text, state = text.strip(), state.strip()
+    if not text or "|" in text or "|" in state:
+        print("❌ [ToDo] 足す文が空か、「|」が在る（表の欄が壊れる）")
+        return 2
+    if bool(no_check) == bool(check):
+        print("❌ [ToDo] --check <試験の番号> か --no-check <確認が要らない理由> のどちらか1つが要る（対応表の検査が設計書を止めるため）")
+        return 2
+    with _todo_lock(next_path):
+        src_path = next_path.parent / SRC_NAME
+        src = json.loads(src_path.read_text(encoding="utf-8"))
+        rows = _todo_table(src)
+        if rows is None:
+            print("❌ [ToDo] 元データに ToDo の表が無い")
+            return 2
+        used = [int(_cells(r)[0]) for r in rows if _cells(r)[0].isdigit()]
+        no = max([int(src.get(NEXT_NO_KEY) or 0)] + [u + 1 for u in used] + [1])
+        flow = _todo_flow(text)
+        if before is not None:
+            at = next((i for i, r in enumerate(rows) if _cells(r)[0] == str(before)), None)
+            if at is None:
+                print(f"❌ [ToDo] --before の {before}番が表に無い")
+                return 2
+        elif flow:
+            at = max((i + 1 for i, r in enumerate(rows) if _todo_flow(_cells(r)[1]) == flow), default=len(rows))
+        else:
+            at = next((i for i, r in enumerate(rows) if _todo_flow(_cells(r)[1])), len(rows))
+        trace = next_path.parent / "req_trace_src.json"
+        new_trace = None
+        if trace.exists():
+            body = trace.read_text(encoding="utf-8")
+            key, val = ('"確認": {', f'"{no}": {json.dumps([check], ensure_ascii=False)}, ') if check else (
+                '"確認が要らない行": {', f'"{no}": {json.dumps(no_check, ensure_ascii=False)}, ')
+            if body.count(key) != 1:
+                print(f"❌ [ToDo] 対応表の元データに {key} がちょうど1か所ない")
+                return 2
+            new_trace = body.replace(key, key + val)
+        rows.insert(at, {"欄": [f" {no} ", f" {text} ", f" {state} "]})
+        src[NEXT_NO_KEY] = no + 1
+        _save_todo(next_path, src)
+        if new_trace is not None:
+            _atomic_write(trace, new_trace)
+    print(f"✅ [ToDo] {no}番を足した（{text.split('。')[0][:40]}）")
+    return 0
+
+
+def show_todo(next_path: pathlib.Path, no: str) -> int:
+    """ToDo の1行の全文を出す（next_step.md の表は短い形なので）。"""
+    src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
+    for r in _todo_table(src) or []:
+        c = _cells(r)
+        if c[0] == str(no):
+            print(f"{c[0]}番\nやること＝{c[1]}\n状態＝{c[2]}")
+            return 0
+    print(f"❌ [ToDo] {no}番が表に無い")
+    return 2
 
 
 def release_todo(next_path: pathlib.Path, sid: str) -> int:
@@ -1187,6 +1346,11 @@ def check_generated(next_path: pathlib.Path) -> list[str]:
     if h != _hash16(body):
         ng.append(f"(g) 目印のハッシュ値 {h} と本文 {_hash16(body)} が違う＝手で書き換えた → 元データ {SRC_NAME} を直して `--write`")
     src = json.loads(src_path.read_text(encoding="utf-8"))
+    ng += todo_number_problems(src)
+    want_list = todo_list_text(src)
+    list_path = next_path.parent / TODO_FILE
+    if want_list is not None and (not list_path.exists() or list_path.read_text(encoding="utf-8") != want_list):
+        ng.append(f"(g) ToDo の一覧 {TODO_FILE} が元データから作ったものと違う → 元データを直して `--write`")
     # ★2026-10-12（172回目）＝元データから作った全文を、毎回読む文書と控えに分けて、それぞれのファイルと照らす。
     main_r, ref_r = split_ref(render(src))
     if main_r != body:
@@ -1244,6 +1408,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     # ★2026-10-12（172回目）＝控えの見出し（REF_HEAD）の行から後ろは、控えのファイルに出す。毎回読む文書には載せない。
     main_part, ref_part = split_ref(new_next)
     _atomic_write(next_path, gen_head(main_part) + main_part)
+    _write_todo_list(next_path, src)
     ref_path = next_path.parent / REF_NAME
     if ref_part:
         _atomic_write(ref_path, gen_head(ref_part) + ref_part)
@@ -1809,6 +1974,63 @@ def selftest() -> int:
         if bad21:
             ng.append(f"T21: ToDo の取り方が違う／{bad21}・{back21}")
 
+    # T22（2026-11-04・268番）＝番号はプログラムが振る。①同時に足しても重ならない ②消えた番号を使い回さない ③--before の前に入る
+    # ④流れの最後に入る ⑤確認の欄が無ければ足さない ⑥対応表に書く ⑦重なり・手で足した行を検査が見つける ⑧表は短い形で3つに分ける
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td)
+        ns22 = tp / "next_step.md"
+        ns22.write_text("x\n", encoding="utf-8")
+        sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2,
+            "行": [{"欄": r} for r in [[" 7 ", " 相談 ", " 後で "], [" 8 ", " ②形 ", " まだ "], [" 9 ", " クラウド｜調べ ", " 依頼前 "]]]}}]}]}
+        (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
+        (tp / "req_trace_src.json").write_text('{"確認": {"1": ["T1"]}, "確認が要らない行": {"2": "x"}}', encoding="utf-8")
+        res22 = {}
+
+        def _rows22():
+            return [_cells(r) for r in _todo_table(json.loads((tp / SRC_NAME).read_text(encoding="utf-8")))]
+        with contextlib.redirect_stdout(io.StringIO()):
+            res22["確認の欄が無ければ足さない"] = add_todo(ns22, "②足す") == 2
+            ths22 = [threading.Thread(target=lambda n=n: add_todo(ns22, f"クラウド｜同時{n}", "依頼前", no_check="調べ")) for n in range(6)]
+            for th in ths22:
+                th.start()
+            for th in ths22:
+                th.join()
+            nums22 = [r[0] for r in _rows22()]
+            res22["同時でも重ならない"] = len(nums22) == len(set(nums22)) == 9
+            add_todo(ns22, "②次", check="T9")
+            res22["流れの最後に入る"] = [r[1] for r in _rows22()][:3] == ["相談", "②形", "②次"]
+            add_todo(ns22, "②前", before="8", no_check="x")
+            res22["前に入る"] = [r[1] for r in _rows22()][1] == "②前"
+            src22 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))
+            top22 = max(int(_cells(r)[0]) for r in _todo_table(src22))
+            _todo_table(src22)[:] = [r for r in _todo_table(src22) if _cells(r)[0] != str(top22)]
+            (tp / SRC_NAME).write_text(json.dumps(src22, ensure_ascii=False), encoding="utf-8")
+            add_todo(ns22, "②消えた後", no_check="x")
+            res22["使い回さない"] = max(int(r[0]) for r in _rows22()) == top22 + 1
+            res22["全文を出せる"] = show_todo(ns22, "8") == 0 and show_todo(ns22, "999") == 2
+        try:
+            tr22 = json.loads((tp / "req_trace_src.json").read_text(encoding="utf-8"))
+            res22["対応表に書く"] = len(tr22["確認"]) == 2 and len(tr22["確認が要らない行"]) == 9
+        except ValueError:
+            res22["対応表に書く"] = False
+        src22 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))
+        res22["いまは問題なし"] = todo_number_problems(src22) == []
+        view22 = todo_list_text(src22).splitlines()
+        at22 = {k: next(i for i, l in enumerate(view22) if k in l) for k in ("## クラウド", "調べ", "## 1. データ", "②形", "## 後で", "相談", "## 詳しい中身")}
+        res22["節に分ける"] = at22["## クラウド"] < at22["調べ"] < at22["## 1. データ"] < at22["②形"] < at22["## 後で"] < at22["相談"] < at22["## 詳しい中身"]
+        _todo_table(src22)[0]["短い名前"] = "短い名前の見本"
+        res22["短い名前を使う"] = "短い名前の見本" in todo_list_text(src22)
+        res22["一覧を書く"] = (tp / TODO_FILE).exists()
+        res22["短くする"] = _todo_short("②長い文の頭。確かめ方（中身）") == "②長い文の頭" and _todo_state_short("まだ（理由）") == "まだ" and _todo_state_short(f"{TAKEN}（ab）／まだ（x）") == f"{TAKEN}（ab）"
+        _todo_table(src22).append({"欄": [" 8 ", " 重なり ", " まだ "]})
+        res22["重なりを見つける"] = any("重なっている" in x for x in todo_number_problems(src22))
+        _todo_table(src22).pop()
+        _todo_table(src22).append({"欄": [f" {src22[NEXT_NO_KEY]} ", " 手で足した ", " まだ "]})
+        res22["手で足した行を見つける"] = any("通さずに足した" in x for x in todo_number_problems(src22))
+        bad22 = [k for k, v in res22.items() if not v]
+        if bad22:
+            ng.append(f"T22: ToDo の番号の振り方か表の形が違う／{bad22}")
+
     # T20（2026-11-02・237回目）＝--todo-from --work が、必読の表を書き替える。work が無ければ書き替えない
     with tempfile.TemporaryDirectory() as td:
         tp = pathlib.Path(td)
@@ -1834,7 +2056,7 @@ def selftest() -> int:
           "／T4b 印の時刻も照らす"
           "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
           "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない"
-          "／T18 --todo-from の決まった書き替え／T19 --todo-start／T20 --todo-from --work／T21 ToDo は順番どおりにしか取れない")
+          "／T18 --todo-from の決まった書き替え／T19 --todo-start／T20 --todo-from --work／T21 ToDo は順番どおりにしか取れない／T22 ToDo の番号はプログラムが振る・表は短い形で3つに分ける")
     for x in ng:
         print(f"  ❌ {x}")
     total = 30
@@ -1863,6 +2085,12 @@ def main() -> int:
                     help="流れの一番上の行を、このセッションの行として取る（流れの途中の行は取れない）。--session が要る")
     ap.add_argument("--todo-done", dest="todo_done", action="store_true", help="このセッションの行を済みにして、表から消す。--session が要る")
     ap.add_argument("--todo-release", dest="todo_release", action="store_true", help="このセッションの行を手放す（済ませずに表へ戻す・順番は変えない）。--session が要る")
+    ap.add_argument("--todo-add", dest="todo_add", metavar="文", help="ToDo の行を足す。番号はプログラムが振る（手で決めない）")
+    ap.add_argument("--todo-show", dest="todo_show", metavar="番号", help="ToDo の1行の全文を出す")
+    ap.add_argument("--state", default="まだ", help="--todo-add と一緒に＝状態の欄")
+    ap.add_argument("--before", metavar="番号", help="--todo-add と一緒に＝この番号の行の前に足す")
+    ap.add_argument("--check", metavar="試験の番号", help="--todo-add と一緒に＝作った後の確認の試験")
+    ap.add_argument("--no-check", dest="no_check", metavar="理由", help="--todo-add と一緒に＝作った後の確認が要らない理由")
     ap.add_argument("--session", metavar="セッションの id")
     ap.add_argument("--resume", action="store_true", help="--todo-take と一緒に＝別のセッションの着手中の行を続ける（まこさんに伺ってから）")
     ap.add_argument("--work", metavar="工事名", help="--todo-from と一緒に＝必読の表を、その工事のいまの段の必読に書き替える（判定は next_move.must_read_for）")
@@ -1875,6 +2103,10 @@ def main() -> int:
         return import_src(a.file)
     if a.todo_start:
         return start_todo(a.file, a.todo_start)
+    if a.todo_add:
+        return add_todo(a.file, a.todo_add, a.state, a.before, a.no_check, a.check)
+    if a.todo_show:
+        return show_todo(a.file, a.todo_show)
     if (a.todo_take or a.todo_done or a.todo_release) and not a.session:
         ap.error("--todo-take・--todo-done・--todo-release には --session が要ります")
     if a.todo_release:
