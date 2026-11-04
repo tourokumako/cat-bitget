@@ -3570,6 +3570,936 @@
     }
    ],
    "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n と s のスキャルの代表の値",
+   "いまの値": {
+    "n": [
+     20
+    ],
+    "s": [
+     2
+    ]
+   },
+   "候補": [
+    {
+     "値": "5分足にも使える",
+     "逐語": "\"Bollinger Bands can be used on bars of any length, 5 minutes, one hour, daily, weekly, etc.\"",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "daily・weekly",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（281行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "5分足 (10, 1.9)",
+     "逐語": "\"Day traders who leave 20 and 2 often put them on a 15-minute chart, or use 10 and 1.9 on a 5-minute chart.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "15-minute chart・5-minute chart",
+     "名指し": [
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（282行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "5分足で (20, 2) は遅い",
+     "逐語": "\"20 and 2 Daily default, or 15-minute Bollinger's reference Late on a 5-minute scalp\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "Daily・15-minute・5-minute",
+     "名指し": [
+      "スキャル",
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（283行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "スキャル (10〜14, 1.5〜2)",
+     "逐語": "\"Period for SMA: Reduce to 10-14 periods.\" / \"Standard Deviations: Use 1.5 to 2.\"",
+     "URL": "https://optionx.trade/blogs/bollinger-bands-scalping-strategy-indian-fno",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（284行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "[\"10〜14\", \"1.5〜2\"]",
+     "逐語": "For scalping on short time frames, you can reduce the period to 10–14, with a multiplier of 1.5–2.",
+     "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "short time frames",
+     "名指し": [
+      "スキャル",
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.スキャル.0",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[\"10〜14\", \"1.5〜2\"]",
+     "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+     "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "shorter timeframes・1-minute・5-minute charts",
+     "名指し": [
+      "スキャル",
+      "5分足",
+      "短い足"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.スキャル.1",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n と s の既定（スキャルの値が教科書に無いときに使う値・欄の外）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "既定 (20, 2)",
+     "逐語": "\"The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.\"",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（276行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "既定 (20, 2)",
+     "逐語": "\"The default parameters (20,2) are based on the default parameters for Bollinger Bands.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（277行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "既定 20・2",
+     "逐語": "\"20 days is the default.\" / \"The number of Standard Deviations away from the SMA that the Upper and Lower Bands should be. 2 is the default.\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（278行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "[20, 2]",
+     "逐語": "The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.0",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[20, 2]",
+     "逐語": "The defaults today are the same as they were 35 years ago, 20 periods for the moving average with the bands set at plus and minus two standard deviations of the same data used for the average.",
+     "URL": "https://www.bollingerbands.com/bollinger-bands",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.1",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[20, 2]",
+     "逐語": "The default parameters (20,2) are based on the default parameters for Bollinger Bands.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.2",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[20, 2]",
+     "逐語": "The time period to be used in calculating the SMA which creates the base for the Upper and Lower Bands. 20 days is the default.",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.3",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[20, 2]",
+     "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)",
+     "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.4",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "[5, 2.0]",
+     "逐語": "length (int): The period. Default: ```5```",
+     "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.既定.5",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n と s の範囲",
+   "いまの値": {
+    "n": {
+     "kind": "int",
+     "lo": 10,
+     "hi": 50
+    },
+    "s": {
+     "kind": "float",
+     "lo": 1.9,
+     "hi": 2.1,
+     "dec": 1
+    }
+   },
+   "候補": [
+    {
+     "値": "(10,1.9)〜(50,2.1)",
+     "逐語": "For consistent price containment: If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.範囲.0",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "(10,1.9)〜(50,2.1)",
+     "逐語": "A Bollinger Band overlay can be set at (50,2.1) for a longer timeframe or at (10,1.9) for a shorter timeframe.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "longer timeframe・shorter timeframe",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.範囲.1",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした"
+    },
+    {
+     "値": "期間 50・倍率 2.5（スイング・長期）",
+     "逐語": "For swing or long-term trading, the period can be increased—for example, to 50—and the multiplier to 2.5.",
+     "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の パラメータの軸.0.範囲.2",
+     "注": "調べの軸の名前：period・stdev_mult。調べの注：資料の表の値と逐語。ページの本文で照らした。1サイトだけ"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n と s（スキャル・範囲・既定と書いていない値）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "組 (10, 1.9)〜(50, 2.1)",
+     "逐語": "\"If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.\"",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（279行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "同じ組",
+     "逐語": "\"Bollinger suggests increasing the standard deviation multiplier to 2.1 for a 50-period SMA and decreasing the standard deviation multiplier to 1.9 for a 10-period SMA.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（280行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    },
+    {
+     "値": "スイング 2.5",
+     "逐語": "\"Swing traders who want fewer outside closes can keep length 20 and raise the multiplier to 2.5.\"",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q3（285行目）",
+     "注": "9種の文書の値は軸を分けずに書いてある（組の値か、どちらか1つの軸の値）"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n のスキャルの代表の値",
+   "いまの値": [
+    20
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 n の範囲",
+   "いまの値": {
+    "kind": "int",
+    "lo": 10,
+    "hi": 50
+   },
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 s のスキャルの代表の値",
+   "いまの値": [
+    2
+   ],
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸 s の範囲",
+   "いまの値": {
+    "kind": "float",
+    "lo": 1.9,
+    "hi": 2.1,
+    "dec": 1
+   },
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-5 値の単位と値域",
+   "いまの値": {
+    "値域": {
+     "有界": null,
+     "分位": null
+    }
+   },
+   "候補": [
+    {
+     "値": "{\"単位\": \"%\", \"下限\": null, \"上限\": null}",
+     "逐語": "Bollinger BandWidth = (Upper Band - Lower Band) / Middle Band * 100",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 値の単位と値域.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-6 値の読み方",
+   "いまの値": {
+    "区分": "ボラ量",
+    "読み方": "",
+    "向きを持つ": false,
+    "性質": [
+     "vol"
+    ]
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Because Bollinger Bands are based on the standard deviation, falling BandWidth reflects decreasing volatility and rising BandWidth reflects increasing volatility.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q1（255行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"BandWidth tells us how wide the Bollinger Bands are. The raw width is normalized using the middle band. Using the default parameters BandWidth is four times the coefficient of variation.\"",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q1（256行目）",
+     "注": ""
+    },
+    {
+     "値": "{\"読み方\": \"帯が狭まると小さく、広がると大きい\", \"向きを持つ\": \"書いてない\"}",
+     "逐語": "BandWidth decreases as Bollinger Bands narrow and increases as Bollinger Bands widen.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 値の読み方.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-7 教科書の役割",
+   "いまの値": {
+    "区分": null,
+    "出どころ": "語の数だけ（弱い）",
+    "札": "ボラ"
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"Because Bollinger Bands are based on the standard deviation, falling BandWidth reflects decreasing volatility and rising BandWidth reflects increasing volatility.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q1（255行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"BandWidth tells us how wide the Bollinger Bands are. The raw width is normalized using the middle band. Using the default parameters BandWidth is four times the coefficient of variation.\"",
+     "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q1（256行目）",
+     "注": ""
+    },
+    {
+     "値": "値動きの幅",
+     "逐語": "Because Bollinger Bands are based on the standard deviation, falling BandWidth reflects decreasing volatility and risi",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 教科書の役割.0",
+     "注": "逐語は文の途中で切れている（ページでは同じ語の続きが在る）"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-11 閾値の範囲",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "8〜12か月の範囲の下端",
+     "逐語": "\"For example, an eight- to 12-month chart will show BandWidth highs and lows over a significant timeframe. BandWidth is considered narrow as it approaches the lows of this range and wide as it approaches the high end.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "値を挙げただけ",
+     "出どころ": "9種の文書 4 Q4（294行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "入る合図",
+     "逐語": "\"A new decline starts with a Squeeze and subsequent break below the lower band.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q2（265行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "場面の判定",
+     "逐語": "\"The bands narrow as price flattens or moves within a relatively narrow range.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q2（264行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「レンジ」"
+    },
+    {
+     "値": "場面の判定",
+     "逐語": "With this in mind, the major trading signal generated by Bollinger BandWidth is known as The Squeeze.",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 使い方.0",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "レンジ（9種の文書の書き込み「レンジ」）",
+     "逐語": "\"The bands narrow as price flattens or moves within a relatively narrow range.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q2（264行目）",
+     "注": "9種の文書の書き込み「レンジ」"
+    },
+    {
+     "値": "レンジ",
+     "逐語": "With this in mind, the major trading signal generated by Bollinger BandWidth is known as The Squeeze.",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 使い方.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "場面の判定",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "レンジ（9種の文書の書き込み「レンジ→ショート」）",
+     "逐語": "\"The chart below shows Honeywell (HON) with an extended trading range in the $50–$55 area. ... HON clearly broke below the lower band to trigger a bearish signal in June 2007.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ",
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q2（267行目）",
+     "注": "9種の文書の書き込み「レンジ→ショート」。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "過去と比べる",
+     "逐語": "\"Narrow BandWidth is relative. BandWidth values should be gauged relative to prior BandWidth values over a period of time.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q4（293行目）",
+     "注": ""
+    },
+    {
+     "値": "銘柄ごとに違う（例 9%）",
+     "逐語": "\"BBW drops. (In the example below, the threshold is 9% however this changes from security to security and timeframe to timeframe).\"",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q4（295行目）",
+     "注": ""
+    },
+    {
+     "値": "例 10・8",
+     "逐語": "\"BandWidth dipped below 10 to put the Squeeze play on in mid-June.\" / \"This line marks 8, which is deemed relatively low based on the historical range.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q4（296行目）",
+     "注": "逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "回数（5日以上）",
+     "逐語": "\"This scan reveals stocks whose Bollinger Bands just expanded rapidly after being contracted for 5 or more days.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 4 Q4（297行目）",
+     "注": ""
+    },
+    {
+     "値": "{\"形\": \"前提つき\", \"値\": 9, \"意味\": \"締まり（Squeeze）の線。銘柄と時間足で変わる\"}",
+     "逐語": "BBW drops. (In the example below, the threshold is 9% however this changes from security to security and timeframe to timeframe).",
+     "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 閾値.0",
+     "注": ""
+    },
+    {
+     "値": "{\"形\": \"前提つき\", \"値\": null, \"意味\": \"狭さはその銘柄の過去の値と比べて決める\"}",
+     "逐語": "Narrow BandWidth is relative. BandWidth values should be gauged relative to prior BandWidth values over a period of time.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c6_01.json の BB幅 の 閾値.1",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "BB幅",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
   }
  ]
 }
