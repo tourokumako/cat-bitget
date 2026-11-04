@@ -10134,6 +10134,314 @@
    "at": "2026-11-03T21:36:21",
    "how": "まこさんが当てないと決めた",
    "verbatim": "m2c15-outside-record-cp99-decisions-20261103/ok_cp99_decline_1_6_20261103"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "5",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "19",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "20",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "22",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "25",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "26",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "27",
+   "file": ".claude/state/verbatim/m2c15-laws-rows-20261103/やることの表.md",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "29",
+   "file": ".claude/state/next_step_src.json",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "30",
+   "file": ".claude/state/next_step_src.json",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-11-03_m2c15_laws_rows_20261103_design_cp100_audit_report.md",
+   "num": "31",
+   "file": ".claude/state/next_step_src.json",
+   "at": "2026-11-04T08:08:44",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/laws/laws.py",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "8",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/法則一覧.md",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "9",
+   "file": ".claude/tools/check_one_path.py",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "10",
+   "file": ".claude/tools/check_one_path.py",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "11",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "12",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "13",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "14",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "15",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "16",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "17",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "18",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "19",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "20",
+   "file": ".claude/state/req_trace_src.json",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "21",
+   "file": ".claude/breaks/b211_structure_need_missing.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "22",
+   "file": ".claude/breaks/b213_place_missing.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "23",
+   "file": ".claude/breaks/b228_laws_kubun_missing.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "24",
+   "file": ".claude/breaks/b230_records_changed_laws.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "25",
+   "file": ".claude/tools/pre_audit_check.py",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "26",
+   "file": ".claude/tools/pre_audit_check.py",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "27",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/要件定義書_レベル4_指標の構造.md",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "28",
+   "file": ".claude/breaks/b234_laws_row_missing.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "29",
+   "file": ".claude/breaks/b235_laws_form_missing.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "30",
+   "file": ".claude/breaks/b236_laws_reader_ref.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "31",
+   "file": ".claude/breaks/b237_laws_doc_changed.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "32",
+   "file": ".claude/breaks/b238_laws_source_diff.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "33",
+   "file": ".claude/breaks/b239_records_changed_rows.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-laws-rows-20261103",
+   "num": "34",
+   "file": ".claude/breaks/b240_t44_s1_diff.sh",
+   "at": "2026-11-04T09:11:45",
+   "how": "当てた"
   }
  ]
 }

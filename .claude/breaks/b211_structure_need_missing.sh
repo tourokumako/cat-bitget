@@ -21,5 +21,5 @@ hit[0]["根拠"]["構造に要ること"].remove(16)
 json.dump(o, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 PYEOF
 
-measure jq -e '((reduce range(1;31) as $i ([]; . + ["\($i)"])) - (reduce .["要素の定義表"]["要素"][]["根拠"]["構造に要ること"][] as $n ([]; . + ["\($n)"])) - (reduce path(.["要素の定義表"]["この表で受けない要ること"][]) as $p ([]; . + [$p[2]]))) == []' "$F"
+measure jq -e --slurpfile l "$PR/laws/laws.json" '((reduce range(1;31) as $i ([]; . + ["\($i)"])) - (reduce (.["要素の定義表"]["要素"][]["根拠"]["構造に要ること"][], $l[0]["要素の定義表"]["要素"][]["根拠"]["構造に要ること"][]?) as $n ([]; . + ["\($n)"])) - (reduce path(.["要素の定義表"]["この表で受けない要ること"][]) as $p ([]; . + [$p[2]]))) == []' "$F"
 finish

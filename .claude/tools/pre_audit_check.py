@@ -65,6 +65,10 @@ CHECKS = [
     "gen_materials.py --selftest",
     "gen_indicator_switch.py --verify",
     "gen_exit_families.py --verify",
+    "laws/laws.py --selftest",
+    "laws/laws.py --verify",
+    "laws/laws.py --check-sources",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/check_one_path.py --test T44",
     "engine_tuner_exec.py --selftest",
     "observe_diag.py --selftest",
     # ★2026-09-07（next_step §6 の145番・141番・設計書 iter="approval-audit-plumbing-20260907"）
@@ -121,7 +125,8 @@ FINGERPRINT_FILES = [
     KNOWN_MATERIALS_PATH,
     # ★2026-11-01（工事 m2c15-catalog-redirect-20261101・やることの表 Y-6）＝build_catalog が読む口と1つのデータから列を作るので、
     #   この2本が変われば材料の列が変わりうる＝指紋に入れる（--run の後に indicators.json を直せば --verify が止める）
-    "indicators/indicators.json", "indicators/indicators.py",
+    "indicators/indicators.json", "indicators/indicators.py", "laws/laws.json", "laws/laws.py",
+    "recipes/identity_s1_legacy.json", "e38_logics.json", "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_rules.json",
 ]
 
 

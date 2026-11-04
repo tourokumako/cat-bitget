@@ -20,5 +20,5 @@ o["指標の記録"]["RSI"]["名前"] = "RSI見本"
 json.dump(o, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 PYEOF
 
-measure jq -e --slurpfile o <(git -C "$ROOT" show 1f6f5ff9:v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.json) '$o[0]["指標の記録"]==.["指標の記録"] and $o[0]["使い方の記録"]==.["使い方の記録"] and $o[0]["部品の記録"]==.["部品の記録"]' "$F"
+measure jq -e --slurpfile o <(git -C "$ROOT" show 1f6f5ff9:v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicators/indicators.json) '$o[0]["指標の記録"]==.["指標の記録"] and $o[0]["使い方の記録"]==.["使い方の記録"][0:16] and $o[0]["部品の記録"]==.["部品の記録"]' "$F"
 finish

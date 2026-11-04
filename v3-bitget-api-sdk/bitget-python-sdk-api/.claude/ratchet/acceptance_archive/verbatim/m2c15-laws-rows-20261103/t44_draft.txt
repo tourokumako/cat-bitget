@@ -1,0 +1,268 @@
+def _laws_reader():
+    sys.path.insert(0, str(SCRIPTS / "laws"))
+    import laws
+    return laws, laws.load()
+
+
+def _s1_consts() -> dict:
+    """定数の表の値（レシピの const を値にする）。"""
+    txt = (SCRIPTS / "indicator_reference_diag.py").read_text(encoding="utf-8")
+    return {k: float(re.search(rf'"{k}": dict\(value=([0-9.]+)', txt).group(1)) for k in ("SCALP_FLOOR", "V11_SL_BUF", "BE_TTL_BARS")}
+
+
+def _s1_val(v, consts: dict):
+    if "const" in v:
+        return consts[v["const"]]
+    return v["legacy"] if "legacy" in v else v["n"]
+
+
+# レシピの値段の決め方の欄 → 法則のデータの欄（値の欄だけ。名前の欄は _s1_level が見る）
+_S1_LEVEL = {"zone_sl": {"k": "倍率"}, "pct": {"k": "幅"}, "peak_giveback": {"arm": "効き始め", "giveback": "戻す割合", "floor": "利益の下限"},
+             "mix": {"frac": "割合"}, "swing": {"m": "さかのぼる本数", "buf": "余白", "gate_buf": "判定の余白"}, "zone": {"buf": "余白"},
+             "shrink": {"tmax": "縮み切るまでの本数", "floor": "利益の下限"}}
+_S1_WORD = {"target": {"low": "安値", "high": "高値"}, "base": {"avg": "平均建値", "entry": "建値"}, "ztarget": {"mid": "中央", "opp": "反対側"},
+            "w": {"inner": "内側の隙間"}, "side_sign": {"profit": "利の側"}, "fill": {"profit": "利の側", "adverse": "損の側"},
+            "side": {"above": "以上", "below": "以下", "above_strict": "より上", "below_strict": "より下"},
+            "dir": {"above": "上側", "above_strict": "上側", "below": "下側", "below_strict": "下側"}}
+# レシピの列 → 使い方の行が持つはずのパラメータと時間足
+_S1_COLS = {"e37_v47_rsi9_15m": ("RSI", {"n": 9}, "15m"), "e37_v47_bb2": ("BB%b", {"n": 20, "s": 2.0}, "5m"),
+            "e37_v59_di14": ("DI差", {"n": 14}, "5m"), "e37_v59_kijun26": ("基準線", {"k_": 26}, "5m")}
+_S1_BB_TH = round(0.5 + 0.5 * (20 / 19) ** 0.5, 7)    # +2σ の旗（標本の標準偏差・n＝20）と同じ本になる BB%b の閾値（修正4 の案B）
+
+
+def _s1_level(rc: dict, so: dict, tbl: list, consts: dict, where: str, why: list) -> None:
+    prog = {x["種類"]: x["プログラムの名前"] for x in tbl}
+    if prog.get(so.get("種類")) != rc["kind"]:
+        why.append(f"{where} の種類が {so.get('種類')}（レシピ {rc['kind']}）")
+        return
+    for k, jp in _S1_LEVEL.get(rc["kind"], {}).items():
+        if k in rc and so.get(jp) != _s1_val(rc[k], consts):
+            why.append(f"{where} の {jp} が {so.get(jp)}（レシピ {_s1_val(rc[k], consts)}）")
+    if rc["kind"] == "zone_sl" and so.get("幅の取り方") != _S1_WORD["w"][rc["w"]]:
+        why.append(f"{where} の幅の取り方")
+    if rc["kind"] == "pct" and so.get("向き") != _S1_WORD["side_sign"].get(rc["k"].get("side_sign")):
+        why.append(f"{where} の向き")
+    if rc["kind"] == "zone" and so.get("計算できないときの代わり") != _S1_WORD["ztarget"].get(rc.get("fallback")):
+        why.append(f"{where} の計算できないときの代わり")
+    if rc["kind"] == "shrink" and so.get("縮み始めの枝") != "枝S1-" + rc["from"]:
+        why.append(f"{where} の縮み始めの枝")
+    if rc["kind"] == "pct" and so.get("基準") != _S1_WORD["base"][rc["base"]]:
+        why.append(f"{where} の基準")
+    if rc["kind"] == "swing" and so.get("狙う値") != _S1_WORD["target"][rc["target"]]:
+        why.append(f"{where} の狙う値")
+    if rc["kind"] == "zone" and so.get("狙う線") != _S1_WORD["ztarget"][rc["target"]]:
+        why.append(f"{where} の狙う線")
+    if rc["kind"] == "mix":
+        _s1_level(rc["to_level"], so.get("先") or {}, tbl, consts, where + " の先", why)
+    if rc["kind"] == "swing":
+        _s1_level(rc["fallback"], so.get("判定に落ちたときの代わり") or {}, tbl, consts, where + " の代わり", why)
+
+
+def _s1_diff(r) -> tuple:
+    """S1 の法則の行を解いた値と、レシピの値を比べる。record は比べない。+2σ の旗は BB%b の閾値に置き替えた値と比べ、置き替えたことを別に出す。"""
+    s1 = json.loads((SCRIPTS / "recipes" / "identity_s1_legacy.json").read_text(encoding="utf-8"))
+    consts = _s1_consts()
+    tbl = r.table["選べる値"]["値段の決め方の種類"]
+    why, same, unconfirmed, swapped = [], 0, set(), []
+    n_rows = len([x for x in r.rows("決済の枝") if str(x["番号"]).startswith("枝S1-")])
+    if n_rows != len(s1["exits"]):
+        why.append(f"枝S1- の行が {n_rows} 本（レシピ {len(s1['exits'])} 本）")
+    for order, ex in enumerate(s1["exits"], 1):
+        before = len(why)
+        no = f"枝S1-{ex['name']}"
+        s = r.solve(no)
+        row = s["行"]
+        unconfirmed |= set(s["役割が未確認"])
+        if s["使える物が無い"] or s["候補が複数"]:
+            why.append(f"{no} の使い方の行が1本に決まらない（無い {len(s['使える物が無い'])}・複数 {len(s['候補が複数'])}）")
+        if row.get("決済の理由") != ex["reason"] or row.get("優先の順") != order:
+            why.append(f"{no} の理由か順")
+        if float(row.get("決済の割合", 1.0)) != float(ex.get("size_ratio", 1.0)):
+            why.append(f"{no} の割合")
+        if ex.get("once") and row.get("1回だけか") is not True:
+            why.append(f"{no} の1回だけか")
+        if bool(ex.get("while_waiting")) != bool(row.get("待機中も効くか")):
+            why.append(f"{no} の待機中も効くか")
+        pl = ex["exec"]["placement"]
+        how = row.get("決済のしかた") or {}
+        if how.get("方法") != {"maker": "指値", "taker": "成行"}[ex["exec"]["method"]] or how.get("置き方") != {"resting": "足の途中に置く", "on_close": "足の終わり"}[pl["kind"]]:
+            why.append(f"{no} の決済のしかた")
+        if how.get("側") != _S1_WORD["fill"].get(pl.get("fill")) or bool(pl.get("pessimistic")) != ("値段が飛んだときの約定" in how):
+            why.append(f"{no} の決済の側か約定の見方")
+        if pl.get("level"):
+            _s1_level(pl["level"], row.get("値段の決め方") or {}, tbl, consts, no, why)
+        sc, eff = ex.get("scope") or {}, row.get("効く玉") or {}
+        if sc.get("ceil_type") != eff.get("型") or list(sc.get("hold_min") or []) != list(eff.get("保有時間") or []) or bool(sc.get("trend_caught")) != bool(eff.get("上げに捕まった玉")):
+            why.append(f"{no} の効く玉")
+        if ex["exec"].get("be_wait"):
+            be, got = ex["exec"]["be_wait"], row.get("決済後の建値待ち") or {}
+            _s1_level(be["level"], got.get("値段の決め方") or {}, tbl, consts, no + " の建値待ち", why)
+            if got.get("待つ本数") != _s1_val(be["ttl"], consts):
+                why.append(f"{no} の待つ本数")
+        conds = (row.get("動く条件") or {}).get("全部満たす") or []
+        used = iter(s["使い方の行"])
+        fires = (ex.get("fire") or {}).get("all") or []
+        if len(conds) != len(fires):
+            why.append(f"{no} の条件の本数 {len(conds)}（レシピ {len(fires)}）")
+        for c, rc in zip(conds, fires):
+            m = rc["material"][0]
+            if c.get("条件の書き方") != rc["form"]:
+                why.append(f"{no} の条件の書き方 {c.get('条件の書き方')}（レシピ {rc['form']}）")
+            if "state" in m:
+                if c["指す物"].get("玉の状態") != m["state"] or c.get("値") != _s1_val(rc["value"], consts) or c.get("側") != _S1_WORD["side"][rc["side"]]:
+                    why.append(f"{no} の状態の条件 {m['state']}")
+                continue
+            u = next(used, None)
+            if u is None:
+                why.append(f"{no} の {m['legacy_col']} の使い方の行が無い")
+                continue
+            th = u["閾値"][0]["代表の値"]["スキャル"]
+            family, par, tf = _S1_COLS[m["legacy_col"]]
+            if m["legacy_col"] == "e37_v47_bb2":
+                if th != _S1_BB_TH or rc["value"]["legacy"] != 0.5:
+                    why.append(f"{no} の BB%b の閾値 {th}（旗と同じ本になる値 {_S1_BB_TH}）")
+                swapped.append(f"{no}: +2σ の旗を BB%b の {th} より上に置き替えた")
+            elif th != rc["value"]["legacy"]:
+                why.append(f"{no} の閾値 {th}（レシピ {rc['value']['legacy']}）")
+            got_par = {k: v.get("スキャル") for k, v in (u.get("パラメータの代表の値") or {}).items()}
+            if (u.get("指す物") or {}).get("指標の記録") != family or u.get("向き") != _S1_WORD["dir"][rc["side"]] or u.get("玉の向き") != s1["meta"]["side"] \
+                    or rc["form"] not in (u.get("使える条件の形") or []) or got_par != {k: [v] for k, v in par.items()} or u.get("時間足") != [tf]:
+                why.append(f"{no} の使い方の行（{family}）が {m['legacy_col']} と違う")
+        if len(why) == before:
+            same += 1
+    e, g = r.solve("売り方S1")["行"], r.solve("確認S1")["行"]
+    rules = {x["種類"]: x["値"] for x in e.get("売り方の決まり") or []}
+    sp, ce = s1["entry"]["split"], s1["entry"]["ceiling"]
+    want = {"型を分ける幅": sp["gap_pct"]["legacy"], "下げ型の天井の窓": sp["down_window_hours"]["legacy"], "レンジの年齢の上限": sp["max_age_hours"]["legacy"],
+            "横ばい型の天井": ce["flat_up_top"], "天井が現値以下なら現値のすぐ上に置く": ce["near_fallback"], "前の玉より高く売らない": ce["clamp_prev_fill"], "上げの前兆で高い指値を建てない": ce["climb_guard"]}
+    why += [f"売り方S1 の {k}" for k, v in want.items() if rules.get(k) != v]
+    if (rules.get("年齢を見ない型") == "down") != bool(sp.get("down_no_age")):
+        why.append("売り方S1 の年齢を見ない型")
+    if e.get("売買の方向") != s1["meta"]["side"]:
+        why.append("売り方S1 の売買の方向")
+    if e.get("再度建てるまでの本数") != sp["rearm_delay_bars"]["legacy"] or e.get("計算の関数") != s1["entry"]["type"]:
+        why.append("売り方S1 の本数か関数")
+    if g.get("内側を見る利確") != "枝S1-" + s1["entry_guards"]["tp_inside"] or g.get("床と比べる利確") != "枝S1-" + s1["entry_guards"]["fee_floor_vs"]:
+        why.append("確認S1")
+    if g.get("手数料の床の倍数") != 1 or s1["entry_guards"]["fee_floor"].get("const") != "SCALP_FLOOR":
+        why.append("確認S1 の床の倍数")
+    br = s1["position_exits"]["range_break"]
+    c2 = r.solve("玉全体S1-レンジ破れ")["行"]
+    if [c.get("値") for c in c2["動く条件"]["全部満たす"]] != [br["bars"]["legacy"], br["vol_n"]["legacy"]] or c2.get("決済の理由") != br["reason"]:
+        why.append("玉全体S1-レンジ破れ")
+    c1, cut = r.solve("玉全体S1-上げの判定")["行"], s1["position_exits"]["uptrend_cut"]
+    if c1.get("付ける状態") != cut["state"] or c1.get("何をするか") != {"mark": "状態を付けて持ち続ける"}.get(cut["mode"]):
+        why.append("玉全体S1-上げの判定")
+    hold = r.solve("持ち方S1")["行"]
+    if hold.get("回数の範囲") != s1["position"]["max_adds"] or hold.get("持ち方") != {"separate": "別々"}.get(s1["position"]["mode"]):
+        why.append("持ち方S1")
+    return why, same, sorted(unconfirmed), swapped
+
+
+def t44(_src: dict) -> tuple:
+    """読む口が止まったときは「通らない」と返す（SystemExit で、ほかの試験まで止めない）。"""
+    try:
+        return _t44(_src)
+    except SystemExit as e:
+        return FAIL, f"読む口が止まった: {e}"
+
+
+def _t44(_src: dict) -> tuple:
+    """法則の足す・直す・止める・消すと、区分・選べる値・欄の増減を、写しで試す。S1 の行を解いた値をレシピと比べる。実物は書き替えない。"""
+    import copy
+    laws, r = _laws_reader()
+
+    class _Plus:
+        """指標データの読む口に、使い方の行を足して見せる（実物は書き替えない）。"""
+        def __init__(self, extra):
+            self._extra = extra
+
+        def __getattr__(self, name):
+            return getattr(r.ind, name)
+
+        def usages(self, name=None):
+            return r.ind.usages(name) + self._extra
+
+    def fresh():
+        return copy.deepcopy(r.data)
+
+    def nos(d):
+        return [x["番号"] for x in laws.Laws(d, reader=r.ind).rows()]
+
+    why = []
+    d = fresh()
+    d["法則の行"].append(dict(copy.deepcopy(next(x for x in d["法則の行"] if x["番号"] == "枝型-TP_PCT")), **{"番号": "枝型-見本"}))
+    if "枝型-見本" not in nos(d):
+        why.append("足した法則を読めない")
+    d = fresh()
+    name = "S1_直近の安値の本数"
+    next(n for n in d["法則の中の数"] if n["名前"] == name)["代表の値"]["スキャル"] = 12
+    if laws.Laws(d, reader=r.ind).solve("枝S1-TP2")["行"]["値段の決め方"]["さかのぼる本数"] != 12:
+        why.append("直した数が読む口に届かない")
+    d = fresh()
+    next(x for x in d["法則の行"] if x["番号"] == "枝型-TP_PCT")["オン/オフと注意"] = {"状態": "オフ"}
+    if "枝型-TP_PCT" in nos(d):
+        why.append("止めた法則を返した")
+    d = fresh()
+    d["法則の行"] = [x for x in d["法則の行"] if x["番号"] != "枝型-TP_PCT"]
+    if "枝型-TP_PCT" in nos(d):
+        why.append("消した法則を返した")
+    d = fresh()
+    d["法則の行"] = [x for x in d["法則の行"] if x["番号"] != "枝S1-TP2"]
+    try:
+        nos(d)
+        why.append("指されている法則を消しても止まらない")
+    except laws.LawsError:
+        pass
+    d = fresh()
+    for x in d["法則の行"]:
+        if x["番号"] in ("枝S1-TP2", "枝S1-SHRINK", "確認S1"):
+            x["オン/オフと注意"] = {"状態": "オフ"}
+    if "枝S1-TP2" in nos(d):
+        why.append("指されている枝を、指す行と一緒に止められない")
+    d = fresh()
+    next(x for x in d["法則の行"] if x["番号"] == "売り方S1")["オン/オフと注意"] = {"状態": "オフ"}
+    if "売り方S1" in nos(d):
+        why.append("売り方を止められない")
+    d = fresh()
+    next(x for x in d["法則の行"] if x["番号"] == "枝S1-TP2")["オン/オフと注意"] = {"状態": "オフ"}
+    try:
+        nos(d)
+        why.append("オンの行が指す法則だけを止めても止まらない")
+    except laws.LawsError:
+        pass
+    rsi = next(u for u in r.ind.usages("RSI") if u.get("場面と型") and u["場面と型"].get("型") == "flat_up")
+    s_long = laws.Laws(fresh(), reader=_Plus([dict(copy.deepcopy(rsi), **{"玉の向き": "LONG"})])).solve("枝S1-MTFCUT")
+    if s_long["候補が複数"] or s_long["使える物が無い"]:
+        why.append("ロングの行を足すと、ショートの枝が解けない")
+    s_more = laws.Laws(fresh(), reader=_Plus([dict(copy.deepcopy(rsi), **{"指す物": {"指標の記録": "CCI"}})])).solve("枝S1-MTFCUT")
+    if not s_more["候補が複数"]:
+        why.append("同じ役割の別の指標を足しても、候補が複数と出ない")
+    part = dict(copy.deepcopy(rsi), **{"指す物": {"部品の記録": "帯pivot"}})
+    laws.Laws(fresh(), reader=_Plus([part])).solve("枝S1-MTFCUT")
+    d = fresh()
+    next(x for x in d["法則の行"] if x["番号"] == "枝型-TP_PCT")["文"] = "写す元と違う文"
+    if not laws.Laws(d, reader=r.ind).check_sources():
+        why.append("枝の型の文を変えても、写す元との照らしが止めない")
+    d = fresh()
+    d[laws.TABLE_KEY]["選べる値"]["区分"].append("見本の区分")
+    d["法則の行"].append({"番号": "見本1", "区分": "見本の区分", "法則の種類": ["建玉の Entry"], "場面": "レンジ", "文": "見本"})
+    if "見本1" not in nos(d):
+        why.append("足した区分を読めない")
+    d = fresh()
+    d[laws.TABLE_KEY]["選べる値"]["玉全体の動き"].append("見本の動き")
+    next(x for x in d["法則の行"] if x["番号"] == "玉全体S1-上げの判定")["何をするか"] = "見本の動き"
+    if "玉全体S1-上げの判定" not in nos(d):
+        why.append("足した選べる値を読めない")
+    d = fresh()
+    d[laws.TABLE_KEY]["要素"].append({"番号": "⑤-99", "要素の名前": "足した欄", "形の決まり": {}, "無いときの扱い": "未設定", "オン/オフ": "オン"})
+    if laws.Laws(d, reader=r.ind).element("枝S1-TP2", "足した欄") != laws.UNDECIDED:
+        why.append("足した欄を読めない")
+    diff, same, unconfirmed, swapped = _s1_diff(r)
+    why += diff
+    note = f"S1 の枝 {same}/12 本がレシピと同じ。役割が未確認＝{'・'.join(unconfirmed)}。置き替え＝{'・'.join(swapped)}"
+    if same != 12:
+        why.append(f"S1 の枝でレシピと同じなのは {same}/12 本")
+    return (PASS, note) if not why else (FAIL, "・".join(why))
+
+

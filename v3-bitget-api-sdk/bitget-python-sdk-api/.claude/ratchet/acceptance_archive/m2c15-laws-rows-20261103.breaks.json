@@ -1,0 +1,112 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-laws-rows-20261103",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b234_laws_row_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b234_laws_row_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b235_laws_form_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b235_laws_form_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b236_laws_reader_ref.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b236_laws_reader_ref.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "4",
+   "script": "b237_laws_doc_changed.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b237_laws_doc_changed.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "5",
+   "script": "b238_laws_source_diff.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b238_laws_source_diff.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "6",
+   "script": "b239_records_changed_rows.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b239_records_changed_rows.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "7",
+   "script": "b240_t44_s1_diff.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b240_t44_s1_diff.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "8",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "9",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "10",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "11",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "12",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "13",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "14",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}
