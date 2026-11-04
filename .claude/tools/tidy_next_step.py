@@ -1144,7 +1144,7 @@ def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None, work:
             state = _released(state)
         if close_n is not None and CLOSE_ROW_RE.search(what):
             what, state = what.replace(f"（{close_n}回目）の締め", f"（{close_n + 1}回目）の締め", 1), "まだ"
-        rows.append({"欄": [f" {no} ", f" {what} ", f" {state} "]})
+        rows.append({**r, "欄": [f" {no} ", f" {what} ", f" {state} "]})  # ★2026-11-04（268番）＝「短い名前」ほかの鍵を消さない
     done = False
     state_head_done = False
     must = None
@@ -1901,7 +1901,7 @@ def selftest() -> int:
         sample = {"節": [
             {"見出し": f"{NEXT_SEC}（5回目）",
              "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": [
-                 {"欄": [" 7 ", " 何か ", " まだ "]},
+                 {"欄": [" 7 ", " 何か ", " まだ "], "短い名前": "短い名前の見本"},
                  {"欄": [" 9 ", " このセッション（5回目）の締め（引き継ぎ・コミット） ", f" {TAKEN}（s1）／まだ "]}]}}]},
             {"見出し": f"{STATE_SEC}（2026-01-01・4回目の締め・記録＝`session_worklog_20260101.md` §1）", "塊": []}]}
         (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -1916,6 +1916,7 @@ def selftest() -> int:
         r18 = got[0][1]["節"]
         rows18 = [[x.strip() for x in r["欄"]] for r in r18[0]["塊"][0]["表"]["行"]]
         ok18 = (got[0][0] == 0 and r18[0]["見出し"] == f"{NEXT_SEC}（6回目）"
+                and r18[0]["塊"][0]["表"]["行"][0].get("短い名前") == "短い名前の見本"   # ★2026-11-04（268番）＝短い名前が消えない
                 and rows18 == [["7", "何か", "まだ"], ["9", "このセッション（6回目）の締め（引き継ぎ・コミット）", "まだ"]]
                 and r18[1]["見出し"].startswith(f"{STATE_SEC}（2026-01-02・5回目の締め・記録")
                 and got[1] == got[0])

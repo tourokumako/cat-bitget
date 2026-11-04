@@ -354,6 +354,109 @@ def _impl_from_file(line: str, bad: list):
     return items
 
 
+# ★2026-11-04（268番・まこさん「先に行う。すぐに修正して」）＝2-1 のコマンドの決まりを page の外へ出し、違反を全部 一度に出す。
+#   直す前は page の中で1件ずつ止めたので、241番の試しを止められるたびに打ち直した（worklog 20261104 §11）。止める条件は変えていない。
+MEASURE_READ_HEADS = ("grep", "wc", "sed", "awk", "find", "sort", "head", "tail", "cut", "uniq", "tr", "cat")
+MEASURE_GIT_SUBS = ("diff", "log", "show", "status", "ls-files", "grep")
+MEASURE_PY_TOOLS = ("run_breaks.py", "tidy_next_step.py", "gen_hook_list.py", "verify_design_contract.py")
+MEASURE_PY_FLAGS = ("--verify", "--count-targets", "--selftest", "--parse-only", "--lint-expect", "--check", "--diff", "--design")
+MEASURE_BAD_CHARS = (">", "<", ";", "&", "`", "$(", "\n")
+MEASURE_FIND_BAD = ("-exec", "-execdir", "-delete", "-ok", "-okdir", "-fprint", "-fprintf", "-fls")
+# 禁止項目の一覧（table_rules）を作るときに読む関数＝やることの表と案を読む関数
+TABLE_RULE_FUNCS = ("_md_table", "src_from_work", "_check_todo_rows", "_read_design_hand", "_read_new_todo", "_finish_new")
+
+
+def measure_problem(cmd: str) -> str:
+    """2-1 のコマンドが読むだけの形かを見る。戻り＝違反の文（空＝違反なし）。コマンドは走らせない。"""
+    import shlex as _shlex
+    for ch in MEASURE_BAD_CHARS:
+        if ch in cmd:
+            return f"「{ch!r}」が在る（読むだけのコマンドに限る）"
+    for seg in cmd.split(" | "):
+        try:
+            toks = _shlex.split(seg)
+        except ValueError as e:
+            return f"コマンドを読めない（{e}）: {seg}"
+        if not toks:
+            return "空のコマンドの区切りが在る"
+        head = toks[0]
+        if head in MEASURE_READ_HEADS:
+            if head == "sed" and any(t.startswith("-i") or t.startswith("--in-place") for t in toks[1:]):
+                return "sed の -i（書き込み）"
+            if head == "find" and any(t in MEASURE_FIND_BAD for t in toks[1:]):
+                return "find の書き込み・実行の旗"
+            if head == "awk" and "system(" in seg:
+                return "awk の system("
+        elif head == "git":
+            if len(toks) < 2 or toks[1] not in MEASURE_GIT_SUBS:
+                return "git の読むだけでない使い方"
+        elif head == "python3":
+            args = toks[1:]
+            if not args or args[0].rsplit("/", 1)[-1] not in MEASURE_PY_TOOLS:
+                return "決まった道具でない python3"
+            if any(t.startswith("-") and t not in MEASURE_PY_FLAGS for t in args[1:]):
+                return "決まった読むだけの旗でない"
+            if not any(t in MEASURE_PY_FLAGS for t in args[1:]):
+                return "読むだけの旗が無い python3"
+        else:
+            return f"読むだけのコマンドの一覧に無い先頭の語「{head}」"
+    return ""
+
+
+def rows21_problems(rows: list) -> list:
+    """2-1 の表の全部の行の違反を、一度に全部 返す（結果の欄・読み方の数字・コマンドの形）。"""
+    out = []
+    for r in rows or []:
+        name = r.get("何を測ったか")
+        if "結果" in r:
+            out.append(f"2-1「{name}」に「結果」の欄が在る。結果は道具がコマンドを走らせて入れる（まこさん「手書きはするな」）")
+        yomi = str(r.get("読み方") or "")
+        if re.search(r"[0-9０-９]", yomi):
+            out.append(f"2-1「{name}」の「読み方」に数字が在る。数字はコマンドの出力にだけ出す: {yomi}")
+        cmd = str(r.get("コマンド") or "")
+        why = measure_problem(cmd)
+        if why:
+            out.append(f"2-1「{name}」のコマンドを走らせない＝{why}: {cmd}")
+    return out
+
+
+def table_rules() -> str:
+    """やることの表と案の禁止項目の一覧を、検査のコードから作る（手で一覧を書かない＝検査と食い違わない）。"""
+    import ast
+
+    def _txt(n) -> str:
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            return n.value
+        if isinstance(n, ast.JoinedStr):
+            return "".join(_txt(v) if isinstance(v, ast.Constant) else "〈値〉" for v in n.values)
+        if isinstance(n, ast.BinOp):
+            return _txt(n.left) + _txt(n.right)
+        return "〈値〉"
+
+    out = ["★やることの表と案の禁止項目です。書く前に全部 読んでください（gen_acceptance.py の検査のコードから作りました）。",
+           "2-1 何を測るか：",
+           "- コマンドに使えない文字＝" + "・".join(repr(c) for c in MEASURE_BAD_CHARS),
+           "- コマンドをつなぐのは、前後に空白のある「 | 」だけ",
+           "- 先頭の語は " + "・".join(MEASURE_READ_HEADS) + " と git と python3 だけ",
+           "- git は " + "・".join(MEASURE_GIT_SUBS) + " だけ",
+           "- python3 は " + "・".join(MEASURE_PY_TOOLS) + " を、旗 " + "・".join(MEASURE_PY_FLAGS) + " のどれかを付けて走らせるだけ",
+           "- sed の -i・find の " + "・".join(MEASURE_FIND_BAD) + "・awk の system( は使えない",
+           "- 「読み方」に数字を書かない。「結果」の欄を書かない。120秒で終わるコマンドにする",
+           "次の形だと、設計書を作るプログラムが止めます：",]
+    seen = set()
+    for fn in ast.parse(Path(__file__).read_text(encoding="utf-8")).body:
+        if not (isinstance(fn, ast.FunctionDef) and fn.name in TABLE_RULE_FUNCS):
+            continue
+        for n in ast.walk(fn):
+            if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "append"
+                    and isinstance(n.func.value, ast.Name) and n.func.value.id == "bad" and n.args):
+                t = _txt(n.args[0])
+                if t != "〈値〉" and t not in seen:
+                    seen.add(t)
+                    out.append("- " + t)
+    return "\n".join(out)
+
+
 def src_from_work(work: str) -> dict:
     """工事のフォルダ（やることの表.md と逐語のファイル）から、設計書を組む中身（page が読む形）を作る。"""
     d_dir = gv.work_dir(work)
@@ -385,6 +488,7 @@ def src_from_work(work: str) -> dict:
             bad.append(f"{TODO_MD} の「## 手書きの項目」に、知らない見出し「### {k}」が在る（写す先の項目が無い）")
     d["何を作るか"] = _text(hand.get("§1 概要") or [])
     d["なぜ作るか"] = _md_table(hand.get("2-1 何を測るか") or [], ("何を測ったか", "コマンド", "読み方"), "2-1", bad) if "2-1 何を測るか" in hand else []
+    bad.extend(rows21_problems(d["なぜ作るか"]))     # ★2026-11-04（268番）＝2-1 の違反も、ほかの違反と一度に出す
     d["やらないこと"] = _md_table(hand.get("3-1 やらないこと") or [], ("中身", "理由", "出どころ"), "3-1", bad) if "3-1 やらないこと" in hand else []
     # ★ひな型の目印の行（HAND_MARKS）は、中身に数えない（その下に「無し」と書いても止まらないようにする＝設計書の監査 CP77）
     _kk = [ln for ln in (hand.get("3-2 決めてほしいこと") or []) if not ln.strip().startswith(HAND_MARKS)]
@@ -2195,50 +2299,8 @@ def page(d: dict) -> str:
     #   ★走らせるのは読むだけのコマンドだけ＝元データに書いたコマンドを道具が走らせると、
     #     Bash の土台ゲートを通らずに書き込む道になるため。
     #   ★区切りは「 | 」（前後に空白）＝grep の `a\|b` の縦棒は区切りにしない。
+    #   ★2026-11-04（268番）＝形の検査は measure_problem に移した。下の rows21_problems が全部の行を先に見てから走らせる。
     def _measure(cmd: str) -> str:
-        import shlex as _shlex
-        read_heads = {"grep", "wc", "sed", "awk", "find", "sort", "head", "tail", "cut", "uniq", "tr", "cat"}
-        git_subs = {"diff", "log", "show", "status", "ls-files", "grep"}
-        py_tools = {"run_breaks.py", "tidy_next_step.py", "gen_hook_list.py", "verify_design_contract.py"}
-        py_flags = {"--verify", "--count-targets", "--selftest", "--parse-only", "--lint-expect",
-                    "--check", "--diff", "--design"}
-        for bad in (">", "<", ";", "&", "`", "$(", "\n"):
-            if bad in cmd:
-                raise SystemExit(f"[gen_acceptance] 「なぜ作るか」のコマンドに「{bad}」が在ります"
-                                 f"（読むだけのコマンドに限る・fail-closed）: {cmd}")
-        for seg in cmd.split(" | "):
-            try:
-                toks = _shlex.split(seg)
-            except ValueError as e:
-                raise SystemExit(f"[gen_acceptance] コマンドを読めない（{e}・fail-closed）: {seg}")
-            if not toks:
-                raise SystemExit(f"[gen_acceptance] 空のコマンドの区切りが在る（fail-closed）: {cmd}")
-            head = toks[0]
-            why = ""
-            if head in read_heads:
-                if head == "sed" and any(t.startswith("-i") or t.startswith("--in-place") for t in toks[1:]):
-                    why = "sed の -i（書き込み）"
-                elif head == "find" and any(t in ("-exec", "-execdir", "-delete", "-ok", "-okdir",
-                                                  "-fprint", "-fprintf", "-fls") for t in toks[1:]):
-                    why = "find の書き込み・実行の旗"
-                elif head == "awk" and "system(" in seg:
-                    why = "awk の system("
-            elif head == "git":
-                if len(toks) < 2 or toks[1] not in git_subs:
-                    why = "git の読むだけでない使い方"
-            elif head == "python3":
-                args = toks[1:]
-                if not args or args[0].rsplit("/", 1)[-1] not in py_tools:
-                    why = "決まった道具でない python3"
-                elif any(t.startswith("-") and t not in py_flags for t in args[1:]):
-                    why = "決まった読むだけの旗でない"
-                elif not any(t in py_flags for t in args[1:]):
-                    why = "読むだけの旗が無い python3"
-            else:
-                why = f"読むだけのコマンドの一覧に無い先頭の語「{head}」"
-            if why:
-                raise SystemExit(f"[gen_acceptance] 「なぜ作るか」のコマンドを走らせません＝{why}"
-                                 f"（読むだけのコマンドに限る・fail-closed）: {cmd}")
         try:
             r = subprocess.run(["bash", "-c", cmd], cwd=str(ROOT), capture_output=True,
                                text=True, timeout=120)
@@ -2251,15 +2313,11 @@ def page(d: dict) -> str:
             text = text[:500] + f"…（出力 {len(lines)} 行のうち先頭 500 文字）"
         return f"{text}（終了コード {r.returncode}）"
 
+    _p21 = rows21_problems(d.get("なぜ作るか") or [])
+    if _p21:
+        raise SystemExit(f"[gen_acceptance] 2-1 の表に違反が {len(_p21)} 件 在ります（fail-closed）:\n  " + "\n  ".join(_p21))
     for r in d.get("なぜ作るか") or []:
-        if "結果" in r:
-            raise SystemExit("[gen_acceptance] 元データの「なぜ作るか」に「結果」の欄が在ります（fail-closed）。"
-                             "結果は道具がコマンドを走らせて入れます（まこさん「手書きはするな」）。"
-                             f"「読み方」（数字なし）に書き替えてください: {r.get('何を測ったか')}")
         yomi = str(r.get("読み方") or "")
-        if re.search(r"[0-9０-９]", yomi):
-            raise SystemExit("[gen_acceptance] 「なぜ作るか」の「読み方」に数字が在ります（fail-closed）。"
-                             f"数字はコマンドの出力にだけ出します: {yomi}")
         add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {_esc(yomi)} | {_esc(_measure(str(r['コマンド'])))} |")
     add("")
     # ★2026-09-29（まこさん OK「それで一旦作ってみて」・worklog 20260929 §82 の骨組み）
@@ -3000,6 +3058,52 @@ def selftest() -> int:
         else:
             print(f"   T{total} 2-1 の結果 → fail（{bad9}）")
 
+        # T9b（2026-11-04・268番）＝違反を2つ入れた表で、2つとも一度に出て、試しの道具（trial_design.py）が止まる。禁止項目の一覧も作れる
+        total += 1
+        bad9b = ""
+        _b9b = tmpd / "t9b"                            # 記録のファイルを分ける（同じ置き場に作ると、前の見本の照らしが通らなくなる）
+        _b9b.mkdir()
+        _w9b = _sample_work(_b9b, new=True)
+        _td9b = gv.work_dir(_w9b) / TODO_MD
+        _td9b.write_text(_td9b.read_text(encoding="utf-8").replace(
+            "| 見本 | grep -c 'def page' .claude/tools/gen_acceptance.py | 在れば一以上 |",
+            "| 違反の一 | rm -f /tmp/gen_acceptance_t9b | 在れば一以上 |\n| 違反の二 | grep -c x .claude/tools/gen_acceptance.py | 2件なら合う |"),
+            encoding="utf-8")
+        try:
+            src_from_work(_w9b)
+            bad9b = "違反の表で止まらない"
+        except SystemExit as e:
+            if not ("違反の一" in str(e) and "違反の二" in str(e)):
+                bad9b = f"2つが一度に出ない（{str(e)[:200]}）"
+        _draft9b = tmpd / "draft_t9b.txt"
+        _draft9b.write_text("見本の案\n", encoding="utf-8")
+        sys.path.insert(0, str(ROOT / ".claude" / "hooks"))
+        import io as _io
+        import contextlib as _ctx
+        import trial_design as _td
+        _sid9b = "_selftest_t9b"
+        _keep9b = (sys.argv, gv.verify, gv.VERBATIM_DIR, gv.ARCHIVE_DIR)
+        _buf9b = _io.StringIO()
+        try:
+            sys.argv = ["trial_design.py", "--work", _w9b, "--draft", str(_draft9b), "--fast", "--session", _sid9b]
+            with _ctx.redirect_stdout(_buf9b):
+                _rc9b = _td.main()
+        finally:
+            sys.argv, gv.verify, gv.VERBATIM_DIR, gv.ARCHIVE_DIR = _keep9b
+            shutil.rmtree(_td.record_path(_sid9b).parent, ignore_errors=True)
+        _o9b = _buf9b.getvalue()
+        if _rc9b == 0 or not ("違反の一" in _o9b and "違反の二" in _o9b) or "A群 0 件" not in _o9b:
+            bad9b = bad9b or f"試しの道具が止まらない（rc={_rc9b}・{_o9b[:200]}）"
+        _rules = table_rules()
+        if not ("読み方" in _rules and "run_breaks.py" in _rules and "が空" in _rules):
+            bad9b = bad9b or "禁止項目の一覧に検査の中身が出ない"
+        shutil.rmtree(gv.work_dir(_w9b), ignore_errors=True)   # 後のテストが同じ工事名で作り直せるように消す
+        if not bad9b:
+            ok += 1
+            print(f"   T{total} 違反2つが一度に出て、試しの道具が止まり、禁止項目の一覧が作れる → pass")
+        else:
+            print(f"   T{total} 違反を一度に出す → fail（{bad9b}）")
+
         # T10（2026-09-29）＝対応の表から1行 消すと、設計書を書かない（設計のもとの抜けを通さない）
         total += 1
         d10 = _copy.deepcopy(base_d)
@@ -3371,8 +3475,12 @@ def main() -> int:
     # ★2026-09-29（工事 point1-design-autogen-20260929）＝工事のフォルダ（やることの表.md と逐語のファイル）から組む口
     # ★2026-09-30（設計書 point1-one-way-20260930-2）＝設計書の作り方はこの口の1本だけ（元データの JSON の --src は消した）
     p.add_argument("--work", default="", help="工事名＝.claude/state/verbatim/<工事名>/ から設計書を組む")
+    p.add_argument("--table-rules", action="store_true", help="やることの表と案の禁止項目の一覧を画面に出す（検査のコードから作る）")
     a = p.parse_args()
     global WORK
+    if a.table_rules:
+        print(table_rules())
+        return 0
     if a.selftest:
         return selftest()
     if a.work:

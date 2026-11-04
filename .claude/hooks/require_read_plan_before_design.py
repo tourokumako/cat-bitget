@@ -43,6 +43,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
@@ -178,6 +179,26 @@ def cli_check():
     return 0
 
 
+def show_rules_once(sid):
+    """★2026-11-04（268番）＝設計書の元を書く前に、禁止項目を1セッションに1回 CC に見せる。書き込みは止めない（出せなくても止めない）。
+    241番の試しで、決まりを読まずに書いて1つずつ止められ、11回 打ち直した（worklog 20261104 §11）。"""
+    mark = os.path.join(STATE, "sessions", sid or "_nosession", "table_rules_shown")
+    if os.path.exists(mark):
+        return
+    try:
+        r = subprocess.run([sys.executable, os.path.join(ROOT, ".claude", "tools", "gen_acceptance.py"), "--table-rules"],
+                           cwd=ROOT, capture_output=True, text=True, timeout=30)
+    except Exception:
+        return
+    if r.returncode != 0 or not r.stdout.strip():
+        return
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": r.stdout.strip()}},
+                     ensure_ascii=False))
+    os.makedirs(os.path.dirname(mark), exist_ok=True)
+    with open(mark, "w", encoding="utf-8") as f:
+        f.write("shown\n")
+
+
 def hook_main():
     raw = sys.stdin.read()
     try:
@@ -201,6 +222,7 @@ def hook_main():
             str((e or {}).get("new_string") or "") for e in ti.get("edits") or [])
     ng = check_for_work(work, body, _read(PLAN), _read(MARK), _read(os.path.join(os.path.dirname(fpn), PLAN_COPY)))
     if not ng:
+        show_rules_once(str(d.get("session_id") or ""))
         sys.exit(0)
     e = sys.stderr
     print("🔒 [読むもの宣言ゲート] 設計書を書く前に、読むものを まこさんに宣言して OK をもらってください（まこさん指示 2026-09-09「設計書書く前に読むものを私に宣言するというフローを入れろ」）。", file=e)
