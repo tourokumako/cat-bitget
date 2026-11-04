@@ -1150,6 +1150,151 @@
      "注": "損切りの幅。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 6,
+   "指標": "基準線",
+   "探す物": "閾値の範囲（形＝値）",
+   "結果": "値を挙げた文だけ在る",
+   "使った検索の語": [
+    "Kijun-sen distance percentage price far from kijun mean reversion threshold",
+    "price distance from kijun sen percent overextended ichimoku（fidelity・stockcharts・schwab・tradingview・babypips・litefinance に絞った）",
+    "price within percent of kijun sen bounce ichimoku grading 2%"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://www.tradingview.com/script/PqxNdJrc/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6852 文字）"
+    },
+    {
+     "URL": "https://www.luxalgo.com/library/indicator/qLUm6JRg-kijun-bands/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 11475 文字）"
+    },
+    {
+     "URL": "https://www.prorealcode.com/snippet/proximity-in-of-2-lines-kijun-ma20/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4157 文字）"
+    },
+    {
+     "URL": "https://doc.stocksharp.com/en/api-examples/2527_Kijun_Sen_Robot",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 23863 文字）"
+    },
+    {
+     "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 25315 文字）"
+    },
+    {
+     "URL": "https://in.tradingview.com/scripts/kijun-sen/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 8517 文字）"
+    },
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 18747 文字）"
+    },
+    {
+     "URL": "https://ru.tradingview.com/script/5b7gDP18-Ichimoku-Signals-Table",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4084 文字）"
+    },
+    {
+     "URL": "https://articles.stockcharts.com/article/stockcharts-insider-a-practical-guide-to-the-ichimoku-kijun-sen-pullback/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 9228 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/9FGkF2Pq-Ichimoku-With-Grading/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6212 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "The price within 2% of the Kijun can be used to evaluate potential bounces off of this line",
+     "URL": "https://ru.tradingview.com/script/5b7gDP18-Ichimoku-Signals-Table",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "%",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（Ichimoku Signals Table・ロシア語の画面）",
+     "注": "終値と基準線の離れが 2% の内か。文の終わりに句点が無い（ページのまま）。同じページの「Price ±2% Kijun – Shows if price is trading within 2% of the Kijun-sen」も同じ数。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "The variable prox is set to 3, which represents the proximity threshold in percentage.",
+     "URL": "https://www.prorealcode.com/snippet/proximity-in-of-2-lines-kijun-ma20/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "%",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "掲示板のコードの断片（ProRealCode）",
+     "注": "基準線と 20本の移動平均の離れの %。終値と基準線の離れではない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "MaFilterPips 6 Minimum LWMA-to-Kijun distance in pips.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/2527_Kijun_Sen_Robot",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "値段",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ライブラリの説明書（StockSharp の戦略の例・Kijun Sen Robot）",
+     "注": "単位が値段かドル（pips）。線形加重の移動平均と基準線の離れで、終値と基準線の離れではない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "When the price moves far away from this line, it is likely to return to this level.",
+     "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+     "範囲の形": "書いてない",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "%",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（LiteFinance）",
+     "注": "数が書いてない。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }

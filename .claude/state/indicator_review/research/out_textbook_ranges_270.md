@@ -15,6 +15,7 @@
 | 3 | DI差 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 5 | 12 | — |
 | 4 | BB%b | 閾値の範囲（形＝値） | 両端の文が在る | 3 | 9 | 11 | StockSharp の戦略の例のコードの最適化の範囲（0.1〜0.3・0.7〜0.9・0.3〜0.7）。うち2つはロングだけの戦略 |
 | 5 | ATR% | 閾値の範囲（形＝値か倍率） | 両端の文が在る | 2 | 5 | 14 | 損切りの幅の ATR の倍率（1.5〜3.0・スキャル 1.0〜1.5）。ATR% の値の閾値の両端の文ではない |
+| 6 | 基準線 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 4 | 10 | — |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -116,6 +117,20 @@
 | 4 | Professional traders often switch to a higher multiplier (e.g., from 2x to 3x) in low-volatility environments to avoid being stopped out by random, low-volume "noise."<br>https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/ | 値を挙げただけ | None | None | 倍率 | ATR の倍数 | 一般 | 時間足は書いてない | ブログ（marketclutch） | 前提＝値動きの小さい場面。本文で照らした道具：curl（空白の数だけそろえた） |
 | 5 | A common same day distance is 1.5 or 2 times the 5 minute ATR, placed beyond the swing that got you in.<br>https://therighttrader.com/learn/indicator-strategies/best-atr-settings | 値を挙げただけ | None | None | 倍率 | ATR の倍数 | 5分足 | 5 minute ATR | ブログ（The Right Trader） | 損切りの幅。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 
+### 6. 基準線｜閾値の範囲（形＝値）（結果：値を挙げた文だけ在る）
+
+使った検索の語：
+- Kijun-sen distance percentage price far from kijun mean reversion threshold
+- price distance from kijun sen percent overextended ichimoku（fidelity・stockcharts・schwab・tradingview・babypips・litefinance に絞った）
+- price within percent of kijun sen bounce ichimoku grading 2%
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | The price within 2% of the Kijun can be used to evaluate potential bounces off of this line<br>https://ru.tradingview.com/script/5b7gDP18-Ichimoku-Signals-Table | 値を挙げただけ | None | None | 値 | % | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Ichimoku Signals Table・ロシア語の画面） | 終値と基準線の離れが 2% の内か。文の終わりに句点が無い（ページのまま）。同じページの「Price ±2% Kijun – Shows if price is trading within 2% of the Kijun-sen」も同じ数。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | The variable prox is set to 3, which represents the proximity threshold in percentage.<br>https://www.prorealcode.com/snippet/proximity-in-of-2-lines-kijun-ma20/ | 値を挙げただけ | None | None | 値 | % | 一般 | 時間足は書いてない | 掲示板のコードの断片（ProRealCode） | 基準線と 20本の移動平均の離れの %。終値と基準線の離れではない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 3 | MaFilterPips 6 Minimum LWMA-to-Kijun distance in pips.<br>https://doc.stocksharp.com/en/api-examples/2527_Kijun_Sen_Robot | 値を挙げただけ | None | None | 値 | 値段 | 一般 | 時間足は書いてない | ライブラリの説明書（StockSharp の戦略の例・Kijun Sen Robot） | 単位が値段かドル（pips）。線形加重の移動平均と基準線の離れで、終値と基準線の離れではない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | When the price moves far away from this line, it is likely to return to this level.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | 書いてない | None | None | 値 | % | 一般 | 時間足は書いてない | 証券会社の解説（LiteFinance） | 数が書いてない。264番でも見つかった文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -206,7 +221,22 @@
 | https://www.tradingview.com/script/358ZxT4e-NATR-Normalized-ATR-Oscillator/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 4750 文字） |
 | https://ta-lib.org/functions/natr.html | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 1974 文字） |
 
-開いたページは、件ごとに数えて 63 本（同じ URL を除くと 63 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
+### 6. 基準線｜閾値の範囲（形＝値）
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://www.tradingview.com/script/PqxNdJrc/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6852 文字） |
+| https://www.luxalgo.com/library/indicator/qLUm6JRg-kijun-bands/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 11475 文字） |
+| https://www.prorealcode.com/snippet/proximity-in-of-2-lines-kijun-ma20/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4157 文字） |
+| https://doc.stocksharp.com/en/api-examples/2527_Kijun_Sen_Robot | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 23863 文字） |
+| https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 25315 文字） |
+| https://in.tradingview.com/scripts/kijun-sen/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 8517 文字） |
+| https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 18747 文字） |
+| https://ru.tradingview.com/script/5b7gDP18-Ichimoku-Signals-Table | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4084 文字） |
+| https://articles.stockcharts.com/article/stockcharts-insider-a-practical-guide-to-the-ichimoku-kijun-sen-pullback/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 9228 文字） |
+| https://www.tradingview.com/script/9FGkF2Pq-Ichimoku-With-Grading/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6212 文字） |
+
+開いたページは、件ごとに数えて 73 本（同じ URL を除くと 73 本）です。開けなかったページは、件ごとに 11 本（同じ URL を除くと 11 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 
