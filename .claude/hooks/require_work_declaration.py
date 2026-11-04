@@ -46,6 +46,7 @@ from transcript_rows import rows                # 記録は会話の本物の行
 
 ROOT = HERE.parent.parent
 SESSIONS = ROOT / ".claude" / "state" / "sessions"
+SRC_JSON = ROOT / ".claude" / "state" / "next_step_src.json"
 # ★2026-10-12（172回目）＝引き継ぎの文書の元データ（next_step_src.json）も、記録と同じ扱いで通す。
 #   なぜ＝1件が済んで「★いまここ」を次の番号へ移した後に、締めの手順（ToDo の表を写す → next_step を作り直す）が打てなくなるため。
 FREE = ("/.claude/plans/", "session_worklog_", "/.claude/state/sessions/", "/memory/", "/.claude/state/next_step_src.json")
@@ -252,6 +253,32 @@ def check(transcript: pathlib.Path, todo: pathlib.Path):
     return f"ToDo の {num}番の宣言の後に、まこさんの返事が まだ無い"
 
 
+def taken_problem(todo: pathlib.Path, src: pathlib.Path, sid: str):
+    """★2026-11-04（263番・まこさん「そもそも順番どおりにできないならtodo化する意味がないよね」）＝★いまここ の行は、
+    tidy_next_step.py --todo-take で取った行だけ（順番の確かめは --todo-take がする）。手で印を付けた行は止める。"""
+    try:
+        nums = doing_numbers(todo.read_text(encoding="utf-8", errors="replace"))
+        data = json.loads(src.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        nums, data = [], None
+    if data is None or len(nums) != 1:
+        return f"いまやる行が無い＝表の上から取る。python3 .claude/tools/tidy_next_step.py --todo-take 工事 --session {sid}（クラウドへの依頼のセッションは 工事 を クラウド にする）"
+    for sec in data.get("節", []):
+        for blk in sec.get("塊", []):
+            for row in (blk.get("表") or {}).get("行", []):
+                if str(row["欄"][0]).strip() == nums[0]:
+                    if str(row["欄"][-1]).strip().startswith(f"着手中（{sid[:8]}）"):
+                        return None
+                    return (f"{nums[0]}番は、表で このセッションの着手中になっていない。"
+                            f"手で印を付けない。python3 .claude/tools/tidy_next_step.py --todo-take 工事 --session {sid}（クラウドへの依頼のセッションは 工事 を クラウド にする）")
+    return f"{nums[0]}番が next_step の表に無い。python3 .claude/tools/tidy_next_step.py --todo-take 工事 --session {sid}（クラウドへの依頼のセッションは 工事 を クラウド にする）"
+
+
+# ★2026-11-04（まこさん「不具合なら修正」）＝bash -n は文法を見るだけで走らせない。ターンの終わりの require_run_after_edit が求める確かめを、
+#   宣言の待ちの間に止めると、2つの hook がぶつかって動けなくなる（直す前に1回 起きた）。
+BASH_SYNTAX = re.compile(r"^bash\s+-n\s+[\w./-]+\s*$")
+
+
 def check_or_read(cmd: str) -> bool:
     """★2026-10-17（183回目・まこさん「要とし、CCの案で修正する」）＝コマンドを区切り（&&・||・;・|・改行）ごとに見て、
       全部が「検査だけの実行」か「読むだけの調べ」なら通す。直す前は、コマンドのどこかに --check などの文字が在れば通したので、
@@ -265,7 +292,7 @@ def check_or_read(cmd: str) -> bool:
     for seg in re.split(r"&&|\|\||;|\||\n", c):
         s = re.sub(r"^\s*(time|timeout\s+\d+)\s+", "", seg).strip()
         s = re.sub(r"^git\s+-C\s+\S+\s+", "git ", s)
-        if not s or bash_is_read(s) or GIT_EXTRA.match(s):
+        if not s or bash_is_read(s) or GIT_EXTRA.match(s) or BASH_SYNTAX.match(s):
             continue
         if TOOL_CHECK.match(s):
             continue
@@ -342,7 +369,7 @@ def gate(d: dict):
         return None
     if name == "Bash" and commit_only(str(inp.get("command", ""))) and last_user_ok_commit(pathlib.Path(tp)):
         return None                            # コミットだけで、直前の発言が「コミットOK」なら、宣言を求めない（2026-11-02）
-    return check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
+    return taken_problem(SESSIONS / sid / "session_todo.md", SRC_JSON, sid) or check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
 
 
 def hook() -> int:
@@ -516,7 +543,23 @@ def selftest() -> int:
         run("T42 印の無い行で、依頼書の置き場へ宣言なしで書く → 止まる", [_user("始めて")], None, True,
             edit("/a/.claude/instructions/x.md"))
         SESSIONS = real_sessions
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 48件（T1〜T42・C1〜C6）のうち、期待と違う {ng} 件")
+    # ★2026-11-04（263番）＝表で取った行だけが通る
+    with tempfile.TemporaryDirectory() as td:
+        tdp = pathlib.Path(td)
+        src43, todo43 = tdp / "s.json", tdp / "t.md"
+        src43.write_text(json.dumps({"節": [{"塊": [{"表": {"行": [{"欄": [" 8 ", " ②形 ", " 着手中（abcdefgh）／まだ "]}, {"欄": [" 9 ", " ②次 ", " まだ "]}]}}]}]}), encoding="utf-8")
+        head43 = "| 番号 | やること | 状態 |\n|---|---|---|\n"
+        todo43.write_text(head43 + f"| 8 | ②形 | {DOING} |\n", encoding="utf-8")
+        ok43 = taken_problem(todo43, src43, "abcdefgh-1") is None and taken_problem(todo43, src43, "zzzzzzzz-1") is not None
+        todo43.write_text(head43 + f"| 9 | ②次 | {DOING} |\n", encoding="utf-8")
+        ok44 = taken_problem(todo43, src43, "abcdefgh-1") is not None
+        ok45 = taken_problem(tdp / "無い.md", src43, "abcdefgh-1") is not None
+    ok46 = check_or_read("bash -n .claude/hooks/a.sh") and not check_or_read("bash .claude/hooks/a.sh") and not check_or_read("bash -n a.sh && rm b")
+    for name43, cond43 in (("T43 取った行は通り、別のセッションの行は止まる", ok43), ("T44 手で印を付けた行は止まる", ok44), ("T45 行が無ければ止まる", ok45),
+                           ("T46 bash -n だけを読むだけに数える（走らせる形と、書き込みをつないだ形は止まる）", ok46)):
+        print(f"  {'✅' if cond43 else '❌'} {name43}")
+        ng += 0 if cond43 else 1
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 52件（T1〜T46・C1〜C6）のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 

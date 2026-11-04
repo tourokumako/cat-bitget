@@ -39,13 +39,17 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import hashlib
+import io
 import json
 import os
 import pathlib
 import re
 import subprocess
 import tempfile
+import threading
 from datetime import date
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -106,16 +110,11 @@ REF_TAIL_RE = re.compile(r"^[\s`]*(?:の\s*)?(§\d+(?:\.\d+)?(?:\s*[〜～・、
 SEC6_HEAD = "# §6 "
 S6_FLAG = "§6の済の行を移す"
 BASELINE_KEY = "読み込んだときに見つからなかった参照"
-# ★2026-11-02（241回目・237番）＝ToDo のファイルの形（render_todo）
-SHORT_KEY = "ToDo の短い文"                     # 元データの鍵。番号 → ToDo の表に出す短い文（無い番号は、元の文の最初の1文を出す）
-DETAIL_HEAD = "## 詳しい中身（元の文を1文字も変えずに残す）"
-DETAIL_SEP = " ／ 元の状態＝"
-TODO_PARTS = (("②", "1. データの形を直す"), ("③", "2. 9種の値を埋める"),
-              ("④", "3. 9種で最初から最後まで通す"), ("⑤", "4. 残りの指標や場面に広げる"))
-TODO_UNDECIDED = "時期が決まっていないもの"
-TODO_LATER = "後でやるもの"
-TODO_CLOSE = "セッションの終わり"
-TODO_SHORT_STATES = ("まだ", "未定", "後で")
+# ★2026-11-04（249回目・263番・まこさん「そもそも順番どおりにできないならtodo化する意味がないよね」「next_stepで管理するとか」）
+#   ＝ToDo の行は next_step の③の表の1か所だけ。並びが順番そのもの。セッションの置き場には、いまやっている1行だけを持つ。
+#   工事とクラウドは流れを分け、それぞれ表の上からしか取れない（並走しても同じ行を取らない）。
+TODO_FLOWS = {"工事": ("②", "③", "④", "⑤"), "クラウド": ("クラウド｜",)}
+TAKEN = "着手中"
 
 # ★2026-10-02（146回目・まこさん指示・逐語「毎回私から、整理整頓しろとｋ、私が読みやすい状態にしろとか言うのだるいんだが。
 #   自発的にやれるようにできないの？」「なにも私が言わないと、書き足し続けるって、すべてのデータがそうなってるよね」
@@ -806,97 +805,159 @@ CLOSE_ROW_RE = re.compile(r"（(\d+)回目）の締め")                       #
 STATE_HEAD_RE = re.compile(r"^(### 3-1 いまの状態（)\d{4}-\d{2}-\d{2}・\d+回目の締め")   # 3-1 の見出しの日付と回目
 
 
-def start_todo(next_path: pathlib.Path, sid: str) -> int:
-    """元データの「次のセッションでやること」の表から、そのセッションの ToDo を作る（2026-11-02・237回目・まこさん「そこから読み込めばいいのでは？」）。
-    なぜ要るか＝締めの --todo-from が表に書くのに、読み込む口が無く、CC が毎回 表を手で打ち直していた（形の誤りで hook にも止められた）。
-    始めの表示（reset_read_log.sh）が呼ぶ。在る ToDo は上書きしない（再開したセッションの ToDo を消さないため）。
-    ★いまここ＝状態が「いまここ（次の回は、ここから）」か「まだ（途中」の最初の行。元の状態の文は「記録」の欄に移す（hook は欄が文字だけの行を数える）。"""
-    todo = next_path.parent / "sessions" / sid / "session_todo.md"
-    if todo.exists():
-        print(f"[ToDo] もう在るので作らない: {todo}")
-        return 0
-    src_path = next_path.parent / SRC_NAME
-    try:
-        src = json.loads(src_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        print(f"⚠️ [ToDo] 元データを読めない（{src_path}・{e}）＝ToDo を作っていない。next_step の③の表から書く")
-        return 2
-    head, rows = "", []
+@contextlib.contextmanager
+def _todo_lock(next_path: pathlib.Path):
+    """元データを読んで書く間の順番待ち（並走する2つのセッションが、同じ行を取らない・書いた物を消し合わない）。"""
+    with open(next_path.parent / ".next_step_src.lock", "a", encoding="utf-8") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def _todo_table(src: dict) -> list | None:
+    """元データの ToDo の表の行（無ければ None）。"""
     for sec in src.get("節", []):
         if sec.get("見出し", "").startswith(NEXT_SEC):
-            head = sec["見出し"]
             for blk in sec.get("塊", []):
                 if "表" in blk and blk["表"]["見出しの行"].strip() == TODO_HEAD:
-                    rows = [[x.strip() for x in r["欄"]] for r in blk["表"]["行"]]
-    if not rows:
-        print(f"⚠️ [ToDo] 元データに ToDo の表が無い＝ToDo を作っていない（{src_path}）")
+                    return blk["表"]["行"]
+    return None
+
+
+def _cells(r: dict) -> list:
+    return [x.strip() for x in r["欄"]]
+
+
+def _todo_flow(what: str) -> str | None:
+    """行の流れ。文の先頭の印で決まる。流れの無い行（後で・未定・締め）は順番を問わない。"""
+    for flow, marks in TODO_FLOWS.items():
+        if what.startswith(marks):
+            return flow
+    return None
+
+
+def _taken_by(state: str) -> str | None:
+    m = re.match(rf"{TAKEN}（([^）]*)）", state)
+    return m.group(1) if m else None
+
+
+def _released(state: str) -> str:
+    """着手中の印を外して、元の状態へ戻す。"""
+    return re.sub(rf"^{TAKEN}（[^）]*）／", "", state)
+
+
+def _session_row(todo: pathlib.Path) -> tuple | None:
+    """セッションの置き場の、いまやっている1行（番号, やること）。"""
+    if not todo.exists():
+        return None
+    for l in todo.read_text(encoding="utf-8").splitlines():
+        c = [x.strip() for x in l.strip().strip("|").split("|")] if l.strip().startswith("|") else []
+        if len(c) >= 3 and c[0].isdigit() and c[2] == HERE_MARK:
+            return c[0], c[1]
+    return None
+
+
+def _save_todo(next_path: pathlib.Path, src: dict) -> None:
+    """元データを書き、next_step.md を同じ中身に作り直す（表の1か所だけを見ればよい形にする）。"""
+    _atomic_write(next_path.parent / SRC_NAME, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
+    main_part, _ = split_ref(render(src))
+    _atomic_write(next_path, gen_head(main_part) + main_part)
+
+
+def start_todo(next_path: pathlib.Path, sid: str) -> int:
+    """セッションの始めの表示。何も書かない。流れごとの次の行と、着手中の行を出す。"""
+    try:
+        rows = _todo_table(json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8")))
+    except (OSError, ValueError) as e:
+        print(f"⚠️ [ToDo] 元データを読めない（{e}）")
         return 2
-    here = next((i for i, r in enumerate(rows) if r[2].startswith(("いまここ", "まだ（途中"))), None)
-    m = re.search(r"（(\d+)回目）", head)
-    title = f"# ToDo（{m.group(1) if m else '?'}回目・next_step の③の表からプログラムが作った）"
-    todo.parent.mkdir(parents=True, exist_ok=True)
-    _atomic_write(todo, render_todo(title, rows, src.get(SHORT_KEY) or {}, here))
-    at = f"{rows[here][0]}番に {HERE_MARK} を付けた" if here is not None else f"{HERE_MARK} は付けていない（「いまここ」「まだ（途中」の行が無い）＝いまやる1件に付ける"
-    print(f"[ToDo] {len(rows)} 行を next_step の③の表から作った。{at}")
+    if rows is None:
+        print("⚠️ [ToDo] 元データに ToDo の表が無い")
+        return 2
+    for flow in TODO_FLOWS:
+        fl = [_cells(r) for r in rows if _todo_flow(_cells(r)[1]) == flow]
+        if not fl:
+            print(f"[ToDo] {flow}＝行が無い")
+        elif _taken_by(fl[0][2]):
+            print(f"[ToDo] {flow}の次＝{fl[0][0]}番は着手中（{_taken_by(fl[0][2])}）。別のセッションが動いているか、前のセッションの続き")
+        else:
+            print(f"[ToDo] {flow}の次＝{fl[0][0]}番（{fl[0][1].split('。')[0][:40]}）")
+    print(f"[ToDo] 行の置き場は next_step の③の表だけ。取る＝工事のセッションは tidy_next_step.py --todo-take 工事 --session {sid}"
+          f"／クラウドへの依頼のセッションは --todo-take クラウド --session {sid}")
     return 0
 
 
-def _todo_part(what: str, state: str) -> str:
-    """その行を置く節。段の記号（②③④⑤）は、やることの文の先頭に在る。2つ付く行（②⑤）は先の段に置く。"""
-    for mark, part in TODO_PARTS:
-        if what.startswith(mark):
-            return part
-    if CLOSE_ROW_RE.search(what):
-        return TODO_CLOSE
-    return TODO_LATER if state.startswith("後で") else TODO_UNDECIDED
-
-
-def render_todo(title: str, rows: list, shorts: dict, here: int | None = None) -> str:
-    """ToDo のファイルの全文（2026-11-02・241回目・237番・まこさん「もっと整理してわかりやすくできないの？」「ok」）。
-    やる順の節に分け、やることは短い文、状態は短い語だけにする。元の文は「詳しい中身」の2列の表に残す。
-    なぜ2列の表か＝gen_req_trace.todo_rows は同じ番号の後の行を読むので「作った後の確認」の文が届き、
-    宣言の hook と --todo-from の状態の読み方は3列以上の行だけを見るので、数え違えない。
-    行の並びは --todo-from が「詳しい中身」の順に戻す（next_step の③の表の順番を変えない）。"""
-    parts = [p for _, p in TODO_PARTS] + [TODO_UNDECIDED, TODO_LATER, TODO_CLOSE]
-    by_part: dict = {p: [] for p in parts}
-    for i, r in enumerate(rows):
-        part = _todo_part(r[1], r[2])
-        short = shorts.get(r[0]) or re.sub(r"^[②③④⑤]+", "", r[1]).split("。")[0]
-        if i == here or r[2] == HERE_MARK:
-            state = HERE_MARK
-        elif r[2].startswith(DONE_MARK):
-            state = r[2]
-        else:
-            state = {TODO_LATER: "後で", TODO_UNDECIDED: "未定"}.get(part, "まだ")
-        by_part[part].append(f"| {r[0]} | {short} | {state} |")
-    out = [title, "", f"上の節から順に進めます。番号の順ではありません。いまやる行は、状態が {HERE_MARK} の行です（1つだけ）。"]
-    for p in parts:
-        if by_part[p]:
-            out += ["", f"## {p}", "", "| 番号 | やること | 状態 |", "|---|---|---|"] + by_part[p]
-    out += ["", DETAIL_HEAD, "", "| 番号 | 元の文 |", "|---|---|"]
-    out += [f"| {r[0]} | {r[1]}{DETAIL_SEP}{r[2]} |" for r in rows]
-    return "\n".join(out) + "\n"
-
-
-def reshape_todo(next_path: pathlib.Path, sid: str) -> int:
-    """いま在る ToDo（前の形の1つの表）を、render_todo の形に作り直す。文は変えない。もう新しい形なら何もしない。"""
+def take_todo(next_path: pathlib.Path, sid: str, what: str, resume: bool = False) -> int:
+    """流れの一番上の行（または流れの無い行）を、このセッションの行として取る。流れの途中の行は取れない。"""
     todo = next_path.parent / "sessions" / sid / "session_todo.md"
-    text = todo.read_text(encoding="utf-8")
-    if DETAIL_HEAD in text:
-        print(f"[ToDo] もう新しい形なので作り直さない: {todo}")
-        return 0
-    rows, here = [], None
-    for l in text.splitlines():
-        c = [x.strip() for x in l.strip().strip("|").split("|")] if l.strip().startswith("|") else []
-        if len(c) < 3 or not c[0].isdigit():
-            continue
-        if c[2] == HERE_MARK:
-            here = len(rows)
-        before = c[3][len("前の状態＝"):] if c[2] == HERE_MARK and len(c) > 3 and c[3].startswith("前の状態＝") else c[2]
-        rows.append([c[0], c[1], before])
-    src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
-    _atomic_write(todo, render_todo(text.splitlines()[0], rows, src.get(SHORT_KEY) or {}, here))
-    print(f"[ToDo] {len(rows)} 行を新しい形に作り直した: {todo}")
+    me = sid[:8]
+    with _todo_lock(next_path):
+        src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
+        rows = _todo_table(src) or []
+        have = _session_row(todo)
+        if what in TODO_FLOWS:
+            row = next((r for r in rows if _todo_flow(_cells(r)[1]) == what), None)
+        else:
+            row = next((r for r in rows if _cells(r)[0] == what), None)
+        if row is None:
+            print(f"❌ [ToDo] 「{what}」の行が表に無い")
+            return 2
+        no, text, state = _cells(row)
+        flow = _todo_flow(text)
+        top = next((r for r in rows if _todo_flow(_cells(r)[1]) == flow), None) if flow else None
+        if top is not None and top is not row:
+            print(f"❌ [ToDo] {no}番は取れない。{flow}の一番上は {_cells(top)[0]}番。"
+                  "順番を変えるときは、まこさんの OK を取って表の行を動かす")
+            return 2
+        owner = _taken_by(state)
+        if owner and owner != me and not resume:
+            print(f"❌ [ToDo] {no}番は着手中（{owner}）。前のセッションの続きなら、まこさんに伺ってから --resume を付ける")
+            return 2
+        if have and have[0] != no:
+            print(f"❌ [ToDo] このセッションは {have[0]}番を進めている。先に --todo-done で閉じるか、まこさんに伺う")
+            return 2
+        row["欄"][2] = f" {TAKEN}（{me}）／{_released(state)} "
+        todo.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write(todo, f"{TODO_HEAD}\n|---|---|---|\n| {no} | {text} | {HERE_MARK} |\n")
+        _save_todo(next_path, src)
+    print(f"✅ [ToDo] {no}番を取った（{text.split('。')[0][:40]}）")
+    return 0
+
+
+def release_todo(next_path: pathlib.Path, sid: str) -> int:
+    """このセッションの行を手放す＝済ませずに表へ戻す。順番は変えない（セッションを終える・別の流れへ移るとき）。"""
+    todo = next_path.parent / "sessions" / sid / "session_todo.md"
+    with _todo_lock(next_path):
+        have = _session_row(todo)
+        if have is None:
+            print("❌ [ToDo] このセッションが進めている行が無い")
+            return 2
+        src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
+        for r in _todo_table(src) or []:
+            if _cells(r)[0] == have[0] and _taken_by(_cells(r)[2]) == sid[:8]:
+                r["欄"][2] = f" {_released(_cells(r)[2])} "
+        todo.unlink()
+        _save_todo(next_path, src)
+    print(f"✅ [ToDo] {have[0]}番を手放した（表の位置は同じ）")
+    return 0
+
+
+def done_todo(next_path: pathlib.Path, sid: str) -> int:
+    """このセッションの行を済みにする＝表から消す。済んだ中身は worklog に書く。"""
+    todo = next_path.parent / "sessions" / sid / "session_todo.md"
+    with _todo_lock(next_path):
+        have = _session_row(todo)
+        if have is None:
+            print("❌ [ToDo] このセッションが進めている行が無い")
+            return 2
+        src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
+        rows = _todo_table(src) or []
+        rows[:] = [r for r in rows if _cells(r)[0] != have[0]]
+        todo.unlink()
+        _save_todo(next_path, src)
+    print(f"✅ [ToDo] {have[0]}番を表から消した")
     return 0
 
 
@@ -908,52 +969,23 @@ def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None, work:
       必読に書き替える（判定は next_move.must_read_for の1か所・CC がファイルを選ばない）。"""
     src_path = next_path.parent / SRC_NAME
     todo = next_path.parent / "sessions" / sid / "session_todo.md"
-    if not src_path.exists() or not todo.exists():
-        print(f"❌ [tidy --todo-from] 元データか ToDo が無い（{src_path}・{todo}）")
+    if not src_path.exists():
+        print(f"❌ [tidy --todo-from] 元データが無い（{src_path}）")
         return 2
     today = today or date.today().isoformat()
-    rows = []
-    close_n = None                                  # 締めの行の回目（いま締めているセッションの回目）
-    todo_lines = todo.read_text(encoding="utf-8").splitlines()
-    # ★2026-11-02（241回目・237番）＝「詳しい中身」の2列の表から元の文を読む。短い語のままの状態は元の文に戻す（③の表の文を短くしない）
-    details: dict = {}
-    for l in todo_lines:
-        c = [x.strip() for x in l.strip().strip("|").split("|")] if l.strip().startswith("|") else []
-        if len(c) == 2 and c[0].isdigit() and DETAIL_SEP in c[1]:
-            details[c[0]] = c[1].rsplit(DETAIL_SEP, 1)
-    done_nos = set()
-    for l in todo_lines:
-        s = l.strip()
-        if not s.startswith("|"):
-            continue
-        c = [x.strip() for x in s.strip("|").split("|")]
-        # ★2026-10-18（189回目）＝恒久の決まり55番は「✅済（日付）」と日付を添える。直す前は「✅済」の4文字だけと比べ、
-        #   日付つきの済んだ行（29・35・43番）を写していた＝毎回読む部分が上限を超えた
-        if len(c) < 3 or not c[0].isdigit():
-            continue
-        if c[2].startswith(DONE_MARK):
-            done_nos.add(c[0])
-            continue
-        what, state = c[1], c[2]
-        if c[0] in details:
-            what = details[c[0]][0]
-            if state in TODO_SHORT_STATES:
-                state = details[c[0]][1]
-        m = CLOSE_ROW_RE.search(what)
-        if state == HERE_MARK and m:
-            # 締めの行＝次の回の締めの行として写す（回目を1つ進め、状態は「まだ」）
-            close_n = int(m.group(1))
-            what, state = what.replace(m.group(0), f"（{close_n + 1}回目）の締め", 1), "まだ"
-        elif state == HERE_MARK:
-            # ToDo の「★いまここ」の行は、次の回が始める行＝「いまここ（次の回は、ここから）」と写す
-            state = "いまここ（次の回は、ここから）"
-        rows.append({"欄": [f" {c[0]} ", f" {what} ", f" {state} "]})
-    if details:                                     # ★③の表の順番を変えない＝「詳しい中身」の順に戻し、後から足した行は後ろに置く
-        by_no = {r["欄"][0].strip(): r for r in rows}
-        ordered = [by_no.pop(no) if no in by_no else {"欄": [f" {no} ", f" {d[0]} ", f" {d[1]} "]}
-                   for no, d in details.items() if no not in done_nos]
-        rows = ordered + list(by_no.values())
     src = json.loads(src_path.read_text(encoding="utf-8"))
+    have = _session_row(todo)
+    m0 = CLOSE_ROW_RE.search(have[1]) if have else None
+    close_n = int(m0.group(1)) if m0 else None      # 締めの行の回目（いま締めているセッションの回目）
+    rows = []
+    for r in _todo_table(src) or []:
+        no, what, state = _cells(r)
+        # ★表の行と順番は変えない。このセッションの着手中の印だけを外す（途中の行は、次の回が一番上から取り直す）
+        if _taken_by(state) == sid[:8]:
+            state = _released(state)
+        if close_n is not None and CLOSE_ROW_RE.search(what):
+            what, state = what.replace(f"（{close_n}回目）の締め", f"（{close_n + 1}回目）の締め", 1), "まだ"
+        rows.append({"欄": [f" {no} ", f" {what} ", f" {state} "]})
     done = False
     state_head_done = False
     must = None
@@ -984,7 +1016,7 @@ def copy_todo(next_path: pathlib.Path, sid: str, today: str | None = None, work:
         print(f"❌ [tidy --todo-from] 写せない（表の見出しの行「{TODO_HEAD}」が元データに在るか＝{done}・済んでいない行＝{len(rows)}）")
         return 2
     _atomic_write(src_path, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
-    print(f"✅ [tidy --todo-from] ToDo の済んでいない {len(rows)} 行を、元データの表に写した → 続けて --write を打つ")
+    print(f"✅ [tidy --todo-from] 表の {len(rows)} 行の着手中の印を外し、回目を進めた → 続けて --write を打つ")
     if must_done:
         print(f"   必読の表＝工事 {work} のいまの段の {len(must)} 件に書き替えた")
     elif work:
@@ -1206,7 +1238,6 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
         return 2
     new_src[BASELINE_KEY] = src.get(BASELINE_KEY, [])
     new_src[S6_FLAG] = bool(src.get(S6_FLAG))
-    new_src[SHORT_KEY] = src.get(SHORT_KEY) or {}
     if new_arc != arc:
         _atomic_write(arc_path, new_arc)
     _atomic_write(src_path, json.dumps(new_src, ensure_ascii=False, indent=1) + "\n")
@@ -1699,20 +1730,19 @@ def selftest() -> int:
 
     # T18（2026-11-01・233回目）＝--todo-from の決まった書き替え。見本の元データと ToDo を一時の場所に作って試す。
     #   ①「2」の見出しが次の回目 ②締めの行が次の回目・まだ ③済んだ行は写さない ④3-1 の見出しの日付と回目 ⑤2回打っても同じ
-    import contextlib
-    import io
     with tempfile.TemporaryDirectory() as td:
         tp = pathlib.Path(td)
         (tp / "next_step.md").write_text("x\n", encoding="utf-8")
         sample = {"節": [
             {"見出し": f"{NEXT_SEC}（5回目）",
-             "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": []}}]},
+             "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": [
+                 {"欄": [" 7 ", " 何か ", " まだ "]},
+                 {"欄": [" 9 ", " このセッション（5回目）の締め（引き継ぎ・コミット） ", f" {TAKEN}（s1）／まだ "]}]}}]},
             {"見出し": f"{STATE_SEC}（2026-01-01・4回目の締め・記録＝`session_worklog_20260101.md` §1）", "塊": []}]}
         (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         (tp / "sessions" / "s1").mkdir(parents=True)
         (tp / "sessions" / "s1" / "session_todo.md").write_text(
-            f"{TODO_HEAD}\n|---|---|---|\n| 7 | 何か | まだ |\n| 8 | 済んだ | {DONE_MARK}（2026-01-02） |\n"
-            f"| 9 | このセッション（5回目）の締め（引き継ぎ・コミット） | {HERE_MARK} |\n", encoding="utf-8")
+            f"{TODO_HEAD}\n|---|---|---|\n| 9 | このセッション（5回目）の締め（引き継ぎ・コミット） | {HERE_MARK} |\n", encoding="utf-8")
         got = []
         for _ in range(2):
             with contextlib.redirect_stdout(io.StringIO()):
@@ -1727,63 +1757,57 @@ def selftest() -> int:
         if not ok18:
             ng.append(f"T18: --todo-from の決まった書き替えが違う／{got[0][0]}・{r18[0]['見出し']}・{rows18}・{r18[1]['見出し']}")
 
-    # T19（2026-11-02・237回目）＝--todo-start。①表の行を写す ②「まだ（途中」の行だけ状態の欄が ★いまここ の文字だけ ③元の状態は記録の欄 ④在る ToDo は上書きしない
+    # T19（2026-11-04・263番）＝--todo-start は何も書かない。流れごとの次の行を出す
     with tempfile.TemporaryDirectory() as td:
         tp = pathlib.Path(td)
         (tp / "next_step.md").write_text("x\n", encoding="utf-8")
         sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": [
-            {"欄": [" 7 ", " 何か ", " 後で "]}, {"欄": [" 8 ", " 途中の物 ", " まだ（途中＝監査の結果から） "]}, {"欄": [" 9 ", " 次の物 ", " まだ（順＝8 の後） "]}]}}]}]}
+            {"欄": [" 7 ", " 何か ", " 後で "]}, {"欄": [" 8 ", " ②形 ", " まだ "]}, {"欄": [" 9 ", " クラウド｜調べ ", " 依頼前 "]}]}}]}]}
         (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
-        with contextlib.redirect_stdout(io.StringIO()):
+        out19 = io.StringIO()
+        with contextlib.redirect_stdout(out19):
             rc19 = start_todo(tp / "next_step.md", "s9")
-        t19 = tp / "sessions" / "s9" / "session_todo.md"
-        got19 = t19.read_text(encoding="utf-8").splitlines() if t19.exists() else []
-        t19.write_text("消さない\n", encoding="utf-8") if t19.exists() else None
-        with contextlib.redirect_stdout(io.StringIO()):
-            start_todo(tp / "next_step.md", "s9")
-        kept19 = t19.read_text(encoding="utf-8") if t19.exists() else ""
-        want19 = ["| 7 | 何か | 後で |", f"| 8 | 途中の物 | {HERE_MARK} |", "| 9 | 次の物 | 未定 |",
-                  f"| 8 | 途中の物{DETAIL_SEP}まだ（途中＝監査の結果から） |", f"| 9 | 次の物{DETAIL_SEP}まだ（順＝8 の後） |"]
-        if not (rc19 == 0 and got19[0].startswith("# ToDo（5回目") and all(x in got19 for x in want19) and kept19 == "消さない\n"):
-            ng.append(f"T19: --todo-start が違う／rc={rc19}・{got19}・{kept19!r}")
+        if not (rc19 == 0 and "工事の次＝8番" in out19.getvalue() and "クラウドの次＝9番" in out19.getvalue() and not (tp / "sessions").exists()):
+            ng.append(f"T19: --todo-start が違う／rc={rc19}・{out19.getvalue()}")
 
-    # T21（2026-11-02・241回目・237番）＝新しい形の往復。①節に分かれ短い文が出る ②★いまここ を読む行は1つ ③--todo-from で③の表の文と順番が元に戻る
-    # ④✅済 にした行は写らない ⑤前の形を作り直しても同じ物になる
+    # T21（2026-11-04・263番）＝順番どおりにしか取れない。①流れの途中は取れない ②一番上の着手中は別のセッションが取れない ③別の流れは同時に取れる
+    # ④済むと次が一番上になる ⑤流れの無い行は順番を問わない ⑥--resume で続きを取れる ⑦同時に取っても1つだけが取れる ⑧締めで印が外れ、順番は変わらない
     with tempfile.TemporaryDirectory() as td:
         tp = pathlib.Path(td)
-        (tp / "next_step.md").write_text("x\n", encoding="utf-8")
-        rows21 = [[" 7 ", " 相談する。長い文 ", " 後で（理由） "], [" 8 ", " ⑤広げる。作った後の確認＝T1 ", " まだ（順＝9 の後） "],
-                  [" 9 ", " ②形を直す。作った後の確認＝T2 ", " いまここ（次の回は、ここから） "], [" 10 ", " ③埋める ", " まだ（順＝8 の後） "],
-                  [" 11 ", " 済ませる物。作った後の確認＝T3 ", " まだ "], [" 12 ", " 調べる ", " まだ（時期は伺う） "],
-                  [" 13 ", " このセッション（5回目）の締め ", " まだ "]]
+        ns21 = tp / "next_step.md"
+        ns21.write_text("x\n", encoding="utf-8")
+        rows21 = [[" 7 ", " 相談する ", " 後で "], [" 8 ", " ②形を直す ", " まだ（理由） "], [" 9 ", " ②次の形 ", " まだ "], [" 10 ", " ③埋める ", " まだ "],
+                  [" 11 ", " クラウド｜調べA ", " 依頼前 "], [" 12 ", " クラウド｜調べB ", " 依頼前 "], [" 13 ", " このセッション（5回目）の締め ", " まだ "]]
         sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [{"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2,
-                                                                         "行": [{"欄": r} for r in rows21]}}]}],
-                  SHORT_KEY: {"9": "形", "11": "済ませる"}}
+                                                                         "行": [{"欄": r} for r in rows21]}}]}]}
         (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
+        res21 = {}
         with contextlib.redirect_stdout(io.StringIO()):
-            start_todo(tp / "next_step.md", "s21")
-        t21 = tp / "sessions" / "s21" / "session_todo.md"
-        text21 = t21.read_text(encoding="utf-8")
-        cells21 = [[x.strip() for x in l.strip("|").split("|")] for l in text21.splitlines() if l.startswith("|")]
-        here21 = [c[0] for c in cells21 if len(c) >= 3 and c[2] == HERE_MARK]
-        ok21a = (here21 == ["9"] and "| 9 | 形 |" in text21 and "| 7 | 相談する | 後で |" in text21 and "| 12 | 調べる | 未定 |" in text21
-                 and text21.index("| 9 | 形 |") < text21.index("| 10 | 埋める |") < text21.index("| 8 | 広げる |") < text21.index("| 12 | 調べる |")
-                 and all(f"| {r[0].strip()} | {r[1].strip()}{DETAIL_SEP}{r[2].strip()} |" in text21 for r in rows21))
-        t21.write_text(text21.replace("| 11 | 済ませる | 未定 |", f"| 11 | 済ませる | {DONE_MARK}（2026-01-02） |"), encoding="utf-8")
-        with contextlib.redirect_stdout(io.StringIO()):
-            copy_todo(tp / "next_step.md", "s21", today="2026-01-02")
-        src21 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))
-        back21 = [[x.strip() for x in r["欄"]] for r in src21["節"][0]["塊"][0]["表"]["行"]]
-        want21 = [[x.strip() for x in r] for r in rows21 if r[0].strip() != "11"]
-        (tp / "sessions" / "s22").mkdir(parents=True)
-        t22 = tp / "sessions" / "s22" / "session_todo.md"
-        t22.write_text(f"# 題\n\n{TODO_HEAD}\n|---|---|---|\n| 9 | ②形を直す | {HERE_MARK} | 前の状態＝まだ（順） |\n| 7 | 何か | 後で（理由） | |\n", encoding="utf-8")
-        with contextlib.redirect_stdout(io.StringIO()):
-            reshape_todo(tp / "next_step.md", "s22")
-        text22 = t22.read_text(encoding="utf-8")
-        ok21c = "| 9 | 形 | " + HERE_MARK + " |" in text22 and f"| 9 | ②形を直す{DETAIL_SEP}まだ（順） |" in text22 and "| 7 | 何か | 後で |" in text22
-        if not (ok21a and back21 == want21 and ok21c):
-            ng.append(f"T21: ToDo の新しい形の往復が違う／{ok21a}・{back21}・{ok21c}")
+            res21["途中は取れない"] = take_todo(ns21, "s2", "9") == 2
+            res21["上を取る"] = take_todo(ns21, "s1", "工事") == 0
+            res21["着手中は取れない"] = take_todo(ns21, "s2", "工事") == 2
+            res21["別の流れは取れる"] = take_todo(ns21, "s2", "クラウド") == 0
+            res21["1セッション1行"] = take_todo(ns21, "s2", "13") == 2
+            res21["手放すと元の状態"] = release_todo(ns21, "s2") == 0 and take_todo(ns21, "s6", "クラウド") == 0 and release_todo(ns21, "s6") == 0 and take_todo(ns21, "s2", "クラウド") == 0
+            res21["続きを取れる"] = take_todo(ns21, "s4", "8", resume=True) == 0
+            done_todo(ns21, "s4")
+            res21["済むと次"] = take_todo(ns21, "s1b", "工事") == 0
+            res21["流れの無い行"] = take_todo(ns21, "s5", "7") == 0
+            done_todo(ns21, "s1b")
+            box21: list = []
+            ths = [threading.Thread(target=lambda n=n: box21.append(take_todo(ns21, f"t{n}", "工事"))) for n in range(6)]
+            for th in ths:
+                th.start()
+            for th in ths:
+                th.join()
+            res21["同時でも1つ"] = box21.count(0) == 1 and box21.count(2) == 5
+            # 締め＝s5 が 7番を進めたまま閉じる（順番を変えず、印だけ外す）
+            copy_todo(ns21, "s5", today="2026-01-02")
+        back21 = [_cells(r) for r in _todo_table(json.loads((tp / SRC_NAME).read_text(encoding="utf-8")))]
+        res21["締めで順番が同じ"] = [r[0] for r in back21] == ["7", "10", "11", "12", "13"] and back21[0][2] == "後で"
+        bad21 = [k for k, v in res21.items() if not v]
+        if bad21:
+            ng.append(f"T21: ToDo の取り方が違う／{bad21}・{back21}")
 
     # T20（2026-11-02・237回目）＝--todo-from --work が、必読の表を書き替える。work が無ければ書き替えない
     with tempfile.TemporaryDirectory() as td:
@@ -1792,10 +1816,8 @@ def selftest() -> int:
         old20 = {"欄": [" `古い.md` ", " 古い ", " 古い "]}
         sample = {"節": [{"見出し": f"{NEXT_SEC}（5回目）", "塊": [
             {"表": {"見出しの行": MUST_HEAD, "区切り": "|---|---|---|", "状態の欄": None, "行": [old20]}},
-            {"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": []}}]}]}
+            {"表": {"見出しの行": TODO_HEAD, "区切り": "|---|---|---|", "状態の欄": 2, "行": [{"欄": [" 7 ", " 何か ", " まだ "]}]}}]}]}
         (tp / SRC_NAME).write_text(json.dumps(sample, ensure_ascii=False), encoding="utf-8")
-        (tp / "sessions" / "s2").mkdir(parents=True)
-        (tp / "sessions" / "s2" / "session_todo.md").write_text(f"{TODO_HEAD}\n|---|---|---|\n| 7 | 何か | まだ |\n", encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             copy_todo(tp / "next_step.md", "s2", today="2026-01-02")
         no20 = json.loads((tp / SRC_NAME).read_text(encoding="utf-8"))["節"][0]["塊"][0]["表"]["行"]
@@ -1812,7 +1834,7 @@ def selftest() -> int:
           "／T4b 印の時刻も照らす"
           "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
           "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない"
-          "／T18 --todo-from の決まった書き替え／T19 --todo-start／T20 --todo-from --work／T21 ToDo の新しい形の往復")
+          "／T18 --todo-from の決まった書き替え／T19 --todo-start／T20 --todo-from --work／T21 ToDo は順番どおりにしか取れない")
     for x in ng:
         print(f"  ❌ {x}")
     total = 30
@@ -1836,9 +1858,13 @@ def main() -> int:
                     help="そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（続けて --write を打つ）。"
                          "締めの行が「★いまここ」なら、「2」の見出しの回目・締めの行・3-1 の見出しも書き、締めの手順を出す")
     ap.add_argument("--todo-start", dest="todo_start", metavar="セッションの id",
-                    help="元データの「次のセッションでやること」の表から、そのセッションの ToDo を作る（在れば作らない・始めの表示が呼ぶ）")
-    ap.add_argument("--todo-reshape", dest="todo_reshape", metavar="セッションの id",
-                    help="いま在る前の形の ToDo を、やる順の節に分けた形に作り直す（文は変えない）")
+                    help="流れごとの次の行を出す（何も書かない・始めの表示が呼ぶ）")
+    ap.add_argument("--todo-take", dest="todo_take", metavar="工事 か クラウド か 番号",
+                    help="流れの一番上の行を、このセッションの行として取る（流れの途中の行は取れない）。--session が要る")
+    ap.add_argument("--todo-done", dest="todo_done", action="store_true", help="このセッションの行を済みにして、表から消す。--session が要る")
+    ap.add_argument("--todo-release", dest="todo_release", action="store_true", help="このセッションの行を手放す（済ませずに表へ戻す・順番は変えない）。--session が要る")
+    ap.add_argument("--session", metavar="セッションの id")
+    ap.add_argument("--resume", action="store_true", help="--todo-take と一緒に＝別のセッションの着手中の行を続ける（まこさんに伺ってから）")
     ap.add_argument("--work", metavar="工事名", help="--todo-from と一緒に＝必読の表を、その工事のいまの段の必読に書き替える（判定は next_move.must_read_for）")
     a = ap.parse_args()
     if a.selftest:
@@ -1849,12 +1875,20 @@ def main() -> int:
         return import_src(a.file)
     if a.todo_start:
         return start_todo(a.file, a.todo_start)
-    if a.todo_reshape:
-        return reshape_todo(a.file, a.todo_reshape)
+    if (a.todo_take or a.todo_done or a.todo_release) and not a.session:
+        ap.error("--todo-take・--todo-done・--todo-release には --session が要ります")
+    if a.todo_release:
+        return release_todo(a.file, a.session)
+    if a.todo_take:
+        return take_todo(a.file, a.session, a.todo_take, resume=a.resume)
+    if a.todo_done:
+        return done_todo(a.file, a.session)
     if a.todo_from:
-        return copy_todo(a.file, a.todo_from, work=a.work)
+        with _todo_lock(a.file):
+            return copy_todo(a.file, a.todo_from, work=a.work)
     if a.write:
-        return do_write(a.file, a.archive, a.limit)
+        with _todo_lock(a.file):
+            return do_write(a.file, a.archive, a.limit)
     if a.verify:
         return do_verify(a.file, a.limit)
     ap.error("--verify / --write / --selftest のどれかを指定してください")

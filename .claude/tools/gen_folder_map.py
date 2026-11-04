@@ -15,10 +15,12 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import os
 import pathlib
 import re
+import subprocess
 import time
 from datetime import date
 
@@ -93,6 +95,107 @@ ROLES = {
         "signal_research/": "シグナルの研究のプログラム",
     },
 }
+
+
+# ★2026-11-04（まこさん「今回一時的に整理してもすぐに汚くするから、フォルダ構成を汚くしないような仕組みを入れろ」）
+#   ＝.claude/state の直下に在ってよい物の表。表に無いファイルやフォルダが増えると --verify が止める（Stop hook が呼ぶ＝ターンを終われない）。
+#   プログラムが作った物もシェルで作った物も、在れば見つかる。足すのは まこさんの OK の後だけ。
+STATE_ROLES = (
+    ("引き継ぎ（次にやること）", ("next_step.md", "next_step_src.json", "next_step_fixed.md", "next_step_fixed_approved.json",
+                                 "next_step_reference.md", "next_step_archive_*.md", "next_step_history_*.md", "must_read_now.txt")),
+    ("日付ごとの作業の記録", ("session_worklog_*.md",)),
+    ("設計書と承認", ("acceptance.md", "acceptance.approved", "design_approved.json", "design_read_plan.md", "design_read_plan_posted",
+                      "read_plan_src.json", "_trial_acceptance.md", "verify_tool.approved", "purpose_check.md", "flow_declaration.md",
+                      "forward_action.md", "exhaustion_check.md", "observation_design.md", "goal_block.md", "current_request.md")),
+    ("過去の決定の文（文書が指す）", ("audit_request_format_plan_20261018.md", "fix_request_require_read_used_20261006.md",
+                                      "label_structure_definition_verbatim_20260929.txt", "mako_decisions.json")),
+    ("検査済みの記録", ("g2_pass.json", "h2_pass.json", "pre_audit_check.json", "pre_audit_materials_pass.json", "try_ok.json", "a12_try_ok.json",
+                        "no_false_claim_count.json", "precheck_pass_*")),
+    ("要件と試験の対応表", ("req_trace.md", "req_trace_src.json")),
+    ("指標の資料（教科書の表ほか・消す時期は162番）", ("indicator_fix_plan.json", "indicator_fix_plan.md", "indicator_fix_sites.json", "indicator_fix_sites.md",
+                                                       "indicator_params_by_strategy.before_153.json", "indicator_params_by_strategy.before_153.md",
+                                                       "indicator_params_by_strategy.json", "indicator_params_by_strategy.md",
+                                                       "indicator_params_review.json", "indicator_params_review.md",
+                                                       "indicator_roles_thresholds.json", "indicator_roles_thresholds.md",
+                                                       "indicator_source_map.json", "indicator_source_map.md")),
+    ("hook の一覧", ("hook_cheatsheet.md", "hook_inventory.md", "hook_inventory_src.json", "hook_roles.json", "_hook_inventory.py")),
+    ("hook が書く印とログ", ("chat_check_blocks.json", "chat_check_last.json", "chat_draft.md", "last_webfetch.timestamp", "last_websearch.timestamp",
+                             "websearch_since_fetch", "search_log.txt", "read_log.txt", "pdca_fast_mode", "*_error.log", "*_reason.log",
+                             "design_gate_fallback.log", "design_gate_fires.log")),
+    ("文書が根拠に挙げる調べのプログラム", ("_gendoc_claims_probe.py", "_guess_probe.py", "_remove_hooks_20261001.py")),
+    ("E37 の調べの結果（E37 は保留）", ("e37_entry_filter_result.csv", "e37_giveup_result.csv", "e37_sl_step1_result.md", "e37_spike_sign_step2_result.md",
+                                        "e37_spike_traj_result.csv", "e37_spike_traj2_result.csv", "e37_spike_traj3_result.csv",
+                                        "e37_spike_traj4_result.csv", "e37_spike_traj5_result.csv")),
+)
+STATE_DIRS = {
+    "verbatim": "まこさんの言葉の逐語と、工事ごとの設計書の元",
+    "indicator_review": "指標の工事の調べと写すプログラム",
+    "sessions": "セッションごとの hook の記録（終わった物は tidy_next_step.py が消す）",
+    "reviews": "設計書と依頼書の見直し表",
+    "hook_fix_proposals": "hook の直しの案",
+    "precheck_pass_results": "採点の前の検査の結果",
+}
+
+
+def state_role(name: str) -> str | None:
+    for role, pats in STATE_ROLES:
+        if any(fnmatch.fnmatchcase(name, p) for p in pats):
+            return role
+    return None
+
+
+def state_stray() -> list[str]:
+    """.claude/state の直下で、表に無いファイルとフォルダ（点で始まる物は数えない）。"""
+    out = []
+    for p in sorted((TOP / "state").iterdir()):
+        if p.name.startswith("."):
+            continue
+        if p.is_dir():
+            if p.name not in STATE_DIRS:
+                out.append(p.name + "/")
+        elif state_role(p.name) is None:
+            out.append(p.name)
+    return out
+
+
+# ★2026-11-04（まこさん「他の場所も必要なら入れる」）＝audits の直下は名前の形で見る。
+AUDITS_ALLOWED = ("*_report.md", "cp*_work", "inputs", "applied_fixes.json", "2026-05-*.md", "2026-09-14_m2e2_cp36_critical_fix_other_ai_check.md",
+                  "audit_cp28_probe.py", "audit_cp28_scan.py", "audit_m2c_cp25_measure.py", "audit_m2c_cp26_measure.py", "audit_m2c_scan.py",
+                  "audit_m2d_cp27_breaks.py", "audit_m2d_cp27_scan.py", "m2d1_ranking_scan.py", "m2d_lint_check.py")
+
+
+def audits_stray() -> list[str]:
+    """sdk の audits の直下で、決まった名前の形に無い物。"""
+    return [p.name for p in sorted((SDK / "audits").iterdir())
+            if not p.name.startswith(".") and not any(fnmatch.fnmatchcase(p.name, a) for a in AUDITS_ALLOWED)]
+
+
+def code_stray() -> list[str]:
+    """scripts/priority_rebuild の下と ratchet の直下の、git に入っていない物。承認の前後で作る物は、いまの設計書に名前が在れば通す
+    （新しいプログラムは設計書の工事でしか作らない）。git に入れるには、まこさんの OK が要る。"""
+    r = subprocess.run(["git", "ls-files", "-o", "--exclude-standard", "-z", "--", "scripts/priority_rebuild", ".claude/ratchet"],
+                       cwd=BOT, capture_output=True, text=True)
+    acc = TOP / "state" / "acceptance.md"
+    design = acc.read_text(encoding="utf-8", errors="replace") if acc.exists() else ""
+    out = []
+    for rel in [x for x in r.stdout.split("\0") if x]:
+        if rel.startswith(".claude/ratchet/") and rel.count("/") > 2:
+            continue                            # ratchet の下の工事の控え（acceptance_archive ほか）は見ない
+        if pathlib.PurePath(rel).name not in design:
+            out.append(rel)
+    return out
+
+
+def state_table() -> list[str]:
+    counts: dict = {}
+    for p in (TOP / "state").iterdir():
+        if p.is_file() and not p.name.startswith("."):
+            counts[state_role(p.name)] = counts.get(state_role(p.name), 0) + 1
+    rows = ["| 何が入っているか | ファイルの数 |", "|---|---|"]
+    rows += [f"| {role} | {counts.get(role, 0):,} |" for role, _ in STATE_ROLES]
+    rows += ["", "| フォルダ | 何が入っているか |", "|---|---|"]
+    rows += [f"| `{n}/` | {r} |" for n, r in STATE_DIRS.items()]
+    return rows
 
 
 def entries(base: pathlib.Path) -> list[str]:
@@ -200,6 +303,7 @@ def render() -> str:
         "4. 同じ中身の写しと控えを作りません。控えが要るなら、git のコミットで残します。",
         "5. 新しいファイルやフォルダは、作る前に まこさんに伺います。作ったら、下の表の役割を `gen_folder_map.py` の ROLES に1行足します。足さないと `--verify` が止まります。",
         "6. 消す物と動かす物は、読む所と git を調べ、まこさんの OK を取ってから消します。下の表の「消す候補」も同じです。",
+        "7. `.claude/state` の直下に在ってよい物は、下の「`.claude/state` の直下の中身」の表だけです。表に無い物が増えると、`--verify` が止め、ターンを終われません（まこさん 2026-11-04）。`audits` の直下は決まった名前の形だけ、`scripts/priority_rebuild` と `ratchet` の直下は git に在る物と、いまの設計書に名前が在る物だけです。",
         "",
         "## sdk 直下（`v3-bitget-api-sdk/bitget-python-sdk-api/`）の中身",
         "",
@@ -219,6 +323,10 @@ def render() -> str:
         "## 直下の `.claude/` の中身",
         "",
         *table(TOP, top, ROLES["top"]),
+        "",
+        "## `.claude/state` の直下の中身",
+        "",
+        *state_table(),
         "",
         "## sdk の `.claude/` の中身",
         "",
@@ -264,6 +372,17 @@ def verify() -> list[str]:
     old = [p for p in baks() if time.time() - p.stat().st_mtime >= BAK_MIN_AGE]
     if old:
         ng.append(f"古い設定の控えが {len(old)} 本（{old[0].name} ほか）→ `gen_folder_map.py --write` で消す（settings.json は git に入っている）")
+    stray = state_stray()
+    if stray:
+        ng.append(f".claude/state の直下に、表に無い物が {len(stray)} 個（{'・'.join(stray[:8])}）→ 要らないなら消す。"
+                  "決まった置き場が在るなら動かす。それでも要るなら、まこさんに伺ってから STATE_ROLES に足す")
+    stray_a = audits_stray()
+    if stray_a:
+        ng.append(f"audits の直下に、決まった形でない物が {len(stray_a)} 個（{'・'.join(stray_a[:8])}）→ 要らないなら消す。作業の物は cp<N>_work へ置く")
+    stray_c = code_stray()
+    if stray_c:
+        ng.append(f"scripts/priority_rebuild か ratchet の直下に、git に無く設計書にも名前が無い物が {len(stray_c)} 個（{'・'.join(stray_c[:8])}）"
+                  "→ 調べの物は作らない。要らないなら消す。要るなら設計書の工事で作る")
     return ng
 
 

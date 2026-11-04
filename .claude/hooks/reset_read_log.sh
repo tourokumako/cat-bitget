@@ -52,8 +52,8 @@ if [ -n "$SID" ]; then
   # ★2026-10-12（172回目）＝表示を実物に合わせた。前の ToDo の hook（enforce_todo_declaration）は 2026-10-01 から登録が無い。
   #   いま ToDo を読むのは、宣言の hook（require_work_declaration）＝「★いまここ」の1件の宣言と、まこさんの返事を求める。
   # ★2026-11-02（237回目・まこさん「そこから読み込めばいいのでは？」）＝ToDo を next_step の元データの表から作る（在れば作らない）。手で打ち直さない。
-  python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/tidy_next_step.py" --todo-start "$SID" || echo "⚠️ [ToDo] 作れなかった＝next_step の③の表から書く"
-  echo "=== [ToDo] このセッションの ToDo の置き場＝$SESS_DIR/session_todo.md（プログラムが作った。手で打ち直さない。★いまここ の欄はその文字だけにする。その番号の宣言〔【宣言】ToDo の N番・【作業内容】【目的】【経緯】【ゴール】〕を返信に書く。まこさんの返事の後に、作業を始める）==="
+  python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/tidy_next_step.py" --todo-start "$SID" || echo "⚠️ [ToDo] 表を読めなかった＝まこさんに報告する"
+  echo "=== [ToDo] 行の置き場は next_step の③の表だけ。表の並びが順番。流れの一番上の行を --todo-take で取る。その番号の宣言〔【宣言】ToDo の N番・【作業内容】【目的】【経緯】【ゴール】〕を返信に書く。まこさんの返事の後に、作業を始める ==="
 else
   echo "⚠️ [ToDo] セッションの id が読めない（stdin の json に session_id も transcript_path も無い）＝ToDo の置き場を決められない。まこさんに報告する。"
 fi

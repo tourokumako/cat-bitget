@@ -106,13 +106,11 @@ def assign(rows: list, rules: list) -> tuple:
 
 
 def known_numbers(root: pathlib.Path = ROOT) -> set:
-    """工事に書いてよい番号＝いちばん新しいセッションの ToDo・next_step の表・M2 のやることの番号。"""
+    """工事に書いてよい番号＝next_step の表（ToDo の行の置き場は、ここだけ）・M2 のやることの番号。"""
     out: set = set()
-    sess = root / SESSIONS.relative_to(ROOT)
-    todos = sorted(sess.glob("*/session_todo.md"), key=lambda p: p.stat().st_mtime)
-    for p in ([todos[-1]] if todos else []) + [root / NEXT_STEP.relative_to(ROOT)]:
-        if p.exists():
-            out |= set(re.findall(r"^\|\s*\**(\d+)\**\s*\|", p.read_text(encoding="utf-8"), flags=re.M))
+    p = root / NEXT_STEP.relative_to(ROOT)
+    if p.exists():
+        out |= set(re.findall(r"^\|\s*\**(\d+)\**\s*\|", p.read_text(encoding="utf-8"), flags=re.M))
     m2 = root / M2_TODO.relative_to(ROOT)
     if m2.exists():
         for t in json.loads(m2.read_text(encoding="utf-8")).get("やること") or []:
@@ -122,13 +120,13 @@ def known_numbers(root: pathlib.Path = ROOT) -> set:
 
 
 def todo_rows(root: pathlib.Path = ROOT) -> dict:
-    """いちばん新しいセッションの ToDo の行（無ければ next_step の表）。戻り＝{番号: 行の全文}。"""
-    sess = root / SESSIONS.relative_to(ROOT)
-    todos = sorted(sess.glob("*/session_todo.md"), key=lambda p: p.stat().st_mtime)
-    p = todos[-1] if todos else root / NEXT_STEP.relative_to(ROOT)
+    """next_step の③の表の行。戻り＝{番号: 行の全文}。ほかの表（判断待ち・やることの表）の番号は ToDo ではないので読まない。"""
+    p = root / NEXT_STEP.relative_to(ROOT)
     if not p.exists():
         return {}
-    return {m.group(1): m.group(0) for m in re.finditer(r"^\|\s*\**(\d+)\**\s*\|.*$", p.read_text(encoding="utf-8"), flags=re.M)}
+    text = p.read_text(encoding="utf-8")
+    m3 = re.search(r"^\*\*③ ToDo の表\*\*.*?(?=^\*\*④ )", text, flags=re.M | re.S)
+    return {m.group(1): m.group(0) for m in re.finditer(r"^\|\s*\**(\d+)\**\s*\|.*$", m3.group(0) if m3 else text, flags=re.M)}
 
 
 def check_problems(src: dict, root: pathlib.Path = ROOT) -> list:
@@ -261,10 +259,10 @@ def selftest() -> int:
     with tempfile.TemporaryDirectory() as td:
         root = pathlib.Path(td)
         (root / "a.md").write_text("# 要件\n\n## 節1\n\n- 行あ\n- 行い\n\n| 欄 | 中身 |\n|---|---|\n| か | き |\n\n# 次\n- 外\n", encoding="utf-8")
-        sdir = root / ".claude" / "state" / "sessions" / "s1"
-        sdir.mkdir(parents=True)
-        (sdir / "session_todo.md").write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
-        spec = [{"名前": "A", "ファイル": "a.md", "始まり": "# 要件", "終わり": "# 次"}]
+        ns = root / NEXT_STEP.relative_to(ROOT)
+        ns.parent.mkdir(parents=True)
+        ns.write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
+        spec =[{"名前": "A", "ファイル": "a.md", "始まり": "# 要件", "終わり": "# 次"}]
         rows = extract(spec, root)
         t("T1 見出し・表の見出し・範囲の外を数えない（3行）", [r["文"] for r in rows] == ["- 行あ", "- 行い", "| か | き |"])
         tests = {"T": {"中身": "x"}}
@@ -284,9 +282,9 @@ def selftest() -> int:
         b = json.loads(json.dumps(good))
         b["試験のコマンド"] = ""
         t("T16 試験のコマンドが空なら止まる", any("コマンド" in x for x in problems_(b)))
-        (sdir / "session_todo.md").write_text("| 番号 | やること |\n|---|---|\n| 7 | 何か |\n", encoding="utf-8")
+        ns.write_text("| 番号 | やること |\n|---|---|\n| 7 | 何か |\n", encoding="utf-8")
         t("T17 行に確認の文が無いと止まる", any("の文が無い" in x for x in problems_(good)))
-        (sdir / "session_todo.md").write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
+        ns.write_text(f"| 番号 | やること |\n|---|---|\n| 7 | 何か。{CHECK_WORD}＝走らせる |\n", encoding="utf-8")
         b = json.loads(json.dumps(good))
         b["割り当て"] = b["割り当て"][:2]
         t("T3 割り当ての無い行で止まる", any("割り当てが無い" in x for x in problems_(b)))
