@@ -313,7 +313,7 @@ def conditions(f: dict, idx: int) -> list:
     if idx == 10 and imp["request"]:                          # 依頼書は在る・結果は まだ＝まこさんに渡す前
         rc, last = run(["python3", ".claude/tools/gen_review.py", "--check", rel(imp["request"])])
         out.append((rc == 0, f"依頼書の見直し表の照らし（gen_review.py --check）＝{last}"))
-        rc, last = run(["python3", ".claude/tools/pre_audit_check.py", "--verify"])
+        rc, last = run(["python3", ".claude/tools/pre_audit_check.py", "--verify", "--design", str(f["archive"] or f["design"])])
         out.append((rc == 0, f"監査に出す前のチェックの記録（pre_audit_check.py --verify）＝{last}"))
     if idx in (7, 11):                                        # 当てる前（段8＝設計書の指示・段12＝実装の監査の修正）
         out += apply_preconditions(f)

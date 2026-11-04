@@ -83,3 +83,21 @@ engine_tuner のコードと指標データは直していない。net は動か
 - ToDo を next_step の③の表へ写し（--todo-from）、「2 次のセッションでやること」と 3-1 を書き替えた。教訓 L-756 を足した（現役の上限で古い1件が控えへ移った）。
 - コミットの OK は、まだいただいていない。対象＝next_step.md・next_step_src.json・この記録・lessons_active.md・lessons_archive.md・依頼書 CP101 とその作業場。decisions.md は前から M で、この回の作業ではない。
 - PC が1回落ちて、監査に出す前のチェックをやり直した（原因は確かめていない）。caffeinate でスリープを90分止めた（まこさんに事後に伝えた）。
+- ★締めのコミット 73d84bd4 の誤り：CP101 の監査が別のセッションで走っている最中に、作業場 cp101_work を丸ごと git add した。監査の途中の物（cp101_result.md・q1_replay.py・q6_conditions.sh・q8_mut.py・q11_check.py・q1_applied の写し）がコミットに入った。中身を見ずに足した私の誤り。作業場のファイルは消えていない。次のセッションで、監査が終わった後に、まこさんに伺ってから作業場を git の対象から外す。
+
+## §4 248回目＝実装の監査 CP101 の結果を受けて、修正を入れた（ToDo の209番）
+
+- 監査 CP101 の結論は GO。Critical 0・Major 10・Minor 13・Process 2。engine_tuner はまだ laws.json を読まないので、net は動かない。
+- まこさん 2026-11-04「勧めのとおり」＝①修正を全部入れる ②修正5〜9（売り方 S2〜S5 をオフ）を当てる ③修正25 は q1_applied の18本だけ git の記録から外し、残り6本は証拠として残す ④225番に TP_PCT の向きの確認を足す ⑤laws_rows_build.py の USAGES の行番号 69・78 を 70・79 に直す。
+- 当てる道具（--choose 5〜9=確定）で21件を当てた。修正24（next_move.py）は私が書いた。修正9・12（法則一覧.md の作り直し）と修正25 は、まこさんが打った。
+- 当てる道具が続けて G2（12:30）と H2（12:35）を走らせ、H2 は全部通った。H2 の検査済みの記録のハッシュ値は c8673355… に変わった（修正19〜22 が H2 の対象の indicators.json を直したため）。
+- 当てた後に走らせた結果＝自己テスト 43/43・写す元との照らし 違い0件・法則一覧.md の照らし 同じ・T44 通る・完成の条件14行 rc=0・壊すプログラム 7/7 と b213 1/1 が止まった。
+- 確かめていないこと＝修正24 の行は段10 でしか走らない。同じ形のコマンドは、設計書の違いでは止まらず「チェックの後にコードが変わっている」で止まった（修正を入れた後なので当然）。段10 の中で通るところまでは見ていない。
+- 監査の範囲の外の疑い＝engine_tuner_gen.py:2059 の TP_PCT に side_sign が無い。_floor_mult（:2045〜2047）も足さない。engine_tuner_exec.py:2402〜2407 は side_sign が無いと建値に幅をそのまま足すので、読む限り SHORT の利確が建値より上になる。走らせていない。これまでの走行への影響も調べていない。225番の確認に足した。
+- 監査の修正に無かった抜け＝修正16〜18 は USAGES の 69・78 を直さない作りだった。修正1〜8 も laws_rows_build.py に入らないので、走らせ直すと laws.json の修正の一部が消える。これからは laws.json を正本として扱う。
+- 2回止められた＝①宣言の根拠の行が無く、宣言を出し直した ②laws_rows_build.py を直した後に走らせた記録が無く、--unused-keys で走らせた。ほかに、sed -i と scripts/priority_rebuild を同じコマンドに書いて、受け入れ条件の hook に1回止められた。
+
+### コミットしていない物（まこさんの OK 待ち）
+- 修正の分＝laws.json・indicators.json・法則一覧.md・要件定義書 レベル4 指標の構造・next_move.py・applied_fixes.json・next_step.md と next_step_src.json（H2 の記録の節）。
+- 監査の分＝結果ファイル CP101・作業場の cp101_result.md・q11_check.py・q12_fix_try.py・cp101_result.review.md。q1_applied の18本の git からの外し。
+- decisions.md は前から変更ありで、この回の作業ではない。

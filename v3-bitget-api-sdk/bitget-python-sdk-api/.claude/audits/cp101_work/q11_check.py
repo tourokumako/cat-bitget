@@ -55,6 +55,16 @@ for name in ("g2_pass.json", "h2_pass.json"):
         if h is not None and not str(now).startswith(str(h)[:12]):
             bad.append(("違う", f))
     print("  合わない", bad)
+    # ★files は名前の一覧なので、上の照らしは在る・無しだけ。enforce_g2_pass.fingerprint・leak_causality_diag.h2_fingerprint と同じ式で指紋を作って比べる
+    fp = hashlib.sha256()
+    for rel in sorted(files):
+        q = os.path.join(ROOT, rel)
+        fp.update(rel.encode())
+        if os.path.exists(q):
+            fp.update(hashlib.sha256(open(q, "rb").read()).digest())
+        else:
+            fp.update(b"<missing>")
+    print("  指紋を作り直した結果", fp.hexdigest()[:16], "記録", str(d.get("fingerprint"))[:16], "同じ=", fp.hexdigest() == d.get("fingerprint"))
     names = " ".join(str(f) for f, _h in items)
     print("  laws.json が対象に在る", "laws.json" in names, "／laws.py", "laws.py" in names, "／indicators.json", "indicators.json" in names)
 
