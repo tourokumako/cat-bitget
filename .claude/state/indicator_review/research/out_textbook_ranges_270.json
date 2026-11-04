@@ -1499,6 +1499,367 @@
      "注": "DI と ADX の期間の話（同じページの「set both to 14」）。同じページに「Dropping the period to 7 on daily crypto makes ADX shout on one wide day.」が在る。本文で照らした道具：curl（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 8,
+   "指標": "基準線",
+   "探す物": "パラメータ k の範囲",
+   "結果": "値を挙げた文だけ在る",
+   "使った検索の語": [
+    "Ichimoku Kijun-sen period settings range crypto 20 30 60 scalping",
+    "Ichimoku settings adjust kijun period 26 30 crypto shorter timeframe（fidelity・stockcharts・schwab・tradingview・babypips に絞った）",
+    "Ichimoku kijun period optimization range tested crypto intraday 5 minute settings study"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://www.kucoin.com/en-au/blog/ichimoku-cloud-for-next-bitcoin-cycle",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 15106 文字）"
+    },
+    {
+     "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 11026 文字）"
+    },
+    {
+     "URL": "https://woox.io/blog/the-ultimate-guide-to-ichimoku-kinko-hyo",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 10127 文字）"
+    },
+    {
+     "URL": "https://tabtrader.com/academy/articles/what-is-ichimoku-cloud-trading-strategy",
+     "HTTP": 0,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 応答なし／Chromium＝error: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://tabtrader.com/academy/ar（本文 0 文字）／WebFetch はこのセッションで名前を引けない（ENOTFOUND）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.coinex.com/en/academy/detail/2464-what-is-ichimoku-cloud-in-crypto-trading",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 349 文字）"
+    },
+    {
+     "URL": "https://coinmarketcap.com/academy/article/what-is-the-ichimoku-cloud-and-how-to-use-it-in-crypto-trading",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 8638 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/X4pwbIqa/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4286 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4476 文字）"
+    },
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 18747 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000589152-ichimoku-cloud/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 6760 文字）"
+    },
+    {
+     "URL": "https://gunthy.gitbook.io/wiki/trading-strategy-options/margin-trading-strategies/ichimoku",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 103 文字）"
+    },
+    {
+     "URL": "https://my.tradingview.com/script/cGaJjq2f-Ichimoku-Kijun-OPTIMISED-FOR-15MIN-EURUSD",
+     "HTTP": 404,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 404／Chromium＝HTTP 404（本文 1895 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.binance.com/en/academy/articles/ichimoku-clouds-explained",
+     "HTTP": 202,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 202／Chromium＝HTTP 202（本文 14090 文字）"
+    },
+    {
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-ichimoku-settings",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "無い",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 13513 文字）"
+    },
+    {
+     "URL": "https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 28507 文字）"
+    },
+    {
+     "URL": "https://fxopen.com/blog/en/what-is-the-ichimoku-cloud-and-how-can-it-be-used-in-crypto-trading",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 15970 文字）"
+    },
+    {
+     "URL": "https://jp.tradingview.com/script/emYrxwRL",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 1732 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "⏱️ 1 Minute (1m) Tenkan / Kijun / Span B: 5 / 15 / 45 Use: Scalping fast price action.",
+     "URL": "https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "スキャル",
+      "短い足"
+     ],
+     "時間足": "1 Minute (1m)",
+     "出どころの質": "TradingView の公開スクリプト（Ichimoku Cloud Auto TF）",
+     "注": "基準線 15。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "⏱️ 5 Minutes (5m) Tenkan / Kijun / Span B: 8 / 24 / 72 Use: Intraday setups, quick trend capture.",
+     "URL": "https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "5分足"
+     ],
+     "時間足": "5 Minutes (5m)",
+     "出どころの質": "TradingView の公開スクリプト（Ichimoku Cloud Auto TF）",
+     "注": "基準線 24。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "⏱️ 15 Minutes (15m) Tenkan / Kijun / Span B: 9 / 27 / 81 Use: Short-term swing and intraday entries with higher reliability.",
+     "URL": "https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "短い足"
+     ],
+     "時間足": "15 Minutes (15m)",
+     "出どころの質": "TradingView の公開スクリプト（Ichimoku Cloud Auto TF）",
+     "注": "基準線 27。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Intraday (All Markets) 20 60 120 5-min, 15-min For faster timeframes, traders often double or triple the standard inputs to reduce noise.",
+     "URL": "https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "5分足",
+      "短い足"
+     ],
+     "時間足": "5-min, 15-min",
+     "出どころの質": "ブログ（ChartsWatcher）",
+     "注": "表の1行。基準線の欄は 60。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Cryptocurrencies 10 30 60 6-Hour, Daily The 24/7 market often benefits from slightly longer periods to smooth out weekend volatility.",
+     "URL": "https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "6-Hour, Daily",
+     "出どころの質": "ブログ（ChartsWatcher）",
+     "注": "表の1行。基準線の欄は 30。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Crypto-Adjusted Settings: While the classic 9-26-52 settings remain the standard, many pros in 2026 utilize 10-30-60 to account for the 24/7 crypto market cycle.",
+     "URL": "https://www.kucoin.com/en-au/blog/ichimoku-cloud-for-next-bitcoin-cycle",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "暗号資産の取引所の解説（KuCoin）",
+     "注": "10-30-60。どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Crypto traders generally adjust this setting to 30 periods.",
+     "URL": "https://woox.io/blog/the-ultimate-guide-to-ichimoku-kinko-hyo",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "暗号資産の取引所の解説（WOO X）",
+     "注": "直前の文「The Kijun-Sen and Chikou-Span used 26 periods to represent the business days in a given month.」を受けた文。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Many crypto traders, therefore, use (10, 30 and 60) instead of the original settings to reflect the 24/7 nature of crypto markets.",
+     "URL": "https://coinmarketcap.com/academy/article/what-is-the-ichimoku-cloud-and-how-to-use-it-in-crypto-trading",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "暗号資産の解説（CoinMarketCap Academy）",
+     "注": "どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Base Line: 60 instead of 26.",
+     "URL": "https://fxopen.com/blog/en/what-is-the-ichimoku-cloud-and-how-can-it-be-used-in-crypto-trading",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（FXOpen）",
+     "注": "暗号資産の設定として。直前に「To match up with crypto’s trading hours, many change the indicator periods from 9, 26, 52, and 26 to 20, 60, 120, and 30.」。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Of course, Ichimoku settings can be adjusted to suit a 5-day week at 7-22-44, then 9-30-60, or 12-24-120 for trending markets.",
+     "URL": "https://www.forex.in.rs/ichimoku-settings-7-22-44/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（forex.in.rs）",
+     "注": "7-22-44・9-30-60・12-24-120。どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "FOR CRYPTO YOU'D BETTER USE: 10,30,30,60,30 OR 20,60,60,120,60 THE TRICKY THING IS THAT KEEPING THE 1-3-3-6-3 RATIO CONSTANT IS NECESSARY",
+     "URL": "https://www.tradingview.com/script/X4pwbIqa/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（ICHIMOKU Kinko Hyo by KIVANC）",
+     "注": "5つの数の並び。同じ文の前の「DEAFULT LENGTHS (9,26,26,52,26)」から、2つ目が基準線と読める。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "TENKAN: 11 - a week and a half KIJUN: 30 - one month SENKOU: 61 - two months",
+     "URL": "https://jp.tradingview.com/script/emYrxwRL",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（Ichimoku Crypto Cloud 11-30-61・日本語の画面）",
+     "注": "基準線 30。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "The default setting for the Base Line is 26 periods and can be adjusted.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "変えてよい、とだけ書く。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "For cryptocurrency markets, traders often adjust default settings (9/26/52) to crypto-optimized parameters like 10/30/60 or 20/60/120 to account for 24/7 trading.",
+     "URL": "https://www.binance.com/en/academy/articles/ichimoku-clouds-explained",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "暗号資産の取引所の解説（Binance Academy）",
+     "注": "curl は応答の中身が空（202）、Chromium で開いた本文の文。本文で照らした道具：Chromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Best settings. Classic: 9, 26, 52. Scalping: 5, 13, 26. Swing trading: 9, 26, 52.",
+     "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "当てはまらない（パラメータの本数）",
+     "話の相手": [
+      "スキャル"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（LiteFinance）",
+     "注": "264番でも見つかった文。基準線は 13（スキャル）。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }

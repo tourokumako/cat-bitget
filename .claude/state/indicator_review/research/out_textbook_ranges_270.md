@@ -17,6 +17,7 @@
 | 5 | ATR% | 閾値の範囲（形＝値か倍率） | 両端の文が在る | 2 | 5 | 14 | 損切りの幅の ATR の倍率（1.5〜3.0・スキャル 1.0〜1.5）。ATR% の値の閾値の両端の文ではない |
 | 6 | 基準線 | 閾値の範囲（形＝値） | 値を挙げた文だけ在る | 0 | 4 | 10 | — |
 | 7 | DI差 | パラメータ n の範囲 | 両端の文が在る | 4 | 8 | 10 | DMI の期間の両端（5〜7・10〜14・20〜30・7〜10） |
+| 8 | 基準線 | パラメータ k の範囲 | 値を挙げた文だけ在る | 0 | 15 | 17 | — |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -149,6 +150,31 @@
 | 7 | Lower values (e.g., 7): more sensitive, more signals Higher values (e.g., 21): more stable, less noise<br>https://in.tradingview.com/script/FstitqUD/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Average Directional Index info） | ADX の平滑化の期間（Smoothing）の文。DI の長さ（Indicator Length）の既定は同じ行の後ろの 14。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 8 | Period 21 is the slower alternative when one day dominates the reading.<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ブログ（The Right Trader） | DI と ADX の期間の話（同じページの「set both to 14」）。同じページに「Dropping the period to 7 on daily crypto makes ADX shout on one wide day.」が在る。本文で照らした道具：curl（空白の数だけそろえた） |
 
+### 8. 基準線｜パラメータ k の範囲（結果：値を挙げた文だけ在る）
+
+使った検索の語：
+- Ichimoku Kijun-sen period settings range crypto 20 30 60 scalping
+- Ichimoku settings adjust kijun period 26 30 crypto shorter timeframe（fidelity・stockcharts・schwab・tradingview・babypips に絞った）
+- Ichimoku kijun period optimization range tested crypto intraday 5 minute settings study
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | ⏱️ 1 Minute (1m) Tenkan / Kijun / Span B: 5 / 15 / 45 Use: Scalping fast price action.<br>https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | スキャル・短い足 | 1 Minute (1m) | TradingView の公開スクリプト（Ichimoku Cloud Auto TF） | 基準線 15。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | ⏱️ 5 Minutes (5m) Tenkan / Kijun / Span B: 8 / 24 / 72 Use: Intraday setups, quick trend capture.<br>https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 5分足 | 5 Minutes (5m) | TradingView の公開スクリプト（Ichimoku Cloud Auto TF） | 基準線 24。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 3 | ⏱️ 15 Minutes (15m) Tenkan / Kijun / Span B: 9 / 27 / 81 Use: Short-term swing and intraday entries with higher reliability.<br>https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 短い足 | 15 Minutes (15m) | TradingView の公開スクリプト（Ichimoku Cloud Auto TF） | 基準線 27。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | Intraday (All Markets) 20 60 120 5-min, 15-min For faster timeframes, traders often double or triple the standard inputs to reduce noise.<br>https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 5分足・短い足 | 5-min, 15-min | ブログ（ChartsWatcher） | 表の1行。基準線の欄は 60。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 5 | Cryptocurrencies 10 30 60 6-Hour, Daily The 24/7 market often benefits from slightly longer periods to smooth out weekend volatility.<br>https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 6-Hour, Daily | ブログ（ChartsWatcher） | 表の1行。基準線の欄は 30。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 6 | Crypto-Adjusted Settings: While the classic 9-26-52 settings remain the standard, many pros in 2026 utilize 10-30-60 to account for the 24/7 crypto market cycle.<br>https://www.kucoin.com/en-au/blog/ichimoku-cloud-for-next-bitcoin-cycle | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 暗号資産の取引所の解説（KuCoin） | 10-30-60。どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 7 | Crypto traders generally adjust this setting to 30 periods.<br>https://woox.io/blog/the-ultimate-guide-to-ichimoku-kinko-hyo | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 暗号資産の取引所の解説（WOO X） | 直前の文「The Kijun-Sen and Chikou-Span used 26 periods to represent the business days in a given month.」を受けた文。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 8 | Many crypto traders, therefore, use (10, 30 and 60) instead of the original settings to reflect the 24/7 nature of crypto markets.<br>https://coinmarketcap.com/academy/article/what-is-the-ichimoku-cloud-and-how-to-use-it-in-crypto-trading | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 暗号資産の解説（CoinMarketCap Academy） | どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 9 | Base Line: 60 instead of 26.<br>https://fxopen.com/blog/en/what-is-the-ichimoku-cloud-and-how-can-it-be-used-in-crypto-trading | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 証券会社の解説（FXOpen） | 暗号資産の設定として。直前に「To match up with crypto’s trading hours, many change the indicator periods from 9, 26, 52, and 26 to 20, 60, 120, and 30.」。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 10 | Of course, Ichimoku settings can be adjusted to suit a 5-day week at 7-22-44, then 9-30-60, or 12-24-120 for trending markets.<br>https://www.forex.in.rs/ichimoku-settings-7-22-44/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | ブログ（forex.in.rs） | 7-22-44・9-30-60・12-24-120。どれが基準線の本数かは、この文には書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 11 | FOR CRYPTO YOU'D BETTER USE: 10,30,30,60,30 OR 20,60,60,120,60 THE TRICKY THING IS THAT KEEPING THE 1-3-3-6-3 RATIO CONSTANT IS NECESSARY<br>https://www.tradingview.com/script/X4pwbIqa/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（ICHIMOKU Kinko Hyo by KIVANC） | 5つの数の並び。同じ文の前の「DEAFULT LENGTHS (9,26,26,52,26)」から、2つ目が基準線と読める。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 12 | TENKAN: 11 - a week and a half KIJUN: 30 - one month SENKOU: 61 - two months<br>https://jp.tradingview.com/script/emYrxwRL | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Ichimoku Crypto Cloud 11-30-61・日本語の画面） | 基準線 30。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 13 | The default setting for the Base Line is 26 periods and can be adjusted.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 定番の教育サイト（StockCharts ChartSchool） | 変えてよい、とだけ書く。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 14 | For cryptocurrency markets, traders often adjust default settings (9/26/52) to crypto-optimized parameters like 10/30/60 or 20/60/120 to account for 24/7 trading.<br>https://www.binance.com/en/academy/articles/ichimoku-clouds-explained | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | 一般 | 時間足は書いてない | 暗号資産の取引所の解説（Binance Academy） | curl は応答の中身が空（202）、Chromium で開いた本文の文。本文で照らした道具：Chromium（空白の数だけそろえた） |
+| 15 | Best settings. Classic: 9, 26, 52. Scalping: 5, 13, 26. Swing trading: 9, 26, 52.<br>https://www.litefinance.org/blog/for-beginners/best-technical-indicators/ichimoku-cloud-indicator-in-forex-explained/ | 値を挙げただけ | None | None | 値 | 当てはまらない（パラメータの本数） | スキャル | 時間足は書いてない | 証券会社の解説（LiteFinance） | 264番でも見つかった文。基準線は 13（スキャル）。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -269,7 +295,29 @@
 | https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi | 無い | curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字） |
 | https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 在る | curl＝HTTP 200／Chromium＝HTTP 503（本文 0 文字） |
 
-開いたページは、件ごとに数えて 83 本（同じ URL を除くと 80 本）です。開けなかったページは、件ごとに 14 本（同じ URL を除くと 13 本）です。
+### 8. 基準線｜パラメータ k の範囲
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://www.kucoin.com/en-au/blog/ichimoku-cloud-for-next-bitcoin-cycle | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 15106 文字） |
+| https://www.forex.in.rs/ichimoku-settings-7-22-44/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 11026 文字） |
+| https://woox.io/blog/the-ultimate-guide-to-ichimoku-kinko-hyo | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 10127 文字） |
+| https://tabtrader.com/academy/articles/what-is-ichimoku-cloud-trading-strategy | 開けない | curl＝HTTP 応答なし／Chromium＝error: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://tabtrader.com/academy/ar（本文 0 文字）／WebFetch はこのセッションで名前を引けない（ENOTFOUND）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.coinex.com/en/academy/detail/2464-what-is-ichimoku-cloud-in-crypto-trading | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 349 文字） |
+| https://coinmarketcap.com/academy/article/what-is-the-ichimoku-cloud-and-how-to-use-it-in-crypto-trading | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 8638 文字） |
+| https://www.tradingview.com/script/X4pwbIqa/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4286 文字） |
+| https://www.tradingview.com/script/LQpN9Nae-Ichimoku-Cloud-Auto-TF/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4476 文字） |
+| https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 18747 文字） |
+| https://www.tradingview.com/support/solutions/43000589152-ichimoku-cloud/ | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 6760 文字） |
+| https://gunthy.gitbook.io/wiki/trading-strategy-options/margin-trading-strategies/ichimoku | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 103 文字） |
+| https://my.tradingview.com/script/cGaJjq2f-Ichimoku-Kijun-OPTIMISED-FOR-15MIN-EURUSD | 開けない | curl＝HTTP 404／Chromium＝HTTP 404（本文 1895 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.binance.com/en/academy/articles/ichimoku-clouds-explained | 在る | curl＝HTTP 202／Chromium＝HTTP 202（本文 14090 文字） |
+| https://therighttrader.com/learn/indicator-strategies/best-ichimoku-settings | 無い | curl＝HTTP 200／Chromium＝HTTP 200（本文 13513 文字） |
+| https://chartswatcher.com/pages/blog/ichimoku-cloud-strategy-trading-secrets-that-actually-work | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 28507 文字） |
+| https://fxopen.com/blog/en/what-is-the-ichimoku-cloud-and-how-can-it-be-used-in-crypto-trading | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 15970 文字） |
+| https://jp.tradingview.com/script/emYrxwRL | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 1732 文字） |
+
+開いたページは、件ごとに数えて 100 本（同じ URL を除くと 96 本）です。開けなかったページは、件ごとに 16 本（同じ URL を除くと 15 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 
