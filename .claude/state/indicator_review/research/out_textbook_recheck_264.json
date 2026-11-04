@@ -7356,6 +7356,578 @@
     }
    ],
    "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-4 パラメータの軸（指標データに軸が無い）（スキャル・範囲・既定と書いていない値）",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "2本を見る",
+     "逐語": "\"TA_LIB_API int TA_CDLENGULFING_Lookback( void ) { return 2; }\"",
+     "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_func/ta_CDLENGULFING.c",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q3（495行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-5 値の単位と値域",
+   "いまの値": {
+    "値域": {
+     "有界": null,
+     "分位": null
+    }
+   },
+   "候補": [
+    {
+     "値": "{\"単位\": \"書いてない\", \"下限\": -100, \"上限\": 100}",
+     "逐語": "outInteger — +100/+80 (bullish, white engulfs black), -100/-80 (bearish, black engulfs white), 0 otherwise.",
+     "URL": "https://ta-lib.org/functions/cdlengulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 値の単位と値域.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-6 値の読み方",
+   "いまの値": {
+    "区分": "反転サイン",
+    "読み方": "+1 は買い転換の示唆",
+    "向きを持つ": true,
+    "性質": [
+     "reversal"
+    ]
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"A reversal pattern that can be bearish or bullish, depending upon whether it appears at the end of an uptrend (bearish engulfing pattern) or a downtrend (bullish engulfing pattern).\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-pattern-dictionary",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（462行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The bullish engulfing candlestick acts as a bullish reversal 63% of the time\"",
+     "URL": "https://thepatternsite.com/BullEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（463行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"It works very well as a bearish reversal, performing that way 79% of the time\"",
+     "URL": "https://thepatternsite.com/BearEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（464行目）",
+     "注": ""
+    },
+    {
+     "値": "{\"読み方\": \"白が黒を包むと強気の反転、黒が白を包むと弱気の反転\", \"向きを持つ\": \"持つ\"}",
+     "逐語": "Bullish (white engulfs black) or bearish (black engulfs white) reversal signal; ideally after a downtrend (bullish) or uptrend (bearish), which the code does not verify.",
+     "URL": "https://ta-lib.org/functions/cdlengulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 値の読み方.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-7 教科書の役割",
+   "いまの値": {
+    "区分": null,
+    "出どころ": "資料の表に無い（オフ）",
+    "札": "ローソク"
+   },
+   "候補": [
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"A reversal pattern that can be bearish or bullish, depending upon whether it appears at the end of an uptrend (bearish engulfing pattern) or a downtrend (bullish engulfing pattern).\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-pattern-dictionary",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（462行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"The bullish engulfing candlestick acts as a bullish reversal 63% of the time\"",
+     "URL": "https://thepatternsite.com/BullEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（463行目）",
+     "注": ""
+    },
+    {
+     "値": "（9種の文書の Q1 の行。値の欄は無い）",
+     "逐語": "\"It works very well as a bearish reversal, performing that way 79% of the time\"",
+     "URL": "https://thepatternsite.com/BearEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q1（464行目）",
+     "注": ""
+    },
+    {
+     "値": "書いてない",
+     "逐語": "A two-candle reversal pattern where the second candle's real body engulfs the first candle's opposite-colored real body.",
+     "URL": "https://ta-lib.org/functions/cdlengulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 教科書の役割.0",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "指標の記録",
+   "使い方の種類": "",
+   "欄": "②-11 閾値の範囲",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この欄の値を書いた逐語が無い（「見つからなかった」と書いた行だけが在る物を含む）。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 8 Q4（505行目））＝「実体の大きさの数｜「長い」の数（例＝ATR の何倍）｜—｜✗ 見つからなかった」"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "入る合図",
+     "逐語": "Engulfing Bearish Line Consists of a small white body that is contained within the following large black candlestick. When it appears at the top it is considered a major reversal signal.",
+     "URL": "https://en.wikipedia.org/wiki/Candlestick_pattern",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 使い方.1",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語"
+    },
+    {
+     "値": "入る合図",
+     "逐語": "\"After meeting resistance around $30 in mid-January, Ford (F) formed a bearish engulfing pattern (red oval). It was immediately confirmed with a decline and subsequent support break.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "前の照らしの結果 out_textbook_compare_222.json の 指標データに行が無い使い方",
+     "注": "前の照らしの「指標データに行が無い使い方」の行（13番目）を、前の照らしの使い方の種類で載せた。全指標の調べは、同じ逐語を「合図が本物かを確かめる条件」に書く。前の照らしの「指標データに行が無い使い方」に在る逐語"
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "上げ",
+     "逐語": "Engulfing Bearish Line Consists of a small white body that is contained within the following large black candlestick. When it appears at the top it is considered a major reversal signal.",
+     "URL": "https://en.wikipedia.org/wiki/Candlestick_pattern",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 使い方.1",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "入る合図",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-2 使い方の種類",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "合図が本物かを確かめる条件",
+     "逐語": "\"After meeting resistance around $30 in mid-January, Ford (F) formed a bearish engulfing pattern (red oval). It was immediately confirmed with a decline and subsequent support break.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q2（486行目）",
+     "注": "前の照らしの「指標データに行が無い使い方」に在る逐語。9種の文書の書き込み「ショート」"
+    },
+    {
+     "値": "合図が本物かを確かめる条件",
+     "逐語": "It was immediately confirmed with a decline and subsequent support break.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "全指標の調べ out_c5.json の 包み足 の 使い方.3",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（閾値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "合図が本物かを確かめる条件",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（合図の形のパラメータ）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-3 場面と型",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（場面と型）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）。9種の文書の行（9種の文書 8 Q2（487行目））＝「（レンジ）｜包み足をレンジでどう使うか｜—｜✗ 見つからなかった（どのページも、前にトレンドが在ることを条件にしている）」"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-4 向き",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（向き）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-5 閾値",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "長い足を選ぶ（数なし）",
+     "逐語": "\"Select tall candles -- page 311.\"",
+     "URL": "https://thepatternsite.com/BearEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 Q4（504行目）",
+     "注": ""
+    }
+   ],
+   "候補が無い理由": ""
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-6 パラメータの代表の値",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（パラメータの代表の値）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-7 時間足",
+   "いまの値": null,
+   "候補": [],
+   "候補が無い理由": "9種の文書と全指標の調べに、この使い方の種類の逐語でこの欄の値（時間足）を書いた文が無い。新しいページは探していない（依頼書は「探してかまいません」で、探すことは決まりではないため。時間の都合で探さなかった）"
+  },
+  {
+   "指標": "包み足",
+   "記録": "使い方の記録",
+   "使い方の種類": "書いてない",
+   "欄": "③-9 合図の形のパラメータ",
+   "いまの値": null,
+   "候補": [
+    {
+     "値": "陽の包み足：1本目が陰、2本目が陽で、2本目の実体が1本目の実体を包む。ひげは見ない",
+     "逐語": "\"The first is a black candle followed by a taller white one. The white candle should have a close above the prior open and an open below the prior close. In other words, the body of the white candle should engulf or overlap the body of the black candle. Ignore the shadows.\"",
+     "URL": "https://thepatternsite.com/BullEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（470行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）"
+    },
+    {
+     "値": "陰の包み足：1本目が陽、2本目が陰で、2本目の始値は前の終値より上、終値は前の始値より下",
+     "逐語": "\"By overlaps , I mean the body of the black candle has an open above the prior close and a close below the prior open.\"",
+     "URL": "https://thepatternsite.com/BearEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（471行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）"
+    },
+    {
+     "値": "1本目は十字線でない。2本目は長い。ひげまで包むのは、要らない",
+     "逐語": "\"The size of the white candlestick is relatively unimportant, but it should not be a doji, which would be relatively easy to engulf. The second should be a long black candlestick. The bigger it is, the more bearish the reversal. The black body must totally engulf the body of the first white candlestick. Ideally, the black body should engulf the shadows as well, but this is not a requirement.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（472行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）"
+    },
+    {
+     "値": "前にトレンドが要る（陽は下げの後、陰は上げの後）",
+     "逐語": "\"Price trend leading to the pattern Downward.\" / \"Price trend leading to the pattern Upward.\"",
+     "URL": "https://thepatternsite.com/BullEngulfing.html / https://thepatternsite.com/BearEngulfing.html",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（473行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）。逐語は2つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "始値と終値だけを包む（高値と安値は要らない）",
+     "逐語": "\"This pattern is similar to the outside reversal chart pattern, but does not require the entire range (high and low) to be engulfed, just the open and close.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-pattern-dictionary",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "レンジ"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（474行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）"
+    },
+    {
+     "値": "TA-Lib：片方の端が等しくてもよい（そのときは 80、両端とも越えれば 100）",
+     "逐語": "\"* Must have:\" / \"* - first: black (white) real body\" / \"* - second: white (black) real body that engulfs the prior real body\"",
+     "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_func/ta_CDLENGULFING.c",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "一般"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（475行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）。逐語は3つの断片（「…」か複数の引用）。断片ごとに本文に在る"
+    },
+    {
+     "値": "確かめの足が要る",
+     "逐語": "\"Further weakness is required for bearish confirmation of this reversal pattern.\"",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+     "読んだ日": "2026-11-04",
+     "ページの確かめ": "ページに在る",
+     "時間足": "時間足は書いてない",
+     "名指し": [
+      "ショート"
+     ],
+     "範囲の形": "",
+     "出どころ": "9種の文書 8 形の条件（476行目）",
+     "注": "9種の文書の「形の条件」の行（値の欄は条件の文）"
+    }
+   ],
+   "候補が無い理由": ""
   }
  ]
 }
