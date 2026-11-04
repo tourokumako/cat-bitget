@@ -11,6 +11,7 @@
 | 番号 | 指標 | 探す物 | 結果 | 文に両端が在る文の数 | 文の数 | 開いたページの数 | 両端の文が何の両端か |
 |---|---|---|---|---|---|---|---|
 | 1 | RSI | 閾値の範囲（形＝値） | 両端の文が在る | 1 | 11 | 12 | Cardwell の弱気の反転の形で RSI が来る所（50-70）。閾値を探す幅とは書いてない |
+| 2 | ADX | 閾値の範囲（形＝値） | 両端の文が在る | 2 | 12 | 14 | 掲示板の条件の帯（25〜40）と、ブログの「20-25 より上」。探す幅とは書いてない |
 
 「両端の文が在る」は、範囲の形が「文に両端が在る」の文が1つでも在ることを指します。その両端が、閾値やパラメータを探す幅として書かれているとは限りません。何の両端かは、右の欄と、2章の各行の注に書きました。
 
@@ -39,6 +40,29 @@
 | 10 | The first condition will be met when the asset has an RSI of greater than 65, and is around the overbought region, in a 5-minute timeframe.<br>https://help.coinrule.com/articles/376756-rsi-top-scalper | 値を挙げただけ | None | None | 値 | 0〜100 | 5分足・ショート | 5-minute timeframe | ボットの説明書（Coinrule のヘルプ。暗号資産の取引の道具） | ショートは、同じページの「In this strategy, we focus on short selling, the process of selling and buying back lower.」から読んだ。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 | 11 | The default settings are: * RSI Length: 14; * Overbought Level: 80; * Oversold Level: 20; * Midpoint: 50.<br>https://www.tradingview.com/script/ImVAOTyf-Modern-RSI/ | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | TradingView の公開スクリプト（Modern RSI） | 既定の値の列挙。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
 
+### 2. ADX｜閾値の範囲（形＝値）（結果：両端の文が在る）
+
+使った検索の語：
+- ADX threshold range 20 to 30 trend strength levels 0-25 25-50 50-75
+- ADX threshold optimize between 15 and 30 scalping 5-minute
+- ADX values 0-25 absent weak trend 25-50 strong 50-75 very strong 75-100（tradingview・fidelity・babypips・stockcharts・schwab に絞った）
+- ADX threshold backtest optimization range values tested 15 20 25 30 35 40
+
+| # | 逐語 | 範囲の形 | 下の端 | 上の端 | 閾値の形 | 単位 | 話の相手 | 時間足 | 出どころの質 | 注 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20.<br>https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 定番の教育サイト（StockCharts ChartSchool） | Wilder の値として紹介。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 2 | In practice, most chart analysts believe a reading above 25 typically indicates a strong trend, and a reading below 20 usually suggests there is no trend—with no clear signal interpretation existing between 20 and 25.<br>https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX | 強さの区切り | 20 | 25 | 値 | 0〜100 | 一般 | 時間足は書いてない | 定番の教育サイト（Fidelity） | 20〜25 は「はっきりした読みが無い間」と書く。探す幅とは書いてない。本文で照らした道具：curl（空白の数だけそろえた） |
+| 3 | Value Interpretation: 0-25: Weak trend or sideways market 25-50: Moderate to strong trend 50-75: Very strong trend 75-100: Extremely strong trend (rare)<br>https://in.tradingview.com/script/FstitqUD/ | 強さの区切り | 0 | 100 | 値 | 0〜100 | レンジ | 時間足は書いてない | TradingView の公開スクリプト（Average Directional Index info） | 4つの区切り（0-25・25-50・50-75・75-100）。「レンジ」は 0-25 の「sideways market」から。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 4 | Below 20 = no trend, the market is chopping.<br>https://crosstrade.io/learn/technical-indicators/adx | 強さの区切り | None | 20 | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（CrossTrade） | 同じページに「20–40 = trend is developing or in place.」「Above 40 = strong trend (rare, don't expect it often).」が続く。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 5 | 20–40 = trend is developing or in place.<br>https://crosstrade.io/learn/technical-indicators/adx | 強さの区切り | 20 | 40 | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（CrossTrade） | 本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 6 | Waiting for ADX > 30 on intraday charts will filter out most valid trends.<br>https://crosstrade.io/learn/technical-indicators/adx | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | intraday charts | 証券会社の解説（CrossTrade） | 日中の足で 30 を待つと、多くのトレンドを落とす、と書く。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 7 | 20 is the common threshold — 25 if you want to be stricter.<br>https://crosstrade.io/learn/technical-indicators/adx | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（CrossTrade） | 本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 8 | A trend shows the most strength when the Average Directional Index is above 25 (potential signal to buy), and a trend is weak or the price is considered trendless if the ADX reaches below 20 - according to the concept creator, Wilder.<br>https://www.tradingview.com/support/solutions/43000589099-average-directional-index-adx/ | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 定番の教育サイト（TradingView のヘルプ） | curl は応答なし、Chromium で開いた本文の文。本文で照らした道具：Chromium（空白の数だけそろえた） |
+| 9 | Moving 25 to 30 is a threshold test, not a period test.<br>https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | ブログ（The Right Trader） | 同じページに「A mark at 30 lets fewer trends through and will skip some real DI crosses.」も在る。本文で照らした道具：curl（空白の数だけそろえた） |
+| 10 | The most commonly regarded levels, above which a stock may be said to be trending, are 20 and 25.<br>https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php | 値を挙げただけ | None | None | 値 | 0〜100 | 一般 | 時間足は書いてない | 証券会社の解説（Incredible Charts の銘柄選びの道具の説明） | 本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 11 | Dovrebbe darmi solo i valori compresi tra 25 e 40 e non tutti quelli sopra 25 e tutti quelli sotto 40.<br>https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/ | 文に両端が在る | 25 | 40 | 値 | 0〜100 | 一般 | 時間足は書いてない | 掲示板（ProRealCode の投稿・イタリア語・2017-10-02） | ADX が 25 から 40 の間のときだけを取る条件を書いた投稿。探す幅とは書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた） |
+| 12 | To reduce the likelihood of false signals, look for the ADX line above a certain threshold; commonly, a value above 20-25 suggests a stronger trend.<br>https://www.liberatedstocktrader.com/adx-indicator/ | 文に両端が在る | 20 | 25 | 値 | 0〜100 | 一般 | 時間足は書いてない | ブログ（Liberated Stock Trader） | curl は 403、Chromium で開いた本文の文。「a value above 20-25」＝閾値を 20〜25 のどこかに置く、という書き方。本文で照らした道具：Chromium（空白の数だけそろえた） |
+
 ## 3. 開いたページ
 
 ### 1. RSI｜閾値の範囲（形＝値）
@@ -58,7 +82,26 @@
 | https://help.coinrule.com/articles/376756-rsi-top-scalper | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4775 文字） |
 | https://forums.babypips.com/t/rsi-scalping/35996 | 開けない | curl＝HTTP 403／Chromium＝HTTP 403（本文 267 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
 
-開いたページは、件ごとに数えて 12 本（同じ URL を除くと 12 本）です。開けなかったページは、件ごとに 3 本（同じ URL を除くと 3 本）です。
+### 2. ADX｜閾値の範囲（形＝値）
+
+| URL | 当たる文 | 道具と結果 |
+|---|---|---|
+| https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 19259 文字） |
+| https://www.babypips.com/learn/forex/average-directional-index | 開けない | curl＝HTTP 403／Chromium＝HTTP 403（本文 264 文字）／WebFetch も 403／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX | 在る | curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字） |
+| https://www.tradingview.com/support/solutions/43000589099-average-directional-index-adx/ | 在る | curl＝HTTP 応答なし／Chromium＝HTTP 200（本文 6540 文字） |
+| https://in.tradingview.com/script/FstitqUD/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4248 文字） |
+| https://ungeracademy.com/blog/trading-with-adx-discover-the-levels-that-really-work-and-why | 開けない | curl＝HTTP 520／Chromium＝HTTP 520（本文 967 文字）／WebFetch は本文が空／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.investopedia.com/terms/a/adx.asp | 開けない | curl＝HTTP 402／Chromium＝HTTP 403（本文 0 文字）／過去のページの保存（web.archive.org）は、curl では接続が切れ、WebFetch では使えないと返った |
+| https://crosstrade.io/learn/technical-indicators/adx | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 4080 文字） |
+| https://br.tradingview.com/script/WkSTQiKr-ADX-w-15-and-30-Lines | 開けない | curl＝HTTP 404／Chromium＝HTTP 404（本文 2068 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://therighttrader.com/learn/indicator-strategies/best-adx-settings | 在る | curl＝HTTP 200／Chromium＝HTTP 503（本文 0 文字） |
+| https://ungeracademy.com/?p=6948 | 開けない | curl＝HTTP 520／Chromium＝HTTP 520（本文 967 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.liberatedstocktrader.com/adx-indicator/ | 在る | curl＝HTTP 403／Chromium＝HTTP 200（本文 20317 文字） |
+| https://landing-page-2ml.pages.dev/docs/indicators/adx/strategy-templates | 開けない | curl＝HTTP 404／Chromium＝HTTP 404（本文 140 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない |
+| https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/ | 在る | curl＝HTTP 200／Chromium＝HTTP 200（本文 2319 文字） |
+
+開いたページは、件ごとに数えて 26 本（同じ URL を除くと 26 本）です。開けなかったページは、件ごとに 9 本（同じ URL を除くと 9 本）です。
 
 ## 4. 確かめられなかった物と、その理由
 

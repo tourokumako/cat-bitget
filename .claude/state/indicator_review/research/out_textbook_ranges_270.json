@@ -266,6 +266,300 @@
      "注": "既定の値の列挙。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
     }
    ]
+  },
+  {
+   "番号": 2,
+   "指標": "ADX",
+   "探す物": "閾値の範囲（形＝値）",
+   "結果": "両端の文が在る",
+   "使った検索の語": [
+    "ADX threshold range 20 to 30 trend strength levels 0-25 25-50 50-75",
+    "ADX threshold optimize between 15 and 30 scalping 5-minute",
+    "ADX values 0-25 absent weak trend 25-50 strong 50-75 very strong 75-100（tradingview・fidelity・babypips・stockcharts・schwab に絞った）",
+    "ADX threshold backtest optimization range values tested 15 20 25 30 35 40"
+   ],
+   "開いたページ": [
+    {
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 19259 文字）"
+    },
+    {
+     "URL": "https://www.babypips.com/learn/forex/average-directional-index",
+     "HTTP": 403,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 403／Chromium＝HTTP 403（本文 264 文字）／WebFetch も 403／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 502（本文 23 文字）"
+    },
+    {
+     "URL": "https://www.tradingview.com/support/solutions/43000589099-average-directional-index-adx/",
+     "HTTP": 0,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 応答なし／Chromium＝HTTP 200（本文 6540 文字）"
+    },
+    {
+     "URL": "https://in.tradingview.com/script/FstitqUD/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4248 文字）"
+    },
+    {
+     "URL": "https://ungeracademy.com/blog/trading-with-adx-discover-the-levels-that-really-work-and-why",
+     "HTTP": 520,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 520／Chromium＝HTTP 520（本文 967 文字）／WebFetch は本文が空／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.investopedia.com/terms/a/adx.asp",
+     "HTTP": 402,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 402／Chromium＝HTTP 403（本文 0 文字）／過去のページの保存（web.archive.org）は、curl では接続が切れ、WebFetch では使えないと返った"
+    },
+    {
+     "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 4080 文字）"
+    },
+    {
+     "URL": "https://br.tradingview.com/script/WkSTQiKr-ADX-w-15-and-30-Lines",
+     "HTTP": 404,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 404／Chromium＝HTTP 404（本文 2068 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 503（本文 0 文字）"
+    },
+    {
+     "URL": "https://ungeracademy.com/?p=6948",
+     "HTTP": 520,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 520／Chromium＝HTTP 520（本文 967 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.liberatedstocktrader.com/adx-indicator/",
+     "HTTP": 403,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 403／Chromium＝HTTP 200（本文 20317 文字）"
+    },
+    {
+     "URL": "https://landing-page-2ml.pages.dev/docs/indicators/adx/strategy-templates",
+     "HTTP": 404,
+     "読んだ日": "2026-11-04",
+     "当たる文": "開けない",
+     "道具と結果": "curl＝HTTP 404／Chromium＝HTTP 404（本文 140 文字）／過去のページの保存（web.archive.org）は、このセッションでは接続が切れて開けない"
+    },
+    {
+     "URL": "https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/",
+     "HTTP": 200,
+     "読んだ日": "2026-11-04",
+     "当たる文": "在る",
+     "道具と結果": "curl＝HTTP 200／Chromium＝HTTP 200（本文 2319 文字）"
+    }
+   ],
+   "文": [
+    {
+     "逐語": "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（StockCharts ChartSchool）",
+     "注": "Wilder の値として紹介。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "In practice, most chart analysts believe a reading above 25 typically indicates a strong trend, and a reading below 20 usually suggests there is no trend—with no clear signal interpretation existing between 20 and 25.",
+     "URL": "https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX",
+     "範囲の形": "強さの区切り",
+     "下の端": 20,
+     "上の端": 25,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（Fidelity）",
+     "注": "20〜25 は「はっきりした読みが無い間」と書く。探す幅とは書いてない。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Value Interpretation: 0-25: Weak trend or sideways market 25-50: Moderate to strong trend 50-75: Very strong trend 75-100: Extremely strong trend (rare)",
+     "URL": "https://in.tradingview.com/script/FstitqUD/",
+     "範囲の形": "強さの区切り",
+     "下の端": 0,
+     "上の端": 100,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "レンジ"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "TradingView の公開スクリプト（Average Directional Index info）",
+     "注": "4つの区切り（0-25・25-50・50-75・75-100）。「レンジ」は 0-25 の「sideways market」から。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Below 20 = no trend, the market is chopping.",
+     "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+     "範囲の形": "強さの区切り",
+     "下の端": null,
+     "上の端": 20,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（CrossTrade）",
+     "注": "同じページに「20–40 = trend is developing or in place.」「Above 40 = strong trend (rare, don't expect it often).」が続く。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "20–40 = trend is developing or in place.",
+     "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+     "範囲の形": "強さの区切り",
+     "下の端": 20,
+     "上の端": 40,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（CrossTrade）",
+     "注": "本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Waiting for ADX > 30 on intraday charts will filter out most valid trends.",
+     "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "intraday charts",
+     "出どころの質": "証券会社の解説（CrossTrade）",
+     "注": "日中の足で 30 を待つと、多くのトレンドを落とす、と書く。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "20 is the common threshold — 25 if you want to be stricter.",
+     "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（CrossTrade）",
+     "注": "本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "A trend shows the most strength when the Average Directional Index is above 25 (potential signal to buy), and a trend is weak or the price is considered trendless if the ADX reaches below 20 - according to the concept creator, Wilder.",
+     "URL": "https://www.tradingview.com/support/solutions/43000589099-average-directional-index-adx/",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "定番の教育サイト（TradingView のヘルプ）",
+     "注": "curl は応答なし、Chromium で開いた本文の文。本文で照らした道具：Chromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Moving 25 to 30 is a threshold test, not a period test.",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（The Right Trader）",
+     "注": "同じページに「A mark at 30 lets fewer trends through and will skip some real DI crosses.」も在る。本文で照らした道具：curl（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "The most commonly regarded levels, above which a stock may be said to be trending, are 20 and 25.",
+     "URL": "https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php",
+     "範囲の形": "値を挙げただけ",
+     "下の端": null,
+     "上の端": null,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "証券会社の解説（Incredible Charts の銘柄選びの道具の説明）",
+     "注": "本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "Dovrebbe darmi solo i valori compresi tra 25 e 40 e non tutti quelli sopra 25 e tutti quelli sotto 40.",
+     "URL": "https://www.prorealcode.com/topic/adx-compreso-tra-due-valori/",
+     "範囲の形": "文に両端が在る",
+     "下の端": 25,
+     "上の端": 40,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "掲示板（ProRealCode の投稿・イタリア語・2017-10-02）",
+     "注": "ADX が 25 から 40 の間のときだけを取る条件を書いた投稿。探す幅とは書いてない。本文で照らした道具：curlとChromium（空白の数だけそろえた）"
+    },
+    {
+     "逐語": "To reduce the likelihood of false signals, look for the ADX line above a certain threshold; commonly, a value above 20-25 suggests a stronger trend.",
+     "URL": "https://www.liberatedstocktrader.com/adx-indicator/",
+     "範囲の形": "文に両端が在る",
+     "下の端": 20,
+     "上の端": 25,
+     "閾値の形": "値",
+     "単位": "0〜100",
+     "話の相手": [
+      "一般"
+     ],
+     "時間足": "時間足は書いてない",
+     "出どころの質": "ブログ（Liberated Stock Trader）",
+     "注": "curl は 403、Chromium で開いた本文の文。「a value above 20-25」＝閾値を 20〜25 のどこかに置く、という書き方。本文で照らした道具：Chromium（空白の数だけそろえた）"
+    }
+   ]
   }
  ]
 }
