@@ -1003,6 +1003,7 @@ HAND_FORM = """# 監査依頼の手書き（実装の監査）｜工事 <工事�
 | y.json | <実装が名前を出すが、この監査では読まない理由> |
 
 ## 工事ごとの問い
+<決まった問い Q0〜Q6（作った後の確認・実装の指示のとおりか・差分・当てた記録・設計書の版・やることの表・完成の条件）が確かめることを、重ねて問わない>
 ### Q8 — <名前>（優先度 A）
 理由：<この問いが外れると何が起きるか>
 <監査に見てほしいこと>
@@ -1143,6 +1144,63 @@ def _position_chain(todos: list) -> str:
     return " → ".join(parts + ["この工事"])
 
 
+# ★2026-11-04（ToDo の255番・まこさん「このあとすぐに修正してほしい」）＝実装の監査の手書きの問いが、決まった問いと重なったら止める。
+#   なぜ＝CP101 の手書きの Q9・Q10 が、決まった問いの Q1・Q2・Q6 と重なった（worklog 20261104 §3）。
+#   見るのは問いの名前だけ＝5文字以上 同じなら重なりの候補。中身が別なら、問いに「重ならない理由：」の行を書けば通る（理由は依頼書に載る）。
+#   限界＝別の言葉で同じことを問うと通る。
+OVERLAP_MIN = 5
+OVERLAP_OK = "重ならない理由："
+
+
+def _common_words(a: str, b: str, n: int = OVERLAP_MIN) -> str:
+    """a と b に共通する、n 文字以上の並びのうち最初に見つかった物（無ければ空）。"""
+    for i in range(len(a) - n + 1):
+        if a[i:i + n] in b:
+            return a[i:i + n]
+    return ""
+
+
+def impl_q_overlaps(name: str, body: str) -> list:
+    """手書きの問いの名前が、決まった問い IMPL_QUESTIONS の名前と重なるとき、その説明を返す。"""
+    if OVERLAP_OK in body:
+        return []
+    out = []
+    for no, _p, fixed, _why, _b in IMPL_QUESTIONS:
+        w = _common_words(name, fixed)
+        if w:
+            out.append(f"決まった問い {no}「{fixed}」と「{w}」が同じ")
+    return out
+
+
+def overlap_selftest() -> list:
+    """CP101 の問いの名前を見本にして、重なりの判定を試す（ファイルに触らない）。戻り＝落ちた見本の説明。"""
+    ng = []
+    for name, word in (("当てた記録に無い修正22件は、設計書と実装に入っているか", "当てた記録"),
+                       ("実物は、実装の指示34件のとおりか", "実装の指示"),
+                       ("完成の条件と試験は、設計書のとおりに動くか", "完成の条件")):
+        if not any(word in x for x in impl_q_overlaps(name, "見本")):
+            ng.append(f"重なる問いで止まらない: {name}")
+        if impl_q_overlaps(name, OVERLAP_OK + "見本の理由"):
+            ng.append(f"理由の行が在るのに止まる: {name}")
+    if impl_q_overlaps("実装で設計書と違った点の扱いは、正しいか", "見本"):
+        ng.append("重ならない問いで止まる")
+    # 本物の通り道＝CP101 の手書きの文書を read_hand に通す（読むだけ）。Q8・Q9・Q10 で止まり、Q11 では止まらない
+    from pathlib import Path as _Path
+    import gen_acceptance as _ga
+    _w = _Path(ROOT) / "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-laws-rows-20261103"
+    try:
+        read_hand(_w, "実装の監査", "impl", [], _ga.gv)
+        ng.append("read_hand が CP101 の手書きの文書で止まらない")
+    except SystemExit as e:
+        _m = str(e)
+        for _no in ("Q8", "Q9", "Q10"):
+            if f"工事ごとの問い {_no} が決まった問いと重なる" not in _m:
+                ng.append(f"read_hand が {_no} で止まらない")
+        if "工事ごとの問い Q11" in _m:
+            ng.append("read_hand が Q11 で止まる")
+    return ng
+
+
 def read_hand(wdir, label: str, kind: str, names: list, gv) -> dict:
     """工事のフォルダの「監査依頼の手書き（…）.md」を読む（CC が書き、まこさんが OK した4つ＝この工事は何のためか・必読・工事ごとの問い・要望のまとめ）。
     ★「この工事は何のためか」は経緯の1に、要望のまとめの1件目（「目的：」で始める）は問い2 の1件目に写す
@@ -1224,6 +1282,9 @@ def read_hand(wdir, label: str, kind: str, names: list, gv) -> dict:
             bad.append(f"工事ごとの問いの番号は Q8 から順に（いま {q['番号']}・{i + 1} 件目）")
         if not q["理由"] or not q["body"]:
             bad.append(f"工事ごとの問い {q['番号']} に「理由：」の行か、見てほしいことが無い")
+        if kind == "impl":
+            for x in impl_q_overlaps(q["名前"], q["body"]):
+                bad.append(f"工事ごとの問い {q['番号']} が決まった問いと重なる候補＝{x}（中身が別なら「{OVERLAP_OK}」の行を書く）")
     if kind == "impl" and not qs:
         bad.append("「## 工事ごとの問い」に「### Q8 — 名前（優先度 A）」の問いが1つも無い")
     wants = []
@@ -3288,6 +3349,12 @@ def selftest(keep: bool = False) -> int:
 
 
 def main(argv: list) -> int:
+    if argv and argv[0] == "--selftest-overlap":          # ★2026-11-04（255番）＝手書きの問いの重なりの判定だけを試す口
+        _ng = overlap_selftest()
+        for _x in _ng:
+            print("  NG " + _x)
+        print(("❌" if _ng else "✅") + f" --selftest-overlap: 手書きの問いの重なりの見本（落ちた {len(_ng)} 件）")
+        return 1 if _ng else 0
     if argv and argv[0] == "--selftest":
         # ★2026-09-30（設計書 point1-one-way-20260930-2）＝控えの元データを受ける口は消した（見本の工事のフォルダだけで試す）
         return selftest(keep=argv[1:] == ["--keep"])
