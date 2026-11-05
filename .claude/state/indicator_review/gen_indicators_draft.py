@@ -2105,9 +2105,9 @@ def request_block() -> str:
                 ordered.append(n)
                 seen_o.add(n)
     tier_note = (f"優先度の順＝①先に通す9種（{len(FIRST_NINE)}）②法則の機械が読む判定が名指しする指標（{len([n for n in law_fams if n not in FIRST_NINE])}）"
-                 f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（オンだが法則に名前が出ない指標）。各段の中は、法則の並びと sources.law の並びのとおり")
+                 f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（法則に名前が出ない指標と部品）。各段の中は、法則の並びと sources.law の並びのとおり。④は名前の並び")
     out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "",
-            f"相手は、material に登録している指標の全部（指標データ `indicators.json` の `指標の記録` に在る指標。オン/オフは問わない）で、{len(targets)} 種です。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
+            f"相手は、material に登録している指標の全部（指標データ `indicators.json` の `指標の記録` と `部品の記録` に在る物。オン/オフは問わない）で、{len(targets)} 種です。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
             "", tier_note, "", f"**作る順（優先度の順。全部）＝** {'・'.join(ordered)}", "",
             f"20種ごとに区切ったファイルの数＝{(len(ordered) + 19) // 20}（out_t1_01.json … out_t1_{(len(ordered) + 19) // 20:02d}.json）"]
     # 6 要件との対応
