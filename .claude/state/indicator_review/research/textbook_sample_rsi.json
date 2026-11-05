@@ -334,7 +334,9 @@
     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
     "確かめの強さ": "ページの文で確かめた"
    },
-   "使う出力": "RSI"
+   "使う出力": "RSI",
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "出口の反転",
@@ -378,7 +380,9 @@
     "逐語": "Enter a short position if the RSI crosses the upper threshold (standard value of 70) downwards; exit the position when the RSI becomes smaller than 50.",
     "URL": "https://www.packtpub.com/en-us/product/python-for-finance-cookbook-2-9781789618518/chapter/technical-analysis-in-python/calculating-the-relative-strength-index-and-testing-a-long-short-strategy",
     "確かめの強さ": "未確認"
-   }
+   },
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "前提崩れの印",
@@ -396,7 +400,9 @@
    "出どころ": {
     "確かめの強さ": "見つからなかった",
     "注記": "RSI の値で玉を切る文は、確かめられた行に無い"
-   }
+   },
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "合図が本物かを確かめる条件",
@@ -443,7 +449,9 @@
      "30m",
      "1h"
     ]
-   ]
+   ],
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "入ってはいけない場面を除く条件",
@@ -501,7 +509,9 @@
     "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
     "確かめの強さ": "ページの文で確かめた",
     "注記": "TradingView の公開スクリプト Grid Bot RSI の設定の説明。帯の中では建てない。売買の方向の名指しは無いので、玉の向きの欄を書かない"
-   }
+   },
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "入る合図",
@@ -581,7 +591,9 @@
     "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
     "確かめの強さ": "ページの文で確かめた",
     "注記": "StockSharp の戦略の例（RSI Slope Breakout）。買いは傾きがプラスで平均を上回るとき、売りはその逆。場面とスキャル・デイトレの名指しは無い。engine_tuner の slope_avg は傾きの平均そのものを閾値と比べる形で、この文の「平均＋k×標準偏差」とは作りが違う（この文は傾きをその平均と比べる実例として置いた）"
-   }
+   },
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "場面の判定",
@@ -620,7 +632,9 @@
     "URL": "https://it.tradingview.com/script/gT4cOao0-MTF-RSI-Centered-at-Zero",
     "確かめの強さ": "ページの文で確かめた",
     "注記": "TradingView の公開スクリプト（MTF RSI — Centered at Zero）。前処理「決まった数との差」の実例。同じページ「Above 0 → bullish pressure」「Below 0 → bearish pressure」。足は 4H と現在の足で、文の時間足は書かない"
-   }
+   },
+   "確認に使う相手": [],
+   "入る線と出る線": []
   },
   {
    "使い方の種類": "ダイバージェンス",
@@ -635,7 +649,7 @@
    "合図の形のパラメータ": [],
    "閾値": [],
    "確認に使う相手": [],
-   "入る線と出る線": null,
+   "入る線と出る線": [],
    "出どころ": {
     "逐語": "A bullish divergence occurs when the underlying security makes a lower low, and RSI forms a higher low.",
     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",

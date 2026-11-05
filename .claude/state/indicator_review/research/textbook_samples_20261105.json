@@ -357,7 +357,9 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "同じ向きの文：TradingView「On the other hand, during periods of sustained sideways movement, volatility is frequently low. This could assist in the discovery of trading ranges.」（https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/）。レンジの値の閾値を書いた文は見つからなかった"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "場面の判定",
@@ -401,7 +403,9 @@
      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "Ratio_t＝真の値幅 ÷ ATR。1.5・2 はスキャル・デイトレの名指しが無いので閾値の範囲の文に置いた。TRT「Period 7 reacts even faster and will jump on a single spike.」は期間の文"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "場面の判定",
@@ -453,7 +457,9 @@
      "URL": "https://www.luxalgo.com/library/indicator/ycjeadf1-atr-momentum/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "同じページ「Fast ATR Length (default 5): the responsive side; shorter is faster and noisier.」「Slow ATR Length (default 20): baseline lookback, also the averaging window in slope mode.」。期間違いの2本（5 と 20）の組。場面の語は expansion／contraction で、4つの場面のどれの語も無い"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入ってはいけない場面を除く条件",
@@ -490,7 +496,9 @@
      "URL": "https://www.tradingview.com/script/2QcaKbTR/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "TradingView の公開スクリプト（ATR Regime Filter）。レンジの逆張りでは、ATR が中央値より下なら建てない（値動きが小さすぎる）、と読んだ。閾値の形「分位」の実例"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -864,7 +872,9 @@
      "URL": "https://www.tradingview.com/script/DML5Zz7l/",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "差の線が 0 の近く（およそ −10〜+10）なら揉み合い。同じページ＝「Two components of DMI are used in calculation: DI+ and DI-; the DMI oscillator calculates the difference between these components and represents it as both a line and a histogram.」"
+    "注記": "差の線が 0 の近く（およそ −10〜+10）なら揉み合い。同じページ＝「Two components of DMI are used in calculation: DI+ and DI-; the DMI oscillator calculates the difference between these components and represents it as both a line and a histogram.」",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -912,7 +922,9 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "場面の上げ＝StockCharts「For example, chartists can focus on +DI buy signals when the bigger trend is up and -DI sell signals when the bigger trend is down.」。ほかに Fidelity「A buy signal is given when DMI+ crosses above DMI-.」、TRT「+DI crossing above -DI is the bullish trigger.」。入る合図の弱点（レンジでのだまし）を見る除く条件は ADX の線に掛かる（下の除く条件の行）"
+    "注記": "場面の上げ＝StockCharts「For example, chartists can focus on +DI buy signals when the bigger trend is up and -DI sell signals when the bigger trend is down.」。ほかに Fidelity「A buy signal is given when DMI+ crosses above DMI-.」、TRT「+DI crossing above -DI is the bullish trigger.」。入る合図の弱点（レンジでのだまし）を見る除く条件は ADX の線に掛かる（下の除く条件の行）",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -960,7 +972,9 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "ほかに Fidelity「A sell signal is given when DMI- crosses above DMI+.」（https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi）"
+    "注記": "ほかに Fidelity「A sell signal is given when DMI- crosses above DMI+.」（https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi）",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "前提崩れの印",
@@ -983,7 +997,9 @@
      "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "交差の次の足で交差が戻ったら手じまう。同じページ＝「If the next bar puts +DI back under -DI, exit even if 84.20 has not printed.」。売りでも同じ（Invalidation The next close puts -DI back under +DI）。指標データの前提崩れの印の行（SHORT・上側・28.10）の値と同じ文は無い"
+    "注記": "交差の次の足で交差が戻ったら手じまう。同じページ＝「If the next bar puts +DI back under -DI, exit even if 84.20 has not printed.」。売りでも同じ（Invalidation The next close puts -DI back under +DI）。指標データの前提崩れの印の行（SHORT・上側・28.10）の値と同じ文は無い",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "場面の判定",
@@ -1022,7 +1038,9 @@
      "URL": "https://www.tradingview.com/script/DML5Zz7l/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "向きを持つ指標を絶対値で使う形（法則 R5 の、トレンドが弱ければレンジ寄り、に当たる）。上の帯の行と同じ文を、前処理「絶対値」＋水準の形で書いた実例"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "場面の判定",
@@ -1074,6 +1092,42 @@
      "URL": "https://www.trade-ideas.com/help/filter/PDIMDI/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "前処理「2本の差」の実例（+DI と −DI の差が 10 より上なら上げが優勢、と読んだ）。銘柄選びの道具の設定の説明"
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "玉の向き": "LONG",
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "入る線と出る線": [],
+    "確認に使う相手": [
+     {
+      "相手": "ADX",
+      "役目": "トレンドの強さを確かめる（ADX が 25 より上）",
+      "逐語": "Example Time Frame: 5-minute chart. Indicators: 14-period ADX, 50 EMA. Entry Rule: Go long when price is above EMA, +DI > −DI, and ADX > 25.",
+      "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+      "確かめの強さ": "ページの文で確かめた"
+     }
+    ],
+    "出どころ": {
+     "逐語": "Example Time Frame: 5-minute chart. Indicators: 14-period ADX, 50 EMA. Entry Rule: Go long when price is above EMA, +DI > −DI, and ADX > 25.",
+     "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "確認に使う相手の実例。50 EMA も文に在るが、DI差の見本なので ADX だけを例にした。数の 5・14・50・25 は DI差の閾値ではない"
     }
    }
   ],
@@ -1544,7 +1598,9 @@
      "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "閾値 70 は足と型の名指しが無いのでスキャル・デイトレに入れない（閾値の範囲の文に在る）。Fidelity は「If it remains persistently between 70 and 100, and the Aroon-Up remains between 0 and 30, then a new downtrend is underway.」"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "場面の判定",
@@ -1582,7 +1638,9 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "2本の両方の条件"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -1621,7 +1679,9 @@
      "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "閾値 70。足と型の名指しが無いのでスキャル・デイトレに入れない。入ってはいけない場面を除く文：「Do not go short when Aroon Down crosses above 70 because price is above the 63-Day moving average.」（同じページ）。スパイクの弱点：「Aroon Down rises to 100% when a long tail makes a new 25-day low.」「Aroon Down highlights the low, but the strong close is a bull signal, indicating buying support.」（同じページの偽の抜けの例）。therighttrader 戦略のページは表で「Down crosses above 70 while Up is below 50」、門は「Close below a falling 50-period EMA」"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -1654,7 +1714,9 @@
      "URL": "https://www.investopedia.com/terms/a/aroon.asp",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "入ってはいけない場面を除く文：「Even if the price is relatively flat, crossovers will occur as eventually a new high or low will be made within the last 25 periods.」（同じページ）"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -2141,7 +2203,9 @@
      "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "0 の近くに留まるとき横ばい。幅の数は文に無い"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -2177,7 +2241,9 @@
      "逐語": "Bullish Crosses occur when Chaikin Money Flow crosses from below the Zero Line to above the Zero Line. Price then rises.",
      "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
      "確かめの強さ": "ページの文で確かめた"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -2259,7 +2325,18 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "0 の上下に幅を置く。買いは +0.05 を上へ、売りは −0.05 を下へ"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": [
+     {
+      "候補の値": 0.05,
+      "文の時間足": "5m",
+      "逐語": "Dozens of zero crosses per session\tBar interval too short for the window\tMove to 5 minute bars and use the 0.05 buffer levels.",
+      "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+      "確かめの強さ": "ページの文で確かめた",
+      "注記": "入る線と抜ける線を 0 から 0.05 離す幅"
+     }
+    ]
    },
    {
     "使い方の種類": "入ってはいけない場面を除く条件",
@@ -2273,7 +2350,6 @@
     "使える条件の形": [
      "cross"
     ],
-    "玉の向き": "両方",
     "合図の形のパラメータ": [],
     "閾値": [
      {
@@ -2303,7 +2379,9 @@
      "逐語": "Ranges. Der Null-Cross feuert ständig, und das ±0.05-Band wird alle paar Kerzen gekreuzt.",
      "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
      "確かめの強さ": "ページの文で確かめた"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -2936,7 +3014,9 @@
      "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "algotest の「Strategy 2: Bollinger Bounce This is the mean reversion setup.」の売りの条件。同じ節「Best for: Stocks and indices on a 15-minute or 1-hour chart during flat, range-bound sessions.」。文は帯で書き、%B の語は無い（上の帯＝%B 1・SC-PB）。LiteFinance も「When the price approaches or touches the upper Bollinger Band, traders may look for potential sell signals, while a move toward the lower band may prompt them to look for potential buy signals.」（https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/・横ばいの相場の節）"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入る合図",
@@ -2958,7 +3038,9 @@
      "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "上の帯より上の終値のあと上の帯より下へ戻る＝%B が 1 を下へ抜ける（文は帯で書き、%B の語は無い）。同じ節の文「The charts that fit are the 5-minute and the 15-minute.」は日中の足の節の文で、この文の足とは読み切れないので時間足は空にした"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "前提崩れの印",
@@ -2979,7 +3061,9 @@
      "URL": "https://therighttrader.com/learn/indicator-strategies/walking-the-bands",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "帯に沿う動きの終わり＝%B が 0.5 を戻って抜ける。指標データの前提崩れの印の行（レンジ・SHORT・上側・1.0129892）を支える文は見つからなかった"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -3488,7 +3572,9 @@
      "逐語": "ADX below 20 for any length of time indicates a ranging market;",
      "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
      "確かめの強さ": "ページの文で確かめた"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入ってはいけない場面を除く条件",
@@ -3503,7 +3589,6 @@
      "slope",
      "diff"
     ],
-    "玉の向き": "両方",
     "合図の形のパラメータ": [
      {
       "名前": "傾きの本数",
@@ -3535,7 +3620,9 @@
      "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "ADX が底から 4 上がるまで入らない（Elder の系）。4 は値の差で、閾値の値ではないので閾値は空。前の文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」"
+    "注記": "ADX が底から 4 上がるまで入らない（Elder の系）。4 は値の差で、閾値の値ではないので閾値は空。前の文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "出口の反転",
@@ -3583,7 +3670,9 @@
      "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "注記": "指標データの出口の反転の行（SHORT 下側・LONG 上側・25）とは向きが違う。どちらが正しいかは書かない"
+    "注記": "指標データの出口の反転の行（SHORT 下側・LONG 上側・25）とは向きが違う。どちらが正しいかは書かない",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    },
    {
     "使い方の種類": "入ってはいけない場面を除く条件",
@@ -3635,7 +3724,9 @@
      "URL": "https://www.surefire-trading.com/tsl/tl/tl-71.html",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "ADX の傾きで RSI の入口の閾値を切り替える決まり。ADX が上がっていないときは RSI 50 より下でしか買わない＝除く条件として読んだ。ADX の期間は書いていない"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -3825,7 +3916,9 @@
      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
      "確かめの強さ": "ページの文で確かめた"
     },
-    "使う出力": "帯の線"
+    "使う出力": "帯の線",
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": [
@@ -3957,7 +4050,9 @@
      "逐語": "Trade upward retracements in a downward price trend -- page 313.",
      "URL": "https://thepatternsite.com/BearEngulfing.html",
      "確かめの強さ": "ページの文で確かめた"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ],
   "探した記録": []
@@ -4030,7 +4125,9 @@
      "URL": "https://c.mql5.com/forextsd/forum/155/woodiescci.pdf",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "続く文＝『If above, trend is up, if below, trend is down.』。6本は本数の条件（streak）。LuxAlgo も『Trend is defined mechanically: in the common formulation, six or more consecutive bars of the 14-period CCI on one side of the zero line establish a trend in that direction, and trades are then taken only with that trend until the definition flips.』と書く。PDF を curl で取り pdftotext で本文を読んだ（Chromium は PDF の本文を出さず照らせない）。行の折り返しは空白1つにつないだ。著者は James L. O'Connell、冒頭に Woodie（Ken Wood）の言葉が在る"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ]
  },
@@ -4079,7 +4176,9 @@
      "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "規則の表の行。日足（「Use a daily chart.」）。幅が126日の最低のあと10本の中で下の帯の外の終値"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ]
  },
@@ -4183,7 +4282,9 @@
      "URL": "https://www.luxalgo.com/library/concept/support-level.md",
      "確かめの強さ": "ページの文で確かめた",
      "注記": "線に触れた回数で、線が本物かを見る。売買の方向の名指しは無い。同じページ「Whether further touches strengthen or weaken the level is contested」"
-    }
+    },
+    "確認に使う相手": [],
+    "入る線と出る線": []
    }
   ]
  },
