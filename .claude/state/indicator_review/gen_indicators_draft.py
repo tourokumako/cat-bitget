@@ -1961,7 +1961,7 @@ def request_block() -> str:
         cv[k] = {**cv[k], **v}
     forms = [f["名前"] for f in jload(PR / "laws" / "laws.json")["条件の書き方"]]
     sw = jload(SDK / ".claude" / "ratchet" / "indicator_switch.json")
-    targets = sorted(set(data["指標の記録"]) | set(data.get("部品の記録") or {}) | {"包み足"})   # ★2026-11-05 まこさん「185種を以前にONにしたということね。今は９種のみON」＝相手は material に登録している全部（指標の記録）。オン/オフは探索の切り替えで、教科書の相手を決める物ではない
+    targets = sorted(set(sw["on"]) | {"包み足"})   # ★2026-11-05 まこさん「優先度以前ONにした185種だけど。大丈夫？ 306種全部はこのタイミングで対応しない」＝相手は indicator_switch.json の on（前にオンにした185種）＋包み足 まこさん「185種を以前にONにしたということね。今は９種のみON」＝相手は material に登録している全部（指標の記録）。オン/オフは探索の切り替えで、教科書の相手を決める物ではない
     missing_nine = [n for n in FIRST_NINE if n not in targets]
     if missing_nine:
         raise SystemExit(f"❌ 先に通す指標が相手に無い: {missing_nine}")
@@ -2105,9 +2105,9 @@ def request_block() -> str:
                 ordered.append(n)
                 seen_o.add(n)
     tier_note = (f"優先度の順＝①先に通す9種（{len(FIRST_NINE)}）②法則の機械が読む判定が名指しする指標（{len([n for n in law_fams if n not in FIRST_NINE])}）"
-                 f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（法則に名前が出ない指標と部品）。各段の中は、法則の並びと sources.law の並びのとおり。④は名前の並び")
+                 f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（前にオンにしたが、法則に名前が出ない指標）。各段の中は、法則の並びと sources.law の並びのとおり。④は名前の並び")
     out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "",
-            f"相手は、material に登録している指標の全部（指標データ `indicators.json` の `指標の記録` と `部品の記録` に在る物。オン/オフは問わない）で、{len(targets)} 種です。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
+            f"相手は、前にオンにした指標（`SDK/.claude/ratchet/indicator_switch.json` の `on`。いまの探索では9種だけをオンにするが、教科書の相手はこの185種）と「包み足」で、{len(targets)} 種です。オフの指標（残りの121種）は、このタイミングでは作りません。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
             "", tier_note, "", f"**作る順（優先度の順。全部）＝** {'・'.join(ordered)}", "",
             f"20種ごとに区切ったファイルの数＝{(len(ordered) + 19) // 20}（out_t1_01.json … out_t1_{(len(ordered) + 19) // 20:02d}.json）"]
     # 6 要件との対応
@@ -2683,7 +2683,7 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 相手の全部を出す命令は次のとおりです（並べ替えは `unique` の順なので、上の順とは違います。上の順が正です）。
 
 ```
-jq -r '.["指標の記録"] | keys[]' SDK/scripts/priority_rebuild/indicators/indicators.json
+jq -r '[.on[], "包み足"] | unique | .[]' SDK/.claude/ratchet/indicator_switch.json
 ```
 
 - 帯の8種（帯VA・帯VA1時間ATR・帯pivot・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR）は、部品の記録に在ります。元になる pivot・Value Area・スイングについて、教科書の文を探し、ほかの指標と同じ要素（役割の候補・値の読み方の候補・閾値の範囲の候補・使い方の記録）に書きます。帯の幅の数（プロジェクトが決めた定数）は、教科書の文に無ければ、パラメータの軸の代表の値の候補を空にして注記に「見つからなかった」と書きます。部品の記録に置く指標には、`確定と期間` を書きません（置き場が無い。後の工事で足す）。
