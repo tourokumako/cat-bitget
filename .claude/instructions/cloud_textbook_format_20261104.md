@@ -1,16 +1,16 @@
-# 依頼書｜先に通す9種の指標の教科書を、見本と同じ書き方で作る（第一回）
+# 依頼書｜material の全部の指標の教科書を、見本と同じ書き方で作る（20種ごとに区切る）
 
 この依頼書は、プログラム `gen_indicators_draft.py`（`--write-request`）が作ります。手で書き換えません（`--verify-request` が検出します）。文はプログラムの中に持ち、表は指標データの定義表・見本・要件の文書（`.claude/rules/core_requirements_full.md`・`SDK/.claude/rules/cat_requirements.md`・`SDK/.claude/rules/要件定義書_レベル4_指標の構造.md`）・指標のオン/オフの表（`SDK/.claude/ratchet/indicator_switch.json`）から作ります。
 
 パスは全部、リポジトリ（cat-bitget）の一番上からの相対パスです。`SDK` は `v3-bitget-api-sdk/bitget-python-sdk-api` の略です。
 
-<!-- TEXTBOOK_REQ_AUTO_START hash=2fcc4444a4a9 -->
+<!-- TEXTBOOK_REQ_AUTO_START hash=237437d419bb -->
 
 ## 一 件名・依頼者・依頼先・依頼日
 
 | 項目 | 中身 |
 |---|---|
-| 件名 | 先に通す9種の指標の教科書を、見本と同じ書き方で作る（第一回） |
+| 件名 | material の全部の指標の教科書を、見本と同じ書き方で作る（20種ごとに区切って出す） |
 | 依頼者 | まこさん（CAT プロジェクト）。この依頼書は、まこさんの指示で、このリポジトリの Claude Code（CC）がプログラムで作った |
 | 依頼先 | クラウドで走る Claude Code のセッション（このリポジトリを取って作業する） |
 | 依頼日 | 2026-11-05 |
@@ -63,19 +63,19 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 
 指標一種につき、教科書を一件（JSON）作ります。書き方は見本と同じです。見本は「五 提供する資料」に在ります。**作業の始め（「四」の進め方の二番）で、見本を全部読みます。**
 
-今回は、下の「対象の範囲」の9種（先に通す指標）だけを作ります。9種を一本のファイル `out_t1_01.json` に入れてプッシュし、報告して作業を終えます。残りの指標には進みません。頼んだ人が9種を確かめてから、続き（横展開）を頼みます。
+相手は、下の「対象の範囲」の全部です。作る順は、先に通す9種を先頭にした並びです。20種ごとに一本のファイル（`out_t1_01.json`、`out_t1_02.json`、…）に入れ、ファイルごとにコミットとプッシュをして、全部 終わるまで続けます。最初のファイルを作る前に「四 進め方」の質問の段で止まり、答えをもらってから量産します。途中で書き方に迷ったら、その都度 止まって聞きます。
 
 ### 対象の範囲
 
-相手の全部と、今回の9種は、次の表のとおりです。
+相手の全部と、作る順は、次の表のとおりです。
 
 #### 調べる相手（プログラムがオン/オフの表から数えた）
 
 相手は、ta（Python の指標ライブラリ）の指標と、相場の法則が名指しする指標と、「包み足」の和集合で、137 種です。順番は、先に通す9種（ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot）を先頭にし、残りは名前の文字の並び（Python の sorted の順）です。先に通す9種は全部 相手に在ります。
 
-**今回の第一回で作る9種（先に通す指標。この順）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot
+**作る順（先に通す9種を先頭に、全部）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot・AO%・AROOND・AROONOSC・AROONU・CCI・CHOP・CMF・DPO%・DPO教科書%・Donchian幅・EFI比・EMA傾き・EOM比・ER・HT_DCPHASE・HWC位置・HWC幅%・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・MACDシグナル線%・MACDヒスト%・MACD線%・MAD比・MASSI・MFI・MMI・NVI傾き・OBV傾き・POC・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・ROC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・SQZ_ON・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・THERMO%・THERMO_EMA%・THERMO原作%・TR%・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UI・UO・VAH・VAL・VHF・VTXM・VTXP・WMA傾き%・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs EMA・close vs KAMA%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs SMA・close vs VWAP・close vs VWAP典型・close vs WMA%・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol・realized_vol_rv・stdev%・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・転換線・高値切り上げ幅%
 
-続きの順（横展開のとき。参考）＝ AO%・AROOND・AROONOSC・AROONU・CCI・CHOP・CMF・DPO%・DPO教科書%・Donchian幅・EFI比・EMA傾き・EOM比・ER・HT_DCPHASE・HWC位置・HWC幅%・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・MACDシグナル線%・MACDヒスト%・MACD線%・MAD比・MASSI・MFI・MMI・NVI傾き・OBV傾き・POC・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・ROC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・SQZ_ON・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・THERMO%・THERMO_EMA%・THERMO原作%・TR%・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UI・UO・VAH・VAL・VHF・VTXM・VTXP・WMA傾き%・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs EMA・close vs KAMA%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs SMA・close vs VWAP・close vs VWAP典型・close vs WMA%・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol・realized_vol_rv・stdev%・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・転換線・高値切り上げ幅%
+20種ごとに区切ったファイルの数＝7（out_t1_01.json … out_t1_07.json）
 
 相手の全部を出す命令は次のとおりです（並べ替えは `unique` の順なので、上の順とは違います。上の順が正です）。
 
@@ -194,8 +194,8 @@ engine_tuner の仕組み＝場面に掛かる法則を選ぶ → 法則が役�
 頼んだ人は、このセッションで質問に答えられます。次の順で進めます。
 
 1. **最初に、プッシュできるかを確かめます。** `git ls-remote origin research/textbook-format-2` で、結果を置くブランチが在るかを見ます。在れば、そのブランチの続きから始め、そのブランチの `out_t1_01.json` に既に在る指標を飛ばします（調べ直しを頼まれた指標と要素は、飛ばさずに調べ直しのファイルへ書きます）。無ければ、ブランチ `refactor/e35-e36-split-strat-base` の最新の版から `research/textbook-format-2` を作り、ファイルを足さずにそのブランチをプッシュします。**プッシュが失敗したら、調べを始めません。** 失敗のエラーの文を報告して、作業を終えます。
-2. **先に質問します。** 依頼書・見本・材料を読み、9種の先頭の数種について、材料から見本の書き方へ写すことを試します。書き方で迷う点を一覧にして、**結果のファイルを作らずに止まります。** 迷う点が無ければ、無いと書いて止まります。質問してよいのは、書き方の読み方だけです。どの値を選ぶかは聞きません。
-3. **答えを受けて量産します。** 答えをもらってから、9種を作り、報告して止まります。
+2. **先に質問します。** 依頼書・見本・材料を読み、並びの先頭の数種について、材料から見本の書き方へ写すことを試します。書き方で迷う点を一覧にして、**結果のファイルを作らずに止まります。** 迷う点が無ければ、無いと書いて止まります。質問してよいのは、書き方の読み方だけです。どの値を選ぶかは聞きません。
+3. **答えを受けて量産します。** 答えをもらってから、20種ごとにファイルを作ってコミットとプッシュをし、全部 終わるまで続けます。ファイルを一本 プッシュするたびに、ブランチ名とコミットの番号を会話で知らせます。
 4. **途中で迷ったら止まります。** 見本に無い書き方が出たら、推測で書かず、その場で止まって聞きます。
 
 始めた時刻と終えた時刻を `date -u` で測ります。会話の記録が要約に置き換わったときは、この依頼書の「三」「四」「七」を読み直します。
@@ -207,7 +207,7 @@ engine_tuner の仕組み＝場面に掛かる法則を選ぶ → 法則が役�
 3. **空の要素は、Web で探します。必須です。** 時間を理由に省きません。開発者の原典、定番の教育サイト、ライブラリの説明書、短い足やスキャルの資料の順に探します。暗号資産の資料が在れば、それも探します。
 4. ページは curl と Chromium の両方で開き、本文に逐語が在ることを照らします。開けないページと、404 と書かれたページは、web.archive.org も見ます。それでも開けないページは、確かめの強さを「未確認」にし、注記に HTTP の番号を書きます。
 5. 探しても無い要素は、空にして注記に「見つからなかった」と書きます。使った検索の語と開いたページを、`探した記録` に残します。hook に止められた・会話が切れた、などで探し終えずに作業を終える要素は、`探した記録` に「探していない」と書きます（「見つからなかった」とは別です）。
-6. 9種が終わったら、「七 受入の条件」の確かめを自分で走らせ、通ってからコミットします。
+6. 20種（最後のファイルは残りの全部）が終わるたびに、「七 受入の条件」の確かめを自分で走らせ、通ってからコミットします。
 
 **とくに必ず探す要素：** パラメータの代表の値（スキャルとデイトレ）、パラメータの範囲の候補、閾値の代表の値（スキャルとデイトレ）、閾値の範囲の候補、使い方の行（使い方の種類・場面・玉の向き・向き）です。代表の値と範囲は、パラメータと閾値の両方について、スキャル・デイトレの文を探します（要件＝最初の段階は戦略ごとの代表の固定値、最後の段階は範囲）。使い方の種類は、7種の全部について探します。場面は、レンジ・上げ・下げ・スパイクの全部について探します。入る合図の文が在る指標は、その合図の弱点を見る「入ってはいけない場面を除く条件」の文も探します（`SDK/.claude/memory/indicator_combination_kb.md` の §3＝合図の弱点を見る条件の節）。期間違いの2本の組（クロスほか）の文は、`合図の形のパラメータ` に、組の相手の名前と両方の期間を書きます（同 §10.2＝期間違いの2本の組の節）。時間足は、文に書いてある足だけを書きます。足を探すための検索はしません（足は役目で決まる・同 §4 の4）。
 
@@ -402,7 +402,7 @@ git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_samples_202
 
 ## 六 納期・工数
 
-- 期限は決めません。9種で一区切りです。9種を作ったら、プッシュして報告し、作業を終えます。
+- 期限は決めません。20種で一区切り（一本のファイル）です。区切りごとにプッシュして知らせ、全部 終わったら報告して作業を終えます。会話の記録が要約に置き換わっても、続きから進めます（プッシュ済みのファイルに在る指標は飛ばす）。
 - 始めた時刻と終えた時刻を `date -u` で測り、報告に書きます。
 - 時間を理由に、探すことを省きません（「四」の探し方の決まり）。
 
@@ -410,7 +410,7 @@ git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_samples_202
 
 次の全部が通れば、完成です。コミットの前に、自分で確かめます。
 
-1. `jq 'length' out_t1_01.json` が 9 を返す。
+1. ファイルごとに `jq 'length'` が 20 を返す（最後のファイルは残りの数）。全部のファイルの合計が、相手の数（上の表）と同じ。
 2. `jq -r '.. | strings | select(. == "書いてない" or . == "持たない")' out_t1_01.json` が何も返さない。
 3. `python3 .claude/state/indicator_review/gen_indicators_draft.py --try-textbook-many out_t1_01.json` の最後の行の「合計の違い」が 0。
 4. 同じテストが出す「書き写し忘れの疑い」の行を、全部 読んで処理した。意味は次のとおりです。
@@ -426,7 +426,7 @@ git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_samples_202
 
 ブランチは `research/textbook-format-2` です。置き場は `.claude/state/indicator_review/research/` です。このフォルダは .gitignore の対象なので、コミットのときに `git add -f` を使います。master へは入れません。
 
-**1. `.claude/state/indicator_review/research/out_t1_01.json`** は、今回の9種の配列です（今回 作るのは、この一本だけです。続きの回では `out_t1_02.json`、… と番号を進めます）。1件の書き方は見本のとおりで、次の2つの項目を足します。
+**1. `.claude/state/indicator_review/research/out_t1_01.json`** から `out_t1_02.json`、… は、20種ごとの配列です（作る順の先頭から20種ずつ。最後のファイルは残りの全部）。1件の書き方は見本のとおりで、次の2つの項目を足します。
 
 - `探した記録`：要素ごとに、検索した語と、開いたページを書きます。形＝`[{"要素": "", "検索の語": [""], "開いたページ": [{"URL": "", "HTTP": 200, "読んだ日": "", "当たる文": "在る"}]}]`。`当たる文` には、そのページにその要素の文が在ったかを「在る」か「無い」で書きます。
 - `閾値を持たない理由`：閾値を持たない指標だけ。
