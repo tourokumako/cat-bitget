@@ -1018,6 +1018,9 @@ def todo_number_problems(src: dict) -> list:
     if dup:
         ng.append(f"(u) ToDo の番号が重なっている＝{'・'.join(dup)}。行は手で足さず、tidy_next_step.py --todo-add で足す")
     nxt = src.get(NEXT_NO_KEY)
+    if nxt is None:                                            # ★2026-11-05＝鍵が無いと --todo-add が消した行の番号を使い回す
+        ng.append(f"(u) 元データに「{NEXT_NO_KEY}」が無い。--todo-add が、消した行の番号をもう一度 振ってしまう。"
+                  "これまでに使った最大の番号（worklog と表で確かめる）の次を、jq で元データに入れる")
     if isinstance(nxt, int):
         over = [n for n in nums if n.isdigit() and int(n) >= nxt]
         if over:
@@ -1402,6 +1405,8 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
         return 2
     new_src[BASELINE_KEY] = src.get(BASELINE_KEY, [])
     new_src[S6_FLAG] = bool(src.get(S6_FLAG))
+    if src.get(NEXT_NO_KEY) is not None:               # ★2026-11-05＝ToDo の次の番号を落とさない。落とすと --todo-add が、消した行の番号をもう一度 振る（273番が三つの行に付いた）
+        new_src[NEXT_NO_KEY] = src[NEXT_NO_KEY]
     if new_arc != arc:
         _atomic_write(arc_path, new_arc)
     _atomic_write(src_path, json.dumps(new_src, ensure_ascii=False, indent=1) + "\n")

@@ -1734,257 +1734,6 @@ def selftest() -> int:
     return 0 if n_ng == 0 else 1
 
 
-def try_textbook(path: str) -> int:
-    """見本の教科書1種を、一時の写しの指標データに入れ、読む口が同じ値を返すかを試す（本物の indicators.json は書かない・ToDo の273番）。
-    見本の形＝{名前, 指標の記録: {要素: 値}, 使い方の記録: [行]}。読むのは読む口だけ（要件 R5）。わざと壊した見本で止まることも試す。"""
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("indicators_reader", PR / "indicators" / "indicators.py")
-    ind = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(ind)
-    tb = jload(Path(path))
-    name = tb["名前"]
-    base = ind.load().data                                     # 本物は読む口で読むだけ
-
-    def src(c):                                                # 候補の出どころの欄（値を除く）
-        return {k: v for k, v in c.items() if k not in ("値", "区分", "挙げた値")}
-
-    def pick(rows):                                            # 代表の値の選び方の③＝決まった規則で1つ（最初の候補・engine_tuner_requirements.md:107）
-        return rows[0]["値"] if rows else None
-
-    def span(rows):                                            # 範囲＝候補に在る値の最小〜最大（案・engine_tuner_requirements.md:153 の未決）
-        vals = [v for c in rows for v in c.get("挙げた値", [])]
-        return (min(vals), max(vals)) if vals else (None, None)
-
-    def to_box(t) -> tuple:
-        """候補の形の教科書 → 箱の形（指標の記録の要素と、使い方の記録の行）。"""
-        old = base["指標の記録"][name]
-        axes = []
-        for a in t["パラメータの軸"]:
-            sc, dt = a.get("スキャル") or [], a.get("デイトレ") or []
-            vals = [c["値"] for c in (a.get("既定") or []) + sc + dt]
-            lo0, hi0 = span(a.get("範囲の文") or [])
-            lo = min([x for x in vals + [lo0] if x is not None])
-            hi = max([x for x in vals + [hi0] if x is not None])
-            axes.append({"名前": a["名前"], "意味": a["意味"], "種類": a["種類"], "範囲": {"kind": "int", "lo": lo, "hi": hi},
-                         "代表の値": {"スキャル": [pick(sc) if sc else pick(a["既定"])], "デイトレ": [pick(dt) if dt else pick(a["既定"])]},
-                         "確かめの強さ": "ページの文で確かめた",
-                         "出どころ": {"既定": a.get("既定"), "スキャル": sc, "デイトレ": dt, "範囲の文": a.get("範囲の文")}})
-        role_old = old.get("教科書の役割") or {}
-        u = t["値の単位と値域"]
-        lo_t, hi_t = span(t.get("閾値の範囲の文") or [])
-        read_old = old.get("値の読み方") or {}
-        rd = t["値の読み方"]
-        fin = t["確定と期間"]
-        refs = dict(old.get("照らしと出どころ") or {})
-        refs["教科書の計算の式"] = t.get("計算の式")
-        refs["元の指標"] = t.get("元の指標")
-        recs = {"パラメータの軸": axes,
-                "教科書の役割": {"区分": [c["区分"] for c in t["教科書の役割"]], "出どころ": [src(c) for c in t["教科書の役割"]], "札": role_old.get("札")},
-                "値の単位と値域": {"単位": u["単位"], "値域": {"有界": [u["下限"], u["上限"]], "分位": None}, "出どころ": src(u)},
-                "値の読み方": {"区分": read_old.get("区分"), "読み方": rd["読み方"], "向きを持つ": read_old.get("向きを持つ") if rd.get("向きを持つ") is None else rd["向きを持つ"],
-                             "性質": read_old.get("性質"), "出どころ": src(rd)},
-                "出力": t["出力"],
-                "確定と期間": {"確定に要る本数": fin["確定に要る本数"], "出どころ": src(fin)},
-                "照らしと出どころ": refs,
-                "閾値の範囲": [{"形": "値", "単位": u["単位"], "範囲": {"kind": "float", "lo": lo_t, "hi": hi_t},
-                               "確かめの強さ": "ページの文で確かめた", "出どころ": t.get("閾値の範囲の文")}]}
-        uses = []
-        for x in t["使い方"]:
-            th = x["閾値"]
-            row = {"指す物": {"指標の記録": name}, "使い方の種類": x["使い方の種類"], "玉の向き": x["玉の向き"], "向き": x["向き"], "時間足": x["時間足"],
-                   "前処理": x.get("前処理") or [], "合図の形のパラメータ": x.get("合図の形のパラメータ") or [], "使える条件の形": x.get("使える条件の形") or [],
-                   "閾値": [],
-                   "オン/オフと出どころ": {"状態": "オン", "出どころ": x["根拠"]}}
-            if x.get("場面"):
-                row["場面と型"] = {"場面": x["場面"]}
-            if x.get("パラメータの代表の値"):
-                row["パラメータの代表の値"] = {k: {st: [pick(v[st])] for st in v} for k, v in x["パラメータの代表の値"].items()}
-            if th["スキャル"] or th["デイトレ"]:
-                rep = {st: pick(th[st]) for st in ("スキャル", "デイトレ") if th[st]}
-                row["閾値"] = [{"形": th["形"], "単位": th["単位"], "代表の値": rep, "確かめの強さ": (th["スキャル"] or th["デイトレ"])[0]["確かめの強さ"],
-                              "出どころ": {"スキャル": th["スキャル"], "デイトレ": th["デイトレ"]}}]
-            uses.append(row)
-        return recs, uses
-
-    def filled(recs, rows) -> dict:
-        d = copy.deepcopy(base)
-        d["指標の記録"][name].update(recs)
-        d["使い方の記録"] = d["使い方の記録"] + rows
-        return d
-
-    def read(d, sub):
-        p = Path(tmp) / sub
-        p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
-        return ind.load(p)
-
-    ng = 0
-    recs, uses = to_box(tb)
-    with tempfile.TemporaryDirectory() as tmp:
-        r = read(filled(recs, uses), "ok.json")
-        for k, v in recs.items():
-            same = r.element(name, k) == v
-            ng += 0 if same else 1
-            print(("✅" if same else "❌"), f"指標の記録の {k}：読む口の値と箱の値が", "同じ" if same else "違う")
-        for a in r.element(name, "パラメータの軸"):
-            print("   パラメータ", a["名前"], "範囲", a["範囲"]["lo"], "〜", a["範囲"]["hi"], "代表の値", a["代表の値"])
-        for t_ in r.element(name, "閾値の範囲"):
-            print("   閾値の範囲", t_["形"], t_["範囲"]["lo"], "〜", t_["範囲"]["hi"])
-        got = r.usages(name)
-        for i, u in enumerate(uses):
-            same = u in got
-            ng += 0 if same else 1
-            print(("✅" if same else "❌"), f"使い方の記録 {i} 行目（{u['使い方の種類']}）：読む口が", "返した" if same else "返さない",
-                  "閾値の代表の値", u["閾値"][0]["代表の値"] if u["閾値"] else "空（見つからなかった）")
-        print(f"読む口の {name} の使い方の行数＝{len(got)}（本物 {len(ind.load().usages(name))} 行＋見本 {len(uses)} 行）")
-        # 法則の読む口（laws.py）で、役割と使い方の種類と場面と玉の向きで、見本の行が見つかるか
-        sl = importlib.util.spec_from_file_location("laws_reader", PR / "laws" / "laws.py")
-        lw = importlib.util.module_from_spec(sl)
-        sl.loader.exec_module(lw)
-        la = lw.Laws(jload(PR / "laws" / "laws.json"), reader=r)
-        for role in ("行き過ぎ", "勢い"):
-            hit = la._usages_of({"指す物": {"使い方の種類": "入る合図", "教科書の役割": role, "場面": "レンジ", "時間足": "5m"}}, {"SHORT"}, [])
-            ok = any((h.get("指す物") or {}).get("指標の記録") == name for h in hit)
-            ng += 0 if ok else 1
-            print(("✅" if ok else "❌"), f"laws.py：役割「{role}」・入る合図・レンジ・5m・SHORT で {name} の行が", "見つかった" if ok else "見つからない")
-        # 要件 4-1 の順＝法則 → 役割 → 指標 → 使い方の行 → 代表の値 → 計算 → 条件（読む口だけを通す。engine_tuner は通らない）
-        import pandas as pd
-        h = [x for x in la._usages_of({"指す物": {"使い方の種類": "入る合図", "教科書の役割": "行き過ぎ", "場面": "レンジ"}}, {"SHORT"}, [])
-             if (x.get("指す物") or {}).get("指標の記録") == name][0]
-        th_v = h["閾値"][0]["代表の値"]["スキャル"]
-        sp = ((h.get("パラメータの代表の値") or {}).get("n") or {}).get("スキャル")
-        n_v = sp[0] if sp else r.element(name, "パラメータの軸")[0]["代表の値"]["スキャル"][0]
-        bars = pd.read_csv(SDK / od.BARS_CSV).tail(5000)
-        vals = r.value(name, bars, n_v)
-        fired = int(((vals.shift(1) >= th_v) & (vals < th_v)).sum())
-        print("--- 使い方の道（読む口だけ・engine_tuner は通らない）")
-        print(f"法則の条件＝役割「行き過ぎ」・入る合図・レンジ・SHORT → 指標 {name} → 向き {h['向き']} → 閾値 {th_v}（スキャル）→ n={n_v}（使い方の代表の値）")
-        print(f"実データの5分足 最後の {len(bars)} 本で、{name}{n_v} を計算＝値の最小 {float(vals.min()):.1f}・最大 {float(vals.max()):.1f}。{th_v} を下へ抜けた回数＝{fired} 回")
-        # 繋げるかのテスト＝読む口の値で条件を1本作り、engine_tuner の条件の計算（engine_tuner_exec._eval_cond）へ渡す。読む口の計算と突き合わせる
-        import engine_tuner_exec as ex
-        b2 = pd.read_csv(SDK / od.BARS_CSV, parse_dates=["timestamp"]).tail(5000).reset_index(drop=True)
-        b2["ts"] = b2["timestamp"]
-        cond = {"form": "level", "side": "below", "value": {"n": float(th_v)}, "material": [{"family": name, "param": n_v, "tf": "5m"}]}
-        got_ex = ex._eval_cond(cond, b2, {}, "legacy", None)
-        got_rd = (r.value(name, b2, n_v) < th_v).to_numpy()
-        same_n = int((got_ex == got_rd).sum())
-        print(f"engine_tuner_exec._eval_cond：{name}{n_v} 5m が {th_v} より下＝成立 {int(got_ex.sum())} 本／読む口の計算＝成立 {int(got_rd.sum())} 本／一致 {same_n}/{len(b2)} 本")
-        ng += 0 if same_n == len(b2) else 1
-        # 法則で繋ぐテスト＝R5（強さが弱ければレンジ寄り）× C4（上位足が許可・下位足が入る）。時間足を変えて、値と条件がどう変わるかを出す
-        roles, weak = la._role_of(r.record("ADX"))
-        adx_n = r.element("ADX", "パラメータの軸")[0]["代表の値"]["スキャル"][0]
-        adx_th = [u for u in r.usages("ADX") if u.get("使い方の種類") == "出口の反転"][0]["閾値"][0]["代表の値"]["スキャル"]
-        print("--- 法則 R5 × C4：役割", roles, "（札から引いた＝" + str(weak) + "）→ ADX", adx_n, "・閾値", adx_th)
-        for tf in ("5m", "15m", "1h", "4h"):
-            mt = {"family": "ADX", "param": adx_n, "tf": tf}
-            va = ex._col_array(b2, mt, {}, "legacy")
-            s_a = pd.Series(va)
-            ch = s_a.ne(s_a.shift(1)) & s_a.notna() & s_a.shift(1).notna()
-            mins = sorted(set(pd.to_datetime(b2.loc[ch, "ts"]).dt.minute.tolist()))[:8]
-            allow = ex._eval_cond({"form": "level", "side": "below", "value": {"n": float(adx_th)}, "material": [mt]}, b2, {}, "legacy", None)
-            both = allow & got_ex
-            print(f"  ADX{adx_n} {tf}：値が変わったバー {int(ch.sum())} 本（分＝{mins}）／{adx_th} より下 {int(allow.sum())} 本／かつ 5m の RSI{n_v} が {th_v} より下＝{int(both.sum())} 本")
-        # 通しのテスト＝読む口の値で入口を作り、engine_tuner の売買のループ（run_recipe）で回して net を出す。出口は S2 の恒等レシピのまま。値決め窓の1か月だけ
-        import tuner_adapters.e38 as ad
-        # 本物の法則の行が、本物の指標データで使い方の行を見つけられるか（laws.json の全部の行）
-        la0 = lw.Laws(jload(PR / "laws" / "laws.json"), reader=ind.load())
-        cnt = {"見つかった": 0, "使える物が無い": 0, "候補が複数": 0}
-        lost = []
-        for row_ in la0.rows():
-            s_ = la0.solve(row_["番号"])
-            cnt["見つかった"] += len(s_["使い方の行"])
-            cnt["使える物が無い"] += len(s_["使える物が無い"])
-            cnt["候補が複数"] += len(s_["候補が複数"])
-            lost += [(row_["番号"], w) for w in s_["使える物が無い"]]
-        print("--- 本物の法則の行 × 本物の指標データ：", cnt)
-        for x_ in lost[:6]:
-            print("   見つからない：", x_[0], json.dumps(x_[1], ensure_ascii=False)[:120])
-        # 行の値だけで条件を作る（向き・形・足・閾値・パラメータを手で書かない）
-        SIDE = {"上側": "above", "下側": "below"}
-        CROSS = {"上へ抜ける": "up", "下へ抜ける": "down"}
-        r3 = read(filled(recs, uses + tb["_テスト用の別の指標の行"]), "ok3.json")
-        la3 = lw.Laws(jload(PR / "laws" / "laws.json"), reader=r3)
-
-        def cond_from(want, role):
-            rows = la3._usages_of({"指す物": want}, {"SHORT"}, [])
-            if len(rows) != 1:
-                raise SystemExit(f"❌ 指す物 {want} の行が {len(rows)} 本（1本でない）")
-            u = rows[0]
-            nm = u["指す物"]["指標の記録"]
-            sp_ = ((u.get("パラメータの代表の値") or {}).get("n") or {}).get("スキャル")
-            par = sp_[0] if sp_ else r3.element(nm, "パラメータの軸")[0]["代表の値"]["スキャル"][0]
-            v_ = float(u["閾値"][0]["代表の値"]["スキャル"])
-            mat = {"family": nm, "param": par, "tf": want["時間足"]}
-            if u["向き"] in SIDE:
-                return {"role": role, "form": "level", "side": SIDE[u["向き"]], "value": {"legacy": v_}, "material": [mat]}
-            return {"role": role, "form": "cross", "value": {"direction": CROSS[u["向き"]], "th": {"legacy": v_}}, "material": [mat]}
-
-        c_env = cond_from({"使い方の種類": "場面の判定", "教科書の役割": "強さ", "場面": "レンジ", "時間足": "15m"}, "env")
-        c_trg = cond_from({"使い方の種類": "入る合図", "教科書の役割": "行き過ぎ", "場面": "レンジ", "時間足": "5m"}, "trigger")
-        rec = jload(PR / "recipes/identity_s2_legacy.json")
-        rec["entry"]["connective"] = {"all": [c_env, c_trg]}
-        win = (pd.Timestamp("2025-07-01"), pd.Timestamp("2025-08-01"))
-        dfw = ad.load_windows([win], pd.Timedelta(days=60))[0]
-        tr, _rep = ex.run_recipe(ex.attach_recipe_columns(dfw, rec), rec)
-        t_df = pd.DataFrame(tr)
-        print(f"--- 通し（法則の指す物 → 使い方の行 → 条件 → run_recipe・{win[0].date()}〜{win[1].date()}・出口は S2 の恒等レシピ）")
-        print("場面の判定の条件＝", json.dumps(c_env, ensure_ascii=False))
-        print("入る合図の条件＝", json.dumps(c_trg, ensure_ascii=False))
-        print(f"売買 {len(t_df)} 件")
-        if len(t_df):
-            print("net 合計", round(float(t_df["net_usd"].sum()), 2), "決済の理由", t_df["exit_reason"].value_counts().to_dict() if "exit_reason" in t_df else list(t_df.columns)[:12])
-        # 形のテスト＝値の閾値でない形（分位・倍率・クロス・閾値なし・部品）が、箱に入り、読む口を通り、engine_tuner の計算で動くか。
-        def usage(kind_, nm_, use_, side_, dire_, th_=None, **kw_):
-            row_ = {"指す物": {kind_: nm_}, "使い方の種類": use_, "玉の向き": side_, "向き": dire_, "閾値": [th_] if th_ else [],
-                    "オン/オフと出どころ": {"状態": "オン", "出どころ": "形のテスト"}}
-            row_.update(kw_)
-            return row_
-        cases = [
-            ("ATR% 分位の閾値", usage("指標の記録", "ATR%", "場面の判定", "両方", "下側", {"形": "分位", "単位": "分位", "代表の値": {"スキャル": 50.0}}, 場面と型={"場面": "レンジ"}, 時間足=["15m"]),
-             {"form": "level", "side": "below", "value": {"threshold_q": "q50"}, "material": [{"family": "ATR%", "param": 14, "tf": "15m"}]}),
-            ("ATR% 倍率の閾値（出口の水準）", usage("指標の記録", "ATR%", "出口の水準を作る材料", "SHORT", "上側", {"形": "倍率", "単位": "ATR の倍数", "代表の値": {"スキャル": 2.0}}, 時間足=["5m"]), None),
-            ("MACD 線どうしのクロス", usage("指標の記録", "MACD線%", "入る合図", "SHORT", "下へ抜ける", None, 場面と型={"場面": "レンジ"}, 時間足=["5m"], 使える条件の形=["cross"], 合図の形のパラメータ=[{"名前": "組の相手", "代表の値": "MACDシグナル線%"}]),
-             {"form": "cross", "value": {"direction": "down"}, "material": [{"family": "MACD線%", "param": [12, 26], "tf": "5m"}, {"family": "MACDシグナル線%", "param": [12, 26, 9], "tf": "5m"}]}),
-            ("MACD ゼロ線のクロス", usage("指標の記録", "MACD線%", "入る合図", "SHORT", "下へ抜ける", {"形": "値", "単位": "%", "代表の値": {"スキャル": 0.0}}, 時間足=["5m"]),
-             {"form": "cross", "value": {"direction": "down", "th": {"legacy": 0.0}}, "material": [{"family": "MACD線%", "param": [12, 26], "tf": "5m"}]}),
-            ("包み足 パラメータなし", usage("指標の記録", "包み足", "合図が本物かを確かめる条件", "SHORT", "下側", {"形": "値", "代表の値": {"スキャル": 0.0}}, 時間足=["5m"]),
-             {"form": "level", "side": "below", "value": {"legacy": 0.0}, "material": [{"family": "包み足", "tf": "5m"}]}),
-            ("帯pivot 部品", usage("部品の記録", "帯pivot", "場面の判定", "両方", "上側", {"形": "値", "代表の値": {"スキャル": 0.5}}, 場面と型={"場面": "レンジ"}, 時間足=["15m"]),
-             {"form": "level", "side": "above", "value": {"legacy": 0.5}, "material": [{"family": "帯pivot", "param": 0.003, "tf": "15m"}]}),
-        ]
-        print("--- 形のテスト（箱に入れ、読む口を通し、engine_tuner_exec で計算する）")
-        for label, row_, cond_ in cases:
-            d4 = filled(recs, uses + [row_])
-            d4["指標の記録"]["包み足"]["オン/オフ"]["状態"] = "オン"     # 194番の決定（写しの中だけ）
-            nm4 = row_["指す物"].get("指標の記録") or row_["指す物"].get("部品の記録")
-            try:
-                r4 = read(d4, f"f{cases.index((label, row_, cond_))}.json")
-                in_box = row_ in r4.usages(nm4)
-                if cond_ is None:
-                    print(f"  {label}：読む口＝{'返した' if in_box else '返さない'}／条件の計算は出口の水準なので今回は試さない")
-                    ng += 0 if in_box else 1
-                    continue
-                qt = None
-                if "threshold_q" in cond_["value"]:
-                    k_ = ex._mat_key(cond_["material"][0], "legacy")
-                    qt = {k_: {"q50": float(pd.Series(ex._col_array(b2, cond_["material"][0], {}, "legacy")).median())}}
-                out_ = ex._eval_cond(cond_, b2, {}, "legacy", qt)
-                print(f"  {label}：読む口＝{'返した' if in_box else '返さない'}／条件の成立 {int(out_.sum())}/{len(b2)} 本")
-                ng += 0 if in_box else 1
-            except (Exception, SystemExit) as e_:                # noqa: BLE001
-                ng += 1
-                print(f"  ❌ {label}：止まった：{e_}")
-        bad = copy.deepcopy(uses)
-        bad[0]["向き"] = "書いてない"
-        try:
-            read(filled(recs, bad), "bad.json")
-            ng += 1
-            print("❌ 向き「書いてない」の見本で、読む口が止まらなかった")
-        except ind.IndicatorsError as e:
-            print("✅ 向き「書いてない」の見本で、読む口が止まった：", e)
-    print("結果：" + ("通った" if not ng else f"通らない（{ng} 件）"), "／本物の indicators.json は書いていない")
-    return 0 if not ng else 1
-
-
 def form_spec() -> dict:
     """engine_tuner_exec.py の FORM_SPEC（条件の書き方ごとの決まりの表）を読む。走らせず、写しも持たない。"""
     import ast
@@ -2001,11 +1750,15 @@ def form_spec() -> dict:
 TEXTBOOK_TOP = {   # 教科書の一番上の鍵 → 定義表の番号（指標の記録, 部品の記録）。None＝その記録に要素が無い
     "名前": ("②-1", "④-1"), "照らしと出どころ": ("②-9", "④-13"), "教科書の役割の候補": ("②-7", "④-12"),
     "値の単位と値域": ("②-5", "④-10"), "値の読み方の候補": ("②-6", "④-11"), "出力": ("②-3", "④-7"),
-    "確定と期間": ("②-8", None), "パラメータの軸": ("②-4", "④-4"), "閾値の範囲の候補": ("②-11", "④-5")}
+    "確定と期間": ("②-8", None), "パラメータの軸": ("②-4", "④-4"), "閾値の範囲の候補": ("②-11", "④-5"),
+    # ★2026-11-05 まこさん「少なくなってないか？」＝M2〜M4 の法則の手順から足した要素（要件定義書の一覧の「CC が足した要素」）
+    "計算の入力": ("②-14", None), "中心線": ("②-15", None), "先行か遅行か": ("②-16", None), "遅れの長さ": ("②-17", None),
+    "効く相場と効かない相場": ("②-18", None), "線の位置": (None, "④-14"), "破れの定義": (None, "④-15")}
 TEXTBOOK_TOP_EXTRA = {"置く記録", "注記", "使い方の記録", "探した記録", "閾値を持たない理由"}     # 定義表の要素でない、教科書だけの鍵
 TEXTBOOK_ROW = {   # 使い方の行の鍵 → 定義表の番号
     "使い方の種類": "③-2", "場面と型": "③-3", "向き": "③-4", "閾値": "③-5", "パラメータの代表の値の候補": "③-6",
-    "時間足": "③-7", "前処理": "③-8", "合図の形のパラメータ": "③-9", "玉の向き": "③-12", "使える条件の形": "③-13"}
+    "時間足": "③-7", "前処理": "③-8", "合図の形のパラメータ": "③-9", "玉の向き": "③-12", "使える条件の形": "③-13",
+    "確認に使う相手": "③-15", "入る線と出る線": "③-16"}                                   # ★2026-11-05 足した要素
 TEXTBOOK_ROW_EXTRA = {"使う出力", "時間足の組", "出どころ", "注記"}                              # ③-1・③-7・③-11 の中に入れる欄と、注記
 TEXTBOOK_OLD = {"値": "候補の値", "注": "注記", "_注": "注記"}                                   # 古い形の候補の行の鍵 → 新しい名前
 # 候補の行と、要素の中の欄の名前（命名の決まり＝候補の行の鍵はどの要素でも同じ）。鍵＝教科書の鍵、値＝中に書いてよい欄。"*" は候補の行の共通の欄
@@ -2025,6 +1778,9 @@ TEXTBOOK_SHAPE = {
     "既定": CAND_KEYS, "スキャル": CAND_KEYS, "デイトレ": CAND_KEYS,
     "範囲の候補": CAND_KEYS,
     "軸どうしの決まり": CAND_KEYS | {"決まり"},
+    # ★2026-11-05 に定義表へ足した要素（候補の行の並び）
+    "計算の入力": CAND_KEYS, "中心線": CAND_KEYS, "先行か遅行か": CAND_KEYS, "遅れの長さ": CAND_KEYS, "効く相場と効かない相場": CAND_KEYS,
+    "確認に使う相手": CAND_KEYS | {"相手", "役目"}, "入る線と出る線": CAND_KEYS, "線の位置": CAND_KEYS | {"名前"}, "破れの定義": CAND_KEYS,
     "閾値の範囲の候補": CAND_KEYS | {"形", "単位"},
     "閾値": {"形", "単位", "代表の値の候補", "注記"},
     "合図の形のパラメータ": {"名前", "代表の値の候補", "注記"},
@@ -2044,22 +1800,65 @@ EXTRA_CHOICES = {"役割の区分の表": {"ローソクの形": {"札": "ロー
 FIRST_NINE = ("ADX", "ATR%", "BB%b", "BB幅", "DI差", "RSI", "基準線", "包み足", "帯pivot")   # 先に通す指標（要件定義書 第3章の3 の表5）
 SIGNAL_PARAM_OF_FORM = {"streak": ["持続の本数"], "within_n": ["何本以内か"], "barssince": ["何本前か"], "cross": ["組の相手", "開き"],
                         "touch": ["タッチの許容幅"], "slope": ["傾きの本数"], "slope_avg": ["傾きの本数", "平均の本数"], "diff": ["組の相手"]}
+ELEMENT_RENAME = {   # 定義表の名前 → （伝わる名前, engine_tuner で何に使うか, 教科書から読む物）。定義表の名前を直す工事（ToDo の275番）で、定義表そのものをこの名前にする。それまで依頼書の表はここから出す
+    "名前": ("名前", "条件の中で指標を名指しする", "指標データの名前（値を入れない。RSI であって RSI14 ではない）"),
+    "出力": ("出力の一覧", "条件の材料にする出力（%K・%D など）を選ぶ", "指標が出す値の一覧と、出力どうしの組"),
+    "パラメータの軸": ("パラメータの一覧", "最初の段階は代表の値で固定し、最後の段階は範囲から探す", "パラメータ（期間など）ごとに、代表の値（スキャル／デイトレ）と範囲の候補、軸どうしの決まり、出どころ"),
+    "値の単位と値域": ("値の単位と値域", "閾値の単位を決め、ほかの指標と比べられるかを見る", "値の単位（%・0〜100 など）と、取りうる値の幅"),
+    "値の読み方": ("値の読み方", "向きを持つなら絶対値の変換を掛ける。順張り値か状態量かで条件の書き方を選ぶ", "値が大きいと何を意味するか。向きを持つか"),
+    "教科書の役割": ("役割", "法則が求める役目（向き・強さ・勢い・行き過ぎ・値動きの幅・出来高・位置・ローソクの形）に当てはまる指標を選ぶ", "教科書が言う、この指標の役割。複数 持てる"),
+    "確定と期間": ("確定に要る本数・未来を使わない作りか・使えるデータの期間", "未来を見ない作りかを確かめる（漏れの検査）。確定まで何本 待つかを決める", "値が確定するまでに要る足の本数。未来の足を見ずに計算できるか。使えるデータの期間"),
+    "照らしと出どころ": ("教科書の出どころ・ライブラリとの対応・食い違いの記録", "値の根拠を辿る（監査が照らす）", "教科書の逐語と URL。ライブラリとの対応。食い違いの記録"),
+    "閾値の範囲": ("閾値の範囲", "最後の段階で閾値を探す幅にする", "指標ごとに一つ（閾値の形が二つ以上なら形ごとに一つ）の、範囲の候補"),
+    "確かめの強さ": ("確かめの強さ", "値の信頼の度合い（弱い値は後回しにできる）", "指標データの値を、教科書でどこまで確かめたか"),
+    "指す物": ("使う指標と出力", "条件がどの列を読むかを決める", "この使い方の行が、どの指標（または部品）のどの出力を使うか"),
+    "使い方の種類": ("使い方の種類", "条件の役目を決める（場面の判定・入る合図・入ってはいけない場面を除く条件・合図が本物かを確かめる条件・出口の水準を作る材料・出口の反転・前提崩れの印）", "教科書がその指標をどの役目で使っているか"),
+    "場面と型": ("場面と入口の型", "どの場面（レンジ・上げ・下げ・スパイク）の法則で使うかを決める", "教科書が言う場面と、入口の型（down・flat_up など）"),
+    "向き": ("閾値を超える向き", "条件の側（上側・下側・上へ抜ける・下へ抜ける）を決める", "閾値のどちら側で使うか"),
+    "閾値": ("閾値の代表の値", "最初の段階で固定する閾値", "この使い方で使う閾値。形・単位・代表の値（スキャル／デイトレ）・出どころ"),
+    "パラメータの代表の値": ("パラメータの代表の値（この使い方だけの上書き）", "使い方ごとに代表の値を変える", "この使い方だけで使うパラメータの代表の値"),
+    "時間足": ("使える時間足", "条件を見る足を決める", "教科書が言う足の一覧と、二〜三本の組"),
+    "前処理": ("値に掛ける変換", "条件の前に値を変換する（絶対値・二本の差・決まった数との差）", "指標の値に掛ける変換"),
+    "合図の形のパラメータ": ("合図の本数と幅", "条件の書き方（streak・cross・touch・within_n・slope）の本数と幅を決める", "持続の本数・開き・タッチの許容幅・何本以内か・傾きの本数・平均の本数・組の相手"),
+    "玉の向き": ("売買の方向", "ショートとロングのどちらの玉の条件にするかを決める", "教科書がその使い方をどちらの方向で言っているか"),
+    "使える条件の形": ("使える条件の書き方", "条件の書き方（level・band・cross など）を選ぶ", "この使い方で使ってよい条件の書き方"),
+    "計算の関数": ("計算する関数の名前", "（教科書から読まない。プログラムが持つ）", ""),
+    "列を作る組": ("列の計算の設定", "（教科書から読まない。プログラムが持つ）", ""),
+    "オン/オフ": ("オン/オフ", "（教科書から読まない。頼んだ側が決める）", ""),
+    "オン/オフと出どころ": ("オン/オフ", "（教科書から読まない。頼んだ側が決める）", ""),
+    "未来を使ってよいか": ("未来を使ってよいか", "（教科書から読まない。正解ラベルの行は作らない）", ""),
+    "上位足の写し方": ("上の足の値を五分足へ写す方法", "（教科書から読まない。頼んだ側の設定が持つ）", ""),
+    "使う物": ("部品が使う指標と部品", "（教科書から読まない。プログラムが持つ）", ""),
+    "作り方の切り替え": ("作り方の選択肢", "（教科書から読まない。プログラムが持つ）", ""),
+    # ★2026-11-05 に定義表へ足した要素（M2〜M4 の法則の手順から。要件定義書の一覧の「CC が足した要素」）
+    "計算の入力": ("計算の入力", "出来高を使う指標かの区分（役割「出来高」）", "終値・高値安値・出来高のどれから計算するか"),
+    "中心線": ("中心線", "中心線をまたぐ使い方（cross の閾値）", "またぐと意味が変わる線の値"),
+    "先行か遅行か": ("先行か遅行か", "確認の相手の選び方（M3 手順6）", "合図が値動きより早いか遅いか"),
+    "遅れの長さ": ("遅れの長さ", "確認の相手の選び方（M3 手順6）", "合図が値動きからどれだけ遅れるか"),
+    "効く相場と効かない相場": ("効く相場と効かない相場", "入ってはいけない場面を除く条件の元（M3 手順5）", "どの相場で効き、どの相場で騙しが多いかの文"),
+    "確認に使う相手": ("確認に使う相手", "合図が本物かを確かめる条件の相手（M3 手順6）", "この合図を確かめる相手の指標と役目"),
+    "入る線と出る線": ("入る線と出る線", "判定に入る水準と抜ける水準を別にする（M2 手順7・法則 C6）", "入る線と出る線の幅"),
+    "線の位置": ("線の位置", "入口の型 S1（上端で売る）・利確の線（M3 手順1・M4 手順2）", "帯の線の位置の名前（上端・中央・下端・縁）"),
+    "破れの定義": ("破れの定義", "前提崩れの印（M4 手順5）", "帯の外に出たと言う条件の文"),
+}
+
 NOT_COLLECTED = {   # 教科書で集めない要素と、その理由（定義表の要素のうち TEXTBOOK_TOP・TEXTBOOK_ROW に無い物は、全部ここに理由が要る＝無ければ止まる）
-    "②-1": "指標データの名前のまま使う", "②-2": "コードの関数の名前", "②-10": "まこさんが決める", "②-12": "列を変えないための物（171番まで）",
-    "③-1": "指標の名前は教科書の名前で決まる。使う出力だけ `使う出力` で集める", "③-10": "正解ラベルの行は作らない", "③-11": "出どころは行の `出どころ` で集める。オン/オフは後の工事",
-    "③-14": "観察の設定が持つ", "④-1": "指標データの名前のまま使う", "④-2": "コードが持つ", "④-3": "コードの関数の名前", "④-6": "コードが持つ",
-    "④-8": "まこさんが決める", "④-9": "列を変えないための物（171番まで）"}
+    "②-1": "指標データの名前のまま使う（教科書の `名前` に写すだけ）", "②-2": "プログラムの関数の名前。教科書には無い", "②-10": "指標を使うか使わないかの切り替え。頼んだ側が決める",
+    "②-12": "プログラムが指標の列を計算するための設定。頼んだ側が持つ",
+    "③-1": "その行がどの指標の物かは、教科書の `名前` で決まる。使う出力だけ `使う出力` で集める", "③-10": "正解ラベル（未来を見る答え）の行は作らない", "③-11": "出どころは行の `出どころ` で集める。オン/オフは頼んだ側が後で決める",
+    "③-14": "上の足の値を5分足へ写す方法。頼んだ側の設定ファイル（observe_config.json）が持つ", "④-1": "指標データの名前のまま使う（教科書の `名前` に写すだけ）", "④-2": "部品が使う指標の名前。プログラムが持つ", "④-3": "プログラムの関数の名前。教科書には無い", "④-6": "部品の作り方の切り替え。プログラムが持つ",
+    "④-8": "部品を使うか使わないかの切り替え。頼んだ側が決める", "④-9": "プログラムが部品の列を計算するための設定。頼んだ側が持つ"}
 REQ_MAP = [   # 要件の行 → 教科書の欄（行の文に在るはずの語で、行がずれていないかを照らす）
     ("core_requirements_full.md", 28, "閾値", "`閾値の範囲の候補`"), ("core_requirements_full.md", 29, "パラメータ", "`パラメータの軸` の `範囲の候補`"),
     ("core_requirements_full.md", 38, "代表的な固定値", "`代表の値の候補` の `スキャル`・`デイトレ`（パラメータと閾値の両方）"),
     ("core_requirements_full.md", 47, "戦略（スキャル／デイトレ）ごと・指標ごとに", "同上"), ("core_requirements_full.md", 53, "既定の値", "`代表の値の候補` の `既定`"),
-    ("core_requirements_full.md", 60, "指標ごとに1つ", "取り込みが候補の最小〜最大を一つの範囲にする（決まり 4番）"),
+    ("core_requirements_full.md", 60, "指標ごとに1つ", "取り込みが候補の最小〜最大を一つの範囲にする（書き方の決まり 5番）"),
     ("core_requirements_full.md", 62, "指標名に閾値やパラメータの値を固定で入れて", "`名前` は指標データのまま。値は候補の行に"),
     ("core_requirements_full.md", 26, "役割に基づき、法則に則って", "`教科書の役割の候補`・使い方の行の `使い方の種類`・`場面と型`・`玉の向き`・`向き`"),
     ("core_requirements_full.md", 30, "時間足", "`時間足`・`時間足の組`・`文の時間足`（選べる語だけ）"),
     ("core_requirements_full.md", 70, "出どころにする資料", "候補の行の `逐語`・`URL`・`確かめの強さ`"),
     ("core_requirements_full.md", 95, "置き場の1か所を直せば済む", "一種・一要素の調べ直しのファイル（「出す物」）"),
-    ("cat_requirements.md", 611, "USD絶対値の閾値", "`閾値` と `閾値の範囲の候補` の単位に「値段」「ドル」を書かない（決まり 22番）"),
+    ("cat_requirements.md", 611, "USD絶対値の閾値", "`閾値` と `閾値の範囲の候補` の単位に「値段」「ドル」を書かない（書き方の決まり 12番）"),
     ("要件定義書_レベル4_指標の構造.md", 0, "1つの指標が、複数の役割を持てること", "`教科書の役割の候補` の複数行"),
     ("要件定義書_レベル4_指標の構造.md", 0, "「向きを持つ」の欄で", "`値の読み方の候補` の `向きを持つ`・`前処理` の「絶対値」"),
     ("要件定義書_レベル4_指標の構造.md", 0, "閾値の形を複数持てること", "`閾値` の行の並び（形・単位ごと）・`閾値の範囲の候補`"),
@@ -2122,7 +1921,7 @@ def _sample_tags(t: dict, table: dict) -> list:
         if c.get("単位") is None and c.get("形"):
             tags.append("単位が選べる語に無い閾値")
     for x in rows:
-        tags += [f"形 {f}" for f in x.get("使える条件の形") or []]
+        tags += [f"条件の書き方 {f}" for f in x.get("使える条件の形") or []]
         tags += [f"前処理「{p}」" for p in x.get("前処理") or []]
         for th in x.get("閾値") or []:
             tags.append(f"閾値の形「{th.get('形')}」")
@@ -2133,7 +1932,7 @@ def _sample_tags(t: dict, table: dict) -> list:
                 tags.append("帯の両端が文に在る")
         for p in x.get("合図の形のパラメータ") or []:
             has = any("候補の値" in c for k in ("スキャル", "デイトレ", "既定") for c in (p.get("代表の値の候補") or {}).get(k) or [])
-            tags.append(f"{p.get('名前')}の数が{'在る' if has else '無い'}行")
+            tags.append(f"{p.get('名前')}の値が{'書いてある' if has else '書いていない'}行")
         if x.get("時間足の組"):
             tags.append("`時間足の組`")
         if x.get("使う出力"):
@@ -2144,7 +1943,7 @@ def _sample_tags(t: dict, table: dict) -> list:
         if "玉の向き" not in x and x.get("使い方の種類") not in ("出口の反転", "前提崩れの印"):
             tags.append("売買の方向が文に無い行（`玉の向き` を書かない）")
         if x.get("使える条件の形") and not any(th.get("代表の値の候補") for th in x.get("閾値") or []) and not x.get("合図の形のパラメータ"):
-            tags.append("数も組の相手も無い行（空で残す）")
+            tags.append("合図の形のパラメータに、値も組の相手も書いていない行（空で残す）")
     return list(dict.fromkeys(tags))
 
 
@@ -2172,8 +1971,52 @@ def request_block() -> str:
         samples += got if isinstance(got, list) else [got]
     sig_names = sorted({n for v in SIGNAL_PARAM_OF_FORM.values() for n in v})
     out = []
+    # 0 作る要素の一覧（engine_tuner が法則に沿って指標を組み合わせるために、教科書から JSON へ読み込む要素。名前は ELEMENT_RENAME）
+    inside0 = {"②-13": "候補の行の `確かめの強さ`"}
+    where = {}
+    for key, (a, b) in TEXTBOOK_TOP.items():
+        for no in (a, b):
+            if no:
+                where[no] = f"`{key}`"
+    for key, no in TEXTBOOK_ROW.items():
+        where[no] = f"`使い方の記録` の行の `{key}`"
+    for no, w in inside0.items():
+        where[no] = w
+    out += ["### 作る要素の一覧（プログラムが定義表から作った）", "",
+            "engine_tuner は、トレードの法則に沿って指標の要素を組み合わせ、条件を作ります。そのために教科書から JSON へ読み込む要素が、下の表です。",
+            "「要素」が、意味の分かる名前です。「教科書での項目の名前」が、教科書のファイル（JSON）に書く項目の名前です（今は定義表の古い名前のままです。定義表の名前を直す工事が別に在り、直った後は「要素」と同じ名前になります）。",
+            "「置き場」は、指標データの中のどこに在る要素かです＝指標の記録（指標そのものの情報）・使い方の記録（その指標をいつ・どう使うかの行）・部品の記録（帯の線など、指標から作る部品）。指標の記録と部品の記録に同じ要素が在る物は、一行にまとめてあります。", "",
+            "| 要素 | engine_tuner で何に使うか | 教科書から読む物 | 置き場 | 教科書での項目の名前（JSON の key） |", "|---|---|---|---|---|"]
+    def _no_key(no):
+        mark, num = no.split("-", 1)
+        return ("①②③④".find(mark), int(num) if num.isdigit() else 999)
+    place = {"②": "指標の記録", "③": "使い方の記録", "④": "部品の記録"}
+    rows0, seen0, skipped0 = [], {}, []
+    for no in sorted(E, key=_no_key):
+        e = E[no]
+        old = e["要素の名前"]
+        if old not in ELEMENT_RENAME:
+            raise SystemExit(f"❌ ELEMENT_RENAME に無い定義表の名前: {old}（{no}）")
+        new, use, read = ELEMENT_RENAME[old]
+        if no in where:
+            k = (old, where[no])
+            if k in seen0 and no[0] == "④":                  # 指標の記録と同じ要素が部品の記録にも在る＝一行にまとめる
+                rows0[seen0[k]]["置き場"] += "・部品の記録"
+                continue
+            seen0[k] = len(rows0)
+            rows0.append({"要素": new, "使う": use, "読む": read, "置き場": place[no[0]], "鍵": where[no]})
+        elif no in NOT_COLLECTED:
+            if new not in [s[0] for s in skipped0]:
+                skipped0.append((new, NOT_COLLECTED[no]))
+        else:
+            raise SystemExit(f"❌ 定義表の要素で、集めるとも集めないとも決めていない物: {no}")
+    for r in rows0:
+        out.append(f"| {r['要素']} | {r['使う']} | {r['読む']} | {r['置き場']} | {r['鍵']} |")
+    out += ["", "定義表に在るが、教科書からは読まない要素（プログラムか頼んだ側が持つ物）＝" + "、".join(f"{n}（{w}）" for n, w in skipped0) + "。", ""]
     # 1 見本が示す形
-    out += ["### 見本が示す形（プログラムが見本から数えた）", "", "| 指標 | 示す形 |", "|---|---|"]
+    out += ["### 見本に入っている書き方の実例（どの見本を開けば、その書き方の例が見られるか。プログラムが見本から数えた）", "",
+            "書き方に迷ったら、この表で、その書き方の実例が入っている見本を探して開いてください。例＝「条件の書き方 level」は、その指標の使い方の行に、条件の書き方 level（値がある線を超えたら、という書き方）の実例が入っている、という意味です。「役割「勢い」」は、役割の候補に「勢い」と書いた実例が入っている、という意味です。", "",
+            "| 指標 | 入っている書き方の実例 |", "|---|---|"]
     seen_tags = set()
     for t in samples:
         tags = _sample_tags(t, table)
@@ -2208,16 +2051,18 @@ def request_block() -> str:
               ("合図の形のパラメータの名前", [n for n in sig_names if n not in same_as]),
               ("使い方の種類", [u for u in cv["使い方の種類"] if u != "正解ラベル"]), ("場面", cv["場面"]), ("玉の向き", list(cv["玉の向き"]) + ["欄なし"]),
               ("向き", cv["向き"]), ("役割の区分", list(cv["役割の区分の表"])), ("値の読み方の区分", list(cv["方向から性質への対応の表"]))]
-    out += ["", "### 見本に実例が無い物（プログラムが選べる語と見本を照らした・0 なら全部に実例が在る）", "", "| 欄 | 実例の無い語 |", "|---|---|"]
+    out += ["", "### 見本に実例が入っていない書き方（選べる語のうち、どの見本にも書いていない物。プログラムが選べる語と見本を照らした・0 なら全部に実例が在る）", "", "| どの項目の選べる語か | 実例の無い語 |", "|---|---|"]
     n_missing = 0
     for kind, allowed in checks:
         miss = [a for a in allowed if a not in seen_in(kind)]
         n_missing += len(miss)
         out.append(f"| {kind} | {'・'.join(miss) if miss else '（全部に実例が在る）'} |")
     out.append(f"| 合計 | {n_missing} |")
-    out += ["", "別の語で受ける物（実例の無い語には数えない）＝" + "、".join(f"{k}→{v}" for k, v in same_as.items()) + "。「何本前」「何本以内」の文は、どちらも within_n の行に書き、名前「何本以内か」に本数を書きます。部分の見本は、書いていない要素の鍵が無い形です。鍵が無い要素は「まだ調べていない」と読みます。量産では全部の要素を調べます。"]
+    out += ["", "選べる語の中で、見本では別の語の行に書く物（だから実例が無くてもよい）＝" + "、".join(f"「{k}」は「{v}」" for k, v in same_as.items()) + "。「何本前」「何本以内」の文は、どちらも条件の書き方 within_n の行に書き、合図の形のパラメータの名前「何本以内か」に本数を書きます。barssince の行は作りません。「部分の見本」は、調べていない要素の項目を書いていない見本です。項目が無い要素は「まだ調べていない」と読みます。この依頼では、全部の要素を調べます。"]
     # 3 教科書の鍵と定義表の要素
-    out += ["", "### 教科書の鍵と、定義表の要素（プログラムが定義表と対応の表から作った）", "", "| 教科書の鍵 | 定義表の要素（指標の記録／部品の記録） | 中に書く欄 |", "|---|---|---|"]
+    out += ["", "### 教科書の項目の名前と、定義表の要素の対応（プログラムが定義表と対応の表から作った）", "",
+            "教科書のファイル（JSON）の中の項目の名前は、定義表の要素の名前に合わせています。この表は、教科書の項目一つにつき一行で、定義表のどの要素に当たるか（指標の記録の番号 ／ 部品の記録の番号）と、その項目の中に書く欄の名前を示します。", "",
+            "| 教科書の項目の名前（JSON の key） | 定義表の要素（指標の記録／部品の記録） | その項目の中に書く欄 |", "|---|---|---|"]
     for key, (a, b) in TEXTBOOK_TOP.items():
         nm = " ／ ".join(f"{no} {E[no]['要素の名前']}" if no else "（無い）" for no in (a, b))
         out.append(f"| `{key}` | {nm} | {'・'.join(f'`{k}`' for k in sorted(TEXTBOOK_SHAPE.get(key, set())))} |")
@@ -2233,7 +2078,7 @@ def request_block() -> str:
     out += ["", f"定義表の要素は {len(E)} 件。集める物 {len(covered)} 件（うち " + "、".join(f"{no} {E[no]['要素の名前']}＝{w}" for no, w in inside.items())
             + f"）。集めない物 {len(rest)} 件＝" + "、".join(f"{no} {E[no]['要素の名前']}（{NOT_COLLECTED[no]}）" for no in rest) + "。"]
     # 4 選べる語
-    out += ["", "### 選べる語（プログラムが定義表の選べる値と法則の条件の書き方から作った）", "", "| 欄 | 選べる語 |", "|---|---|"]
+    out += ["", "### 選べる語（プログラムが定義表の選べる値と法則の条件の書き方から作った）", "", "| どの項目の選べる語か | 選べる語 |", "|---|---|"]
     tf = json.loads((PR / "observe_config.json").read_text(encoding="utf-8"))["timeframes"]
     rows = [("教科書の役割の区分", list(cv["役割の区分の表"])), ("閾値の形", cv["閾値の形"]), ("値の単位（値の単位と値域だけ。閾値には「値段」「ドル」を書かない）", cv["値の単位"]),
             ("使い方の種類（正解ラベルは作らない）", [u for u in cv["使い方の種類"] if u != "正解ラベル"]), ("場面", cv["場面"]), ("玉の向き", cv["玉の向き"]), ("向き", cv["向き"]),
@@ -2241,9 +2086,14 @@ def request_block() -> str:
             ("値の読み方の区分", list(cv["方向から性質への対応の表"])), ("合図の形のパラメータの名前", sig_names), ("売買スタイル（代表の値の候補の鍵）", list(cv["売買スタイル"]) + ["既定"])]
     for k, v in rows:
         out.append(f"| {k} | {'・'.join(v)} |")
-    out += ["", "合図の形のパラメータの名前と条件の形の対応＝" + "、".join(f"{f}→{'・'.join(v)}" for f, v in SIGNAL_PARAM_OF_FORM.items()) + "。"]
+    out += ["", "合図の形のパラメータの名前と条件の形の対応＝" + "、".join(f"{f}→{'・'.join(v)}" for f, v in SIGNAL_PARAM_OF_FORM.items())
+            + "。ただし barssince の行は作らず、「何本前」の文も within_n の行に「何本以内か」で書きます（名前「何本前か」は選べる語に在りますが、使いません）。"]
     # 5 相手
-    out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "", f"相手は ta の指標と相場の法則が名指しする指標と「包み足」の和集合で、{len(targets)} 種です。順番は、先に通す指標（{'・'.join(FIRST_NINE)}）を先頭にし、残りは名前の並びのとおりです。先に通す指標は全部 相手に在ります。"]
+    ordered = list(FIRST_NINE) + [n for n in targets if n not in FIRST_NINE]
+    out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "",
+            f"相手は、ta（Python の指標ライブラリ）の指標と、相場の法則が名指しする指標と、「包み足」の和集合で、{len(targets)} 種です。順番は、先に通す9種（{'・'.join(FIRST_NINE)}）を先頭にし、残りは名前の文字の並び（Python の sorted の順）です。先に通す9種は全部 相手に在ります。",
+            "", f"**今回の第一回で作る20種（この順）＝** {'・'.join(ordered[:20])}", "",
+            f"続きの順（参考）＝ {'・'.join(ordered[20:])}"]
     # 6 要件との対応
     out += ["", "### 要件との対応（プログラムが要件の文書の行を読んで作った）", "", "| 要件の行 | 中身（実物の行） | 教科書のどこに入るか |", "|---|---|---|"]
     for fname, line, must, where in REQ_MAP:
@@ -2266,30 +2116,6 @@ def request_block() -> str:
         fixes.append("③-7 時間足に、足の組を置く形を決める（今は出どころの中に `時間足の組` を置く）")
     out += [f"- {f}" for f in fixes]
     return "\n".join(out) + "\n"
-
-
-def write_request(verify: bool = False) -> int:
-    """--write-request＝依頼書の印の間を作り直す。--verify-request＝手で書き換えられていないかを見る。"""
-    import hashlib
-    text = REQUEST_MD.read_text(encoding="utf-8")
-    s, e = text.find(REQ_START), text.find(REQ_END)
-    if s < 0 or e < 0:
-        raise SystemExit(f"❌ 依頼書に印が無い: {REQ_START} … {REQ_END}")
-    block = request_block()
-    h = hashlib.sha256(block.encode("utf-8")).hexdigest()[:12]
-    import re
-    head_end = text.find("-->", s) + 3
-    cur = text[head_end:e].strip("\n")
-    m = re.search(r"hash=([0-9a-f]*)", text[s:head_end])
-    cur_h = m.group(1) if m else ""
-    if verify:
-        ok = cur == block.strip("\n") and cur_h == h
-        print(("✅" if ok else "❌") + " 依頼書の表の部分は" + ("作り直した物と同じ" if ok else "作り直した物と違う（--write-request で作り直す）"))
-        return 0 if ok else 1
-    new = text[:s] + f"{REQ_START} hash={h} ここは gen_indicators_draft.py --write-request が作る＝手で書き換えない -->\n" + block + REQ_END + text[e + len(REQ_END):]
-    REQUEST_MD.write_text(new, encoding="utf-8")
-    print(f"依頼書の表の部分を作り直した＝{REQUEST_MD}（hash {h}）")
-    return 0
 
 
 def textbook_shape_errors(t: dict) -> list:
@@ -2727,7 +2553,6 @@ def main() -> int:
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--rewrite", action="store_true")
-    ap.add_argument("--try-textbook", metavar="見本のパス")
     ap.add_argument("--try-textbook-many", metavar="教科書の並びのパス", nargs="+")
     ap.add_argument("--textbook-new-form", metavar=("古い形のパス", "新しい形のパス"), nargs=2)
     ap.add_argument("--box-out", metavar="取り込みの写しを書く先", help="--try-textbook-many と一緒に＝全部を箱に入れた指標データの写しを書く（本物には書かない）")
@@ -2742,8 +2567,6 @@ def main() -> int:
         return textbook_convert(*a.textbook_new_form)
     if a.try_textbook_many:
         return try_textbook_many(a.try_textbook_many, a.box_out)
-    if a.try_textbook:
-        return try_textbook(a.try_textbook)
     if a.selftest:
         return selftest()
     if a.verify:
@@ -2761,6 +2584,344 @@ def main() -> int:
         raise SystemExit(f"❌ {OUT} はもう在り、写す元から作り直した物と違う（違いは --verify で見る。162番までは、値を写す元で直し、--rewrite で作り直す＝監査 CP94 の修正14 案B）")
     print(f"{OUT} はもう在り、写す元から作り直した物と同じ（書かない）")
     summary(data, n_hidden)
+    return 0
+
+
+
+
+# ── 依頼書の全文（プログラムが作る。手で書き換えない＝--verify-request が検出する）──────────────────────
+REQUEST_DATE = "2026-11-05"
+REQUEST_TEXT = """# 依頼書｜全指標の教科書を、見本と同じ書き方で作る（第一回・先頭の20種）
+
+この依頼書は、プログラム `gen_indicators_draft.py`（`--write-request`）が作ります。手で書き換えません（`--verify-request` が検出します）。文はプログラムの中に持ち、表は指標データの定義表・見本・要件の文書（`.claude/rules/core_requirements_full.md`・`SDK/.claude/rules/cat_requirements.md`・`SDK/.claude/rules/要件定義書_レベル4_指標の構造.md`）・指標のオン/オフの表（`SDK/.claude/ratchet/indicator_switch.json`）から作ります。
+
+パスは全部、リポジトリ（cat-bitget）の一番上からの相対パスです。`SDK` は `v3-bitget-api-sdk/bitget-python-sdk-api` の略です。
+
+<!-- TEXTBOOK_REQ_AUTO_START hash=<<HASH>> -->
+
+## 一 件名・依頼者・依頼先・依頼日
+
+| 項目 | 中身 |
+|---|---|
+| 件名 | 全指標の教科書を、見本と同じ書き方で作る（第一回・先頭の20種） |
+| 依頼者 | まこさん（CAT プロジェクト）。この依頼書は、まこさんの指示で、このリポジトリの Claude Code（CC）がプログラムで作った |
+| 依頼先 | クラウドで走る Claude Code のセッション（このリポジトリを取って作業する） |
+| 依頼日 | <<DATE>> |
+
+## 二 目的と背景
+
+### この依頼書で使う語
+
+| 語 | 意味 |
+|---|---|
+| CAT プロジェクト | BTC の売買 BOT を作るプロジェクト。目標は、本番で全部の月の net（手数料を引いた利益）が決めた額以上になること |
+| engine_tuner | net を最大にする条件の組み合わせ（指標・閾値・パラメータ・時間足）を探すプログラム |
+| 法則 | 相場から見つけた知識を文で書いた物（例＝「レンジでは帯の上端で売る」）。engine_tuner は、法則に沿って条件を組む |
+| 指標データ | `SDK/scripts/priority_rebuild/indicators/indicators.json`。全部の指標の情報を置く、ただ一つのファイル。中は「指標の記録」（②）・「使い方の記録」（③）・「部品の記録」（④）に分かれる |
+| 定義表 | 指標データの中の `要素の定義表`。指標データの要素（項目）の名前・意味・選べる値を決めた表。この依頼の要素の一覧は、ここから作っている |
+| 教科書 | この依頼で作る物。その指標についてページに書いてある文（逐語）と、その文から読み取った値を、プログラムが読める形（JSON）で並べたファイル |
+| 読む口 | `SDK/scripts/priority_rebuild/indicators/indicators.py`。指標データを読むプログラム。テスト `--try-textbook-many` は、この読む口で教科書を読めるかを試す |
+| ta | Python の指標ライブラリ（`ta`）。指標データの指標の多くは、このライブラリのクラスに当たる |
+| 正解ラベル | そのバーが実際にレンジだったかを、未来の値動きから後で付けた答え。判定の成績を測るときだけ使う。この依頼では作らない |
+| 資料の表 | 前に Web で調べて作った三つの表＝`.claude/state/indicator_params_review.json`・`indicator_params_by_strategy.json`・`indicator_roles_thresholds.json` |
+| 前の依頼 | 全指標306種を調べた依頼（依頼書 `.claude/instructions/cloud_textbook_all_20261103.md`）。結果は「五」の材料の表に在る |
+| ToDo の274番 | 頼んだ側の やることリストの番号。この教科書を指標データに取り込む工事。あなたは読まなくてよい |
+| G2・H2・材料の検査 | 頼んだ側が engine_tuner を走らせる前に通す検査の名前。この環境では走らせない |
+| 先に通す9種 | 頼んだ側が、engine_tuner の全工程を最初に通すと決めた9種の指標（ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot）。だから相手の並びの先頭に置く |
+| 探し方の段階（最初の段階・最後の段階） | engine_tuner の探し方。最初の段階は、パラメータと閾値を代表の固定値にして、指標と役割の組み合わせを絞る。最後の段階は、残った組み合わせのパラメータと閾値を範囲から探す。だから教科書には、代表の値と範囲の両方が要る |
+| 入口の型 | 玉を建てるときの売り方の種類（例＝down・flat_up）。文に在る語をそのまま写す |
+| 軸どうしの決まり | 一つの指標の二つのパラメータの間の決まり（例＝短い期間は長い期間より小さい） |
+| テスト | `--try-textbook-many`（「五」のプログラム）。教科書を読む口で読めるかを試す |
+| 要件 H6 | `SDK/.claude/rules/cat_requirements.md` の決まり＝USD の絶対値の閾値を禁じる |
+| FORM_SPEC | engine_tuner の中の表。条件の書き方（level・band・cross など）ごとの決まり（材料が何本要るか、など） |
+| 指標の名前 | 指標データに在る名前をそのまま使う（例＝AROOND・BB%b・帯pivot）。綴りを直さない |
+
+### 何に使うか
+
+engine_tuner は、net を最大にする条件の組み合わせを探すプログラムです。指標・閾値・パラメータ・時間足を、法則に沿って組みます。そのための指標の情報は、指標データに集めます。
+
+この依頼で作る教科書は、指標データへ入れる材料です。出来上がった教科書は、後の工事（ToDo の274番）でプログラムが指標データに取り込み、engine_tuner が代表の値と範囲を探しに使います。
+
+**この作業は、値を決めません。データもプログラムも直しません。** 候補を全部並べます。一つを選ぶのは、後の工事の設計書と監査です。
+
+### なぜ今 要るか
+
+いま指標データには、閾値の範囲と、入る合図などの使い方が、ほとんど入っていません。前の依頼で全指標306種を調べましたが、書き方が指標データと違うので、そのままでは入りません（値が文字で書いてある・「書いてない」という語が値の欄に在る）。そこで RSI 一種の見本を作り、読む口で読めることをテストで確かめました。この依頼は、その見本と同じ書き方で、残りの指標を作ります。今回の相手が137種なのは、306種のうち指標データに在る物（ta の指標・法則が名指しする指標・包み足）に絞ったからです。
+
+教科書は、誤りが見つかったときに、その指標のその要素だけを調べ直して差し替えられる作りにします（「八」の調べ直しのファイル）。
+
+## 三 依頼の内容
+
+### 作る物
+
+指標一種につき、教科書を一件（JSON）作ります。書き方は見本と同じです。見本は「五 提供する資料」に在ります。**作業の始め（「四」の進め方の二番）で、見本を全部読みます。**
+
+今回は、下の「対象の範囲」の20種だけを作ります。20種を一本のファイル `out_t1_01.json` に入れてプッシュし、報告して作業を終えます。21種目以降には進みません。頼んだ人が20種を確かめてから、続きを頼みます。
+
+### 対象の範囲
+
+相手の全部と、今回の20種は、次の表のとおりです。
+
+<<相手>>
+
+相手の全部を出す命令は次のとおりです（並べ替えは `unique` の順なので、上の順とは違います。上の順が正です）。
+
+```
+jq -r '[.sources.ta[], .sources.law[], "包み足"] | unique | .[]' SDK/.claude/ratchet/indicator_switch.json
+```
+
+- 帯の8種（帯VA・帯VA1時間ATR・帯pivot・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR）は、部品の記録に在ります。元になる pivot・Value Area・スイングについて、教科書の文を探し、ほかの指標と同じ要素（役割の候補・値の読み方の候補・閾値の範囲の候補・使い方の記録）に書きます。帯の幅の数（プロジェクトが決めた定数）は、教科書の文に無ければ、パラメータの軸の代表の値の候補を空にして注記に「見つからなかった」と書きます。部品の記録に置く指標には、`確定と期間` を書きません（置き場が無い。後の工事で足す）。
+- パラメータの軸の名前は、指標データの名前を使います。次の命令で見られます。
+
+```
+jq '.["指標の記録"]["RSI"]["パラメータの軸"]' SDK/scripts/priority_rebuild/indicators/indicators.json
+jq '.["部品の記録"]["帯pivot"]["パラメータの軸"]' SDK/scripts/priority_rebuild/indicators/indicators.json
+```
+
+### 作る要素
+
+<<要素一覧>>
+
+要素ごとの書き方（項目の中に書く欄・選べる語・見本のどこに実例が在るか）は、「五 提供する資料」の表に在ります。
+
+### やらないこと
+
+- 値を決めません。おすすめを書きません。候補を全部並べます。
+- 上の一覧で「集めない」の要素は書きません。
+- 正解ラベルの行は作りません（使い方の種類の選べる語に無い物は書きません）。
+- 取引の道具の関数の説明（ProRealCode の BarsSince など）だけの文は、使い方の行にしません。
+- 見本に無い書き方が出たら、推測で書かず、「四」の「進め方」のとおりに止まります。
+
+## 四 条件と制約
+
+### 進め方（質問してから量産する）
+
+頼んだ人は、このセッションで質問に答えられます。次の順で進めます。
+
+1. **最初に、プッシュできるかを確かめます。** `git ls-remote origin research/textbook-format-2` で、結果を置くブランチが在るかを見ます。在れば、そのブランチの続きから始め、そのブランチの `out_t1_01.json` に既に在る指標を飛ばします（調べ直しを頼まれた指標と要素は、飛ばさずに調べ直しのファイルへ書きます）。無ければ、ブランチ `refactor/e35-e36-split-strat-base` の最新の版から `research/textbook-format-2` を作り、ファイルを足さずにそのブランチをプッシュします。**プッシュが失敗したら、調べを始めません。** 失敗のエラーの文を報告して、作業を終えます。
+2. **先に質問します。** 依頼書・見本・材料を読み、20種の先頭の数種について、材料から見本の書き方へ写すことを試します。書き方で迷う点を一覧にして、**結果のファイルを作らずに止まります。** 迷う点が無ければ、無いと書いて止まります。質問してよいのは、書き方の読み方だけです。どの値を選ぶかは聞きません。
+3. **答えを受けて量産します。** 答えをもらってから、20種を作り、報告して止まります。
+4. **途中で迷ったら止まります。** 見本に無い書き方が出たら、推測で書かず、その場で止まって聞きます。
+
+始めた時刻と終えた時刻を `date -u` で測ります。会話の記録が要約に置き換わったときは、この依頼書の「三」「四」「七」を読み直します。
+
+### 一種ごとの手順
+
+1. 材料（「五」の表）を読み、在る値を見本の書き方へ写します。文字で書いてある値は、逐語を読んで数に直します。
+2. 全部の要素を照らし、空の要素を挙げます。
+3. **空の要素は、Web で探します。必須です。** 時間を理由に省きません。開発者の原典、定番の教育サイト、ライブラリの説明書、短い足やスキャルの資料の順に探します。暗号資産の資料が在れば、それも探します。
+4. ページは curl と Chromium の両方で開き、本文に逐語が在ることを照らします。開けないページと、404 と書かれたページは、web.archive.org も見ます。それでも開けないページは、確かめの強さを「未確認」にし、注記に HTTP の番号を書きます。
+5. 探しても無い要素は、空にして注記に「見つからなかった」と書きます。使った検索の語と開いたページを、`探した記録` に残します。hook に止められた・会話が切れた、などで探し終えずに作業を終える要素は、`探した記録` に「探していない」と書きます（「見つからなかった」とは別です）。
+6. 20種が終わったら、「七 受入の条件」の確かめを自分で走らせ、通ってからコミットします。
+
+**とくに必ず探す要素：** パラメータの代表の値（スキャルとデイトレ）、パラメータの範囲の候補、閾値の代表の値（スキャルとデイトレ）、閾値の範囲の候補、使い方の行（使い方の種類・場面・玉の向き・向き）です。代表の値と範囲は、パラメータと閾値の両方について、スキャル・デイトレの文を探します（要件＝最初の段階は戦略ごとの代表の固定値、最後の段階は範囲）。使い方の種類は、7種の全部について探します。場面は、レンジ・上げ・下げ・スパイクの全部について探します。入る合図の文が在る指標は、その合図の弱点を見る「入ってはいけない場面を除く条件」の文も探します（`SDK/.claude/memory/indicator_combination_kb.md` の §3＝合図の弱点を見る条件の節）。期間違いの2本の組（クロスほか）の文は、`合図の形のパラメータ` に、組の相手の名前と両方の期間を書きます（同 §10.2＝期間違いの2本の組の節）。時間足は、文に書いてある足だけを書きます。足を探すための検索はしません（足は役目で決まる・同 §4 の4）。
+
+### 探し方の決まり
+
+Web で調べる依頼は、使える手段を全部使って調べ切ります。「探していない」を「無い」と書きません（まこさん指示 2026-11-04・逐語「今後こんな手抜き検索しないでほしいんだが。」）。
+
+1. 候補が無い欄と見つからなかった欄は、WebSearch で探します。
+2. ページは curl と Chromium の両方で開きます。WebFetch が使えれば、WebFetch でも開きます。
+3. 開けないページと、404 と書かれたページは、過去のページの保存（web.archive.org）も見ます。
+4. 見つからなかった物には、検索した語・開いたページ・無かったことを書きます。探していない物は「探していない」と書き、その件数を報告の先頭に書きます。
+5. 時間の制限が無いのに、「時間の都合」を探さない理由にしません。
+
+### 教科書の書き方の決まり
+
+項目の名前と並びは、見本のとおりです。項目の名前は、定義表の要素の今の名前にします。まだ一つに決めていない候補の欄は、名前に「の候補」を付けます。候補の行の欄は、どの要素でも同じです（「五」の表「候補の行の共通の欄」）。名前を漢字一文字で新しく作りません。説明の無い項目を足しません。足したい項目が在れば、止まって聞きます。名前の決まりの全文は `SDK/.claude/rules/要件定義書_レベル4_指標の構造.md` の「要素の命名の決まり」に在ります。選べる語は、「五」の表「選べる語」のとおりで、ほかの語を書きません。役割の区分は複数の行で持てます。
+
+追加の決まりは次のとおりです。
+
+**名前と値の書き方**
+
+1. **指標の名前は2つ書きます。** `名前` は指標データの名前のまま（プログラムが読む名前）です。`照らしと出どころ` の中の `元の指標` は、英語の正式名と開発者です（例＝RSI（Relative Strength Index・Wilder））。前の依頼の結果の `元の指標` の欄と、資料の表の `元の指標` の欄から写します。無い指標は Web で探します。検索には `元の指標` の英語の名前を使います。
+2. **値の欄に「書いてない」「持たない」を書きません。** 文が無ければ、`null` か空の並びにします。
+3. **値は数で書きます。** 1つの候補の行に1つの値です。「7 to 9」のような文は、値 7 と値 9 の2行にします。
+4. **候補を全部並べます。** 1つに選びません。代表の値の候補は、スキャル・デイトレ・既定に分けます。文に「scalping」「day trading」（スキャル・デイトレ）の語が在るときだけ、その側に入れます。足の名前だけの文は `既定` に入れ、候補の `文の時間足` に足を書きます。どちらとも読めなければ `既定` に入れて注記に書きます。
+5. **範囲の候補は、必ず探します。** パラメータの `範囲の候補` と `閾値の範囲の候補` は、スキャル・デイトレの代表の値と並ぶ必須の要素です（要件＝最後の段階で範囲から探す・指標ごとに一つ）。文の値は `挙げた値` に書き、`範囲の形` の欄に「文に両端が在る」か「値を挙げただけ」と書きます。文が「入力できる範囲」（例＝期間は 2〜500 まで入力できる）や「強さの区切り」（例＝0〜25 は弱い・25〜50 は強い）を言っているときは、`範囲の形` にその語を書きます。範囲の数そのものは作りません。取り込みが、候補の全部の値の最小から最大までを、その指標の一つの範囲にします。両端の文が無い指標は、代表の値の候補だけからでも範囲ができます。文が一つも無ければ空にして注記に「見つからなかった」と書きます。
+6. **逐語は1文字も変えず、文を切らずに全部写します。** 前の依頼の結果で途中で切れている文は、ページを開いて全部写します。
+7. **選べない足（週足・月足ほか）は、時間足の欄に書きません。** 候補の `文の時間足` を `null` にし、注記に原文を書きます。
+8. **閾値を持たない指標は、** `閾値の範囲の候補` を空にして、`閾値を持たない理由` に理由と逐語を書きます。
+9. **文の分類は、語の有無でなく意味で読みます。** 「true range」の range はレンジの話ではありません。「short-term」の short はショートの話ではありません。別の線の文（基準線の行に転換線の文ほか）を混ぜません。
+10. 計算の式は `照らしと出どころ` の中の `教科書の計算の式` に、式の文と URL を書きます。文が無ければ `null` にします。
+11. 指標データや前の依頼の結果と食い違う値は、消さずに候補に並べ、注記に書きます。どちらが正しいかは書きません。
+12. **閾値の単位に「値段」「ドル」を書きません**（要件 H6）。値段や USD で書かれた閾値の文は、`閾値の範囲の候補` に `単位` を `null` で写し、`注記` に「値段の絶対値の文」と書きます。使い方の行の `閾値` には入れません。`値の単位と値域` の単位には「値段」「ドル」を書けます（値域の説明のため）。
+13. **選べる語に無い単位**（CMF の値の幅ほか）は、単位を `null` にして、`値の単位と値域` の候補の行の `値域` の中の `有界`（下限と上限の組）に、文の両端の値を書きます（見本の CMF）。語を足しません。
+14. **部品の記録に置く指標**は、一番上に `置く記録` を書きます（値＝部品の記録）。指標の記録に置く指標には書きません。
+
+**使い方の行の書き方**
+
+15. **`場面と型` の中の `型` と `時間足` は、文に書いてあるときだけ書きます。** `型` は入口の型の名前（down・flat_up など、文に在る語をそのまま）です。無ければ `型` は `null`、`時間足` は空の並びにします。足の組が文に在れば `時間足の組` に書きます。足は法則と engine_tuner が決める物なので、推測で埋めません。
+16. **`出どころ` の文に数値が在れば、その行の `閾値` に必ず書きます。** 文に足の名指しが無ければ、`既定` に入れて注記に書きます。同じ値を `閾値の範囲の候補` に書いていても、行の `閾値` にもう一度 書きます。
+17. **文に売買の方向が無い行は、`玉の向き` の欄を書きません。** `null` にしません。プログラムは、欄が無ければ「両方」と読みます。文に方向が在るときだけ、選べる語で書きます。
+18. **`向き` は、level・slope・slope_avg・diff の行で必ず文から読みます。** 読めなければ `null` にして注記に書きます。band・cross・touch ほかの行は、文に無ければ `null` のままです。
+19. **向きを持つ指標を絶対値で使う文**（DI差の大きさほか）は、`前処理` に「絶対値」と書きます。
+20. **閾値の文が無い指標**（ATR% ほか）は、閾値を空にして注記に「見つからなかった」と書きます。数を作りません。倍率の文（ATR の2倍ほか）は、形「倍率」・単位「ATR の倍数」で書きます。
+21. **帯（band）の行は、文に在る数を書きます。** 両端が在れば、行を分けて両方書きます。中心の値だけなら、その値だけを書き、注記に「中心の値だけが文に在る」と書きます。両端を作りません。
+22. **線どうしのクロス（cross）は、** `合図の形のパラメータ` に、名前「組の相手」の行を書き、`代表の値の候補` の `既定` の `候補の値` に指標データの名前を書きます（見本の DI差）。水準を抜けるクロスは、組の相手でなく `閾値` に書きます。どちらも文に無ければ空のままにして、注記に書きます。文に期間の組が在れば、`パラメータの代表の値の候補` に軸ごとに書きます。
+23. **本数や幅の文**（何本続いたら・何本以内に・どれだけ開いたら）は、`合図の形のパラメータ` に、名前「持続の本数」「何本以内か」「開き」などの行で書きます。数が文に無ければ、候補を空にして `注記` に書きます。
+24. **傾き（slope・slope_avg）の行は、** 名前「傾きの本数」（何本前との差か）を `合図の形のパラメータ` に書きます。平均を取る文は、名前「平均の本数」も書きます。文に本数が無ければ候補を空にします（見本の ADX・RSI）。
+
+### 禁止
+
+1. データ・プログラム・文書を直しません。作ってよいのは、「八」の出す物だけです。とくに、リポジトリの一番上の `.claude/rules/` と `SDK/.claude/rules/` を直しません。
+2. 値を決めません。おすすめを書きません。
+3. 書いてないことを、推測で埋めません。検索結果の要約だけで書きません。要約の文しか得られないときは、「未確認」にします。
+4. 乱数を使いません。
+5. engine_tuner と、その前に通す検査（G2・H2・材料の検査）を走らせません。5分足のデータがこの環境に無いので、走らせても止まります。
+6. hook（書き込みや実行の前に走る検査のプログラム）に止められたら、回り込まず、止められたときの文を報告に書いて作業を終えます。
+7. 短いスクリプトと途中の出力は、リポジトリの外の一時フォルダに置きます。
+
+## 五 提供する資料
+
+### 見本（書き方の正本）
+
+- `.claude/state/indicator_review/research/textbook_sample_rsi.json`：全部の要素が在る指標の見本です。
+- `.claude/state/indicator_review/research/textbook_samples_20261105.json`：書き方の違う指標の見本です。どの見本にどの書き方の実例が入っているかは、下の表「見本に入っている書き方の実例」を見てください。見本には、今回の相手に無い指標（LeeMykland・DPO教科書% など）も入っています。書き方の例として読むだけで、作る相手には入れません。
+
+```
+git fetch origin refactor/e35-e36-split-strat-base
+git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_sample_rsi.json
+git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_samples_20261105.json
+```
+
+### 要素ごとの書き方の表（プログラムが作った）
+
+<<項目の欄>>
+
+<<選べる語>>
+
+<<実例>>
+
+<<実例なし>>
+
+### 読む物
+
+| 読む物 | 置き場 | なぜ読むか |
+|---|---|---|
+| 定義表 | `SDK/scripts/priority_rebuild/indicators/indicators.json` の `要素の定義表` | 要素の名前と選べる値の正本 |
+| 名前の読み方 | 前の依頼の依頼書 `.claude/instructions/cloud_textbook_all_20261103.md` の「名前の読み方」 | 指標の名前の意味 |
+| 指標の組み合わせの知識 | `SDK/.claude/memory/indicator_combination_kb.md` の §3・§4・§10.2 | 合図の弱点を見る条件・足の決め方・期間違いの2本の組 |
+
+### 材料（前の依頼までに調べた物。先に読み、在る値はここから写す）
+
+**在る値は、Web で探し直しません。下の材料から見本の書き方へ写します。** 材料は全部読みます。表の「ブランチ」は、このリポジトリの origin のブランチの名前です。ファイルは、そのブランチの中の書いてある場所に在ります。
+
+| 材料 | ブランチ | ファイル |
+|---|---|---|
+| 全指標の調べ（前の依頼の結果） | `research/textbook-all-1`〜`research/textbook-all-5` | `.claude/state/indicator_review/research/out_c1.json`〜`out_c5.json` |
+| 同上の続き | `research/textbook-all-6` | `.claude/state/indicator_review/research/out_c6_01.json`〜`out_c6_08.json` |
+| 9種の文書 | `research/textbook-9-kinds` | `SDK/.claude/memory/textbook_9kinds_kb.md` |
+| 9種の確かめ直しと候補 | `research/textbook-recheck-264` | `.claude/state/indicator_review/research/out_textbook_recheck_264.json`（基準線の転換線の文の誤りなどが書いてある） |
+| 閾値とパラメータの範囲の文 | `research/textbook-ranges-270` | `.claude/state/indicator_review/research/out_textbook_ranges_270.json` |
+| 指標データとの照らし | `research/textbook-compare-222` | `.claude/state/indicator_review/research/out_textbook_compare_222.json` |
+| 前に作った教科書（古い書き方。今回の書き方へ写す相手） | `research/textbook-format-1` | `.claude/state/indicator_review/research/out_t1_01.json`。今回の成果物と同じ名前ですが、別のブランチの別のファイルです。文と値はここから写します。書き方は `--textbook-new-form` で直します（下の「プログラム」）。足りない要素はその後で足します |
+| 資料の表と閾値の調べ | `refactor/e35-e36-split-strat-base` | `.claude/state/indicator_params_review.json`・`indicator_params_by_strategy.json`・`indicator_roles_thresholds.json`、`.claude/state/indicator_review/research/out_w1.json`〜`out_w4.json`・`threshold_role.json` |
+
+### プログラム
+
+- `python3 .claude/state/indicator_review/gen_indicators_draft.py --try-textbook-many <教科書のファイル…>`：書き方のテスト。読む口が全部の要素を読めるかを試し、定義表と違う名前・古い名前・玉の向きが null の行で止まります。最後の行に「合計の違い」（見つけた問題の数の合計）を出します。
+- `python3 .claude/state/indicator_review/gen_indicators_draft.py --textbook-new-form <古い書き方のファイル> <新しい書き方で書く先>`：前に作った教科書を、今回の書き方へ写します。
+
+## 六 納期・工数
+
+- 期限は決めません。20種で一区切りです。20種を作ったら、プッシュして報告し、作業を終えます。
+- 始めた時刻と終えた時刻を `date -u` で測り、報告に書きます。
+- 時間を理由に、探すことを省きません（「四」の探し方の決まり）。
+
+## 七 受入の条件
+
+次の全部が通れば、完成です。コミットの前に、自分で確かめます。
+
+1. `jq 'length' out_t1_01.json` が 20 を返す。
+2. `jq -r '.. | strings | select(. == "書いてない" or . == "持たない")' out_t1_01.json` が何も返さない。
+3. `python3 .claude/state/indicator_review/gen_indicators_draft.py --try-textbook-many out_t1_01.json` の最後の行の「合計の違い」が 0。
+4. 同じテストが出す「書き写し忘れの疑い」の行を、全部 読んで処理した。意味は次のとおりです。
+   - 教科書の使い方の一行には、三つの物が入っています。逐語（調べたページから写した英文そのもの）と、閾値の欄（その英文が言っている「この値を超えたら」の値を書く欄）と、合図の形のパラメータの欄（「何本続いたら」「どれだけ上がったら」の本数や幅を書く欄）です。
+   - 抜けの例＝ADX の見本の一行では、逐語に「ADX が安値から四つ上がるまで待て」と書いてあったのに、二つの欄が両方 空でした。英文は写したのに、その中の値を欄に書き写していない状態です。engine_tuner は英文を読まないので、書き写さない値は使われません。
+   - テストは、英文の中に数字が在るのに二つの欄が両方 空の行を、「書き写し忘れの疑い」として出します。英文の数字が、全部 値とは限りません。本の頁の番号や、「次の足」の足の番号も数字です。プログラムには見分けられないので、出た行をあなたが読み、値なら欄に書き写し、頁の番号などなら注記に「閾値ではない」と書いてください。
+5. 「探していない」物の件数を、報告の先頭に書いた。
+6. ブランチ `research/textbook-format-2` にプッシュできた。
+
+## 八 報告と連絡
+
+### 出す物
+
+ブランチは `research/textbook-format-2` です。置き場は `.claude/state/indicator_review/research/` です。このフォルダは .gitignore の対象なので、コミットのときに `git add -f` を使います。master へは入れません。
+
+**1. `.claude/state/indicator_review/research/out_t1_01.json`** は、今回の20種の配列です（今回 作るのは、この一本だけです。続きの回では `out_t1_02.json`、… と番号を進めます）。1件の書き方は見本のとおりで、次の2つの項目を足します。
+
+- `探した記録`：要素ごとに、検索した語と、開いたページを書きます。形＝`[{"要素": "", "検索の語": [""], "開いたページ": [{"URL": "", "HTTP": 200, "読んだ日": "", "当たる文": "在る"}]}]`。`当たる文` には、そのページにその要素の文が在ったかを「在る」か「無い」で書きます。
+- `閾値を持たない理由`：閾値を持たない指標だけ。
+
+**調べ直しのファイル：** 頼んだ人が指標と要素を指定して調べ直しを頼んだときは、`out_t1_redo_01.json`、… に書きます。項目は `名前` と、調べ直した要素だけです。テスト（`--try-textbook-many`）に元のファイルの後ろに並べて渡すと、同じ指標の同じ要素だけが差し替わります。定義表に要素が増えたときも、同じ書き方で足した要素だけを書きます。前のファイルは書き替えません。
+
+**2. `.claude/state/indicator_review/research/out_t1_summary.md`** は、人が読むまとめです。結論を先に書きます。探していない物の件数（先頭）、相手の数と作った数、要素ごとの値が在る指標の数と見つからなかった指標の数、確かめられなかった物とその理由、始めた時刻と終えた時刻、を書きます。
+
+### 終わったときの報告（会話で返す）
+
+1. 探していない物の件数（先頭に書きます）。
+2. ブランチの名前と、最後のコミットの番号。
+3. 作った指標の数と、ファイルの数。
+4. 要素ごとの、値が在る数と見つからなかった数。
+5. かかった時間。
+6. 確かめられなかった物と、その理由。
+
+### 質問の仕方
+
+書き方の読み方で迷ったら、結果のファイルを作らずに止まり、迷う点を一覧にして会話で聞きます（「四」の進め方）。
+
+## 付録（頼んだ側の記録。あなたは読まなくてよい）
+
+<<要件>>
+
+<<後で直す>>
+<!-- TEXTBOOK_REQ_AUTO_END -->
+"""
+
+
+def request_doc() -> str:
+    """依頼書の全文を作る（REQUEST_TEXT の文に、request_block() の表を差し込む）。"""
+    block = request_block()
+    parts = {}
+    for chunk in ("\n" + block).split("\n### ")[1:]:
+        parts[chunk.split("\n", 1)[0]] = "#### " + chunk.rstrip("\n")       # 文の見出し（###）の下に入るので、一段 下げる
+    def part(prefix):
+        hits = [v for k, v in parts.items() if k.startswith(prefix)]
+        if len(hits) != 1:
+            raise SystemExit(f"❌ 依頼書の表「{prefix}」が request_block() にちょうど一つ無い: {len(hits)}")
+        return hits[0]
+    doc = REQUEST_TEXT
+    req = SDK / ".claude" / "rules" / "要件定義書_レベル4_指標の構造.md"          # 要素の一覧の正本（まこさん 2026-11-05「要件定義書に一覧つくって」「それを正本として」）
+    txt = req.read_text(encoding="utf-8")
+    s0, e0 = txt.find("## 指標の教科書に載せる要素の一覧"), txt.find("## 要素の命名の決まり")
+    if s0 < 0 or e0 < 0 or e0 < s0:
+        raise SystemExit(f"❌ 要件定義書に「指標の教科書に載せる要素の一覧」の節が無い: {req}")
+    sec = "#### 作る要素の一覧（正本＝要件定義書_レベル4_指標の構造.md の「指標の教科書に載せる要素の一覧」。プログラムがそのまま写した）\n\n" + txt[s0:e0].split("\n", 1)[1].strip("\n").replace("\n**", "\n**")
+    doc = doc.replace("<<要素一覧>>", sec)
+    for ph, prefix in (("<<項目の欄>>", "教科書の項目の名前"), ("<<選べる語>>", "選べる語"),
+                       ("<<実例>>", "見本に入っている書き方の実例"), ("<<実例なし>>", "見本に実例が入っていない書き方"),
+                       ("<<相手>>", "調べる相手"), ("<<要件>>", "要件との対応"), ("<<後で直す>>", "この依頼の後の工事で直す定義表")):
+        doc = doc.replace(ph, part(prefix))
+    left = [p for p in ("<<要素一覧>>", "<<項目の欄>>", "<<選べる語>>", "<<実例>>", "<<実例なし>>", "<<相手>>", "<<要件>>", "<<後で直す>>") if p in doc]
+    if left:
+        raise SystemExit(f"❌ 依頼書に差し込めていない表: {left}")
+    return doc.replace("<<DATE>>", REQUEST_DATE)
+
+
+def write_request(verify: bool = False) -> int:
+    """--write-request＝依頼書の全文を作って書く。--verify-request＝手で書き換えられていないかを見る。"""
+    import hashlib
+    body = request_doc()
+    h = hashlib.sha256(body.encode("utf-8")).hexdigest()[:12]
+    doc = body.replace("<<HASH>>", h)
+    if verify:
+        cur = REQUEST_MD.read_text(encoding="utf-8") if REQUEST_MD.exists() else ""
+        ok = cur == doc
+        print(("✅" if ok else "❌") + " 依頼書は" + ("作り直した物と同じ" if ok else "作り直した物と違う（--write-request で作り直す）"))
+        return 0 if ok else 1
+    REQUEST_MD.write_text(doc, encoding="utf-8")
+    print(f"依頼書の全文を作り直した＝{REQUEST_MD}（hash {h}・{len(doc.splitlines())} 行）")
     return 0
 
 

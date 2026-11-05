@@ -40,7 +40,11 @@ STRIP = [
     re.compile(r"^\|\s*\d+\s*\|", re.M),                 # 表の番号の欄
     re.compile(r"[①-⑳]"),
 ]
-NUM = re.compile(r"\d+(?:[,，]\d{3})*(?:\.\d+)?")
+# ★2026-11-05 まこさん「直していいから漢数字は見辛いからやめて」＝止めるのは「数えた数」だけにした。
+#   数えた数＝件・行・本・個・か所・箇所 の単位が直後に付く数。
+#   番号・種の数・値・割合は、数えた数ではないので止めない。
+#   直す前は、全部の数字を止めていたので、CC が返信を漢数字で書く逃げ方をしていた。
+NUM = re.compile(r"(\d+(?:[,，]\d{3})*(?:\.\d+)?)\s*(?:件|行|本|個|か所|箇所)")
 SYSTEM = re.compile(r"<system-reminder>.*?</system-reminder>", re.S)
 FEEDBACK = "Stop hook feedback:"
 
@@ -48,7 +52,7 @@ FEEDBACK = "Stop hook feedback:"
 def numbers_in(text: str) -> list:
     for p in STRIP:
         text = p.sub(" ", text)
-    return [m.group(0).replace(",", "").replace("，", "") for m in NUM.finditer(text)]
+    return [m.group(1).replace(",", "").replace("，", "") for m in NUM.finditer(text)]
 
 
 def counted(session: str) -> set:

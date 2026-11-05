@@ -982,6 +982,213 @@
      "拡張の条件": []
     },
     "出どころ": "ToDo の208番（まこさんが足す分に挙げた行）"
+   },
+   {
+    "番号": "②-14",
+    "要素の名前": "計算の入力",
+    "置く記録": "指標の記録",
+    "中身": "終値・高値安値・出来高のどれから計算するか（出来高を使う指標かの区分に使う）",
+    "形の決まり": {
+     "値の種類": "文字の並び（終値・高値・安値・出来高・始値）",
+     "選べる値の名前": null,
+     "複数持てるか": true
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      2
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "②-15",
+    "要素の名前": "中心線",
+    "置く記録": "指標の記録",
+    "中身": "またぐと意味が変わる線の値（50・0 など）。cross の閾値に使う",
+    "形の決まり": {
+     "値の種類": "数",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "持たない",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      18
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "②-16",
+    "要素の名前": "先行か遅行か",
+    "置く記録": "指標の記録",
+    "中身": "合図が値動きより早いか遅いか（先行・遅行・同時）。確認の相手の選び方に使う（M3 手順6）",
+    "形の決まり": {
+     "値の種類": "文字",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      2
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "②-17",
+    "要素の名前": "遅れの長さ",
+    "置く記録": "指標の記録",
+    "中身": "合図が値動きからどれだけ遅れるか（足の本数）",
+    "形の決まり": {
+     "値の種類": "数",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      12
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "②-18",
+    "要素の名前": "効く相場と効かない相場",
+    "置く記録": "指標の記録",
+    "中身": "どの相場で効き、どの相場で騙しが多いかの文。入ってはいけない場面を除く条件の元（M3 手順5）",
+    "形の決まり": {
+     "値の種類": "文字",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      2
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "③-15",
+    "要素の名前": "確認に使う相手",
+    "置く記録": "使い方の記録",
+    "中身": "この合図を確かめる相手の指標と役目（出来高・ローソクの形 など）。M3 手順6",
+    "形の決まり": {
+     "値の種類": "行の並び（指標の名前か役割・役目）",
+     "選べる値の名前": null,
+     "複数持てるか": true
+    },
+    "無いときの扱い": "既定＝無し",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      20
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "③-16",
+    "要素の名前": "入る線と出る線",
+    "置く記録": "使い方の記録",
+    "中身": "判定に入る水準と、抜ける水準を別にする幅（hysteresis）。M2 手順7・法則 C6",
+    "形の決まり": {
+     "値の種類": "数（幅）",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "既定＝無し",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      4
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "④-14",
+    "要素の名前": "線の位置",
+    "置く記録": "部品の記録",
+    "中身": "帯の線の位置の名前（上端・中央・下端・縁）。入口の型 S1 と利確の線に使う（M3 手順1・M4 手順2）",
+    "形の決まり": {
+     "値の種類": "文字の並び",
+     "選べる値の名前": null,
+     "複数持てるか": true
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      21
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
+   },
+   {
+    "番号": "④-15",
+    "要素の名前": "破れの定義",
+    "置く記録": "部品の記録",
+    "中身": "帯の外に出たと言う条件（前提崩れの印に使う。M4 手順5）",
+    "形の決まり": {
+     "値の種類": "文字（条件の文）",
+     "選べる値の名前": null,
+     "複数持てるか": false
+    },
+    "無いときの扱い": "未設定",
+    "オン/オフ": "オン",
+    "読むプログラム": [],
+    "写す元": "教科書（クラウドの依頼 271番）",
+    "根拠": {
+     "要件の行": [],
+     "構造に要ること": [
+      27
+     ],
+     "拡張の条件": []
+    },
+    "出どころ": "要件定義書_レベル4_指標の構造.md「指標の教科書に載せる要素の一覧」の「M2〜M4 の手順から CC が足した要素」（まこさん 2026-11-05「少なくなってないか？」「このチャットに一覧だしたやつよりへってるよね？」）"
    }
   ],
   "法則の記録の置き場": "scripts/priority_rebuild/laws/laws.json",
@@ -994,7 +1201,8 @@
     "出口の水準を作る材料",
     "出口の反転",
     "前提崩れの印",
-    "正解ラベル"
+    "正解ラベル",
+    "ダイバージェンス"
    ],
    "役割の区分": {
     "表": "役割の区分の表"
@@ -1683,7 +1891,7 @@
       "tb": "_tb_aber_pos",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -2099,7 +2307,7 @@
       "tb": "_tb_aber_orig",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -2339,7 +2547,7 @@
       "tb": "_tb_adosc",
       "ext": null,
       "known": "known=lambda p: [(_bar_clv(600, True), [(-1, 3.5, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -2482,7 +2690,7 @@
       "tb": "_tb_adx",
       "ext": "_ext_adx",
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -3100,7 +3308,7 @@
       "tb": "_tb_adxr",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -3254,7 +3462,7 @@
       "tb": "_tb_slp_alma",
       "ext": null,
       "known": "known=lambda p: [(_up(int(p[0]) + 40), [(-1, 5.0 / ((100.0 + int(p[0]) + 39) - 5.0 - _alma_lag(int(p[0]))) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -3383,7 +3591,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_up(400), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -3549,7 +3757,7 @@
       "tb": "_tb_ao",
       "ext": "_ext_ao",
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -3884,7 +4092,7 @@
       "tb": "_tb_aobv_lr",
       "ext": null,
       "known": "known=lambda p: [(_up(600), [(-1, 1.0, 1e-9)]), (_dn(600), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -4026,7 +4234,7 @@
       "tb": "_tb_apo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -4165,7 +4373,7 @@
       "tb": "_tb_ar",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -4353,7 +4561,7 @@
       "tb": "_tb_aroon_d",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -4859,7 +5067,7 @@
       "tb": "_tb_aroon_osc",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -5301,7 +5509,7 @@
       "tb": "_tb_aroon_u",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -5868,7 +6076,7 @@
       "tb": "_tb_atr_pct",
       "ext": "_ext_atr_pct",
       "known": "known=lambda p: [(_mk(np.full(p[0] * 5, 100.0), o=np.full(p[0] * 5, 100.0),\n                         h=np.full(p[0] * 5, 101.0), l=np.full(p[0] * 5, 99.0)), [(-1, 2.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -6450,7 +6658,7 @@
       "tb": "_tb_bb_pctb",
       "ext": "_ext_bb_pctb",
       "known": "known=lambda p: [(_alt_pm1(p[0] * 2), [(-1, 0.75, 1e-9)])] if p[0] == 20 and p[1] == 2 else None)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -7093,7 +7301,7 @@
       "tb": "_tb_bb_width",
       "ext": "_ext_bb_width",
       "known": "known=lambda p: [(_alt_pm1(p[0] * 2), [(-1, 0.04, 1e-9)])] if p[0] == 20 and p[1] == 2 else None)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -7712,7 +7920,7 @@
       "tb": "_tb_bias",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -7847,7 +8055,7 @@
       "tb": "_tb_bop",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -7972,7 +8180,7 @@
       "tb": "_tb_br",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -8127,7 +8335,7 @@
       "tb": "_tb_cci",
       "ext": "_ext_cci",
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -8619,7 +8827,7 @@
       "tb": "_tb_cfo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -8788,7 +8996,7 @@
       "tb": "_tb_cg",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -8949,7 +9157,7 @@
       "tb": "_tb_chop",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -9344,7 +9552,7 @@
       "tb": "_tb_cmf",
       "ext": "_ext_cmf",
       "known": "known=lambda p: [(_mk(100 + np.arange(p[0] + 5, dtype=float),\n                         o=100 + np.arange(p[0] + 5, dtype=float) - 0.5,\n                         h=100 + np.arange(p[0] + 5, dtype=float),\n                         l=100 + np.arange(p[0] + 5, dtype=float) - 1.0), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -9756,7 +9964,7 @@
       "tb": "_tb_cmo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -9951,7 +10159,7 @@
       "tb": "_tb_copc",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10090,7 +10298,7 @@
       "tb": "_tb_cti",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10349,7 +10557,7 @@
       "tb": "_tb_cvi",
       "ext": null,
       "known": "known=lambda p: [(_bar_fixed_range(p[0] * 6 + 60), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10496,7 +10704,7 @@
       "tb": "_tb_slp_dema",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10645,7 +10853,7 @@
       "tb": "_tb_dip",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10799,7 +11007,7 @@
       "tb": "_tb_dim",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -10962,7 +11170,7 @@
       "tb": "_tb_didiff",
       "ext": "_ext_didiff",
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -11416,7 +11624,7 @@
       "tb": "_tb_dmp",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -11576,7 +11784,7 @@
       "tb": "_tb_dmn",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -11741,7 +11949,7 @@
       "tb": "_tb_dpo",
       "ext": null,
       "known": "known=lambda p: [(_up(int(p[0]) * 2 + 40), [(-1, ((int(0.5 * int(p[0])) + 1) + (int(p[0]) - 1) / 2.0) / (100.0 + int(p[0]) * 2 + 39) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -12141,7 +12349,7 @@
       "tb": "_tb_dpo_tb",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]),\n                    (_up(p[0] * 3), [(-1, (((p[0] - 1) / 2.0) - (int(0.5 * p[0]) + 1)) / (100.0 + p[0] * 3 - 1) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -12542,7 +12750,7 @@
       "tb": "_tb_dx",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -12700,7 +12908,7 @@
       "tb": "_tb_donch",
       "ext": "_ext_donch",
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 10.0 / 105.0 * 100, 1e-9)])] if p[0] >= 20 else None)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -13152,7 +13360,7 @@
       "tb": "_tb_ebsw",
       "ext": null,
       "known": "known=lambda p: [(_up(1200, step=0.5), [(-1, 1.0, 1e-9)]),\n                    (_dn(1200, start=700.0, step=0.5), [(-1, -1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -13286,7 +13494,7 @@
       "tb": "_tb_efi",
       "ext": "_ext_efi",
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -13725,7 +13933,7 @@
       "tb": "_tb_ema_slope",
       "ext": "_ext_ema_slope",
       "known": "known=lambda p: [(_flat(max(60, p[0] * 4)), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -14233,7 +14441,7 @@
       "tb": "_tb_eom",
       "ext": "_ext_eom",
       "known": "known=lambda p: [(_bar_hl(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -14595,7 +14803,7 @@
       "tb": "_tb_er",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -14931,7 +15139,7 @@
       "tb": "_tb_eri_bear",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15088,7 +15296,7 @@
       "tb": "_tb_eri_bull",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15264,7 +15472,7 @@
       "tb": "_tb_fisher",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15421,7 +15629,7 @@
       "tb": "_tb_fisher_sig",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15559,7 +15767,7 @@
       "tb": "_tb_slp_fwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15687,7 +15895,7 @@
       "tb": "_tb_ha_uwick",
       "ext": null,
       "known": "known=lambda p: [(_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.0, 1e-9)]),\n                    (_bar_nowick(200, step=0.5), [(-1, 0.2, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15806,7 +16014,7 @@
       "tb": "_tb_ha_lwick",
       "ext": null,
       "known": "known=lambda p: [(_bar_nowick(200, step=0.5), [(-1, 0.0, 1e-9)]),\n                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -15925,7 +16133,7 @@
       "tb": "_tb_ha_body",
       "ext": null,
       "known": "known=lambda p: [(_bar_nowick(200, step=0.5), [(-1, 100.0 / 199.5, 1e-9)]),\n                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, -100.0 / 100.5, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16053,7 +16261,7 @@
       "tb": "_tb_slp_hma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16184,7 +16392,7 @@
       "tb": "_tb_ht_dcperiod",
       "ext": null,
       "known": "known=lambda p: [(_bar_cycle(2000, 20), [(-1, 20.0, 0.05)]),\n                    (_bar_cycle(2000, 30), [(-1, 30.0, 0.05)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16296,7 +16504,7 @@
       "tb": "_tb_ht_dcphase",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16500,7 +16708,7 @@
       "tb": "_tb_ht_inphase",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16616,7 +16824,7 @@
       "tb": "_tb_ht_leadsine",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16728,7 +16936,7 @@
       "tb": "_tb_ht_quad",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16844,7 +17052,7 @@
       "tb": "_tb_ht_sine",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -16956,7 +17164,7 @@
       "tb": "_tb_ht_trendmode",
       "ext": null,
       "known": "known=lambda p: [(_up(800, step=0.5), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -17194,7 +17402,7 @@
       "tb": "_tb_hw_pos",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -17724,7 +17932,7 @@
       "tb": "_tb_hw_width",
       "ext": null,
       "known": "known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -18168,7 +18376,7 @@
       "tb": null,
       "ext": null,
       "known": "\"一致しないので外し、定義から導ける既知答えで検証する＝ずっと上がり続けるデータでは 100 になる\", known=lambda p: [(_up(max(200, int(p[0]) * 6)), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -18372,7 +18580,7 @@
       "tb": "_tb_slp_kama",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -18864,7 +19072,7 @@
       "tb": "_tb_kdj_d",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -19043,7 +19251,7 @@
       "tb": "_tb_kdj_j",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -19222,7 +19430,7 @@
       "tb": "_tb_kdj_k",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -19557,7 +19765,7 @@
       "tb": "_tb_kst",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -20678,7 +20886,7 @@
       "tb": "_tb_kst_sig",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -21545,7 +21753,7 @@
       "tb": "_tb_kvos",
       "ext": null,
       "known": "known=lambda p: [(_bar_vslope(800, True), [(-1, 10.5 / 773.0, 1e-6)]),\n                    (_flat(600), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -21654,7 +21862,7 @@
       "tb": "_tb_kvo",
       "ext": null,
       "known": "known=lambda p: [(_bar_vslope(800, True), [(-1, 10.5 / 773.0, 1e-6)]),\n                    (_flat(600), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -21827,7 +22035,7 @@
       "tb": "<lambda>",
       "ext": "<lambda>",
       "known": "known=lambda p: [(_flat(120), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -22420,7 +22628,7 @@
       "tb": "<lambda>",
       "ext": "<lambda>",
       "known": "known=lambda p: [(_flat(120), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23072,7 +23280,7 @@
       "tb": "_tb_slp_linreg",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23232,7 +23440,7 @@
       "tb": "_tb_lrsi",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23361,7 +23569,7 @@
       "tb": "_tb_lrangle",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23505,7 +23713,7 @@
       "tb": "_tb_slp_lrb",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23654,7 +23862,7 @@
       "tb": "_tb_lrm",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -23832,7 +24040,7 @@
       "tb": "_tb_lee_mykland",
       "ext": null,
       "known": "def _lm_known_paper(p):\n    return [(_lm_case(), [(-1, math.sqrt(2.0 / math.pi), 1e-9), (-2, -math.sqrt(2.0 / math.pi), 1e-9)]),\n            (_lm_jump_case(), [(-1, _LM_Y / _LM_X * math.sqrt(2.0 / math.pi), 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -24376,7 +24584,7 @@
       "tb": "_tb_lee_mykland_e36",
       "ext": null,
       "known": "def _lm_known_e36(p):\n    K = int(p[0])\n    return [(_lm_case(), [(-1, math.sqrt(2.0 / math.pi), 1e-9), (-2, -math.sqrt(2.0 / math.pi), 1e-9)]),\n            (_lm_jump_case(), [(-1, _LM_Y / math.sqrt(math.pi / (2.0 * (K - 1)) * ((K - 2) * _LM_X ** 2 + _LM_X * _LM_Y)), 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -24859,7 +25067,7 @@
       "tb": "_tb_macd_signal",
       "ext": "_ext_macd_signal",
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -25478,7 +25686,7 @@
       "tb": "_tb_macd_hist",
       "ext": "_ext_macd_hist",
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -26077,7 +26285,7 @@
       "tb": "_tb_macd_line",
       "ext": "_ext_macd_line",
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -26630,7 +26838,7 @@
       "tb": "_tb_mad",
       "ext": null,
       "known": "known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 100.0 / 101.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -26881,7 +27089,7 @@
       "tb": "_tb_marketfi",
       "ext": null,
       "known": "known=lambda p: [(_bar_hl(p[0] + 40), [(-1, 2.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -27053,7 +27261,7 @@
       "tb": "_tb_massi",
       "ext": null,
       "known": "known=lambda p: [(_bar_fixed_range(200), [(-1, 25.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -27513,7 +27721,7 @@
       "tb": "_tb_slp_mcgd",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -27662,7 +27870,7 @@
       "tb": "_tb_median_slope",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -27820,7 +28028,7 @@
       "tb": "_tb_mfi",
       "ext": "_ext_mfi",
       "known": "known=lambda p: [(_mk(100 + np.arange(p[0] + 5, dtype=float)), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -28215,7 +28423,7 @@
       "tb": "_tb_slp_midpoint",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -28364,7 +28572,7 @@
       "tb": "_tb_slp_midprice",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -28513,7 +28721,7 @@
       "tb": "_tb_slp_mmar",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -28683,7 +28891,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [\n       (_mk(np.full(int(p[0]) + 5, 100.0)), [(-1, 0.0, 1e-9)]),\n       (_mk(np.array([100.0 + (i % 2) for i in range(int(p[0]) + 5)])), [(-1, 100.0, 1e-9)]),\n       (_mk(np.array([0.0] + [1.0] * (int(p[0]) - 1))),\n        [(-1, 100.0 / (int(p[0]) - 1), 1e-9)]),\n   ],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -29006,7 +29214,7 @@
       "tb": "_tb_mom",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -29148,7 +29356,7 @@
       "tb": "_tb_msw_lead",
       "ext": null,
       "known": "known=lambda p: [(_bar_cycle(1002, 5), [(-1, 0.8910065241883679, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -29264,7 +29472,7 @@
       "tb": "_tb_msw_sine",
       "ext": null,
       "known": "known=lambda p: [(_bar_cycle(1002, 5), [(-1, 0.9510565162951535, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -29396,7 +29604,7 @@
       "tb": "_tb_nvi_slope",
       "ext": null,
       "known": "known=lambda p: [(_bar_vslope(p[0] + 40, True), [(-1, 0.0, 1e-9)]),\n                    (_bar_vslope(p[0] + 40, False), [(-1, \"+\", 0.0)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -29725,7 +29933,7 @@
       "tb": "_tb_obv_slope",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] + 5), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -30032,7 +30240,7 @@
       "tb": "_tb_pdist",
       "ext": null,
       "known": "known=lambda p: [(_bar_fixed_range(80, half=1.0), [(-1, 4.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -30163,7 +30371,7 @@
       "tb": "_tb_pgo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -30317,7 +30525,7 @@
       "tb": "_tb_po",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -30507,7 +30715,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -30983,7 +31191,7 @@
       "tb": "_tb_ppo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -31558,7 +31766,7 @@
       "tb": "_tb_ppo_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -32101,7 +32309,7 @@
       "tb": "_tb_ppo_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -32663,7 +32871,7 @@
       "tb": null,
       "ext": null,
       "known": "\"Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま・下げ続ける足なら頭打ちの 0.2（K-4）\", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.2, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -33113,7 +33321,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -33586,7 +33794,7 @@
       "tb": "_tb_psl",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -33743,7 +33951,7 @@
       "tb": "_tb_pvi_slope",
       "ext": null,
       "known": "known=lambda p: [(_bar_vslope(p[0] + 40, False), [(-1, 0.0, 1e-9)]),\n                    (_bar_vslope(p[0] + 40, True), [(-1, \"+\", 0.0)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -33937,7 +34145,7 @@
       "tb": "_tb_pvo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -34342,7 +34550,7 @@
       "tb": "_tb_pvol_ratio",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -34538,7 +34746,7 @@
       "tb": "_tb_pvo_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -34996,7 +35204,7 @@
       "tb": "_tb_pvo_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -35404,7 +35612,7 @@
       "tb": "_tb_pvt_slope",
       "ext": "_ext_pvt_slope",
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -35687,7 +35895,7 @@
       "tb": "_tb_slp_pwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -35816,7 +36024,7 @@
       "tb": null,
       "ext": null,
       "known": "\"ずっと上がり続けるデータでは RSI が 100 になり、この線も 100 になる\", known=lambda p: [(_up(300), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -35931,7 +36139,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_up(300), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -36061,7 +36269,7 @@
       "tb": "_tb_qstick",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -36228,7 +36436,7 @@
       "tb": "_tb_slp_rainbow",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -36462,7 +36670,7 @@
       "tb": "_tb_rci",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] + 5), [(-1, 100.0, 1e-9)]), (_dn(p[0] + 5), [(-1, -100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -37576,7 +37784,7 @@
       "tb": "_tb_slp_rma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -37730,7 +37938,7 @@
       "tb": "_tb_roc",
       "ext": "_ext_roc",
       "known": "known=lambda p: [(_mk(np.r_[np.full(p[0] + 5, 100.0), 110.0]), [(-1, 10.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -38306,7 +38514,7 @@
       "tb": "_tb_rsi",
       "ext": "_ext_rsi",
       "known": "known=lambda p: [(_up(p[0] * 4 + 10), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -38932,7 +39140,7 @@
       "tb": null,
       "ext": null,
       "known": "\"ずっと上がり続けるデータでは 100 になる（RSI と同じ世界標準の慣例）\", known=lambda p: [(_up(max(120, int(p[0]) * 4 + 10)), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -39087,7 +39295,7 @@
       "tb": "_tb_rvgi",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -39248,7 +39456,7 @@
       "tb": "_tb_rvgi_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -39409,7 +39617,7 @@
       "tb": "_tb_rvgi_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -39570,7 +39778,7 @@
       "tb": "_tb_rvi",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] * 6 + 40), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -39766,7 +39974,7 @@
       "tb": "_tb_sr_touch_atr1h",
       "ext": null,
       "known": "def _known_sr_touch_atr1h(p):\n    \"\"\"S-Rタッチ1時間ATR の手計算の既知答え3件（2026-09-26・M2-E-4c）。\n\n    ①下端に張り付く＝n＋12本を 100.1 で平ら（始値＝高値＝安値＝終値）・最後の1本だけ 100.0。\n      1時間足の値動きの幅は0＝許容幅は下端 0.15%＝帯は 100±0.15。窓の n 本は全部 100.1＝全部 触れる → n\n    ②上端に張り付く＝n＋12本を 終値 101.8・高値 104.8・安値 100.8、最後の1本だけ 100.0。\n      1時間足の値動きの幅は 4.0（高値−安値）＝ATR% は 4÷101.8（約3.9%）。倍率 0.5 でも上端 0.6% に張り付く。\n      帯は 100±0.6＝窓の安値 100.8 は 100.6 より上＝1本も触れない → 0\n    ③1時間足と5分足で答えが割れる＝60時間ぶん、1時間ごとに 100.0 と 100.5 を交互に（1時間の中は平ら）、\n      最後の1本だけ 100.0。1時間足の TR は2本目から 0.5＝ATR＝0.5×(1−(1−1/期間)^59)。\n      最後に閉じた1時間足（60本目）は 100.5 で閉じる。許容幅＝倍率 × ATR ÷ 100.5 を上下限で挟む。\n      窓の n 本の半分は 100.0（必ず触れる）・半分は 100.5（許容幅が 0.5% 以上のときだけ触れる）。\n      ★5分足の ATR% で数えると、1時間の中は平らなので値動きの幅が小さく、許容幅は下端に張り付く\n        ＝倍率 1.5 でも 100.5 に届かない＝この見本が「どの足の ATR で測ったか」を見分ける。\n    \"\"\"\n    n, k, an = int(p[0]), float(p[1]), int(p[2])\n    c1 = np.r_[np.full(n + 12, 100.1), 100.0]\n    c2 = np.r_[np.full(n + 12, 101.8), 100.0]\n    h2 = np.r_[np.full(n + 12, 104.8), 100.0]\n    l2 = np.r_[np.full(n + 12, 100.8), 100.0]\n    m = 60\n    c3 = np.r_[np.repeat([100.0 + 0.5 * (j % 2) for j in range(m)], 12), 100.0]\n    a3 = 0.5 * (1.0 - (1.0 - 1.0 / an) ** (m - 1))\n    t3 = min(max(k * a3 / 100.5, 0.0015), 0.006)\n    e3 = n / 2 + (n / 2 if 100.0 * t3 >= 0.5 else 0.0)\n    return [(_mk(c1, o=c1, h=c1, l=c1), [(-1, float(n), 1e-9)]),\n            (_mk(c2, o=c2, h=h2, l=l2), [(-1, 0.0, 1e-9)]),\n            (_mk(c3, o=c3, h=c3, l=c3), [(-1, float(e3), 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -40467,7 +40675,7 @@
       "tb": "_tb_sr_touch",
       "ext": null,
       "known": "known=lambda p: [(_mk(np.full(int(p[0]) + 12, 100.0), o=np.full(int(p[0]) + 12, 100.0),\n                         h=np.full(int(p[0]) + 12, 100.0), l=np.full(int(p[0]) + 12, 100.0)),\n                     [(-1, float(int(p[0])), 1e-9)]),\n                    (_mk(np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         o=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),\n                     [(-1, 3.0, 1e-9)]),\n                    # ★K-4（監査 CP60 の修正59）＝帯の外の既知答え＝前の n 本が全部 50 で最後の1本だけ 100（帯は 100±許容幅）＝触れる足は 0\n                    (_mk(np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], o=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0],\n                         h=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], l=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0]),\n                     [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -40845,7 +41053,7 @@
       "tb": "_tb_sr_fr_atr1h",
       "ext": null,
       "known": "known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -41571,7 +41779,7 @@
       "tb": "_tb_sr_fr",
       "ext": null,
       "known": "known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -41843,7 +42051,7 @@
       "tb": "_tb_slp_sinwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42022,7 +42230,7 @@
       "tb": "_tb_smc_sweep",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42318,7 +42526,7 @@
       "tb": "_tb_smc_fr",
       "ext": null,
       "known": "known=lambda p: [(_smc_fr_case(\"bull\"), [(-1, 1.0, 1e-9)]), (_smc_fr_case(\"bear\"), [(-1, -1.0, 1e-9)]),\n                    (_smc_fr_case(\"stay\"), [(-1, 0.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42483,7 +42691,7 @@
       "tb": "_tb_sqz",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42615,7 +42823,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42738,7 +42946,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -42962,7 +43170,7 @@
       "tb": "_tb_sqz_on",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -43528,7 +43736,7 @@
       "tb": "_tb_sqz_carter",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "教科書"
      }
     ],
@@ -43903,7 +44111,7 @@
       "tb": "_tb_slp_ssf",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -44103,7 +44311,7 @@
       "tb": "_tb_stc",
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_alt_pm1(400), [(-1, \"+\", 0.0)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -44657,7 +44865,7 @@
       "tb": "_tb_stcstoch",
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_alt_pm1(400), [(-1, \"+\", 0.0)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -45108,7 +45316,7 @@
       "tb": "_tb_slp_swma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -45297,7 +45505,7 @@
       "tb": "_tb_stoch_d",
       "ext": "_ext_stoch_d",
       "known": "known=lambda p: [(_mk(100 + np.arange(p[0] + 8, dtype=float)), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -45923,7 +46131,7 @@
       "tb": "_tb_stoch_k",
       "ext": "_ext_stoch_k",
       "known": "known=lambda p: [(_mk(100 + np.arange(p[0] + 5, dtype=float)), [(-1, 100.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -46570,7 +46778,7 @@
       "tb": "_tb_stochrsi_d",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -47318,7 +47526,7 @@
       "tb": "_tb_stochrsi_k",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -48051,7 +48259,7 @@
       "tb": "_tb_stochrsi_raw",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -48595,7 +48803,7 @@
       "tb": "_tb_supertrend_pct",
       "ext": null,
       "known": "known=lambda p: [(_mk(np.r_[np.linspace(300, 105, 20), np.linspace(105, 300, 25)[1:]]),\n                     [(15, \"-\", 0), (-1, \"+\", 0)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -48733,7 +48941,7 @@
       "tb": "_tb_slp_t3",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -48864,7 +49072,7 @@
       "tb": "_tb_td_dn",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -48972,7 +49180,7 @@
       "tb": "_tb_td_up",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -49111,7 +49319,7 @@
       "tb": "_tb_slp_tema",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -49244,7 +49452,7 @@
       "tb": "_tb_thermo_pct",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(80), [(-1, 0.5, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -49557,7 +49765,7 @@
       "tb": "_tb_thermo_ema",
       "ext": null,
       "known": "\"（最初の値＝ライブラリの既定 20）。EMA の種＝最初の n 本の単純平均（ライブラリの既定）\", tb=_tb_thermo_ema, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -49720,7 +49928,7 @@
       "tb": "_tb_thermo_orig",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -49927,7 +50135,7 @@
       "tb": "_tb_thermo_ratio",
       "ext": null,
       "known": "known=lambda p: [(_up(400), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -50036,7 +50244,7 @@
       "tb": "_tb_tr_pct",
       "ext": null,
       "known": "tb=_tb_tr_pct, known=lambda p: [(_bar_fixed_range(80, half=1.0), [(-1, 2.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -50230,7 +50438,7 @@
       "tb": "_tb_slp_trima",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -50410,7 +50618,7 @@
       "tb": "_tb_trix",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -50922,7 +51130,7 @@
       "tb": "_tb_trix_ema_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -51391,7 +51599,7 @@
       "tb": "_tb_trix_ema_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -51867,7 +52075,7 @@
       "tb": "_tb_trix_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -52342,7 +52550,7 @@
       "tb": "_tb_trix_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -52793,7 +53001,7 @@
       "tb": "_tb_slp_tsf",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -52985,7 +53193,7 @@
       "tb": "_tb_tsi",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -53546,7 +53754,7 @@
       "tb": "_tb_tsi_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -53992,7 +54200,7 @@
       "tb": "_tb_tsi_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -54473,7 +54681,7 @@
       "tb": "_tb_ttm",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -54620,7 +54828,7 @@
       "tb": "_tb_ui",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] * 4 + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -55043,7 +55251,7 @@
       "tb": null,
       "ext": "_ext_uo",
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -55527,7 +55735,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -55968,7 +56176,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -56372,7 +56580,7 @@
       "tb": "_tb_vfi",
       "ext": null,
       "known": "known=lambda p: [(_bar_geo(p[0] + 60, up=True), [(-1, float(p[0]), 1e-9)]),\n                    (_bar_geo(p[0] + 60, up=False), [(-1, -float(p[0]), 1e-9)]),\n                    (_flat(p[0] + 60), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -56510,7 +56718,7 @@
       "tb": "_tb_vhf",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -56842,7 +57050,7 @@
       "tb": "_tb_slp_vidya",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -56971,7 +57179,7 @@
       "tb": "_tb_vosc",
       "ext": null,
       "known": "known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                    (_bar_vslope(800, True), [(-1, 700.0 / 786.5, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -57106,7 +57314,7 @@
       "tb": "_tb_vtxm",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -57500,7 +57708,7 @@
       "tb": "_tb_vtxp",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -57937,7 +58145,7 @@
       "tb": "_tb_vwmacd_s",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -58117,7 +58325,7 @@
       "tb": "_tb_vwmacd_h",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -58297,7 +58505,7 @@
       "tb": "_tb_vwmacd",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -58439,7 +58647,7 @@
       "tb": "_tb_slp_vwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -58707,7 +58915,7 @@
       "tb": "_tb_wad_slope",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] + 40), [(-1, \"+\", 0.0)]), (_dn(p[0] + 40), [(-1, \"-\", 0.0)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -58863,7 +59071,7 @@
       "tb": "_tb_slp_wma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -59187,7 +59395,7 @@
       "tb": "_tb_wpat",
       "ext": null,
       "known": "known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),\n                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -59676,7 +59884,7 @@
       "tb": "_tb_w_fr",
       "ext": null,
       "known": "known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]), (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)]),\n                    (_w_case2(int(p[0])), [(-2, 1.0, 1e-9), (-1, 0.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -60141,7 +60349,7 @@
       "tb": "_tb_slp_zlma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -60270,7 +60478,7 @@
       "tb": "_tb_body",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 100.5], o=[100.0, 100.0], h=[100.0, 100.6], l=[100.0, 99.0]),\n                     [(-1, 0.3125, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -60409,7 +60617,7 @@
       "tb": "_tb_aber_zg",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -60841,7 +61049,7 @@
       "tb": "_tb_accbl",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -61263,7 +61471,7 @@
       "tb": "_tb_accbu",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -61687,7 +61895,7 @@
       "tb": "_tb_pos_alma",
       "ext": null,
       "known": "known=lambda p: [(_up(int(p[0]) + 40), [(-1, ((100.0 + int(p[0]) + 39) / ((100.0 + int(p[0]) + 39) - _alma_lag(int(p[0]))) - 1.0) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -62309,7 +62517,7 @@
       "tb": "_tb_ce_l",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -62795,7 +63003,7 @@
       "tb": "_tb_ce_s",
       "ext": null,
       "known": "known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -63304,7 +63512,7 @@
       "tb": null,
       "ext": null,
       "known": "\"値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 17.0) - 1.0) * 100.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -63909,7 +64117,7 @@
       "tb": null,
       "ext": null,
       "known": "\"終値が Chande Kroll の買い側の逆指値（TradingView の組み込みの Stop Long＝直近 q 本の min(p 本安値 ＋ x×ATR)）から何%離れているか\", \"同上\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 1.0) - 1.0) * 100.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -64462,7 +64670,7 @@
       "tb": "_tb_pos_dema",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -64949,7 +65157,7 @@
       "tb": "_tb_vs_ema",
       "ext": "_ext_vs_ema",
       "known": "known=lambda p: [(_flat(max(60, p[0] * 4)), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -65572,7 +65780,7 @@
       "tb": null,
       "ext": null,
       "known": "\"同上。★同じ理由で既知答えで検証する＝値段が一定なら ぴったり 0\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -65981,7 +66189,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),\n                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),\n                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -66303,7 +66511,7 @@
       "tb": "_tb_pos_fwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -66648,7 +66856,7 @@
       "tb": "_tb_pos_hilo",
       "ext": null,
       "known": "known=lambda p: [(_up(80), [(-1, (179.0 / 168.0 - 1.0) * 100.0, 1e-9)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -67031,7 +67239,7 @@
       "tb": "_tb_pos_hma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -67483,7 +67691,7 @@
       "tb": null,
       "ext": null,
       "known": "\"代わりに既知答えで検証する＝値段が一定なら ぴったり 0\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -67686,7 +67894,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),\n                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),\n                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -67959,7 +68167,7 @@
       "tb": null,
       "ext": null,
       "known": "\"Holt-Winters（3つの係数の指数平滑）。★既知答えで検証する＝値段が一定なら ぴったり 0\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -68376,7 +68584,7 @@
       "tb": null,
       "ext": null,
       "known": "\"値段がずっと同じデータでは移動平均も必ずその値と一致するので、この列は ぴったり 0 になる\", known=lambda p: [(_flat(max(120, int(p[0]) * 4)), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -68917,7 +69125,7 @@
       "tb": "_tb_pos_kama",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -69493,7 +69701,7 @@
       "tb": "_tb_pos_linreg",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -69933,7 +70141,7 @@
       "tb": "_tb_pos_lrb",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -70346,7 +70554,7 @@
       "tb": null,
       "ext": null,
       "known": "\"代わりに既知答えで検証する＝値段が一定なら ぴったり 0\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -70756,7 +70964,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),\n                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),\n                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -71103,7 +71311,7 @@
       "tb": "_tb_pos_mcgd",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -71603,7 +71811,7 @@
       "tb": "_tb_median",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -71946,7 +72154,7 @@
       "tb": "_tb_pos_midpoint",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -72332,7 +72540,7 @@
       "tb": "_tb_pos_midprice",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -72727,7 +72935,7 @@
       "tb": "_tb_pos_mmar",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -73153,7 +73361,7 @@
       "tb": null,
       "ext": null,
       "known": "\"ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら EMA10＋3×ATR10 の上の帯（K-4）\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 7.5) - 1.0) * 100.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -73578,7 +73786,7 @@
       "tb": null,
       "ext": null,
       "known": "\"★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら売り側の SAR＝終値＋5（K-4）\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -74065,7 +74273,7 @@
       "tb": "_tb_pos_pwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -74418,7 +74626,7 @@
       "tb": "_tb_pos_rainbow",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -74913,7 +75121,7 @@
       "tb": "_tb_pos_rma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -75446,7 +75654,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -75571,8 +75779,8 @@
        ],
        "範囲": [
         {
-         "下限": -3e+37,
-         "上限": 3e+37,
+         "下限": -3E+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>Start Value</Name> <ShortDescription>Start value and direction. 0 for Auto, &gt;0 for Long, &lt;0 for Short</ShortDescription> <Minimum>-3.000000e+37</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>0.000000e+0</DefaultValue>",
          "出どころの順位": 3
@@ -75594,7 +75802,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>Offset on Reverse</Name> <ShortDescription>Percent offset added/removed to initial stop on short/long reversal</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>0.000000e+0</DefaultValue>",
          "出どころの順位": 3
@@ -75616,7 +75824,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Init Long</Name> <ShortDescription>Acceleration Factor initial value for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
          "出どころの順位": 3
@@ -75638,7 +75846,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Long</Name> <ShortDescription>Acceleration Factor for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
          "出どころの順位": 3
@@ -75660,7 +75868,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Max Long</Name> <ShortDescription>Acceleration Factor maximum value for the Long direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-1</DefaultValue>",
          "出どころの順位": 3
@@ -75682,7 +75890,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Init Short</Name> <ShortDescription>Acceleration Factor initial value for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
          "出どころの順位": 3
@@ -75704,7 +75912,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Short</Name> <ShortDescription>Acceleration Factor for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-2</DefaultValue>",
          "出どころの順位": 3
@@ -75726,7 +75934,7 @@
        "範囲": [
         {
          "下限": 0,
-         "上限": 3e+37,
+         "上限": 3E+37,
          "URL": "https://github.com/TA-Lib/ta-lib/blob/main/ta_func_api.xml",
          "逐語": "<Name>AF Max Short</Name> <ShortDescription>Acceleration Factor maximum value for the Short direction</ShortDescription> <Minimum>0.000000e+0</Minimum> <Maximum>3.000000e+37</Maximum> <DefaultValue>2.000000e-1</DefaultValue>",
          "出どころの順位": 3
@@ -75918,7 +76126,7 @@
       "tb": "_tb_pos_sinwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -76256,7 +76464,7 @@
       "tb": "_tb_vs_sma",
       "ext": "_ext_vs_sma",
       "known": "known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -76765,7 +76973,7 @@
       "tb": "_tb_pos_ssf",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -77216,7 +77424,7 @@
       "tb": "_tb_pos_ssf_avg",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "教科書"
      }
     ],
@@ -77603,7 +77811,7 @@
       "tb": "_tb_pos_swma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -77990,7 +78198,7 @@
       "tb": "_tb_pos_t3",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -78428,7 +78636,7 @@
       "tb": "_tb_pos_tema",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -78889,7 +79097,7 @@
       "tb": "_tb_pos_trima",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -79269,7 +79477,7 @@
       "tb": "_tb_pos_trima_ta",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -79644,7 +79852,7 @@
       "tb": "_tb_pos_tsf",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -80018,7 +80226,7 @@
       "tb": "_tb_pos_vidya",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -80504,7 +80712,7 @@
       "tb": "_tb_pos_vidya_cmo",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "教科書"
      }
     ],
@@ -80764,7 +80972,7 @@
       "tb": "_tb_vs_vwap",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]),\n                    (_up(p[0] + 40), [(-1, ((100.0 + p[0] + 39) / ((100.0 + p[0] + 39) - (p[0] - 1) / 2.0) - 1.0) * 100.0, 1e-9)]),\n                    (_mk(100.0 + np.arange(p[0] + 40, dtype=float), v=np.r_[np.ones(p[0] + 39), 9.0]),\n                     [(-1, ((100.0 + p[0] + 39) / ((p[0] * (100.0 + p[0] + 39) - p[0] * (p[0] - 1) / 2.0 + 8.0 * (100.0 + p[0] + 39)) / (p[0] + 8.0)) - 1.0) * 100.0, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -81093,7 +81301,7 @@
       "tb": "_tb_vs_vwap_tp",
       "ext": "<lambda>",
       "known": "known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]), (_tp_case(p[0] + 10), [(-1, (103.0 / 105.0 - 1) * 100, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -81406,7 +81614,7 @@
       "tb": "_tb_pos_vwma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -81800,7 +82008,7 @@
       "tb": "_tb_pos_wma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -82248,7 +82456,7 @@
       "tb": "_tb_pos_zlma",
       "ext": null,
       "known": null,
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -82642,7 +82850,7 @@
       "tb": "_tb_fib",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.5, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -83123,7 +83331,7 @@
       "tb": "_tb_fr_lo_dist",
       "ext": null,
       "known": "known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, (100.0 / 81.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -83476,7 +83684,7 @@
       "tb": "_tb_fr_hi_dist",
       "ext": null,
       "known": "known=lambda p: [(_fr_case(p[0], True, 110.0, 121.0), [(-1, (100.0 / 121.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -83820,7 +84028,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_up(200, step=1.0),\n                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -83958,7 +84166,7 @@
       "tb": "_tb_kurtosis",
       "ext": null,
       "known": "known=lambda p: [(_bar_alt(p[0] + 40), [(-1, -2.0 * (p[0] - 1) / (p[0] - 3), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -84098,7 +84306,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_up(200, step=1.0),\n                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -84393,7 +84601,7 @@
       "tb": "_tb_dist_low_prev",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -84889,7 +85097,7 @@
       "tb": "_tb_dist_high_prev",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -85378,7 +85586,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_up(200, step=1.0),\n                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -85496,7 +85704,7 @@
       "tb": "_tb_pinbar",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 100.5], o=[100.0, 100.0], h=[100.0, 100.6], l=[100.0, 99.0]),\n                     [(-1, 0.5625, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -85645,7 +85853,7 @@
       "tb": "_tb_vs_pivot",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -86035,7 +86243,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -86426,7 +86634,7 @@
       "tb": "<lambda>",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])], tb_kind=\"写し\")",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": "写し"
      }
     ],
@@ -86817,7 +87025,7 @@
       "tb": "_tb_rvol",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -87118,7 +87326,7 @@
       "tb": "_tb_rvol_rv",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]), (_geo_case(p[0] * 3), [(-1, 100.0 * np.log(1.001), 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -87680,7 +87888,7 @@
       "tb": "_tb_skew",
       "ext": null,
       "known": "tb=_tb_skew, known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -87825,7 +88033,7 @@
       "tb": "_tb_stdev_pct",
       "ext": null,
       "known": "known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 100.0 / 101.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -88527,7 +88735,7 @@
       "tb": "_tb_dist_low",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -88910,7 +89118,7 @@
       "tb": "_tb_dist_high",
       "ext": null,
       "known": "known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -89404,7 +89612,7 @@
       "tb": "_tb_vr",
       "ext": null,
       "known": "known=lambda p: [(_up(p[0] + 5), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -89784,7 +89992,7 @@
       "tb": "_tb_zscore",
       "ext": null,
       "known": "known=lambda p: [(_alt_pm1(p[0] * 2), [(-1, 1.0 / float(np.sqrt(p[0] / (p[0] - 1))), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -89950,7 +90158,7 @@
       "tb": "_tb_zscore_ret",
       "ext": null,
       "known": "known=lambda p: [(_mk(100.0 * np.exp(np.cumsum(np.resize([0.01, -0.01], p[0] * 2)))),\n                     [(-1, -float(np.sqrt((p[0] - 1) / p[0])), 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -90094,7 +90302,7 @@
       "tb": "_tb_uwick",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 100.5], o=[100.0, 100.0], h=[100.0, 100.6], l=[100.0, 99.0]),\n                     [(-1, 0.0625, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -90213,7 +90421,7 @@
       "tb": "_tb_lwick",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 100.5], o=[100.0, 100.0], h=[100.0, 100.6], l=[100.0, 99.0]),\n                     [(-1, 0.625, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -90453,7 +90661,7 @@
       "tb": "_tb_inside",
       "ext": null,
       "known": "known=lambda p: [(_bar_inside(), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -90592,7 +90800,7 @@
       "tb": "_tb_vol_roc",
       "ext": null,
       "known": "known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -90725,7 +90933,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -91070,7 +91278,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_HI, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -91415,7 +91623,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -91725,7 +91933,7 @@
       "tb": null,
       "ext": null,
       "known": "\"StockCharts「Pivot Points」の逐語「the prior day's high, low, and close」「do not change and remain in play throughout the day」。%化は H6\", known=lambda p: [(_pivot_day_case(), [(-1, 0.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -92032,7 +92240,7 @@
       "tb": null,
       "ext": null,
       "known": "\"教科書の R1＝2×PP − 前の期間の安値 からの乖離%\", \"StockCharts の逐語「Resistance 1 (R1) = (P x 2) - Low」\", known=lambda p: [(_pivot_day_case(), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -92344,7 +92552,7 @@
       "tb": null,
       "ext": null,
       "known": "\"教科書の S1＝2×PP − 前の期間の高値 からの乖離%\", \"StockCharts の逐語「Support 1 (S1) = (P x 2) - High」\", known=lambda p: [(_pivot_day_case(), [(-1, 5.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -92658,7 +92866,7 @@
       "tb": null,
       "ext": null,
       "known": "\"StockCharts の逐語「Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.」。週の始まりは ISO 8601 の月曜\", known=lambda p: [(_pivot_week_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K7)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -92934,7 +93142,7 @@
       "tb": null,
       "ext": null,
       "known": "\"前の週の R1＝2×PP − 前の週の安値 からの乖離%\", \"StockCharts の逐語「Resistance 1 (R1) = (P x 2) - Low」\", known=lambda p: [(_pivot_week_case(), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])], mako=MAKO_K7)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -93209,7 +93417,7 @@
       "tb": null,
       "ext": null,
       "known": "\"前の週の S1＝2×PP − 前の週の高値 からの乖離%\", \"StockCharts の逐語「Support 1 (S1) = (P x 2) - High」\", known=lambda p: [(_pivot_week_case(), [(-1, 5.0, 1e-9)])], mako=MAKO_K7)",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -93481,7 +93689,7 @@
       "tb": "_tb_engulf",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 100.0, 101.1], o=[101.0, 101.0, 99.9],\n                         h=[101.0, 101.0, 101.2], l=[99.9, 99.9, 99.8]), [(-1, 1.0, 1e-9)]),\n                    (_mk(c=[101.0, 101.0, 99.9], o=[100.0, 100.0, 101.2],\n                         h=[101.0, 101.0, 101.3], l=[99.9, 99.9, 99.8]), [(-1, -1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -93610,7 +93818,7 @@
       "tb": "_tb_ichi",
       "ext": "_ext_kijun",
       "known": "known=lambda p: [(_range_case(), [(-1, 0.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -94019,7 +94227,7 @@
       "tb": "_tb_harami",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[100.0, 99.8, 100.5], o=[100.0, 101.2, 100.0],\n                         h=[100.0, 101.2, 100.6], l=[100.0, 99.7, 99.9]), [(-1, 1.0, 1e-9)]),\n                    (_mk(c=[100.0, 101.2, 99.9], o=[100.0, 99.8, 100.4],\n                         h=[100.0, 101.3, 100.5], l=[99.9, 99.7, 99.8]), [(-1, -1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -94156,7 +94364,7 @@
       "tb": "_tb_bars_since_low",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=np.full(p[0] + 20, 100.0), o=np.full(p[0] + 20, 100.0),\n                         h=np.full(p[0] + 20, 101.0),\n                         l=np.r_[np.full(p[0] + 9, 100.0), 90.0, np.full(10, 100.0)]), [(-1, 10.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -94624,7 +94832,7 @@
       "tb": "_tb_fr_lo_step",
       "ext": null,
       "known": "known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, -10.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -94968,7 +95176,7 @@
       "tb": "_tb_body_range",
       "ext": null,
       "known": "known=lambda p: [(_bar_fixed_body(p[0] * 4 + 20), [(-1, 1.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -95230,7 +95438,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -95575,7 +95783,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_HI, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -95920,7 +96128,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -96230,7 +96438,7 @@
       "tb": null,
       "ext": null,
       "known": "known=lambda p: [(_vwap_day_case(), [(-2, (103.0 / 105.0 - 1) * 100, 1e-9), (-1, (99.0 / 102.0 - 1) * 100, 1e-9)])],",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -96507,7 +96715,7 @@
       "tb": "_tb_shape",
       "ext": null,
       "known": "known=lambda p: [(_mk(np.r_[np.linspace(110, 100, p[0] // 2 + 1), np.linspace(100, 110, p[0] // 2 + 1)[1:],\n                               np.full(2, 110.0)][:p[0] + 3]), [(p[0], 2.0, 1e-9)]),\n                    (_mk(np.r_[np.linspace(100, 110, p[0] // 2 + 1), np.linspace(110, 100, p[0] // 2 + 1)[1:],\n                               np.full(2, 100.0)][:p[0] + 3]), [(p[0], -2.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -96925,7 +97133,7 @@
       "tb": "_tb_fr_break",
       "ext": null,
       "known": "known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, (100.0 / 90.0 - 1) * 100, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -97267,7 +97475,7 @@
       "tb": "_tb_ichi",
       "ext": "_ext_tenkan",
       "known": "known=lambda p: [(_range_case(), [(-1, 0.0, 1e-6)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -97676,7 +97884,7 @@
       "tb": "_tb_streak",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=[101.0, 102.0, 103.0], o=[100.0, 101.0, 102.0]), [(-1, 3.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -97819,7 +98027,7 @@
       "tb": "_tb_bars_since_high",
       "ext": null,
       "known": "known=lambda p: [(_mk(c=np.full(p[0] + 20, 100.0), o=np.full(p[0] + 20, 100.0),\n                         h=np.r_[np.full(p[0] + 9, 100.0), 110.0, np.full(10, 100.0)],\n                         l=np.full(p[0] + 20, 99.0)), [(-1, 10.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -98287,7 +98495,7 @@
       "tb": "_tb_fr_hi_step",
       "ext": null,
       "known": "known=lambda p: [(_fr_case(p[0], True, 110.0, 121.0), [(-1, 10.0, 1e-9)])])",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -99261,7 +99469,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -99670,7 +99878,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -99987,7 +100195,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -100375,7 +100583,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case(kind, 105.0), [(-1, 1.0, 1e-9)]), (_line_case(kind, 112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -100707,7 +100915,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case_w(105.0), [(-1, 1.0, 1e-9)]), (_line_case_w(112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -101095,7 +101303,7 @@
       "tb": null,
       "ext": null,
       "known": "return lambda p: [(_line_case_w(105.0), [(-1, 1.0, 1e-9)]), (_line_case_w(112.0), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -101661,7 +101869,7 @@
       "tb": "_tb_band_swing",
       "ext": null,
       "known": "return lambda p: [(_band_case(kind, int(p[-1])), [(-1, 1.0, 1e-9)]),\n                      (_band_case(kind, int(p[-1]) - 1, unconfirmed=True), [(-1, 0.0, 1e-9)]),\n                      (_band_case(\"narrow\", 4), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
@@ -102762,7 +102970,7 @@
       "tb": "_tb_band_swing",
       "ext": null,
       "known": "return lambda p: [(_band_case(kind, int(p[-1])), [(-1, 1.0, 1e-9)]),\n                      (_band_case(kind, int(p[-1]) - 1, unconfirmed=True), [(-1, 0.0, 1e-9)]),\n                      (_band_case(\"narrow\", 4), [(-1, 0.0, 1e-9)])]",
-      "tol": 1e-06,
+      "tol": 0.000001,
       "tb_kind": null
      }
     ],
