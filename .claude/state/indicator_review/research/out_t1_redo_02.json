@@ -1,0 +1,3064 @@
+[
+ {
+  "名前": "ADX",
+  "使い方の記録": [
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 20,
+         "文の時間足": null,
+         "逐語": "If the ADX is below 20, it suggests weak or no trend, and scalping may not be as effective.",
+         "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "スキャルの記事。足は同じ節に1分足か5分足"
+        }
+       ],
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "ADX below 20 for any length of time indicates a ranging market;",
+         "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "Only run your mean reversion setup when ADX < 20.",
+         "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "The Results page will list all securities which are ranging (ADX below 20).",
+         "URL": "https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php",
+         "確かめの強さ": "ページの文で確かめた"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "ADX below 20 for any length of time indicates a ranging market;",
+     "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+     "確かめの強さ": "ページの文で確かめた"
+    }
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope",
+     "diff"
+    ],
+    "合図の形のパラメータ": [
+     {
+      "名前": "傾きの本数",
+      "代表の値の候補": {
+       "既定": []
+      },
+      "注記": "傾きを見る本数の文は見つからなかった"
+     }
+    ],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 4,
+         "逐語": "Dr Elder suggests waiting until ADX rises 4 steps off its low (e.g. ADX rises to 19 from a low of 15).",
+         "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "安値から 4 上がるまで待つ（例＝15 から 19）。diff（安値との差）の閾値。足の名指しは無い"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Dr Elder suggests waiting until ADX rises 4 steps off its low (e.g. ADX rises to 19 from a low of 15).",
+     "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "ADX が底から 4 上がるまで入らない（Elder の系）。4 は値の差で、閾値の値ではないので閾値は空。前の文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」。見本と前の教科書で違う（前の教科書に、同じ文で中身の違う行が在る。両方を候補に残した）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "出口の反転",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "cross"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 25,
+         "文の時間足": "5m",
+         "逐語": "Example Time Frame: 5-minute chart. Indicators: 14-period ADX, 50 EMA. Entry Rule: Go long when price is above EMA, +DI > −DI, and ADX > 25. Exit Rule: Take profit at 1.5× risk or when ADX drops below 25.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "デイトレの記事の5分足の例。スキャルの名指しは無い。足で分けた"
+        }
+       ],
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "Exit when -DI crosses back above +DI, or when ADX falls back under 20, whichever you wrote first.",
+         "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "スイング（日足）の節の文"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Exit when -DI crosses back above +DI, or when ADX falls back under 20, whichever you wrote first.",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "指標データの出口の反転の行（SHORT 下側・LONG 上側・25）とは向きが違う。どちらが正しいかは書かない。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope"
+    ],
+    "合図の形のパラメータ": [
+     {
+      "名前": "傾きの本数",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 1,
+         "逐語": "If the ADX is rising (ADX today is 0.20 or more higher than yesterday) then buy if the 14 bar RSI is less than 85.",
+         "URL": "https://www.surefire-trading.com/tsl/tl/tl-71.html",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "today と yesterday の差＝1本前との差"
+        }
+       ]
+      }
+     }
+    ],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 0.2,
+         "逐語": "If the ADX is rising (ADX today is 0.20 or more higher than yesterday) then buy if the 14 bar RSI is less than 85.",
+         "URL": "https://www.surefire-trading.com/tsl/tl/tl-71.html",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "傾き（1本前との差）の閾値。足の名指しが無いので既定"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "If the ADX is rising (ADX today is 0.20 or more higher than yesterday) then buy if the 14 bar RSI is less than 85.",
+     "URL": "https://www.surefire-trading.com/tsl/tl/tl-71.html",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "ADX の傾きで RSI の入口の閾値を切り替える決まり。ADX が上がっていないときは RSI 50 より下でしか買わない＝除く条件として読んだ。ADX の期間は書いていない"
+    },
+    "玉の向き": "LONG",
+    "注記": "逐語の then buy（買い）に合わせ、玉の向きを LONG にした"
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 20,
+         "文の時間足": null,
+         "逐語": "If the ADX is above 20, it indicates that there is a trend in the market, and you should consider looking for scalping opportunities.",
+         "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "スキャルの記事"
+        }
+       ],
+       "既定": [
+        {
+         "候補の値": 25,
+         "逐語": "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20.",
+         "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "Typically if the ADX is above 25 it indicates a strong trend.",
+         "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "curl の本文で照らした（Chromium は 502）"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "At its most basic, the Average Directional Index (ADX) can be used to determine if a security is trending or not. This determination helps traders choose between a trend-following system or a non-trend-following system.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "トレンドの場面。上げと下げを分けない（ADX は向きが無い。TRT＝「ADX at 40 with minus DI on top is a strong downtrend.」）ので場面は null"
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "cross"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "Go long when ADX rises above 20 and Momentum is above zero.",
+         "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "向きは Twiggs Momentum で決める（ADX の文ではない部分）"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "ADX rising above 20 indicates the start of a new trend;",
+     "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "入る合図の弱点（kb §3 のトレンドの強さの急上昇）を見る除く条件は、下の『入ってはいけない場面を除く条件』の行（ADX が底から上を向くまで待つ・4つ上がるまで待つ）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した",
+    "確認に使う相手": [
+     {
+      "相手": "出来高・ローソクの形（エンガルフィング・十字線・ハンマーなど）",
+      "役目": "合図の確からしさを上げる",
+      "逐語": "Volume Confirmation: Look for increasing volume on the breakout of a key level or during the formation of a candlestick pattern. High volume suggests strong participation and increases the likelihood that the price movement will continue in the expected direction.",
+      "URL": "https://vvip-trade.blogspot.com/2025/12/adx-rsi-confirm-your-entries-for-better.html",
+      "注記": "同じ記事「Candlestick Patterns: Use candlestick patterns, such as engulfing patterns, doji, or hammer patterns, to confirm the direction of the trend.」",
+      "読んだ日": "2026-11-05",
+      "HTTP": 200,
+      "確かめの強さ": "ページの文で確かめた"
+     }
+    ]
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "cross"
+    ],
+    "玉の向き": "SHORT",
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "Go short when ADX rises above 20 and Momentum is below zero.",
+         "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "向きは Momentum で決める"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Go short when ADX rises above 20 and Momentum is below zero.",
+     "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+     "確かめの強さ": "ページの文で確かめた"
+    }
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "band"
+    ],
+    "玉の向き": "両方",
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "The band is the average plus Multiplier standard deviations: ADX above it on a rising candle goes long and on a falling candle goes short, and a position closes once ADX falls back below its average.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0252_ADX_Breakout",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "線は ADX の直近 20 本の平均＋0.1 標準偏差（Default Values : ADXPeriod = 14 AvgPeriod = 20 Multiplier = 0.1 CandleType = TimeSpan.FromMinutes(5)）。決まった数の閾値ではないので閾値は空"
+    },
+    "注記": "StockSharp の戦略の例。足は既定値の行に5分足（文の中ではない）"
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 20,
+         "文の時間足": null,
+         "逐語": "If the ADX is below 20, it is best to wait for a stronger trend to develop before executing any trades.",
+         "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "スキャルの記事の手順1"
+        },
+        {
+         "候補の値": 14,
+         "文の時間足": null,
+         "逐語": "ADX minimum value: threshold (default 14).",
+         "URL": "https://www.tradingview.com/script/mREvvoZt/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "5分足のスキャルで成績が良いと書く公開スクリプトの既定値。スタイルの名指しは文に無い"
+        }
+       ],
+       "デイトレ": [
+        {
+         "候補の値": 15,
+         "文の時間足": "15m",
+         "逐語": "Example : On a 15-minute GBP/USD chart, an ADX of 15 means it's better to avoid chasing breakouts .",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "15 は避ける例の値（デイトレの記事）"
+        }
+       ],
+       "既定": [
+        {
+         "候補の値": 25,
+         "逐語": "ADX must be over 25 (strong trend. The value is determined by trader)",
+         "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "The first requirement is for ADX to be trading above 25. This ensures that prices are trending. Many traders, however, use 20 as the key level.",
+         "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "The first requirement is for ADX to be trading above 25. This ensures that prices are trending. Many traders, however, use 20 as the key level.",
+         "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "Skip the idea when ADX is under 20.",
+         "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "デイトレの節（5分足・15分足・1時間足の話）の文"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "Mechanical filter, not a full entry: take a long from your price rule only when +DI is above -DI and ADX is above 25.",
+         "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "デイトレの節の文"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "When ADX is under 20, steer clear of trend-following trades and range strategies.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "Only run your MA crossover strategy when ADX > 20.",
+         "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 20,
+         "逐語": "This is because ADX was not above 20 when -DI crossed above +DI in late April.",
+         "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "ADX が 20 より上でないので売りの合図が無かった、という例"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "Wilder's own system used ADX above 25 as a filter before acting on a crossover.",
+         "URL": "https://capital.com/en-gb/learn/technical-analysis/directional-indicators",
+         "確かめの強さ": "ページの文で確かめた"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "ADX must be over 25 (strong trend. The value is determined by trader)",
+     "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "DI のクロス（DI差の入る合図）や、トレンドに乗る手法を、ADX が低いときに使わない、という除く条件。ADX 自身の入る合図（20 を上へ抜ける）の弱点を見る文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」「Dr Elder suggests waiting until ADX rises 4 steps off its low (e.g. ADX rises to 19 from a low of 15).」（https://www.incrediblecharts.com/indicators/directional_movement.php）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope",
+     "diff"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Dr Elder suggests waiting until ADX rises 4 steps off its low (e.g. ADX rises to 19 from a low of 15).",
+     "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "ADX が底から 4 上がるまで入らない（Elder の系）。4 は値の差で、閾値の値ではないので閾値は空。前の文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」。見本と前の教科書で違う（見本の同じ文の行と、前の教科書のこの行の中身が違う。両方を候補に残した）。4・19・15は、ADXの値そのものの差と例の数値。閾値（水準の値）ではない。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "合図が本物かを確かめる条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope",
+     "level"
+    ],
+    "玉の向き": "LONG",
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 28,
+         "文の時間足": "5m",
+         "逐語": "Example : If EUR/USD breaks above resistance on a 5-minute chart and ADX rises from 22 to 28, it confirms the strength of the breakout.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "22 から 28 へ上がる例。デイトレの記事。スキャルの名指しは無い。足で分けた"
+        }
+       ],
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "Some occur with ADX above 20 to validate signals.",
+         "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "A breakout is more likely to succeed when the ADX is already above 25 or rising.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "Swing rule you can test: long when +DI crosses above -DI and ADX is above 25 and rising.",
+         "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "スイングの節（日足）の文"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "An ADX reading above 25 confirms the presence of a valid trend.",
+         "URL": "https://bingx.com/en/learn/article/how-to-use-adx-indicator-in-crypto-trading",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "暗号資産の交換所の解説。4時間足の例の節"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "This bullish signal is reinforced if/when ADX turns up and the trend strengthens.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "ほかに TradingView＝「The signal strengthens if ADX rises.」（https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/）。文は bullish（上げ）だけを言う。両方から LONG に直した"
+   },
+   {
+    "使い方の種類": "出口の水準を作る材料",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 35,
+         "逐語": "Example : If ADX is at 35, you could permit a 20-pip stop; if ADX is at 22, a 10-pip stop may be preferable.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "ADX が高いほど損切りを広く。20 pips・10 pips は値段の幅"
+        },
+        {
+         "候補の値": 22,
+         "逐語": "Example : If ADX is at 35, you could permit a 20-pip stop; if ADX is at 22, a 10-pip stop may be preferable.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "The stronger the trend (higher ADX), the wider your stop-loss can be to avoid being whipsawed.",
+     "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "反対の文＝TRT「ADX does not place the stop.」（https://therighttrader.com/learn/indicator-strategies/best-adx-settings）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "出口の反転",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 42,
+         "逐語": "Example : If ADX drops from 42 to 36 while you're in a long trade, it may be wise to scale out.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "LONG の例。42 から 36 へ下がる"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Take profits when ADX turns downwards from above +DI and -DI.",
+     "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "ADX が +DI と −DI の両方より上で下を向いたら利食い（Elder の系）。ほかに StockSharp＝「Trades close as the ADX falls back toward the mean.」（https://doc.stocksharp.com/en/api-examples/0252_ADX_Breakout）、BingX＝「When the ADX line peaks and begins to slope downward, it signals that the trend is losing strength, even if price hasn’t reversed yet.」（https://bingx.com/en/learn/article/how-to-use-adx-indicator-in-crypto-trading）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "前提崩れの印",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope",
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 40,
+         "逐語": "A weakening trend is signaled when 14-day ADX turns down while above 40.",
+         "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "14-day（日足）"
+        },
+        {
+         "候補の値": 40,
+         "逐語": "A declining ADX from elevated levels (e.g., above 40) usually indicates that the trend is weakening.",
+         "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 25,
+         "逐語": "When the ADX falls below 25, it warns that trend momentum is weakening, and new breakout entries may lack conviction.",
+         "URL": "https://bingx.com/en/learn/article/how-to-use-adx-indicator-in-crypto-trading",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "暗号資産の4時間足の例の節"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "A weakening trend is signaled when 14-day ADX turns down while above 40.",
+     "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "ほかに CrossTrade＝「A falling ADX = trend is losing momentum, even if price is still moving.」、TradeLux＝「If ADX flattens and price rotates back into balance, the trader stops treating the setup like a continuation trade.」。指標データの前提崩れの印の行（SHORT 上側・LONG 下側・25）は教科書の文ではない（264番）。文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "hysteresis"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "入る線と出る線": [
+     {
+      "候補の値": "22（入る）・18（出る）",
+      "逐語": "if you want to apply the principle of a thermostat, (switch on the heat if the temperature drops below a low level, switch off if temperature goes above a high level) -it's called hysteresis- to avoid switching on and off multiple times in a row if the indicator is close to the threshold, how would you do it? Take a look at this example with the ADX indicator and 22 as the high level and 18 as the low level",
+      "URL": "https://forum.mql4.com/23536",
+      "注記": "フォーラムの例。22・18はトレンドの『在る・無い』を切り替える例の数で、スキャル・デイトレの名指しは無い",
+      "読んだ日": "2026-11-05",
+      "HTTP": 200,
+      "確かめの強さ": "ページの文で確かめた"
+     }
+    ],
+    "出どころ": {
+     "逐語": "if(adx > 22 ) indi=1; if(adx< 18 ) indi=0;",
+     "URL": "https://forum.mql4.com/23536",
+     "注記": "入る水準（22）と出る水準（18）を分けて、しきい値付近での何度も切り替わりを防ぐ（ヒステリシス）",
+     "読んだ日": "2026-11-05",
+     "HTTP": 200,
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "。22・18は、閾値や合図の形のパラメータではなく、入る線と出る線の欄に書いた（この行の性質がヒステリシスだから）。閾値ではない"
+   }
+  ]
+ },
+ {
+  "名前": "ATR%",
+  "探した記録": [
+   {
+    "要素": "閾値の値（スキャル・デイトレ）・閾値の範囲の文",
+    "検索の語": [
+     "NATR normalized ATR percent threshold filter scalping 5-minute minimum volatility",
+     "\"ATR%\" OR \"ATR percent\" filter avoid trading low volatility day trading threshold",
+     "day trading stock screener \"ATR\" percent of price at least 3% OR \"above 2%\" volatility minimum intraday",
+     "crypto scalping ATR as percentage of price 5-minute BTC typical value \"0.2%\" OR \"0.3%\" OR \"0.5%\" ATR"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.macroption.com/normalized-atr",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/2QcaKbTR/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://mi4uu.github.io/botmarley-book/strategies/indicators/atr.html",
+      "HTTP": 404,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/ssXHE1zm-0-14-DTE-Volatility-Screener-For-Matt/",
+      "HTTP": 404,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     },
+     {
+      "URL": "https://in.tradingview.com/script/ssXHE1zm-0-14-DTE-Volatility-Screener-For-Matt/",
+      "HTTP": 404,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     },
+     {
+      "URL": "https://es.tradingview.com/script/LqrjI0pu-ATR-Percentages-Box/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "閾値の値（スキャル・デイトレ）・注",
+    "検索の語": [
+     "（上と同じ）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://web.archive.org/web/2025/https://www.tradingview.com/script/ssXHE1zm-0-14-DTE-Volatility-Screener-For-Matt/",
+      "HTTP": 0,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     }
+    ],
+    "注記": "0-14 DTE の公開スクリプト（ATR% 1.5%・3% と検索の要約に出た）は HTTP 404。WebFetch も 404、web.archive.org は WebFetch で開けない。値は書かなかった"
+   },
+   {
+    "要素": "使い方の種類：入る合図・場面：スパイク",
+    "検索の語": [
+     "ATR rising breakout confirmation entry signal \"ATR\" expansion stockcharts OR fidelity OR schwab",
+     "ATR spike volatility spike avoid entering trade news bar ATR percent crypto",
+     "short ATR crosses above long ATR volatility expansion \"ATR(5)\" \"ATR(20)\" OR \"ATR(10)\" ratio signal"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://tlc.thinkorswim.com/center/reference/Tech-Indicators/strategies/A-D/ATRHighSMABreakoutsLE",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0036_ATR_Expansion",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://forge.mql5.io/aghost/SmartATR/src/branch/main/STRATEGIES/Gold_NewsFilter.md",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/0cAZfxk4-Crypto-Volume-Volatility-Spike-Detector/",
+      "HTTP": 404,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/indicator/ycjeadf1-atr-momentum/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "確定と期間",
+    "検索の語": [
+     "（既存のページの本文を「data point|at least|history」で探した）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：レンジ",
+    "検索の語": [
+     "（材料の文を今日のページで照らした）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/2QcaKbTR/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：上げ",
+    "検索の語": [
+     "ATR rising breakout confirmation entry signal \"ATR\" expansion stockcharts OR fidelity OR schwab"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "上げ・下げを名指しして ATR の使い方を書いた文は無い。SC-ATRP「moves higher during dramatic price changes in either direction」・LuxAlgo「Expansion can accompany rallies, selloffs, or violent two-way chop.」＝向きを分けない"
+   },
+   {
+    "要素": "使い方の場面：下げ",
+    "検索の語": [
+     "ATR rising breakout confirmation entry signal \"ATR\" expansion stockcharts OR fidelity OR schwab"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "上と同じ。SC-ATR「A bearish support break with increased ATR…」は合図が本物かを確かめる条件に置いた（場面の語は無い）"
+   },
+   {
+    "要素": "使い方の場面：スパイク",
+    "検索の語": [
+     "ATR spike volatility spike avoid entering trade news bar ATR percent crypto"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://forge.mql5.io/aghost/SmartATR/src/branch/main/STRATEGIES/Gold_NewsFilter.md",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方：前提崩れの印",
+    "検索の語": [
+     "ATR rising breakout confirmation entry signal \"ATR\" expansion stockcharts OR fidelity OR schwab",
+     "ATR spike volatility spike avoid entering trade news bar ATR percent crypto"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0036_ATR_Expansion",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "計算の入力・中心線・先行か遅行か・遅れの長さ・効く相場と効かない相場",
+    "検索の語": [
+     "Average True Range \"lagging indicator\" OR \"leading indicator\" volatility",
+     "ATR indicator \"does not work\" OR \"limitation\" weakness trending vs ranging"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://trendspider.com/learning-center/understanding-the-average-true-range-a-comprehensive-guide/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr-and-average-true-range-percent-atrp",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://tlc.thinkorswim.com/center/reference/Tech-Indicators/strategies/A-D/ATRHighSMABreakoutsLE",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "ATR volatility filter \"enter when\" different threshold \"exit when\" hysteresis avoid flip-flop"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://de.tradingview.com/script/TPvNyPwv-Deadband-Hysteresis-Filter-BackQuant",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い",
+      "注記": "ATRを単位に使う価格のデッドバンド（enter 1.0・exit 0.5）の文は在るが、ATR%自身の値に入る水準と出る水準を分けた文ではない"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/volatility-regime-switches.md",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "ATRを単位にした価格のデッドバンドの文はあったが、ATR%の値そのものに入る水準と出る水準を分けた文は見つからなかった"
+   }
+  ]
+ },
+ {
+  "名前": "BB%b",
+  "探した記録": [
+   {
+    "要素": "閾値の値（スキャル・デイトレ）",
+    "検索の語": [
+     "%B indicator range-bound market mean reversion sell when %B above 1 short scalping 5-minute %b 0.95 0.05",
+     "Bollinger %B day trading strategy 15-minute short entry %B crosses below 1 exit 0.5"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://fxreplay.com/indicators/bollinger-bands-b-25fa9",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/yXkWPSlU/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-b",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.investopedia.com/terms/p/percentb.asp",
+      "HTTP": 402,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：レンジ",
+    "検索の語": [
+     "%B indicator range-bound market mean reversion sell when %B above 1 short scalping 5-minute %b 0.95 0.05"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "レンジを名指しした %B の文は無い。algotest・LiteFinance の帯の文（上の帯で売る）を入る合図のレンジの行に置いた"
+   },
+   {
+    "要素": "使い方の場面：上げ",
+    "検索の語": [
+     "\"%B\" Bollinger stop loss exit if %B stays above 1 band walk short invalidated trend continuation"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/walking-the-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：下げ",
+    "検索の語": [
+     "\"%B\" Bollinger stop loss exit if %B stays above 1 band walk short invalidated trend continuation"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/walking-the-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：スパイク",
+    "検索の語": [
+     "%B indicator range-bound market mean reversion sell when %B above 1 short scalping 5-minute %b 0.95 0.05"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://fxreplay.com/indicators/bollinger-bands-b-25fa9",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-b",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.pulse.bot/stock-trading/news/larry-connors-b-strategy-a-simple-mean-reversion-edge-explained-643c3403-0b1c-4b94-a5e5-f387424c1505/",
+      "HTTP": 0,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     }
+    ],
+    "注記": "pulse.bot の記事は検索の要約に「volatility spikes can push %B far beyond the thresholds」と出たが、curl は接続リセット（HTTP の番号なし）、Chromium は 502、WebFetch は 503、web.archive.org はこの環境から開けない＝要約の文だけなので値の欄に書かなかった。スパイクを名指しした %B の使い方の文は、開いたページに無かった"
+   },
+   {
+    "要素": "使い方：出口の水準を作る材料",
+    "検索の語": [
+     "Bollinger %B day trading strategy 15-minute short entry %B crosses below 1 exit 0.5"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/walking-the-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "確定と期間",
+    "検索の語": [
+     "（既存のページの本文を「data point|at least|history」で探した）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "計算の入力・中心線・先行か遅行か・遅れの長さ・効く相場と効かない相場",
+    "検索の語": [
+     "\"%B\" Bollinger Bands \"lagging indicator\" OR \"leading indicator\""
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/percent-b",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-band-percent-b",
+      "HTTP": 404,
+      "読んだ日": "2026-11-05",
+      "当たる文": "開けない",
+      "注記": "web.archive.orgにも控えが無い（archived_snapshots が空）。他ページで同じ要素の文を確かめられた"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "\"%B\" Bollinger enter below 0 exit above 0.5 different level asymmetric band strategy"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.pulse.bot/stock-trading/news/larry-connors-b-strategy-a-simple-mean-reversion-edge-explained-643c3403-0b1c-4b94-a5e5-f387424c1505/",
+      "HTTP": 0,
+      "読んだ日": "2026-11-05",
+      "当たる文": "開けない",
+      "注記": "curlで応答が無く(タイムアウト)、web.archive.orgにも控えが無い"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/designer-gallery/Bollinger_Reversion",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "%Bを下側0.2・上側0.8で入れて反対側で抜ける（平均回帰）文はあったが、同じ側で入る水準と出る水準を分けた文（ヒステリシス）は見つからなかった"
+   }
+  ]
+ },
+ {
+  "名前": "BB幅",
+  "使い方の記録": [
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [
+     "1d"
+    ],
+    "前処理": [
+     "過去6か月の中の位置"
+    ],
+    "使える条件の形": [
+     "level",
+     "within_n"
+    ],
+    "玉の向き": "両方",
+    "合図の形のパラメータ": [
+     {
+      "名前": "何本以内か",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 10,
+         "文の時間足": "1d",
+         "逐語": "Rule Long Short Setup Bandwidth at a 126-day low Bandwidth at a 126-day low Trigger First close above the upper band within 10 sessions First close below the lower band within 10 sessions Stop Middle band on the entry day Middle band on the entry day Target Entry plus 2 times the risk Entry minus 2 times the risk Invalid No close outside either band within 10 sessions No close outside either band within 10 sessions Hypothetical long.",
+         "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "規則の表の行。日足"
+        }
+       ]
+      }
+     }
+    ],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Rule Long Short Setup Bandwidth at a 126-day low Bandwidth at a 126-day low Trigger First close above the upper band within 10 sessions First close below the lower band within 10 sessions Stop Middle band on the entry day Middle band on the entry day Target Entry plus 2 times the risk Entry minus 2 times the risk Invalid No close outside either band within 10 sessions No close outside either band within 10 sessions Hypothetical long.",
+     "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "規則の表の行。日足（「Use a daily chart.」）。幅が126日の最低のあと10本の中で下の帯の外の終値"
+    },
+    "注記": "見本と前の教科書で違う（前の教科書に、同じ文で中身の違う行が在る。両方を候補に残した）。逐語（Rule Long Short Setup…）が Long と Short の両方の列を言うので、玉の向きを両方にした"
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "The bands narrow as price flattens or moves within a relatively narrow range.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "同じページ「Relatively narrow BandWidth (a.k.a. the Squeeze) can foreshadow a significant advance or decline.」。TradingView「With this in mind, the major trading signal generated by Bollinger BandWidth is known as The Squeeze .」（https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/）"
+    }
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [
+     "1d"
+    ],
+    "前処理": [
+     "過去6か月の中の位置"
+    ],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "A squeeze day is a day when bandwidth is at or below the minimum bandwidth of the prior 125 trading days.",
+     "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "同じページ「A squeeze, in his description, is bandwidth at a six-month low.」「Bollinger Squeeze Strategy Rules Use a daily chart.」。LuxAlgo も「Bollinger's guideline was the lowest reading in six months (roughly 125 daily bars); percentile variants flag readings near the bottom of their historical range, and an alternative test declares the squeeze on while both bands sit inside Keltner Channels.」（https://www.luxalgo.com/library/concept/bollinger-squeeze/）。閾値は「過去125日の最小以下」で、数の閾値ではない"
+    },
+    "注記": "125（過去の本数の窓）は、窓の長さであって、数の閾値ではない"
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": null,
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 0.1,
+         "文の時間足": "5m",
+         "逐語": "Default Values : BollingerPeriod = 20 BollingerDeviation = 2m SqueezeThreshold = 0.1m CandleType = TimeSpan.FromMinutes(5) Filters : Category: Trend Direction: Both Indicators: Bollinger Stops: No Complexity: Basic Timeframe: Intraday (5m) Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+         "URL": "https://doc.stocksharp.com/en/api-examples/0021_Bollinger_Squeeze",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "SqueezeThreshold の既定。100倍しない比。スキャルの名指しは無い"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Bollinger Squeeze waits for narrow band width indicating low volatility.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0021_Bollinger_Squeeze",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "StockSharp の戦略の例。同じページのコード「var narrow = _prevBandWidth <= SqueezeThreshold」。bestscalping（暗号資産のスキャル）は「Identify the squeeze as it forms: the band width at or near its lowest of the session, several candles of narrow closes, volume falling.」と書く（https://bestscalping.pages.dev/docs/indicators/bollinger-bands・数は無い）"
+    }
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "A new decline starts with a Squeeze and subsequent break below the lower band.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "幅が狭い（スクイーズ）のあと値段が下の帯を割る。TradingView「In a Bearish BBW Squeeze: BBW drops.」「Price falls below the Lower Band which starts a new downward trend.」（https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/）"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "A new advance starts with a Squeeze and subsequent break above the upper band.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [
+     "1d"
+    ],
+    "前処理": [
+     "過去6か月の中の位置"
+    ],
+    "使える条件の形": [
+     "level",
+     "within_n"
+    ],
+    "玉の向き": "両方",
+    "合図の形のパラメータ": [
+     {
+      "名前": "何本以内か",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 10,
+         "注記": "帯の幅が126日の最低のあと、10本の中に帯の外の終値が出るか。126は窓の長さで閾値ではない"
+        }
+       ]
+      }
+     }
+    ],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Rule Long Short Setup Bandwidth at a 126-day low Bandwidth at a 126-day low Trigger First close above the upper band within 10 sessions First close below the lower band within 10 sessions Stop Middle band on the entry day Middle band on the entry day Target Entry plus 2 times the risk Entry minus 2 times the risk Invalid No close outside either band within 10 sessions No close outside either band within 10 sessions Hypothetical long.",
+     "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "規則の表の行。日足（「Use a daily chart.」）。幅が126日の最低のあと10本の中で下の帯の外の終値"
+    },
+    "注記": "見本と前の教科書で違う（見本の同じ文の行と、前の教科書のこの行の中身が違う。両方を候補に残した）。逐語（Rule Long Short Setup…）が Long と Short の両方の列を言うので、玉の向きを両方にした"
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [
+     "5m",
+     "15m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "玉の向き": "SHORT",
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Short entry: price closes below the lower band.",
+     "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "algotest の「Strategy 1: Bollinger Squeeze Breakout」の売りの条件。同じ節「The Bollinger Squeeze happens when the upper and lower bands come very close together.」「Best for: Nifty and BankNifty on 5-minute and 15-minute charts.」。幅の数は無い"
+    }
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "cross"
+    ],
+    "玉の向き": "LONG",
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "%",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 10
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "To test how well Bollinger Bandwidth identifies volatility shifts, we ran a backtest on Best Buy Co. (BBY) from 2004 to 2025 using a simple rule: Buy: When Bollinger Bandwidth crosses above 10, signaling a volatility expansion.",
+     "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-bandwidth",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "値 10（1つの銘柄の検証）。スキャル・デイトレの名指しは無いので閾値の範囲の文に置いた"
+    },
+    "注記": "2004・2025は検証した年（期間）で、閾値ではない"
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "slope"
+    ],
+    "パラメータの代表の値の候補": {
+     "n": {
+      "スキャル": [
+       {
+        "候補の値": 20,
+        "文の時間足": "5m",
+        "逐語": "Default Values: BollingerPeriod = 20 BollingerDeviation = 2.0m AtrMultiplier = 2.0m CandleType = TimeSpan.FromMinutes(5) Filters: Category: Breakout Direction: Both Indicators: Bollinger Bands, ATR Stops: Yes Complexity: Basic Timeframe: Intraday Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+        "URL": "https://doc.stocksharp.com/en/api-examples/0038_BB_Width",
+        "確かめの強さ": "ページの文で確かめた"
+       }
+      ]
+     },
+     "s": {
+      "スキャル": [
+       {
+        "候補の値": 2.0,
+        "文の時間足": "5m",
+        "逐語": "Default Values: BollingerPeriod = 20 BollingerDeviation = 2.0m AtrMultiplier = 2.0m CandleType = TimeSpan.FromMinutes(5) Filters: Category: Breakout Direction: Both Indicators: Bollinger Bands, ATR Stops: Yes Complexity: Basic Timeframe: Intraday Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+        "URL": "https://doc.stocksharp.com/en/api-examples/0038_BB_Width",
+        "確かめの強さ": "ページの文で確かめた"
+       }
+      ]
+     }
+    },
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Details Entry Criteria: Band width expanding and price relative to middle band.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0038_BB_Width",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "StockSharp（Bollinger Band Width Breakout）。同じページ「A widening channel with price above the mid-band triggers longs, while a widening channel below it triggers shorts.」。既定の足は5分足"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [
+     "1d"
+    ],
+    "前処理": [
+     "過去6か月の中の位置"
+    ],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "A close outside the bands when bandwidth is not at a six-month low is not this strategy.",
+     "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "幅が6か月の最低でないときの帯の外の終値では入らない。kb_s3 の「価格が帯の端に触れる」の弱点（帯が拡大していないこと）を見る条件にあたる"
+    }
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Traders who anticipate the direction enter before the break and are chopped inside the compression; the edge is in the confirmation, and the squeeze only tells you that a confirmation is worth waiting for.",
+     "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "暗号資産のスキャルのサイト。幅が狭い（締まり）の中では入らない。同じページの落とし穴「Entering inside the squeeze.」"
+    }
+   },
+   {
+    "使い方の種類": "合図が本物かを確かめる条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Bollinger Bands Width Indicator The Bollinger Bands Width indicator measures the percentage difference between the upper and lower bands: Add the Bollinger Bands Width indicator to your chart Look for periods of low width, indicating potential squeeze setups Use width expansion as a confirmation of breakout strength 3.",
+     "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "スキャル（1分足・5分足）の記事の文。LuxAlgo「With confirmation filters against head fakes: Bollinger warned that the first move out of a squeeze can be a false breakout that reverses through the opposite side, so many traders require a confirming close, a successful retest, or expanding volume before entering.」（https://www.luxalgo.com/library/concept/bollinger-squeeze/）。Kingfisher「When the bands subsequently expand (confirmed by band width increasing), the coiled energy releases as a directional move.」（https://thekingfisher.io/glossary/bollinger_bands）"
+    },
+    "注記": "文末の「3.」は箇条書きの番号。閾値ではない",
+    "確認に使う相手": [
+     {
+      "相手": "OBV（出来高）",
+      "役目": "締まりのあとの動きが本物かを確かめる",
+      "逐語": "About confirmation: Consider using volume-based indicators—like the On Balance Volume",
+      "URL": "https://articles.stockcharts.com/article/stockcharts-insider-how-to-spot-a-stock-thats-wound-tight-and-ready-to-break-part-1",
+      "読んだ日": "2026-11-05",
+      "HTTP": 200,
+      "確かめの強さ": "ページの文で確かめた"
+     }
+    ]
+   },
+   {
+    "使い方の種類": "出口の水準を作る材料",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "倍率",
+      "単位": null,
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 50,
+         "注記": "帯の幅（値段の幅）に対する割合（%）。ATRの倍数ではないので単位はnullにした"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Stop: 50% of the current band width from your entry price.",
+     "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "algotest の「Strategy 7: 5-Minute Intraday Breakout」。損切りの幅＝帯の幅（値段の幅）の 50%。0.5 は ATR の倍数ではなく帯の幅の割合で、スキャル・デイトレの名指しは無い"
+    }
+   },
+   {
+    "使い方の種類": "出口の反転",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "slope"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Exit Criteria: Band width contracts or stop.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0038_BB_Width",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "同じページ「Exits occur when the band width contracts or a volatility stop is reached.」。既定の足は5分足"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "出口の反転",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "cross"
+    ],
+    "玉の向き": "SHORT",
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "%",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 10
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Sell: When it crosses back below 10, indicating contraction.",
+     "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-bandwidth",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "値 10（1つの銘柄の検証）"
+    },
+    "注記": "文は Sell（売り）だけを言う。LONG から SHORT に直した"
+   },
+   {
+    "使い方の種類": "前提崩れの印",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "When the bands are relatively far apart, that is often a sign that the current trend may be ending.",
+     "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/bollinger-band-width",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "Fidelity。SentimenTrader「Trend exhaustion: Extremely wide Bandwidth can signal a trend is overextended and may be slowing.」（https://sentimentrader.com/education/technical-indicators/bollinger-bandwidth）。数は無い"
+    }
+   },
+   {
+    "使い方の種類": "前提崩れの印",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [
+     "1d"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "within_n"
+    ],
+    "合図の形のパラメータ": [
+     {
+      "名前": "何本以内か",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 10,
+         "注記": "締まりのあと10本の中に帯の外の終値が無ければ、その締まりは無効。126は窓の長さで閾値ではない"
+        }
+       ]
+      }
+     }
+    ],
+    "閾値": [],
+    "出どころ": {
+     "逐語": "Rule Long Short Setup Bandwidth at a 126-day low Bandwidth at a 126-day low Trigger First close above the upper band within 10 sessions First close below the lower band within 10 sessions Stop Middle band on the entry day Middle band on the entry day Target Entry plus 2 times the risk Entry minus 2 times the risk Invalid No close outside either band within 10 sessions No close outside either band within 10 sessions Hypothetical long.",
+     "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "表の「Invalid No close outside either band within 10 sessions」＝締まりのあと10本の中に帯の外の終値が無ければ、その締まりは無効"
+    },
+    "玉の向き": "両方",
+    "注記": "逐語（Rule Long Short Setup…）が Long と Short の両方の列を言うので、玉の向きを両方にした"
+   }
+  ],
+  "探した記録": [
+   {
+    "要素": "閾値の値（スキャル・デイトレ）・閾値の範囲の文",
+    "検索の語": [
+     "Bollinger BandWidth squeeze \"six-month low\" OR \"6-month low\" lowest level Bollinger definition",
+     "Bollinger BandWidth threshold intraday 5-minute crypto squeeze \"bandwidth\" below 1% OR \"0.5%\" OR \"2%\" scalping"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/bollinger-squeeze/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0021_Bollinger_Squeeze",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://thekingfisher.io/glossary/bollinger_bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://pillarlab-web.pages.dev/pillars/bollinger-band-volatility-squeeze",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "パラメータの範囲の文",
+    "検索の語": [
+     "（材料の文を今日のページで照らした）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+      "HTTP": 502,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方：出口の反転・前提崩れの印",
+    "検索の語": [
+     "Bollinger BandWidth \"expansion\" reversal end of trend exit when BandWidth turns down from high \"The Expansion\""
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/bollinger-band-width",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/0038_BB_Width",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://barchartsolutions.atlassian.net/wiki/x/7QA7QQ",
+      "HTTP": 202,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.dailyfx.com/espanol/aprender-trading/bandas-de-bollinger/ancho-de-banda-de-bollinger.html",
+      "HTTP": 403,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない"
+     }
+    ],
+    "注記": "dailyfx は curl 403・Chromium 502、web.archive.org はこの環境から開けない。barchart は HTTP 202 で本文が空"
+   },
+   {
+    "要素": "使い方の場面：レンジ",
+    "検索の語": [
+     "Bollinger BandWidth squeeze \"six-month low\" OR \"6-month low\" lowest level Bollinger definition"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/trading-strategies/bollinger-squeeze-strategy",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：上げ",
+    "検索の語": [
+     "Bollinger BandWidth \"expansion\" reversal end of trend exit when BandWidth turns down from high \"The Expansion\""
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/bollinger-band-width",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "上げ・下げは、締まりのあとの抜けの向き（入る合図の行）としてだけ在り、BandWidth の値で上げ・下げを判定する文は無い（「The direction depends on the subsequent band break.」）"
+   },
+   {
+    "要素": "使い方の場面：下げ",
+    "検索の語": [
+     "Bollinger BandWidth \"expansion\" reversal end of trend exit when BandWidth turns down from high \"The Expansion\""
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000501972-bollinger-bandwidth-bbw/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/bollinger-band-width",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：スパイク",
+    "検索の語": [
+     "Bollinger BandWidth threshold intraday 5-minute crypto squeeze \"bandwidth\" below 1% OR \"0.5%\" OR \"2%\" scalping"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://thekingfisher.io/glossary/bollinger_bands",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.luxalgo.com/library/concept/bollinger-squeeze/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "SentimenTrader「exercise caution when volatility spikes」は数も使い方の形も無い文で、行にしなかった"
+   },
+   {
+    "要素": "確定と期間",
+    "検索の語": [
+     "（既存のページの本文を「data point|at least|history」で探した）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "計算の入力・中心線・先行か遅行か・遅れの長さ・効く相場と効かない相場",
+    "検索の語": [
+     "Bollinger BandWidth \"lagging\" OR \"leading\" squeeze centerline"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る（効く相場と効かない相場のみ。中心線・先行か遅行か・遅れの長さは見つからなかった）"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://articles.stockcharts.com/article/stockcharts-insider-how-to-spot-a-stock-thats-wound-tight-and-ready-to-break-part-1",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "Bollinger BandWidth squeeze \"enter\" \"exit\" different threshold hysteresis deadband"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.luxalgo.com/library/concept/bollinger-squeeze.md",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://in.tradingview.com/script/FWvj6Be3-Squeeze-Ping-BB-Width-Percentile-quiet-expansion-v1-5",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い",
+      "注記": "締まりの判定は1つのしきい値（既定0.80）だけで、入る水準と出る水準を分けていない"
+     }
+    ],
+    "注記": "締まりの判定は1本のしきい値だけの文が多く、入る水準と出る水準を分けた文は見つからなかった"
+   }
+  ]
+ },
+ {
+  "名前": "DI差",
+  "探した記録": [
+   {
+    "要素": "パラメータの軸 n のスキャル・デイトレ",
+    "検索の語": [
+     "+DI -DI crossover scalping 5-minute chart DMI period settings exit when DI cross back"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://usethinkscript.com/threads/scalping-options-with-the-dmi-study.4037/",
+      "HTTP": 403,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い",
+      "注記": "curl は 403、Chromium は 200（本文を読めた）。DI の期間の数を勧める文は無い"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/KGgiwVyO-Directional-Indicator-Crossovers-JopAlgo/",
+      "HTTP": 404,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない",
+      "注記": "curl・Chromium とも 404。WebFetch も 404。web.archive.org は WebFetch で開けない（「Claude Code is unable to fetch from web.archive.org」と返る）。curl と Chromium では、この環境から web.archive.org を開けない（親が確かめた）"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/A2XlaUGt-DMI-Spread-Dashboard-5m-30m-1h/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "合図の形のパラメータの開き",
+    "検索の語": [
+     "DMI crossover filter minimum spread between +DI and -DI points after cross avoid false signals",
+     "DMI \"+DI\" \"-DI\" difference \"greater than\" OR \"at least\" points filter rule spread between DI lines minimum gap"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://lumleytrading.pages.dev/directional-movement-index",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い",
+      "注記": "開きの大小の文は在るが、数の決まりは無い"
+     },
+     {
+      "URL": "https://www.trade-ideas.com/help/filter/PDIMDI/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る",
+      "注記": " curl と Chromium の両方で本文に在った（2026-11-05）"
+     }
+    ]
+   },
+   {
+    "要素": "閾値の値（DI差 の大きさ）",
+    "検索の語": [
+     "\"+DI\" \"-DI\" spread difference \"greater than\" trend strength DMI difference threshold points",
+     "\"Delta\" \"+DI\" \"-DI\" \"±25 seems to be a good threshold\""
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/hX32vzhx-Average-Directional-Index-%CE%94DI-Delta/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/script/Ed6cgkC0/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い",
+      "注記": "curl は 200、Chromium は 502"
+     },
+     {
+      "URL": "https://www.babypips.com/forexpedia/directional-movement-index",
+      "HTTP": 403,
+      "読んだ日": "2026-11-04",
+      "当たる文": "開けない",
+      "注記": "curl・Chromium とも 403。WebFetch も 403。web.archive.org は WebFetch で開けない（「Claude Code is unable to fetch from web.archive.org」と返る）。curl と Chromium では、この環境から web.archive.org を開けない（親が確かめた）"
+     },
+     {
+      "URL": "https://doc.stocksharp.com/en/api-examples/1072_Monthly_Performance_Table",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "StockSharp の LongDifference（|+DI − ADX|）は DI差 ではないので写さない（270番の注のとおり）"
+   },
+   {
+    "要素": "使い方：出口の反転・前提崩れの印",
+    "検索の語": [
+     "+DI -DI crossover scalping 5-minute chart DMI period settings exit when DI cross back"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "使い方の場面：レンジ・スパイク",
+    "検索の語": [
+     "DMI +DI -DI crossover whipsaw news spike volatile single bar false signal sideways market"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://capital.com/en-gb/learn/technical-analysis/directional-indicators",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ],
+    "注記": "レンジはだましが多いという弱点の文だけ（レンジで使う文ではない）。スパイクの文は見つからなかった"
+   },
+   {
+    "要素": "値の単位と値域・確定と期間・使い方の場面：レンジ",
+    "検索の語": [
+     "\"+DI\" minus \"-DI\" difference oscillator range -100 to 100 unstable period bars required"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://www.tradingview.com/script/DML5Zz7l/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://ta-lib.org/functions/minus_di.html",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "無い"
+     }
+    ]
+   },
+   {
+    "要素": "材料の逐語の照らし（前の調べ・264番・270番）",
+    "検索の語": [
+     "（検索しない。URL を開いた）"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://ta-lib.org/functions/plus_di.html",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://ta-lib.org/functions/minus_di.html",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.brokercheck.co.za/?p=17435",
+      "HTTP": 200,
+      "読んだ日": "2026-11-04",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "計算の入力・中心線・先行か遅行か・遅れの長さ・効く相場と効かない相場",
+    "検索の語": [
+     "\"+DI\" \"-DI\" DMI \"lagging indicator\" OR \"leading indicator\" directional indicator",
+     "DMI directional indicator \"does not work well\" OR \"whipsaw\" sideways market"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://capital.com/en-gb/learn/technical-analysis/directional-movement-index",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://capital.com/en-gb/learn/technical-analysis/directional-movement-index",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "DMI \"+DI\" \"-DI\" cross \"enter\" \"exit\" different spread threshold hysteresis avoid whipsaw"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://stockcharts.com/articles/mailbag/2013/04/which-indicators-separate-positive-and-negative-price-movement.html",
+      "HTTP": 404,
+      "読んだ日": "2026-11-05",
+      "当たる文": "開けない",
+      "注記": "curlもChromiumも404。web.archive.orgの控えもcurl・Chromiumとも403で開けない"
+     },
+     {
+      "URL": "https://www.linnsoft.com/techind/directional-indicator-diplus-diminus",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "検索の要約には『+DIのクロスは30を超えたときだけ数え、戻りは-DIが30を超えることを求める』という文の存在が出たが、ページ自体を開けず（404・web.archive.orgも403）、本文で確かめられなかった。開けた他のページには同じ文が無く、見つからなかったと判定した"
+   }
+  ]
+ },
+ {
+  "名前": "RSI",
+  "使い方の記録": [
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": "レンジ",
+     "型": null
+    },
+    "向き": "下へ抜ける",
+    "時間足": [
+     "5m"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "level",
+     "within_n"
+    ],
+    "玉の向き": "SHORT",
+    "パラメータの代表の値の候補": {
+     "n": {
+      "スキャル": [
+       {
+        "候補の値": 7,
+        "逐語": "In ranging markets: Tighten RSI to 7 periods, use 75/25 levels",
+        "URL": "https://wundertrading.com/journal/en/rsi-vs-stochastic-rsi-crypto-trading",
+        "確かめの強さ": "ページの文で確かめた"
+       }
+      ]
+     }
+    },
+    "合図の形のパラメータ": [
+     {
+      "名前": "何本以内か",
+      "代表の値の候補": {
+       "既定": []
+      },
+      "注記": "根拠の文は 70 より上の後に 70 を下へ抜けると書くが、本数は書いていない。本数の文は見つからなかった"
+     }
+    ],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 75,
+         "文の時間足": "5m",
+         "逐語": "Using 75 for overbought and 25 for oversold conditions filters out market noise while maintaining sensitivity to genuine momentum changes.",
+         "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 80,
+         "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+         "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 70,
+         "文の時間足": "5m",
+         "逐語": "A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.",
+         "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+         "確かめの強さ": "ページの文で確かめた"
+        }
+       ],
+       "デイトレ": [
+        {
+         "候補の値": 70,
+         "文の時間足": "15m",
+         "逐語": "Use a 14‑period RSI with 70/30 overbought/oversold levels to balance sensitivity and reliability on 15‑minute charts, catching momentum shifts early without excessive false signals.",
+         "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-15-minute-chart/",
+         "確かめの強さ": "ページの文で確かめた"
+        },
+        {
+         "候補の値": 75,
+         "逐語": "Scalpers should use RSI(5-7) with 80/20 levels, while day traders benefit from RSI(9-10) with 75/25 levels.",
+         "URL": "https://eplanetbrokers.com/training/best-rsi-settings-for-5-minute-charts/",
+         "確かめの強さ": "ページの文で確かめた"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "A short candidate is RSI crossing back below 70 after a print above 70. The first poke of 30 on a 5 minute chart is noise.",
+     "URL": "https://therighttrader.com/learn/indicator-strategies/best-rsi-settings",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "使う出力": "RSI",
+    "確認に使う相手": [
+     {
+      "相手": "ADX",
+      "役目": "強いトレンドかを確かめる",
+      "逐語": "The entry signal is generated when the RSI reaches overbought or oversold levels, and the ADX confirms the strength of the trend.",
+      "URL": "https://vvip-trade.blogspot.com/2025/12/adx-rsi-confirm-your-entries-for-better.html",
+      "注記": "RSIのダイバージェンスそのものの文ではなく、RSIの行き過ぎの合図をADXで確かめる文",
+      "読んだ日": "2026-11-05",
+      "HTTP": 200,
+      "確かめの強さ": "ページの文で確かめた"
+     }
+    ],
+    "注記": "確認に使う相手（ADX）をダイバージェンスの行から移した。文『The entry signal is generated when the RSI reaches overbought or oversold levels, and the ADX confirms the strength of the trend.』は、この行き過ぎ（RSIが70を上から下へ抜ける）の合図についての文"
+   },
+   {
+    "使い方の種類": "出口の反転",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "玉の向き": "SHORT",
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 50,
+         "逐語": "Enter a short position if the RSI crosses the upper threshold (standard value of 70) downwards; exit the position when the RSI becomes smaller than 50.",
+         "URL": "https://www.packtpub.com/en-us/product/python-for-finance-cookbook-2-9781789618518/chapter/technical-analysis-in-python/calculating-the-relative-strength-index-and-testing-a-long-short-strategy",
+         "確かめの強さ": "未確認",
+         "注記": "ページは 403。検索の要約の文。スキャルの名指しは無い"
+        },
+        {
+         "候補の値": 30,
+         "逐語": "take profit when RSI reaches the opposite extreme zone: above 70 for long positions, below 30 for short positions",
+         "URL": "https://journalplus.co/strategies/rsi-trading-strategy",
+         "確かめの強さ": "未確認",
+         "注記": "ページは転送の繰り返しで開けない。検索の要約の文"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Enter a short position if the RSI crosses the upper threshold (standard value of 70) downwards; exit the position when the RSI becomes smaller than 50.",
+     "URL": "https://www.packtpub.com/en-us/product/python-for-finance-cookbook-2-9781789618518/chapter/technical-analysis-in-python/calculating-the-relative-strength-index-and-testing-a-long-short-strategy",
+     "確かめの強さ": "未確認"
+    }
+   },
+   {
+    "使い方の種類": "前提崩れの印",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "出どころ": {
+     "確かめの強さ": "見つからなかった",
+     "注記": "RSI の値で玉を切る文は、確かめられた行に無い"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "合図が本物かを確かめる条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "下側",
+    "時間足": [
+     "1h"
+    ],
+    "前処理": [],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "スキャル": [
+        {
+         "候補の値": 45,
+         "文の時間足": "1h",
+         "逐語": "H1 RSI < 45 (below midline, not overbought)",
+         "URL": "https://www.mql5.com/en/blogs/post/767332",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "買いの3時間足の条件の1つ（M15<30・M30<35・H1<45）"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "I weight H1 at 50% because the higher timeframe trend is the most important filter",
+     "URL": "https://www.mql5.com/en/blogs/post/767332",
+     "確かめの強さ": "ページの文で確かめた"
+    },
+    "時間足の組": [
+     [
+      "15m",
+      "30m",
+      "1h"
+     ]
+    ],
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "入ってはいけない場面を除く条件",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "band_exclude"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": "0〜100",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 35,
+         "逐語": "No Trade Zone: RSI Levels where no trades will be signaled. Adjust to prevent over-buying/selling in narrow markets. Default: 35-65:",
+         "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "帯の下の端"
+        },
+        {
+         "候補の値": 65,
+         "逐語": "No Trade Zone: RSI Levels where no trades will be signaled. Adjust to prevent over-buying/selling in narrow markets. Default: 35-65:",
+         "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "帯の上の端"
+        },
+        {
+         "候補の値": 40,
+         "逐語": "No Trade Zone (40-60)",
+         "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "帯の下の端。同じページの図の説明"
+        },
+        {
+         "候補の値": 60,
+         "逐語": "No Trade Zone (40-60)",
+         "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "帯の上の端。同じページの図の説明"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "No Trade Zone: RSI Levels where no trades will be signaled. Adjust to prevent over-buying/selling in narrow markets. Default: 35-65:",
+     "URL": "https://ru.tradingview.com/script/SmsIDcDc-Grid-Bot-RSI/",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "TradingView の公開スクリプト Grid Bot RSI の設定の説明。帯の中では建てない。売買の方向の名指しは無いので、玉の向きの欄を書かない"
+    }
+   },
+   {
+    "使い方の種類": "入る合図",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [
+     "slope_avg"
+    ],
+    "パラメータの代表の値の候補": {
+     "n": {
+      "既定": [
+       {
+        "候補の値": 14,
+        "逐語": "Param(nameof(RsiPeriod), 14)",
+        "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
+        "確かめの強さ": "ページの文で確かめた",
+        "注記": "コードの既定"
+       }
+      ]
+     }
+    },
+    "合図の形のパラメータ": [
+     {
+      "名前": "傾きの本数",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 1,
+         "逐語": "Long signal: RSI slope exceeds average + k*stddev (slope is positive and we don't have a long position)",
+         "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "傾き＝確定した足ごとの RSI の差（1本前との差）"
+        }
+       ]
+      }
+     },
+     {
+      "名前": "平均の本数",
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 20,
+         "逐語": "Param(nameof(LookbackPeriod), 20)",
+         "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "傾きの平均と標準偏差を取る本数（コードの既定）"
+        }
+       ]
+      }
+     }
+    ],
+    "閾値": [
+     {
+      "形": "前提つき",
+      "単位": null,
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 2,
+         "逐語": "Param(nameof(DeviationMultiplier), 2m)",
+         "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "閾値＝傾きの平均 ＋ 2 × 標準偏差。平均と標準偏差は走らせて決まる値なので、形は前提つき。単位は選べる語に無い（傾きの標準偏差の倍数）"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "Entries occur when slope exceeds its typical level by a multiple of standard deviation, taking trades in the direction of acceleration with a protective stop.",
+     "URL": "https://doc.stocksharp.com/en/api-examples/0267_RSI_Slope_Breakout",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "StockSharp の戦略の例（RSI Slope Breakout）。買いは傾きがプラスで平均を上回るとき、売りはその逆。場面とスキャル・デイトレの名指しは無い。engine_tuner の slope_avg は傾きの平均そのものを閾値と比べる形で、この文の「平均＋k×標準偏差」とは作りが違う（この文は傾きをその平均と比べる実例として置いた）"
+    },
+    "注記": "文に売買の方向の語（long/short/buy/sell/bullish/bearish）が無いので、玉の向きの欄を消した"
+   },
+   {
+    "使い方の種類": "場面の判定",
+    "場面と型": {
+     "場面": "上げ",
+     "型": null
+    },
+    "向き": "上側",
+    "時間足": [],
+    "前処理": [
+     "決まった数との差"
+    ],
+    "使える条件の形": [
+     "level"
+    ],
+    "合図の形のパラメータ": [],
+    "閾値": [
+     {
+      "形": "値",
+      "単位": null,
+      "代表の値の候補": {
+       "既定": [
+        {
+         "候補の値": 0,
+         "逐語": "Above 0 → bullish pressure",
+         "URL": "https://it.tradingview.com/script/gT4cOao0-MTF-RSI-Centered-at-Zero",
+         "確かめの強さ": "ページの文で確かめた",
+         "注記": "決まった数＝50（RSI − 50）。0 より上＝RSI が 50 より上と同じ。単位は差なので選べる語に無い"
+        }
+       ]
+      }
+     }
+    ],
+    "出どころ": {
+     "逐語": "transforms both the current timeframe RSI and the 4H RSI by centering them at zero (RSI − 50), giving a clean, intuitive regime view.",
+     "URL": "https://it.tradingview.com/script/gT4cOao0-MTF-RSI-Centered-at-Zero",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "TradingView の公開スクリプト（MTF RSI — Centered at Zero）。前処理「決まった数との差」の実例。同じページ「Above 0 → bullish pressure」「Below 0 → bearish pressure」。足は 4H と現在の足で、文の時間足は書かない"
+    }
+   },
+   {
+    "使い方の種類": "ダイバージェンス",
+    "場面と型": {
+     "場面": null,
+     "型": null
+    },
+    "向き": null,
+    "時間足": [],
+    "前処理": [],
+    "使える条件の形": [],
+    "合図の形のパラメータ": [],
+    "閾値": [],
+    "入る線と出る線": null,
+    "出どころ": {
+     "逐語": "A bullish divergence occurs when the underlying security makes a lower low, and RSI forms a higher low.",
+     "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi",
+     "確かめの強さ": "ページの文で確かめた",
+     "注記": "Bullish and Bearish Divergences in RSI の節。同じ節「A strong uptrend can show numerous bearish divergences before a top materializes.」＝強いトレンドでは弱点。ダイバージェンスの条件の書き方は laws.json の条件の書き方にまだ無い（後の工事）"
+    },
+    "玉の向き": "LONG",
+    "注記": "逐語の bullish divergence（上げのダイバージェンス）に合わせ、玉の向きを LONG にした。確認に使う相手（ADX）は、ダイバージェンスの文ではなく行き過ぎの合図の文だったため、行き過ぎの合図の行（使い方0）へ移した",
+    "確認に使う相手": []
+   }
+  ]
+ },
+ {
+  "名前": "基準線",
+  "探した記録": [
+   {
+    "要素": "先行か遅行か・遅れの長さ",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "効く相場と効かない相場",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://en.wikipedia.org/wiki/Ichimoku_Kink%C5%8D_Hy%C5%8D",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/ichimoku-cloud",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "Ichimoku Kijun Tenkan cross \"enter\" \"exit\" different threshold hysteresis OR deadband filter"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://doc.stocksharp.com/en/designer-gallery/Ichimoku_Tenkan_Kijun_Cross",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://in.tradingview.com/script/xx3enmiW-Cloud-Pro-Ichimoku-Confluence/",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い",
+      "注記": "買い・売りの入り口と出口を別の階層（雲との位置）で分けるスクリプトだが、基準線そのものの入る水準と出る水準を分けた幅の文ではない"
+     }
+    ],
+    "注記": "買いの冷却時間（Kijun期間の半分）や、雲との位置で入口・出口を分ける文はあったが、基準線そのものの値に入る水準と出る水準を分けた幅の文は見つからなかった"
+   }
+  ]
+ },
+ {
+  "名前": "包み足",
+  "探した記録": [
+   {
+    "要素": "計算の入力・中心線・先行か遅行か・遅れの長さ・効く相場と効かない相場",
+    "検索の語": [
+     "engulfing pattern candlestick reliability \"works best\" OR \"more reliable\" trend",
+     "engulfing pattern calculation input open close"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://ta-lib.org/functions/cdlengulfing.html",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://thepatternsite.com/BearEngulfing.html",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     },
+     {
+      "URL": "https://www.investopedia.com/terms/e/engulfingpattern.asp",
+      "HTTP": 402,
+      "読んだ日": "2026-11-05",
+      "当たる文": "開けない",
+      "注記": "web.archive.orgにも控えが無い（archived_snapshots が空）。他ページで同じ要素の文を確かめられた"
+     }
+    ]
+   },
+   {
+    "要素": "確認に使う相手",
+    "検索の語": [],
+    "開いたページ": [
+     {
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/chart-analysis/candlestick-charts/candlestick-bearish-reversal-patterns",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "在る"
+     }
+    ]
+   },
+   {
+    "要素": "入る線と出る線",
+    "検索の語": [
+     "engulfing candlestick pattern entry exit different confirmation level hysteresis OR \"wider stop\" asymmetric"
+    ],
+    "開いたページ": [
+     {
+      "URL": "https://capital.com/en-au/learn/technical-analysis/engulfing-pattern",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     },
+     {
+      "URL": "https://ftp.secondnaturejournal.com/Download_PDFS/mL0776/600317/Candlestick%20Entry%20And%20Exit%20Signals.pdf",
+      "HTTP": 200,
+      "読んだ日": "2026-11-05",
+      "当たる文": "無い"
+     }
+    ],
+    "注記": "包み足は数の閾値を持たない指標（形の在る無し）なので、入る水準と出る水準を分けた幅という文は見つからなかった"
+   }
+  ]
+ }
+]
