@@ -4,7 +4,7 @@
 
 パスは全部、リポジトリ（cat-bitget）の一番上からの相対パスです。`SDK` は `v3-bitget-api-sdk/bitget-python-sdk-api` の略です。
 
-<!-- TEXTBOOK_REQ_AUTO_START hash=237437d419bb -->
+<!-- TEXTBOOK_REQ_AUTO_START hash=69f6be3abf7e -->
 
 ## 一 件名・依頼者・依頼先・依頼日
 
@@ -73,7 +73,9 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 
 相手は、ta（Python の指標ライブラリ）の指標と、相場の法則が名指しする指標と、「包み足」の和集合で、137 種です。順番は、先に通す9種（ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot）を先頭にし、残りは名前の文字の並び（Python の sorted の順）です。先に通す9種は全部 相手に在ります。
 
-**作る順（先に通す9種を先頭に、全部）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot・AO%・AROOND・AROONOSC・AROONU・CCI・CHOP・CMF・DPO%・DPO教科書%・Donchian幅・EFI比・EMA傾き・EOM比・ER・HT_DCPHASE・HWC位置・HWC幅%・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・MACDシグナル線%・MACDヒスト%・MACD線%・MAD比・MASSI・MFI・MMI・NVI傾き・OBV傾き・POC・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・ROC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・SQZ_ON・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・THERMO%・THERMO_EMA%・THERMO原作%・TR%・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UI・UO・VAH・VAL・VHF・VTXM・VTXP・WMA傾き%・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs EMA・close vs KAMA%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs SMA・close vs VWAP・close vs VWAP典型・close vs WMA%・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol・realized_vol_rv・stdev%・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・転換線・高値切り上げ幅%
+優先度の順＝①先に通す9種（9）②法則の機械が読む判定が名指しする指標（11）③相場の法則が名指しする指標 sources.law（65）④残り（ta だけの指標）。各段の中は、法則の並びと sources.law の並びのとおり
+
+**作る順（優先度の順。全部）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot・CHOP・ER・VHF・MACDヒスト%・EMA傾き・MMI・SQZ_ON・Donchian幅・realized_vol・stdev%・HWC幅%・HT_DCPHASE・HWC位置・MAD比・POC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・THERMO%・THERMO_EMA%・THERMO原作%・TR%・UI・VAH・VAL・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs VWAP・close vs VWAP典型・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol_rv・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・高値切り上げ幅%・AO%・AROOND・AROONOSC・AROONU・CCI・CMF・DPO%・DPO教科書%・EFI比・EOM比・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・MACDシグナル線%・MACD線%・MASSI・MFI・NVI傾き・OBV傾き・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・ROC・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VTXM・VTXP・WMA傾き%・close vs EMA・close vs KAMA%・close vs SMA・close vs WMA%・転換線
 
 20種ごとに区切ったファイルの数＝7（out_t1_01.json … out_t1_07.json）
 

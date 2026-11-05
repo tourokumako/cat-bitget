@@ -2089,10 +2089,26 @@ def request_block() -> str:
     out += ["", "合図の形のパラメータの名前と条件の形の対応＝" + "、".join(f"{f}→{'・'.join(v)}" for f, v in SIGNAL_PARAM_OF_FORM.items())
             + "。ただし barssince の行は作らず、「何本前」の文も within_n の行に「何本以内か」で書きます（名前「何本前か」は選べる語に在りますが、使いません）。"]
     # 5 相手
-    ordered = list(FIRST_NINE) + [n for n in targets if n not in FIRST_NINE]
+    # ★2026-11-05 まこさん「次は優先度高の20件ずつ」「また名前の順にしようとしてたのかよ」＝名前の順をやめ、engine_tuner が次に読む順にする
+    #   ①先に通す9種 ②法則の機械が読む判定が名指しする指標（regime_laws.json の family） ③相場の法則が名指しする指標（sources.law） ④残り
+    laws_j = jload(SDK / ".claude" / "ratchet" / "regime_laws.json")
+    law_fams = []
+    for lw in laws_j.get("法則", []):
+        for f in ((lw.get("機械が読む判定") or {}).get("数える部品") or {}).get("family") or []:
+            if f in targets and f not in law_fams:
+                law_fams.append(f)
+    src_law = [n for n in sw["sources"].get("law", []) if n in targets]
+    ordered, seen_o = [], set()
+    for tier in (list(FIRST_NINE), law_fams, src_law, sorted(targets)):
+        for n in tier:
+            if n not in seen_o:
+                ordered.append(n)
+                seen_o.add(n)
+    tier_note = (f"優先度の順＝①先に通す9種（{len(FIRST_NINE)}）②法則の機械が読む判定が名指しする指標（{len([n for n in law_fams if n not in FIRST_NINE])}）"
+                 f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（ta だけの指標）。各段の中は、法則の並びと sources.law の並びのとおり")
     out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "",
             f"相手は、ta（Python の指標ライブラリ）の指標と、相場の法則が名指しする指標と、「包み足」の和集合で、{len(targets)} 種です。順番は、先に通す9種（{'・'.join(FIRST_NINE)}）を先頭にし、残りは名前の文字の並び（Python の sorted の順）です。先に通す9種は全部 相手に在ります。",
-            "", f"**作る順（先に通す9種を先頭に、全部）＝** {'・'.join(ordered)}", "",
+            "", tier_note, "", f"**作る順（優先度の順。全部）＝** {'・'.join(ordered)}", "",
             f"20種ごとに区切ったファイルの数＝{(len(ordered) + 19) // 20}（out_t1_01.json … out_t1_{(len(ordered) + 19) // 20:02d}.json）"]
     # 6 要件との対応
     out += ["", "### 要件との対応（プログラムが要件の文書の行を読んで作った）", "", "| 要件の行 | 中身（実物の行） | 教科書のどこに入るか |", "|---|---|---|"]
