@@ -1961,7 +1961,7 @@ def request_block() -> str:
         cv[k] = {**cv[k], **v}
     forms = [f["名前"] for f in jload(PR / "laws" / "laws.json")["条件の書き方"]]
     sw = jload(SDK / ".claude" / "ratchet" / "indicator_switch.json")
-    targets = sorted(set(sw["on"]) | {"包み足"})      # ★2026-11-05 まこさん「material登録の指標一覧はデータで確認したのか？」＝material で使う指標＝indicator_switch.json のオン（ta∪law の137種は CC が作った集合だった）
+    targets = sorted(set(data["指標の記録"]) | {"包み足"})   # ★2026-11-05 まこさん「185種を以前にONにしたということね。今は９種のみON」＝相手は material に登録している全部（指標の記録）。オン/オフは探索の切り替えで、教科書の相手を決める物ではない
     missing_nine = [n for n in FIRST_NINE if n not in targets]
     if missing_nine:
         raise SystemExit(f"❌ 先に通す指標が相手に無い: {missing_nine}")
@@ -2107,7 +2107,7 @@ def request_block() -> str:
     tier_note = (f"優先度の順＝①先に通す9種（{len(FIRST_NINE)}）②法則の機械が読む判定が名指しする指標（{len([n for n in law_fams if n not in FIRST_NINE])}）"
                  f"③相場の法則が名指しする指標 sources.law（{len([n for n in src_law if n not in FIRST_NINE and n not in law_fams])}）④残り（オンだが法則に名前が出ない指標）。各段の中は、法則の並びと sources.law の並びのとおり")
     out += ["", "### 調べる相手（プログラムがオン/オフの表から数えた）", "",
-            f"相手は、material で使う指標（`SDK/.claude/ratchet/indicator_switch.json` の `on` に在る、オンの指標）の全部と「包み足」で、{len(targets)} 種です。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
+            f"相手は、material に登録している指標の全部（指標データ `indicators.json` の `指標の記録` に在る指標。オン/オフは問わない）で、{len(targets)} 種です。先に通す9種（{'・'.join(FIRST_NINE)}）は全部 相手に在ります。",
             "", tier_note, "", f"**作る順（優先度の順。全部）＝** {'・'.join(ordered)}", "",
             f"20種ごとに区切ったファイルの数＝{(len(ordered) + 19) // 20}（out_t1_01.json … out_t1_{(len(ordered) + 19) // 20:02d}.json）"]
     # 6 要件との対応
@@ -2683,7 +2683,7 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 相手の全部を出す命令は次のとおりです（並べ替えは `unique` の順なので、上の順とは違います。上の順が正です）。
 
 ```
-jq -r '[.on[], "包み足"] | unique | .[]' SDK/.claude/ratchet/indicator_switch.json
+jq -r '.["指標の記録"] | keys[]' SDK/scripts/priority_rebuild/indicators/indicators.json
 ```
 
 - 帯の8種（帯VA・帯VA1時間ATR・帯pivot・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR）は、部品の記録に在ります。元になる pivot・Value Area・スイングについて、教科書の文を探し、ほかの指標と同じ要素（役割の候補・値の読み方の候補・閾値の範囲の候補・使い方の記録）に書きます。帯の幅の数（プロジェクトが決めた定数）は、教科書の文に無ければ、パラメータの軸の代表の値の候補を空にして注記に「見つからなかった」と書きます。部品の記録に置く指標には、`確定と期間` を書きません（置き場が無い。後の工事で足す）。
