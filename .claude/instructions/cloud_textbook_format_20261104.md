@@ -4,7 +4,7 @@
 
 パスは全部、リポジトリ（cat-bitget）の一番上からの相対パスです。`SDK` は `v3-bitget-api-sdk/bitget-python-sdk-api` の略です。
 
-<!-- TEXTBOOK_REQ_AUTO_START hash=69f6be3abf7e -->
+<!-- TEXTBOOK_REQ_AUTO_START hash=3c669add421a -->
 
 ## 一 件名・依頼者・依頼先・依頼日
 
@@ -71,18 +71,18 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 
 #### 調べる相手（プログラムがオン/オフの表から数えた）
 
-相手は、ta（Python の指標ライブラリ）の指標と、相場の法則が名指しする指標と、「包み足」の和集合で、137 種です。順番は、先に通す9種（ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot）を先頭にし、残りは名前の文字の並び（Python の sorted の順）です。先に通す9種は全部 相手に在ります。
+相手は、material で使う指標（`SDK/.claude/ratchet/indicator_switch.json` の `on` に在る、オンの指標）の全部と「包み足」で、186 種です。先に通す9種（ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot）は全部 相手に在ります。
 
-優先度の順＝①先に通す9種（9）②法則の機械が読む判定が名指しする指標（11）③相場の法則が名指しする指標 sources.law（65）④残り（ta だけの指標）。各段の中は、法則の並びと sources.law の並びのとおり
+優先度の順＝①先に通す9種（9）②法則の機械が読む判定が名指しする指標（11）③相場の法則が名指しする指標 sources.law（65）④残り（オンだが法則に名前が出ない指標）。各段の中は、法則の並びと sources.law の並びのとおり
 
-**作る順（優先度の順。全部）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot・CHOP・ER・VHF・MACDヒスト%・EMA傾き・MMI・SQZ_ON・Donchian幅・realized_vol・stdev%・HWC幅%・HT_DCPHASE・HWC位置・MAD比・POC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・THERMO%・THERMO_EMA%・THERMO原作%・TR%・UI・VAH・VAL・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs VWAP・close vs VWAP典型・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol_rv・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・高値切り上げ幅%・AO%・AROOND・AROONOSC・AROONU・CCI・CMF・DPO%・DPO教科書%・EFI比・EOM比・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・MACDシグナル線%・MACD線%・MASSI・MFI・NVI傾き・OBV傾き・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・ROC・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VTXM・VTXP・WMA傾き%・close vs EMA・close vs KAMA%・close vs SMA・close vs WMA%・転換線
+**作る順（優先度の順。全部）＝** ADX・ATR%・BB%b・BB幅・DI差・RSI・基準線・包み足・帯pivot・CHOP・ER・VHF・MACDヒスト%・EMA傾き・MMI・SQZ_ON・Donchian幅・realized_vol・stdev%・HWC幅%・HT_DCPHASE・HWC位置・MAD比・POC・S-Rタッチ1時間ATR・S-Rタッチ数・S-Rタッチ確定1時間ATR・S-Rタッチ確定数・SMC_SWEEP・SMC_SWEEP確定・THERMO%・THERMO_EMA%・THERMO原作%・TR%・UI・VAH・VAL・W字・W字確定谷・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・close vs CKSPl%・close vs CKSPs%・close vs PMAX%・close vs PSAR%・close vs SAREXT%・close vs VWAP・close vs VWAP典型・fib位置・fractal安値距離%・fractal高値距離%・n本安値・n本高値・pivotPP・pivotR1・pivotS1・realized_vol_rv・swing安値距離・swing高値距離・前日POC・前日VAH・前日VAL・前期間pivotPP・前期間pivotR1・前期間pivotS1・前週pivotPP・前週pivotR1・前週pivotS1・安値切り上げ幅%・帯VA・帯VA1時間ATR・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR・当日POC・当日VAH・当日VAL・当日VWAP・形スコア・構造破断距離%・高値切り上げ幅%・ABER位置・ABER原作位置・AO%・AROOND・AROONOSC・AROONU・CCI・CMF・DPO%・DPO教科書%・EFI比・EOM比・KAMA傾き%・KST・KSTシグナル・Keltner上・Keltner下・LeeMykland・LeeMykland_E36版・MACDシグナル線%・MACD線%・MASSI・MFI・NVI傾き・OBV傾き・PPO・PPOシグナル・PPOヒスト・PSAR加速・PSAR反転・PVO・PVOシグナル・PVOヒスト・PVT傾き・RCI・ROC・SQZ_ON_Carter・STC・STCstoch・Stoch%D・Stoch%K・StochRSI%D・StochRSI%K・StochRSI素%K・TRIX・TRIX_EMAシグナル・TRIX_EMAヒスト・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VTXM・VTXP・WMA傾き%・close vs ABER_ZG%・close vs ALMA%・close vs DEMA%・close vs EMA・close vs FAMA%・close vs FAMA_HL%・close vs FWMA%・close vs HILO%・close vs HMA%・close vs HT_TRENDLINE%・close vs HT_TRENDLINE_HL%・close vs HWMA%・close vs JMA%・close vs KAMA%・close vs LINREG%・close vs LRb%・close vs MAMA%・close vs MAMA_HL%・close vs MCGD%・close vs MEDIAN%・close vs MIDPOINT%・close vs MIDPRICE%・close vs MMAR%・close vs PWMA%・close vs RAINBOW%・close vs RMA%・close vs SINWMA%・close vs SMA・close vs SSF%・close vs SSF平均%・close vs SWMA%・close vs T3%・close vs TEMA%・close vs TRIMA%・close vs TRIMA_TA%・close vs TSF%・close vs VIDYA%・close vs VIDYA_CMO%・close vs VWMA%・close vs WMA%・close vs ZLMA%・volume_ratio・安値からの経過バー・転換線・高値からの経過バー
 
-20種ごとに区切ったファイルの数＝7（out_t1_01.json … out_t1_07.json）
+20種ごとに区切ったファイルの数＝10（out_t1_01.json … out_t1_10.json）
 
 相手の全部を出す命令は次のとおりです（並べ替えは `unique` の順なので、上の順とは違います。上の順が正です）。
 
 ```
-jq -r '[.sources.ta[], .sources.law[], "包み足"] | unique | .[]' SDK/.claude/ratchet/indicator_switch.json
+jq -r '[.on[], "包み足"] | unique | .[]' SDK/.claude/ratchet/indicator_switch.json
 ```
 
 - 帯の8種（帯VA・帯VA1時間ATR・帯pivot・帯pivot1時間ATR・帯pivot前週・帯pivot前週1時間ATR・帯スイング・帯スイング1時間ATR）は、部品の記録に在ります。元になる pivot・Value Area・スイングについて、教科書の文を探し、ほかの指標と同じ要素（役割の候補・値の読み方の候補・閾値の範囲の候補・使い方の記録）に書きます。帯の幅の数（プロジェクトが決めた定数）は、教科書の文に無ければ、パラメータの軸の代表の値の候補を空にして注記に「見つからなかった」と書きます。部品の記録に置く指標には、`確定と期間` を書きません（置き場が無い。後の工事で足す）。
