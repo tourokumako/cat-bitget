@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=8e89988b042502a4 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=e2d69f0c92c29248 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## 1 毎回最初に読むこと
@@ -75,7 +75,7 @@
 
 **③ ToDo の表**　この表は、前のセッションの ToDo のうち、済んでいない行をプログラムが写したものです。番号と順番は まこさんが決めたもので、入れ替えません。表に無い番号は、済んだものか、ほかの番号に置き替えた欠番です。
 
-一覧＝`.claude/state/todo.md`（57行・節ごとに上から順。行の元データ＝`next_step_src.json`。足す＝--todo-add・全文＝--todo-show）。
+一覧＝`.claude/state/todo.md`（58行・節ごとに上から順。行の元データ＝`next_step_src.json`。足す＝--todo-add・全文＝--todo-show）。
 
 **④ この先の順番**
 順番の正本＝③の表の並び（段の考え方の出どころ＝core_requirements_full.md の節「工事の順番」と「工事の順番の2」）。先に レンジ×スキャル×ショート×9種（帯pivot・BB幅・ADX・DI差・RSI・包み足・ATR%・基準線・BB%b）で全工程を通し、その後に横展開する。M6 は E38 の S1 で通す。
