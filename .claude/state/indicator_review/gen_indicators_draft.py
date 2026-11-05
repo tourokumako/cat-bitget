@@ -1985,13 +1985,202 @@ def try_textbook(path: str) -> int:
     return 0 if not ng else 1
 
 
+def form_spec() -> dict:
+    """engine_tuner_exec.py の FORM_SPEC（条件の書き方ごとの決まりの表）を読む。走らせず、写しも持たない。"""
+    import ast
+    tree = ast.parse((PR / "engine_tuner_exec.py").read_text(encoding="utf-8"))
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "FORM_SPEC":
+            return {k.value: {kw.arg: ast.literal_eval(kw.value) for kw in v.keywords} for k, v in zip(n.value.keys, n.value.values)}
+    raise SystemExit("FORM_SPEC が見つからない")
+
+
+def try_textbook_many(paths: list) -> int:
+    """教科書の並び（out_t1_*.json・見本）を1種ずつ箱の形へ直し、読む口へ通す（本物の indicators.json は書かない・ToDo の271番）。
+    見るのは、欄の名前が見本と合うか・読む口が止めないか・同じ値を返すか・候補が箱に残るか・条件にできる行の数まで。値の正しさと engine_tuner は見ない。"""
+    import importlib.util
+    spec_of = form_spec()
+    sample = jload(Path(__file__).parent / "research" / "textbook_sample_rsi.json")
+    row_keys = set().union(*(set(x) for x in sample["使い方"])) | {"注"}
+    top_keys = set(sample) | {"探した記録", "閾値の注", "記録の種類"}
+
+    def usable_row(u) -> bool:
+        """FORM_SPEC の決まりで、条件を組むのに要る欄がそろうか。入れ子の形（streak ほか）は中の条件で見る。"""
+        rep = (u["閾値"][0]["代表の値"] if u["閾値"] else {}) or {}
+        src_rows = (u["閾値"][0]["出どころ"] if u["閾値"] else {}) or {}
+        pair = bool(u["合図の形のパラメータ"])
+        for f in u["使える条件の形"]:
+            s = spec_of.get(f) or {}
+            if s.get("nest") or s.get("pair") == "inner2":
+                continue
+            if s.get("needs_side") and not u["向き"]:
+                continue
+            if s.get("band"):
+                ends = [c for k in ("スキャル", "デイトレ", "既定") for c in (src_rows.get(k) or []) if "値" in c]
+                if len({c["値"] for c in ends}) >= 2:           # 帯は両端が要る
+                    return True
+                continue
+            p = s.get("pair")
+            if p == "none" or (p == "1" and (rep or f.startswith("slope"))) or (p == "2" and pair) or (p == "2or1th" and (pair or rep)):
+                return True
+        return False
+
+    spec = importlib.util.spec_from_file_location("indicators_reader", PR / "indicators" / "indicators.py")
+    ind = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ind)
+    base = ind.load().data
+    src = lambda c: {k: v for k, v in (c or {}).items() if k not in ("値", "区分", "挙げた値")}
+    pick = lambda rows: rows[0]["値"] if rows else None
+    kind_of = lambda t: t.get("記録の種類") or "指標の記録"
+    one_side_rule = True
+    gaps = []                                                  # 箱に欄が無く、教科書の値が在る要素
+
+    def count_cands(x) -> int:                                 # 値か挙げた値を持つ候補の数（箱へ移して減っていないかを見る）
+        if isinstance(x, dict):
+            return (1 if "値" in x or "挙げた値" in x else 0) + sum(count_cands(v) for v in x.values())
+        return sum(count_cands(v) for v in x) if isinstance(x, list) else 0
+
+    def box(t, drop_default: bool) -> tuple:
+        axes = []
+        for a in t["パラメータの軸"]:
+            df, sc, dt = ([c for c in a.get(k) or [] if "値" in c] for k in ("既定", "スキャル", "デイトレ"))   # 値の無い行＝「見つからなかった」の目印
+            vals = [c["値"] for c in df + sc + dt] + [v for c in a.get("範囲の文") or [] for v in c.get("挙げた値", [])]
+            rep = {"スキャル": pick(sc or df), "デイトレ": pick(dt or df)}
+            axes.append({"名前": a["名前"], "意味": a.get("意味"), "種類": a.get("種類"),
+                         "範囲": {"kind": "int" if a.get("種類") == "整数" else "float", "lo": min(vals, default=None), "hi": max(vals, default=None)},
+                         "代表の値": {k: [v] for k, v in rep.items() if v is not None}, "確かめの強さ": "ページの文で確かめた",
+                         "出どころ": {k: a.get(k) for k in ("既定", "スキャル", "デイトレ", "範囲の文")}})
+        u, rd, fin = t["値の単位と値域"], t["値の読み方"], t["確定と期間"]
+        ranges = {}
+        for c in t.get("閾値の範囲の文") or []:
+            ranges.setdefault((c.get("形"), c.get("単位")), []).append(c)
+        recs = {"パラメータの軸": axes,
+                "教科書の役割": {"区分": [c["区分"] for c in t["教科書の役割"]], "出どころ": [src(c) for c in t["教科書の役割"]], "札": None},
+                "値の単位と値域": {"単位": u.get("単位"), "値域": {"有界": [u.get("下限"), u.get("上限")], "分位": None}, "出どころ": src(u)},
+                "値の読み方": {"区分": None, "読み方": rd.get("読み方"), "向きを持つ": rd.get("向きを持つ"), "性質": None, "出どころ": src(rd)},
+                "出力": t["出力"], "確定と期間": {"確定に要る本数": fin.get("確定に要る本数"), "出どころ": src(fin)},
+                "閾値の範囲": [{"形": k[0], "単位": k[1], "範囲": {"kind": "float", "lo": min((v for c in cs for v in c.get("挙げた値", [])), default=None),
+                                                         "hi": max((v for c in cs for v in c.get("挙げた値", [])), default=None)},
+                               "確かめの強さ": "ページの文で確かめた", "出どころ": cs} for k, cs in ranges.items()]}
+        allowed = {e["要素の名前"] for e in base["要素の定義表"]["要素"] if e["置く記録"] == kind_of(t)}
+        if "閾値の範囲" not in allowed and "閾値" in allowed:   # 部品の記録は、閾値の範囲を「閾値」の中に持つ（定義表の中身の列）
+            recs["閾値"] = recs.pop("閾値の範囲")
+        for k in sorted(set(recs) - allowed):                  # 名前だけで捨てない。中身が在る物は止めて知らせる
+            empty = k == "確定と期間" and recs[k].get("確定に要る本数") is None
+            if empty:
+                print("箱に欄が無い要素（教科書の値も無い）：", t["名前"], k)
+            else:
+                print("❌ 箱に欄が無く、教科書の値が在る要素：", t["名前"], k)
+                gaps.append((t["名前"], k))
+            del recs[k]
+        uses = []
+        for x in t["使い方"]:
+            th = x["閾値"]
+            row = {"指す物": {kind_of(t): t["名前"]}, "使い方の種類": x["使い方の種類"], "向き": x["向き"], "時間足": x["時間足"],
+                   "前処理": x.get("前処理") or [], "合図の形のパラメータ": x.get("合図の形のパラメータ") or [], "使える条件の形": x.get("使える条件の形") or [],
+                   "閾値": [], "オン/オフと出どころ": {"状態": "オン", "出どころ": x["根拠"]}}
+            if x.get("玉の向き") or not one_side_rule:          # 文に売買の方向が無い行は欄を書かない（欄が無ければ laws.py が両方と読む）
+                row["玉の向き"] = x.get("玉の向き")
+            if x.get("場面") or x.get("型"):
+                row["場面と型"] = {"場面": x.get("場面"), "型": x.get("型")}
+            if x.get("パラメータの代表の値"):
+                row["パラメータの代表の値"] = {k: {st: [pick([c for c in (v.get(st) or v.get("既定") or []) if "値" in c])] for st in ("スキャル", "デイトレ") if v.get(st) or v.get("既定")}
+                                               for k, v in x["パラメータの代表の値"].items()}    # 要件＝教科書に無ければ既定の値を使う
+            cands = th.get("スキャル"), th.get("デイトレ"), th.get("既定")
+            if any(cands):
+                rep = {st: pick([c for c in (th.get(st) or th.get("既定") or []) if "値" in c]) for st in ("スキャル", "デイトレ") if th.get(st) or th.get("既定")}
+                row["閾値"] = [{"形": th["形"], "単位": th["単位"], "代表の値": rep, "出どころ": {k: th.get(k) for k in ("スキャル", "デイトレ", "既定")}}]
+            uses.append(row)
+        return recs, uses
+
+    def filled(items) -> dict:
+        d = copy.deepcopy(base)
+        for kind, nm, recs, uses in items:
+            d[kind][nm].update(recs)
+            d["使い方の記録"] = d["使い方の記録"] + uses
+        return d
+
+    ng, table, done = 0, [], []
+    data = []
+    for one in paths:
+        got_d = jload(Path(one))
+        data.extend(got_d if isinstance(got_d, list) else [got_d])
+    for t in data:                                             # 欄の名前を見本と照らす。無い名前を空と数えない（恒久83番）
+        extra = (set(t) - top_keys) | {k for x in t["使い方"] for k in x if k not in row_keys}
+        short = {k for x in t["使い方"] for k in row_keys - set(x) if k not in ("玉の向き", "パラメータの代表の値", "注")}
+        if extra or short:
+            print("❌ 見本と欄の名前が違う：", t["名前"], "余る", sorted(extra), "足りない", sorted(short))
+            ng += 1
+    with tempfile.TemporaryDirectory() as tmp:
+        def read(d):
+            p = Path(tmp) / f"t{len(list(Path(tmp).iterdir()))}.json"   # 読む口は同じパスを1回しか読まない（indicators.py:416）
+            p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            return ind.load(p)
+        for t in data:
+            nm, stop, same = t["名前"], "", 0
+            kind = kind_of(t)
+            try:
+                recs, uses = box(t, False)
+                r = read(filled([(kind, nm, recs, uses)]))
+            except ind.IndicatorsError as e:
+                stop = str(e)[:150]
+                print("止まった文：", nm, stop)
+                ng += 1
+                continue
+            bad = [k for k, v in recs.items() if r.element(nm, k) != v]
+            got = r.usages(nm)
+            off = (base[kind][nm].get("オン/オフ") or base[kind][nm].get("オン/オフと出どころ") or {}).get("状態") == "オフ"
+            same = len(uses) if off else sum(1 for u in uses if u in got)   # オフの指標の使い方は読む口が返さない（決まり⑤）
+            if off:
+                print("オフの指標（使い方が返らないのは決まりのとおり）：", nm)
+            lost = count_cands([t["パラメータの軸"], t["閾値の範囲の文"], [x["閾値"] for x in t["使い方"]]]) - count_cands([recs["パラメータの軸"], recs.get("閾値の範囲") or recs.get("閾値") or [], [u["閾値"] for u in uses]])
+            usable = [u for u in uses if usable_row(u)]
+            rng = [u for u in usable if (u.get("場面と型") or {}).get("場面") == "レンジ" and u.get("玉の向き", "両方") in ("SHORT", "両方")]
+            only_df = sum(1 for u in uses if u["閾値"] and not u["閾値"][0]["代表の値"])
+            ng += len(bad) + (len(uses) - same) + (1 if lost else 0)
+            done.append((kind, nm, recs, uses))
+            table.append((nm, "止まる" if stop else "通る", len(bad), f"{same}/{len(uses)}", lost, len(usable), len(rng), only_df))
+            if stop:
+                print("止まった文：", nm, stop)
+        print("名前\t読む口\t要素の違い\t使い方が返る\t減った候補\t条件にできる行\tうちレンジ×SHORTか両方\t既定だけで代表の値が空")
+        for row in table:
+            print("\t".join(str(c) for c in row))
+        r_all = read(filled(done))                             # 全部を同時に入れても止まらないか
+        print(f"全部を同時に入れた読む口＝通った（{len(done)} 種・使い方 {sum(len(x[3]) for x in done)} 行）")
+        broken = copy.deepcopy(done[0][3][:1])
+        broken[0]["向き"] = "書いてない"
+        try:
+            read(filled([(done[0][0], done[0][1], done[0][2], broken)]))
+            print("❌ わざと壊した行（向き「書いてない」）を読む口が止めなかった")
+            ng += 1
+        except ind.IndicatorsError as e:
+            print("✅ わざと壊した行で読む口が止まった：", str(e)[:100])
+        sl = importlib.util.spec_from_file_location("laws_reader", PR / "laws" / "laws.py")
+        lw = importlib.util.module_from_spec(sl)
+        sl.loader.exec_module(lw)
+        la = lw.Laws(jload(PR / "laws" / "laws.json"), reader=r_all)
+        print("--- laws.py で見つかる指標（SHORT・場面レンジ。見るのは今回の指標だけ）")
+        names = {x[1] for x in done}
+        for use in ("場面の判定", "入る合図", "入ってはいけない場面を除く条件"):
+            for role in ("向き", "強さ", "勢い", "行き過ぎ", "値動きの幅", "出来高", "位置"):
+                hit = la._usages_of({"指す物": {"使い方の種類": use, "教科書の役割": role, "場面": "レンジ"}}, {"SHORT"}, [])
+                got_n = sorted({(h.get("指す物") or {}).get("指標の記録") or (h.get("指す物") or {}).get("部品の記録") for h in hit} & names)
+                print(f"  {use}・{role}：", got_n if got_n else "なし")
+    ng += len(gaps)
+    print("合計の違い＝", ng, "（止まる・要素の違い・返らない行・減った候補・箱に欄が無い要素の合計）")
+    return 0 if not ng else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--rewrite", action="store_true")
     ap.add_argument("--try-textbook", metavar="見本のパス")
+    ap.add_argument("--try-textbook-many", metavar="教科書の並びのパス", nargs="+")
     a = ap.parse_args()
+    if a.try_textbook_many:
+        return try_textbook_many(a.try_textbook_many)
     if a.try_textbook:
         return try_textbook(a.try_textbook)
     if a.selftest:

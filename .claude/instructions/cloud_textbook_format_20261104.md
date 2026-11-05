@@ -16,12 +16,31 @@ engine_tuner は、net を最大にする条件の組み合わせを探すプロ
 
 ## 見本
 
-`.claude/state/indicator_review/research/textbook_sample_rsi.json` です。**最初に全部読みます。形は、この見本に合わせます。**
+見本は次のとおりです。**最初に全部読みます。形は、この見本に合わせます。**
+
+- `.claude/state/indicator_review/research/textbook_sample_rsi.json`：全部の要素が在る指標の見本です。
+- `.claude/state/indicator_review/research/textbook_samples_20261105.json`：形の違う指標の見本です。下の「見本が示す形」を見てください。
 
 ```
 git fetch origin refactor/e35-e36-split-strat-base
 git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_sample_rsi.json
+git show FETCH_HEAD:.claude/state/indicator_review/research/textbook_samples_20261105.json
 ```
+
+### 見本が示す形
+
+| 指標 | 示す形 |
+|---|---|
+| ATR% | 代表の値が既定しか無い行、倍率の閾値、前処理の在る行 |
+| DI差 | クロスの組の相手が在る行、帯の両端が文に在る行 |
+| AROOND | 文の数を使い方の行の閾値へ書いた行 |
+| CMF | 帯の中心の値だけが文に在る行、選べる語に無い単位 |
+| BB%b | 文に数も組の相手も無く、条件にできない行（そのまま空で残す） |
+| ADX | 場面の判定で、文に売買の方向が無い行 |
+| 帯pivot | 部品の記録に置く指標（`記録の種類`）、見つからなかった軸の書き方 |
+| 包み足 | パラメータも数の閾値も持たない指標（`閾値の注`） |
+
+見本に無い形が出たら、推測で書かず、下の「質問してから量産する」のとおりに止まります。
 
 ## 調べる相手と順番（第1回）
 
@@ -55,16 +74,27 @@ jq '.["部品の記録"]["帯pivot"]["パラメータの軸"]' SDK/scripts/prior
 | 9種の確かめ直しと候補 | `research/textbook-recheck-264` の `out_textbook_recheck_264.json`（基準線の転換線の文の誤りなどが書いてある） |
 | 閾値とパラメータの範囲の文 | `research/textbook-ranges-270` の `out_textbook_ranges_270.json` |
 | 指標データとの照らし | `research/textbook-compare-222` の `out_textbook_compare_222.json` |
+| 前に作った結果（形を直す相手） | `research/textbook-format-1` の `.claude/state/indicator_review/research/out_t1_01.json`。文と値はここから写し、形だけを直します |
 | 資料の表と閾値の調べ | 作業のブランチの `.claude/state/indicator_params_review.json`・`indicator_params_by_strategy.json`・`indicator_roles_thresholds.json`、`.claude/state/indicator_review/research/out_w1.json`〜`out_w4.json`・`threshold_role.json` |
 
 ## 最初にプッシュできるかを確かめる
 
-1. `git ls-remote origin research/textbook-format-1` でブランチが在るかを確かめます。
+1. `git ls-remote origin research/textbook-format-2` でブランチが在るかを確かめます。
 2. 在れば、そのブランチの続きから始めます。結果のファイルに在る指標を飛ばします。
 3. 無ければ、ブランチ `refactor/e35-e36-split-strat-base` の最新の版から作り、そのままプッシュします。
 4. **プッシュが失敗したら、調べを始めません。** 止まった文を報告して、作業を終えます。
 
-始めた時刻と終えた時刻を `date -u` で測ります。この作業を頼んだ人は、質問に答えられません。確認の質問をせず、最後まで進めます。会話の記録が要約に置き換わったときは、この依頼書の「形の決まり」「守ること」「出す物」を読み直します。
+始めた時刻と終えた時刻を `date -u` で測ります。会話の記録が要約に置き換わったときは、この依頼書の「形の決まり」「守ること」「出す物」を読み直します。
+
+## 質問してから量産する
+
+頼んだ人は、このセッションで質問に答えられます。次の順で進めます。
+
+1. **先に質問します。** 依頼書・見本・材料を読み、並びの先頭の数種を試しに読みます。形の読み方で迷う点を一覧にして、**結果のファイルを作らずに止まります。** 迷う点が無ければ、無いと書いて止まります。
+2. **答えを受けて量産します。** 答えをもらってから、決まった数の指標を作り、報告して止まります。
+3. **途中で迷ったら止まります。** 見本に無い形が出たら、推測で書かず、その場で止まって聞きます。
+
+質問してよいのは、形の読み方だけです。どの値を選ぶかは聞きません。値は決めないためです。
 
 ## やること
 
@@ -130,6 +160,13 @@ Web で調べる依頼は、使える手段を全部使って調べ切る。「�
 12. **線どうしのクロスは、** `合図の形のパラメータ` に `{"名前": "組の相手", "代表の値": "<指標データの名前>"}` を書きます。文に期間の組が在れば、`パラメータの代表の値` に軸ごとに書きます。
 13. **向きを持つ指標を絶対値で使う文**（DI差の大きさほか）は、`前処理` に「絶対値」と書きます。
 14. **閾値の文が無い指標**（ATR% ほか）は、閾値を空にして「見つからなかった」と書きます。数を作りません。倍率の文（ATR の2倍ほか）は、形「倍率」・単位「ATR の倍数」で書きます。
+15. **使い方の行の根拠の文に数が在れば、その行の閾値に必ず書きます。** 文に足の名指しが無ければ、`既定` に入れて注に書きます。閾値の範囲の文に書いたから行に書かない、としません。
+16. **文に売買の方向が無い行は、`玉の向き` の欄を書きません。** `null` にしません。プログラムは、欄が無ければ「両方」と読みます。文に方向が在るときだけ、選べる語で書きます。
+17. **帯（band）の行は、文に在る数を書きます。** 両端が在れば、行を分けて両方書きます。中心の値だけなら、その値だけを書き、注に「中心の値だけが文に在る」と書きます。両端を作りません。
+18. **`向き` は、level・slope・slope_avg・diff の行で必ず文から読みます。** 読めなければ `null` にして注に書きます。band・cross・touch ほかの行は、文に無ければ `null` のままです。
+19. **クロス（cross）の行は、組の相手か閾値のどちらかを書きます。** 線どうしなら組の相手、水準を抜けるなら閾値です。どちらも文に無ければ空のままにして、注に書きます。
+20. **選べる語に無い単位**（CMF の値の幅ほか）は、単位を `null` にして、`下限` と `上限` に文の値を書きます。語を足しません。
+21. **部品の記録に置く指標**は、一番上に `記録の種類` を書きます（値＝部品の記録）。指標の記録に置く指標には書きません。
 
 ## 守ること
 
@@ -143,7 +180,7 @@ Web で調べる依頼は、使える手段を全部使って調べ切る。「�
 
 ## 出す物
 
-ブランチは `research/textbook-format-1` です。置き場は `.claude/state/indicator_review/research/` です。このフォルダは .gitignore の対象なので、コミットのときに `git add -f` を使います。master へは入れません。
+ブランチは `research/textbook-format-2` です。置き場は `.claude/state/indicator_review/research/` です。このフォルダは .gitignore の対象なので、コミットのときに `git add -f` を使います。master へは入れません。
 
 **1. `out_t1_01.json`、`out_t1_02.json`、…** は、20種ごとの配列です。1件の形は見本のとおりで、次の2つの鍵を足します。
 
@@ -165,7 +202,13 @@ jq 'length' out_t1_01.json
 jq -r '.. | strings | select(. == "書いてない" or . == "持たない")' out_t1_01.json
 ```
 
-2つ目の出力が1行でも在れば、直してからコミットします。
+2つ目の出力が在れば、直してからコミットします。
+
+コミットの前に、形のテストも走らせます。最後の行の「合計の違い」が無くなるまで直してから、コミットします。
+
+```
+python3 .claude/state/indicator_review/gen_indicators_draft.py --try-textbook-many out_t1_01.json
+```
 
 ## 終わったときの報告
 

@@ -1,0 +1,3466 @@
+[
+  {
+    "名前": "ATR%",
+    "元の指標": "ATR%（Average True Range Percent＝ATRP／Normalized ATR＝NATR・ATR は Wilder）",
+    "_注": "材料＝bundles/ATRpct.json（前の調べ out_c6_01 の ATR%・指標データの記録・資料の表・264番の候補と確かめ直し・270番・222番・9種の文書 6）。2026-11-04 に、写した逐語をすべて pagecheck（curl と Chromium）で本文に在ることを照らした（pandas-ta は PyPI の wheel を取って中の atr.py・natr.py を照らした）。空の要素は WebSearch で探し、見つかった文を足した（thinkorswim・StockSharp・LuxAlgo・TradingView の公開スクリプト・macroption・MQL5 Algo Forge）。指標データの ATR% は ATR ÷ 終値 × 100 で、ATRP（StockCharts）・NATR（TA-Lib・macroption）と同じ形。使い方の文の多くは ATR（割らない形）について書いた文で、その行は注に書いた。9種の文書の「marketclutch は 404」は、264番と今日の確かめでは HTTP 200 で開け、逐語は本文に在った。",
+    "教科書の役割": [
+      {
+        "区分": "値動きの幅",
+        "逐語": "The Average True Range Percent (ATRP) is an indicator that measures the volatility of a security.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "値動きの幅",
+        "逐語": "It is important to remember that ATR doesn't indicate price direction, just volatility.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "ATR（割らない形）の文"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": "%",
+      "下限": null,
+      "上限": null,
+      "逐語": "ATRP seeks to overcome this limitation by expressing the ATR value as a percentage of the price.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "下限・上限を書いた文は見つからなかった（値段に対する%で、上限の無い値）"
+    },
+    "値の読み方": {
+      "読み方": "レンジでは低く、どちらの向きでも大きく動くと高い。大きいほど値動きが荒い",
+      "向きを持つ": false,
+      "逐語": "The ATRP is lower when the security is in a trading range, and moves higher during dramatic price changes in either direction.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "向きが無いことは同じページの「The Bottom Line Like its relative ATR, Average True Range Percent (ATRP) is not a directional indicator.」（本文に在る）"
+    },
+    "出力": [
+      {
+        "名前": "ATR%",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった（1本の線として描く文だけ）"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": 250,
+      "逐語": "On our charts, we calculate back at least 250 periods (typically much further) to ensure a much greater degree of accuracy for our ATR values.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "ATR（割らない形）の文。前の調べと9種の文書は「見つからなかった」だったが、2026-11-04 に同じページの本文で見つけた"
+    },
+    "計算の式": {
+      "逐語": "The ATRP is calculated by dividing the ATR value by the closing price and multiplying the result by 100.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "真の値幅の式は TradingView「true range = max[(high - low), abs(high - previous close), abs (low - previous close)]」（https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/）、平滑は StockCharts「Current ATR = [(Prior ATR x 13) + Current TR] / 14」（https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr）。指標データの式（_atr ÷ 終値 × 100・_atr は ewm(alpha=1/n)）と形は同じ。TradingView の既定は RMA で、SMA・EMA・WMA に変えられる（「By default on TradingView the ATR is a Relative Moving Average (RMA) of the True Range, but the smoothing type can be changed to SMA, EMA or WMA in the settings.」）"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "period",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "Typically, the Average True Range (ATR) is based on 14 periods and can be calculated on an intraday, daily, weekly or monthly basis.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "By default, the indicator is calculated using 14 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "The time period to be used in calculating the Average True Range. 14 days is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "The look back period to use for the ATR is at the trader's discretion however 14 days is the most common.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "real = NATR(high, low, close, timeperiod=14)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/volatility_indicators.html",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "length (int): The period. Default: ```14```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/atr.py",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "pandas-ta 0.4.71b0 の atr.py（PyPI の wheel の中）。GitHub の原本は前の調べで 404"
+          },
+          {
+            "値": 20,
+            "逐語": "length (int): The period. Default: ```20```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "pandas-ta の natr.py の説明文は 20。同じファイルのコードは「length = v_pos_default(length, 14)」で 14。説明文とコードが食い違う（どちらが正しいかは書かない）"
+          },
+          {
+            "値": 14,
+            "逐語": "length = v_pos_default(length, 14)",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/natr.py",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "natr.py のコードの既定。上の説明文の 20 と食い違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 5,
+            "文の時間足": null,
+            "逐語": "Optimization for Scalpers: Settings 5 to 7 Scalpers operate on the shortest timeframes, such as the 1-minute or 5-minute charts.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "足は「1-minute or 5-minute charts」で1つに決まらない。範囲の文にも置いた"
+          },
+          {
+            "値": 7,
+            "文の時間足": null,
+            "逐語": "Optimization for Scalpers: Settings 5 to 7 Scalpers operate on the shortest timeframes, such as the 1-minute or 5-minute charts.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "足は「1-minute or 5-minute charts」で1つに決まらない"
+          },
+          {
+            "値": 7,
+            "文の時間足": "5m",
+            "逐語": "Standard Scalp (Period 7) Primary Use: General intraday price action on 5-minute charts.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 5,
+            "文の時間足": null,
+            "逐語": "Aggressive Scalper 5 - 7 1.0x to 1.5x Exiting at the first sign of volatility reversal.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "表の1行（Trader Profile・ATR Period・Multiplier・Logic）"
+          },
+          {
+            "値": 7,
+            "文の時間足": null,
+            "逐語": "Aggressive Scalper 5 - 7 1.0x to 1.5x Exiting at the first sign of volatility reversal.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "表の1行"
+          },
+          {
+            "値": 14,
+            "文の時間足": "5m",
+            "逐語": "Default Values : AtrPeriod = 14 MAPeriod = 20 AtrMultiplier = 2.0m CandleType = TimeSpan.FromMinutes(5) Filters : Category: Breakout Direction: Both Indicators: ATR, MA Stops: Yes Complexity: Basic Timeframe: Intraday Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+            "URL": "https://doc.stocksharp.com/en/api-examples/0036_ATR_Expansion",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "StockSharp の戦略の例（ATR Expansion Breakout）の既定。スキャルの名指しは無く、5分足の既定なのでスキャルに置いた"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "For most day traders targeting 15-minute to 1-hour timeframes, the 14-period setting offers the best trade-off between smoothing and reactivity.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "足は「15-minute to 1-hour timeframes」の幅で1つに決まらない"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "Standard Day Trader 14 2.0x Standard buffer to allow for session noise.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "表の1行"
+          },
+          {
+            "値": 20,
+            "文の時間足": null,
+            "逐語": "Using a 20 or 22-period setting (roughly the number of trading days in a month, adapted to the intraday timeframe) provides a very smooth volatility line.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "見出しは「Smoothing for Trend Trading: Periods 20 to 22」で、続く文は「Some intraday strategies focus on capturing a single large move that lasts for the entire session.」＝日中の一方向の動きを狙う場合。デイトレの名指しは見出しに無い"
+          },
+          {
+            "値": 22,
+            "文の時間足": null,
+            "逐語": "Using a 20 or 22-period setting (roughly the number of trading days in a month, adapted to the intraday timeframe) provides a very smooth volatility line.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "上と同じ文"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "Day traders can use 14 on a 5 minute or 15 minute chart. Use 10 only when 14 feels like yesterday's range.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "足は「5 minute or 15 minute chart」で1つに決まらない。264番はこの文をスキャルの候補に置いていた（名指しはデイトレ）"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "Day traders can use 14 on a 5 minute or 15 minute chart. Use 10 only when 14 feels like yesterday's range.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "上と同じ文"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              5,
+              7,
+              20,
+              21
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Scalpers require the rapid response of a 5 or 7-period setting, while trend traders benefit from the smoothing of a 20 or 21-period lookback.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表と指標データの範囲 5〜21 の出どころ。両端を1つの範囲として書いた文ではない（264番の確かめ直し）"
+          },
+          {
+            "挙げた値": [
+              5,
+              7
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Optimization for Scalpers: Settings 5 to 7 Scalpers operate on the shortest timeframes, such as the 1-minute or 5-minute charts.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              20,
+              22
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Smoothing for Trend Trading: Periods 20 to 22 Some intraday strategies focus on capturing a single large move that lasts for the entire session.",
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              10,
+              7
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "If one news bar blows the distance out and you need it to fade faster, try period 10 and keep the multiple unchanged. Period 7 reacts even faster and will jump on a single spike.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              8
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "In his work, Wilder often used an 8-period ATR.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-atr",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              5,
+              10,
+              20,
+              50
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Conventions rather than standards: a short ATR of 5 to 10 bars against a long one of 20 to 50 is common for the ratio form, and ATR against its own 20-period average is the usual slope form.",
+            "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "短い ATR 5〜10 と長い ATR 20〜50 の2本の比の形の値（2本の組）"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": "%",
+        "挙げた値": [
+          4
+        ],
+        "範囲の形": "値を挙げただけ",
+        "文の時間足": null,
+        "逐語": "The final scan clause excludes high-volatility stocks (those with average ATRP of more than 4% over the last year) from the results.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "検索の例（株）。同じページの検索の文は「[ATRP(250) < 4]」。足の名指しは「over the last year」で、選べる足に当てはまらない"
+      },
+      {
+        "形": "分位",
+        "単位": "分位",
+        "挙げた値": [
+          70,
+          50
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Inputs ATR length (default 14) TF source ATR (srcTF, e.g., “1”, “5”, “15”) Target window (days) (days, default 20) Show label (bool) Suggested use Breakout/Momentum: require ATR > P70 in addition to your breakout conditions (close beyond level, volume, retest).",
+        "URL": "https://www.tradingview.com/script/2QcaKbTR/",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "TradingView の公開スクリプト（ATR Regime Filter）。P70＝70番目の分位・Median＝50。同じページ「Range/Mean reversion: at minimum require ATR > Median.」。ATR（割らない形）の分位で、ATR% の分位と同じという文は無い"
+      },
+      {
+        "形": "倍率",
+        "単位": "ATR の倍数",
+        "挙げた値": [
+          1.5,
+          3.0
+        ],
+        "範囲の形": "文に両端が在る",
+        "逐語": "A good ATR multiplier for stop losses typically ranges between 1.5x and 3.0x the current ATR value.",
+        "URL": "https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "損切りの幅の倍率。ATR% の値の閾値ではない"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "向き": "下側",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "%",
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "ATRP increases during strong moves and decreases during trading ranges.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "同じ向きの文：TradingView「On the other hand, during periods of sustained sideways movement, volatility is frequently low. This could assist in the discovery of trading ranges.」（https://www.tradingview.com/support/solutions/43000501823-average-true-range-atr/）。レンジの値の閾値を書いた文は見つからなかった"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "スパイク",
+        "向き": "上側",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "倍率",
+          "単位": "ATR の倍数",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 1.5,
+              "逐語": "Thresholds such as Ratio_t > 1.5 or > 2 are often used to flag outsized breakout bars.",
+              "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に足の名指しが無いので既定に入れる"
+            },
+            {
+              "値": 2,
+              "逐語": "Thresholds such as Ratio_t > 1.5 or > 2 are often used to flag outsized breakout bars.",
+              "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に足の名指しが無いので既定に入れる"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Thresholds such as Ratio_t > 1.5 or > 2 are often used to flag outsized breakout bars.",
+          "URL": "https://www.luxalgo.com/library/concept/atr-expansion-contraction/",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "Ratio_t＝真の値幅 ÷ ATR。1.5・2 はスキャル・デイトレの名指しが無いので閾値の範囲の文に置いた。TRT「Period 7 reacts even faster and will jump on a single spike.」は期間の文"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": null,
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [
+          "2本の比"
+        ],
+        "使える条件の形": [
+          "cross"
+        ],
+        "パラメータの代表の値": {
+          "n": {
+            "既定": [
+              {
+                "値": 5,
+                "逐語": "Fast ATR Length (default 5): the responsive side; shorter is faster and noisier.",
+                "URL": "https://www.luxalgo.com/library/indicator/ycjeadf1-atr-momentum/",
+                "確かめの強さ": "ページの文で確かめた"
+              },
+              {
+                "値": 20,
+                "逐語": "Slow ATR Length (default 20): baseline lookback, also the averaging window in slope mode.",
+                "URL": "https://www.luxalgo.com/library/indicator/ycjeadf1-atr-momentum/",
+                "確かめの強さ": "ページの文で確かめた"
+              }
+            ]
+          }
+        },
+        "合図の形のパラメータ": [
+          {
+            "名前": "組の相手",
+            "代表の値": "ATR%"
+          }
+        ],
+        "閾値": {
+          "形": "値",
+          "単位": "%",
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Zero crosses : Expansion Started and Contraction Started alerts mark the fast ATR crossing its reference, the regime transitions.",
+          "URL": "https://www.luxalgo.com/library/indicator/ycjeadf1-atr-momentum/",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "同じページ「Fast ATR Length (default 5): the responsive side; shorter is faster and noisier.」「Slow ATR Length (default 20): baseline lookback, also the averaging window in slope mode.」。期間違いの2本（5 と 20）の組。場面の語は expansion／contraction で、4つの場面のどれの語も無い"
+        },
+        "型": null
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "閾値の値（スキャル・デイトレ）・閾値の範囲の文",
+        "検索の語": [
+          "NATR normalized ATR percent threshold filter scalping 5-minute minimum volatility",
+          "\"ATR%\" OR \"ATR percent\" filter avoid trading low volatility day trading threshold",
+          "day trading stock screener \"ATR\" percent of price at least 3% OR \"above 2%\" volatility minimum intraday",
+          "crypto scalping ATR as percentage of price 5-minute BTC typical value \"0.2%\" OR \"0.3%\" OR \"0.5%\" ATR"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-true-range-percent-atrp",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.macroption.com/normalized-atr",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/2QcaKbTR/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://mi4uu.github.io/botmarley-book/strategies/indicators/atr.html",
+            "HTTP": 404,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/ssXHE1zm-0-14-DTE-Volatility-Screener-For-Matt/",
+            "HTTP": 404,
+            "読んだ日": "2026-11-04",
+            "当たる文": "開けない"
+          },
+          {
+            "URL": "https://in.tradingview.com/script/ssXHE1zm-0-14-DTE-Volatility-Screener-For-Matt/",
+            "HTTP": 404,
+            "読んだ日": "2026-11-04",
+            "当たる文": "開けない"
+          },
+          {
+            "URL": "https://es.tradingview.com/script/LqrjI0pu-ATR-Percentages-Box/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://tradersagency.com/blog/atr-position-sizing-stop-loss-placement",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://marketclutch.com/the-volatility-compass-optimizing-average-true-range-atr-settings-for-intraday-traders/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-atr-settings",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "DI差",
+    "元の指標": "DMI の +DI と −DI（Directional Movement Index・Wilder）",
+    "_注": "材料＝前の調べ（out_c6_01 の DI差）・指標データの指標の記録と使い方の記録・資料の表（params_review・by_strategy・roles_thresholds・threshold_role）・264番の候補と確かめ直し・270番（閾値の範囲・n の範囲）・222番の照らし・9種の文書の 3 節。2026-11-04 に逐語を URL ごとに curl と Chromium で開いて照らした（pagecheck）。足りない要素は WebSearch で探した。名前の読み方：指標データの DI差 は +DI − −DI（_adx_di の2つ目から3つ目を引く）。元の +DI・−DI について書き、差の形を書いた文は分けて注に書いた。差を1本の線として書いた文は、Incredible Charts の DI Difference（銘柄選びの道具・週足 13 本）と、TradingView の公開スクリプト（DMI Spread Dashboard・ΔDI Delta）だけ。別の線の文を混ぜない：ADX だけの文（ADX must be over 25 ほか）は ADX の教科書に置き、この教科書には +DI・−DI を書いた文だけを置いた。指標データの使い方の記録の1行（前提崩れの印・SHORT・レンジ・down・上側・28.10・5分足・n=14・identity_s1_legacy.json:70）は教科書の文ではない（222番：前提崩れの印として DI差を書いた文は無い・型 down は教科書に無い）。閾値の欄に既定の箱を足した（足もスタイルも名指ししない値）。",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "The Plus Directional Indicator (+DI) and Minus Directional Indicator (-DI), shown in green and red in the chart above, are derived from smoothed averages of these differences and measure trend direction over time.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "curl の本文は「(-DI) , shown」と空白が入るため、Chromium の本文で照らした"
+      },
+      {
+        "区分": "向き",
+        "逐語": "The other two indicators (+DI and -DI) are used to compliment the ADX. They serve the purpose of determining trend direction.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "向き",
+        "逐語": "Measures the strength of upward price movement. Rising +DI signals strengthening upward direction; compared against MINUS_DI to judge trend direction.",
+        "URL": "https://ta-lib.org/functions/plus_di.html",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": null,
+      "下限": null,
+      "上限": null,
+      "確かめの強さ": "見つからなかった",
+      "注": "+DI − −DI の値域を書いた文は見つからなかった。各線は「This gives +DI and -DI as values, usually shown on a scale from 0 to 100.」（https://capital.com/en-gb/learn/technical-analysis/directional-indicators）。TradingView の「DMI has a value between 0 and 100 and is used to measure the strength of the current trend.」は DMI 全体の文で、差の値域ではない（264番の確かめ直し）。前の調べの 0〜100 は値に写さなかった"
+    },
+    "値の読み方": {
+      "読み方": "+DI が −DI より上なら上げ、下なら下げ（差がプラスなら上げ）",
+      "向きを持つ": true,
+      "逐語": "When +DI is above -DI, the trend is up; when +DI is below -DI, the trend is down.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "差の形の文＝「A positive spread means +DI is greater than -DI and upward directional movement is dominant.」（https://www.tradingview.com/script/A2XlaUGt-DMI-Spread-Dashboard-5m-30m-1h/・公開スクリプト）。差の大きさの文＝「The larger the spread between the two primary lines, the stronger the price trend.」（https://www.tradingview.com/script/Ed6cgkC0/・公開スクリプト）"
+    },
+    "出力": [
+      {
+        "名前": "+DI",
+        "組の相手": "−DI",
+        "逐語": "outReal — Plus Directional Indicator",
+        "URL": "https://ta-lib.org/functions/plus_di.html",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "TA-Lib は +DI と −DI を別の関数で返す（MINUS_DI の頁＝https://ta-lib.org/functions/minus_di.html）。DI差（+DI − −DI）は指標データが作る形"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": null,
+      "逐語": "Numerical Stability: Initial Unstable Period",
+      "URL": "https://ta-lib.org/functions/plus_di.html",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "助走が要るとは書くが、本数は文に無い。StockCharts の「around 150 periods」は ADX の文なので写さない"
+    },
+    "計算の式": {
+      "逐語": "+DI = 100 * (+DM / TR); if TR = 0, +DI = 0.",
+      "URL": "https://ta-lib.org/functions/plus_di.html",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "差の形の式の文は見つからなかった。Incredible Charts の DX の手順に「Record the difference between +DI14 and -DI14 as a positive number.」（https://www.incrediblecharts.com/indicators/directional_movement.php）＝差の絶対値（DX の分子）。指標データの DI差 は符号つきの差。222番：TA-Lib の「if TR = 0, +DI = 0」の扱いは指標データの関数に無い"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "period",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "The time period to be used in calculating the DI (14 is Default).",
+            "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 1–100000 Wilder smoothing period",
+            "URL": "https://ta-lib.org/functions/plus_di.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "引数の表の1行（PLUS_DI）"
+          },
+          {
+            "値": 14,
+            "逐語": "The calculation example below is based on a 14-period indicator setting, as recommended by Wilder.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "Trade a DMI crossover when +DI crosses -DI on Wilder's 14-period default.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "The default Directional Movement Index uses 14 day smoothing.",
+            "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "These values are then added up from the past 14 periods and then plotted.",
+            "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "curl の本文で照らした（Chromium は 502）"
+          }
+        ],
+        "スキャル": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "DI の期間をスキャル（1分足・5分足）向けに書いた文は見つからなかった。5分足の文は ADX の期間（EBC の 14-period ADX）だけで、DI の期間ではない"
+          }
+        ],
+        "デイトレ": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "DI の期間だけをデイトレ向けに書いた文は見つからなかった。TRT は「If your platform has one length, it is 14 for everything.」と DI と ADX を同じ 14 にすると書く（https://therighttrader.com/learn/indicator-strategies/best-adx-settings）が、デイトレの 14 は ADX の文（Day traders keep 14 on a 15 minute or 1 hour chart.）なので写さない"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              1,
+              100000
+            ],
+            "範囲の形": "入力できる範囲",
+            "逐語": "optInTimePeriod integer 14 1–100000 Wilder smoothing period",
+            "URL": "https://ta-lib.org/functions/plus_di.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力として受ける値。勧める範囲ではない"
+          },
+          {
+            "挙げた値": [
+              5,
+              7
+            ],
+            "範囲の形": "文に両端が在る",
+            "文の時間足": "1d",
+            "逐語": "Optimal Period for DMI: A shorter period, like 5 to 7 days, is more responsive to price movements.",
+            "URL": "https://www.brokercheck.co.za/?p=17435",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文＝days"
+          },
+          {
+            "挙げた値": [
+              10,
+              14
+            ],
+            "範囲の形": "文に両端が在る",
+            "文の時間足": "1d",
+            "逐語": "Optimal Period for DMI: A moderate period, such as 10 to 14 days, balances responsiveness with reliability.",
+            "URL": "https://www.brokercheck.co.za/?p=17435",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文＝days"
+          },
+          {
+            "挙げた値": [
+              20,
+              30
+            ],
+            "範囲の形": "文に両端が在る",
+            "文の時間足": "1d",
+            "逐語": "Optimal Period for DMI: A longer period, like 20 to 30 days, reduces sensitivity to short-term price fluctuations.",
+            "URL": "https://www.brokercheck.co.za/?p=17435",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文＝days"
+          },
+          {
+            "挙げた値": [
+              7,
+              10
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Shorter Periods (like 7-10): Using a shorter lookback makes the DMI much more sensitive to recent price swings.",
+            "URL": "https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              21,
+              28
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A longer period, like 21 or 28, smooths everything out, giving you more reliable signals but getting you into trends a bit later.",
+            "URL": "https://chartswatcher.com/pages/blog/mastering-the-dmi-directional-movement-index",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              10,
+              20
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "If you set DI length to 10 and ADX smoothing to 20, you no longer have Wilder's tool and you cannot tell which length mattered.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "DI の期間と ADX の平滑の期間を別にしない、という文（勧める値ではない）"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          20,
+          25
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "A Minimum of 20 or 25 for the S&P 500 or ASX 200",
+        "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "DI Difference（同じページ＝Calculates the difference between current DI+ and DI- values.）の最小値。同じページの初め＝「We therefore use momentum filters with a time period of 13 weeks (half of the six month period).」（週足。選べない足なので文の時間足は書かない）。単位は DI（0〜100 の目盛り）どうしの差"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          30,
+          40
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "A higher Minimum of 30 or 40 for faster-moving small caps in the Russell 3000 or ASX.",
+        "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同上"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          40
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "We ran a higher Minimum of 40 (on DI Difference) for the Russell 3000 to reduce the number of stocks returned:",
+        "URL": "https://www.incrediblecharts.com/stock_screener/screen-filters-to-identify-momentum-trends.php",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同上"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "band"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": -10,
+              "逐語": "In quiet markets, oscillator values fluctuating near the zero line (approx. -10 to +10 range) might signify sideways or rangebound price action.",
+              "URL": "https://www.tradingview.com/script/DML5Zz7l/",
+              "確かめの強さ": "ページの文で確かめた"
+            },
+            {
+              "値": 10,
+              "逐語": "In quiet markets, oscillator values fluctuating near the zero line (approx. -10 to +10 range) might signify sideways or rangebound price action.",
+              "URL": "https://www.tradingview.com/script/DML5Zz7l/",
+              "確かめの強さ": "ページの文で確かめた"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "In quiet markets, oscillator values fluctuating near the zero line (approx. -10 to +10 range) might signify sideways or rangebound price action.",
+          "URL": "https://www.tradingview.com/script/DML5Zz7l/",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "差の線が 0 の近く（およそ −10〜+10）なら揉み合い。同じページ＝「Two components of DMI are used in calculation: DI+ and DI-; the DMI oscillator calculates the difference between these components and represents it as both a line and a histogram.」"
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "上げ",
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [
+          {
+            "名前": "組の相手",
+            "代表の値": "−DI",
+            "注": "+DI と −DI の交差。指標データの DI差（+DI − −DI）では 0 を上へ抜けること。−DI は指標データに単独の名前が無い"
+          }
+        ],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": []
+        },
+        "根拠": {
+          "逐語": "A buy signal occurs when +DI crosses above -DI.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "場面の上げ＝StockCharts「For example, chartists can focus on +DI buy signals when the bigger trend is up and -DI sell signals when the bigger trend is down.」。ほかに Fidelity「A buy signal is given when DMI+ crosses above DMI-.」、TRT「+DI crossing above -DI is the bullish trigger.」。入る合図の弱点（レンジでのだまし）を見る除く条件は ADX の線に掛かる（下の除く条件の行）"
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": "下げ",
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [
+          {
+            "名前": "組の相手",
+            "代表の値": "−DI",
+            "注": "−DI が +DI を上へ抜ける＝DI差 が 0 を下へ抜ける"
+          }
+        ],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": []
+        },
+        "根拠": {
+          "逐語": "A sell signal triggers when -DI crosses above +DI.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "ほかに Fidelity「A sell signal is given when DMI- crosses above DMI+.」（https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/dmi）"
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": null,
+        "玉の向き": "LONG",
+        "向き": "下へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross",
+          "within_n"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": []
+        },
+        "根拠": {
+          "逐語": "Cancel the trade if bar t+1 reverses the DI cross before price has moved the full distance from the entry to the stop.",
+          "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "交差の次の足で交差が戻ったら手じまう。同じページ＝「If the next bar puts +DI back under -DI, exit even if 84.20 has not printed.」。売りでも同じ（Invalidation The next close puts -DI back under +DI）。指標データの前提崩れの印の行（SHORT・上側・28.10）の値と同じ文は無い"
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "パラメータの軸 n のスキャル・デイトレ",
+        "検索の語": [
+          "+DI -DI crossover scalping 5-minute chart DMI period settings exit when DI cross back"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://therighttrader.com/learn/indicator-strategies/dmi-crossover",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://usethinkscript.com/threads/scalping-options-with-the-dmi-study.4037/",
+            "HTTP": 403,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い",
+            "注": "curl は 403、Chromium は 200（本文を読めた）。DI の期間の数を勧める文は無い"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/KGgiwVyO-Directional-Indicator-Crossovers-JopAlgo/",
+            "HTTP": 404,
+            "読んだ日": "2026-11-04",
+            "当たる文": "開けない",
+            "注": "curl・Chromium とも 404。WebFetch も 404。web.archive.org は WebFetch で開けない（「Claude Code is unable to fetch from web.archive.org」と返る）。curl と Chromium では、この環境から web.archive.org を開けない（親が確かめた）"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/A2XlaUGt-DMI-Spread-Dashboard-5m-30m-1h/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "AROOND",
+    "元の指標": "Aroon-Down（Aroon の下の線・Tushar Chande）",
+    "_注": "前の調べ（out_c* の AROOND の行）・資料の表（params_review・by_strategy・roles_thresholds・threshold_role）・指標データの記録から写し、空の要素を 2026-11-04 に WebSearch で探して足した。前の調べの教科書の役割・値の読み方・値域・出力・閾値の一部は Aroon Oscillator のページの文で、Aroon Down の線の文ではないので、この行には写さず、Aroon（2本）または Aroon Down の文に置き換えた。今日 curl と Chromium で開いて本文に逐語が在ることを照らした（URL ごとの HTTP は探した記録）。Fidelity は Chromium 502・curl 200 で照らした（Incredible Charts は1回目 Chromium 502、pagecheck.js の2回目 200）。PDF 以外の逐語は tools/pagecheck.js でも全部「在る」を確かめた。指標データの名前 AROOND は pandas-ta の aroon の1列目（Aroon Down）。264番・270番・222番に AROOND の行は無い。指標データの値の読み方は「状態量・大きいほど直近で安値を付けた・向きを持つ false」。指標データの n の範囲は 7〜25（AROONU は 7〜288）で、文の値 288（DayTrading.com）・30〜40（暗号資産）は範囲の外（どちらが正しいかは書かない）。パラメータの文は Aroon（2本）の期間として書かれた物で、AROONU と同じ文。",
+    "教科書の役割": [
+      {
+        "区分": "強さ",
+        "逐語": "Developed by Tushar Chande in 1995, Aroon is an indicator system that determines whether a stock is trending or not and how strong the trend is.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "向き",
+        "逐語": "Indicates trend strength and direction.",
+        "URL": "https://ta-lib.org/functions/aroon.html",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "Indicates trend strength and direction.",
+        "URL": "https://ta-lib.org/functions/aroon.html",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "The AroonUp and the AroonDown measure the strength of the uptrend and the strength of the downtrend, respectively.",
+        "URL": "https://www.investopedia.com/terms/a/aroon.asp",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Aroon Down は下げの強さと書く"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "This number is intended to quantify the strength of a trend (if there is one).",
+        "URL": "https://www.tradingview.com/support/solutions/43000501801-aroon/",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": "0〜100",
+      "下限": 0,
+      "上限": 100,
+      "逐語": "The Aroon indicators are shown in percentage terms and fluctuate between 0 and 100.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    "値の読み方": {
+      "読み方": "期間の中の安値を付けた足で 100。安値を付けてからの足が増えるほど下がる",
+      "向きを持つ": null,
+      "逐語": "Aroon Down is 100 on bars where the market price reaches the lowest low for the current period. The value decreases for each successive bar whose low price is greater than the lowest value.",
+      "URL": "https://www.tradingview.com/support/solutions/43000773004-aroon-oscillator/",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "Aroon Oscillator のページの中の、Aroon Down の線だけを書いた文。向きを持つかを書いた文は無い（指標データは false・「大きいほど直近で安値を付けた」）"
+    },
+    "出力": [
+      {
+        "名前": "AROOND",
+        "組の相手": "AROONU",
+        "逐語": "outAroonDown — Recency of the lowest low (100 = it is the current bar, decaying as it ages)",
+        "URL": "https://ta-lib.org/functions/aroon.html",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "TA-Lib の AROON は outAroonDown と outAroonUp の2本を出す。指標データは pandas-ta の aroon の1列目を使う"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": null,
+      "逐語": "Up = 100*(period-(today-highestIdx))/period; Down = 100*(period-(today-lowestIdx))/period, where highestIdx/lowestIdx index the highest high / lowest low over the window [today-period .. today].",
+      "URL": "https://ta-lib.org/functions/aroon.html",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "窓は today-period から today まで＝n+1 本。決まった数ではないので値は null"
+    },
+    "計算の式": {
+      "逐語": "Aroon-Down = ((25 - Days Since 25-day Low)/25) x 100",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "指標データの式の文は _reg(\"AROOND\", \"AROOND{}\", False, lambda d, n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 0])。ta の説明書は ta.trend.aroon_down(close, window=25, fillna=False) で close を使う。コードの計算は見ていない"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "period",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 25,
+            "逐語": "The default parameter setting in SharpCharts is 25 and the example below is based on 25 days.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 25,
+            "逐語": "By default, the indicator is calculated using 25 periods. This parameter can be adjusted to meet your technical analysis needs.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 25,
+            "逐語": "The default Aroon period is 25, which Tushar Chande originally calibrated for daily charts.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "日足の値として書く"
+          },
+          {
+            "値": 25,
+            "逐語": "Tushar Chande published Aroon with a 25-period lookback in 1995.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-aroon-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 25,
+            "逐語": "The default time period for the Aroon indicators is 25 Days.",
+            "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 25,
+            "逐語": "By default, the Aroon is calculated with a 25-period lookback.",
+            "URL": "https://help.ctrader.com/indicators/built-in/trend/aroon/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 25,
+            "逐語": "ta.trend.aroon_down(close, window=25, fillna=False)",
+            "URL": "https://technical-analysis-library-in-python.readthedocs.io/en/latest/ta.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ta の関数の既定"
+          },
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/aroon.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "TA-Lib の既定。StockCharts の 25 と食い違う"
+          },
+          {
+            "値": 14,
+            "逐語": "aroondown, aroonup = AROON(high, low, timeperiod=14)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/momentum_indicators.html",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "If we shorten this to a period of 14, which is often the default setting, we produce the following:",
+            "URL": "https://www.daytrading.com/aroon",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "Period: (20) - the number of bars, or period, used to calculate the study.",
+            "URL": "https://www.barchart.com/trader/help/studies/aroon.php",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "Barchart の study の既定。HTTP 202 で本文は Chromium で読めた"
+          },
+          {
+            "値": 25,
+            "逐語": "My data clearly shows that the optimal setting for the Aroon indicator is Aroon-25 on a 5-minute chart.",
+            "URL": "https://www.liberatedstocktrader.com/aroon-indicator/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "自前の検証の結果（5分足）。スキャルともデイトレとも名指しが無いので既定に置く。資料の表の逐語「Our testing shows that the best setting for Aroon is 25 on an OHLC 5-minute chart which yields a 47% win rate.」は今日のページの本文に無い"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 9,
+            "文の時間足": "1m",
+            "逐語": "9-period Aroon on 1-minute charts: Fast, noisy, best for scalpers comfortable with a higher false-signal rate.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 14,
+            "文の時間足": "5m",
+            "逐語": "14-period Aroon on 5-minute charts: Reasonably responsive for momentum entries on stocks and ES futures.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "資料の表はスキャルの欄に置いた。ページでは「For intraday day trading, most active traders dial the lookback period down to find a more responsive setting. Common configurations:」の下の行なのでデイトレに置く"
+          },
+          {
+            "値": 9,
+            "文の時間足": null,
+            "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "「9-14」の下の端。足の名指しは無い（intraday）"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "「9-14」の上の端"
+          },
+          {
+            "値": 25,
+            "文の時間足": null,
+            "逐語": "While you can set the Aroon indicator to calculate any given number of periods, most day traders use the Aroon indicator with a standard 25-periods.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同じページの 9-14 と食い違う"
+          },
+          {
+            "値": 288,
+            "文の時間足": "5m",
+            "逐語": "For example, a day trader using a 5-minute chart on a 24/5 asset (like forex and many commodities) who want to use the Aroon to view the trend over the past day could set the period all the way up to 288, or roughly the number of five-minute periods in the past day in which the asset traded.",
+            "URL": "https://www.daytrading.com/aroon",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "指標データの AROOND の範囲（7〜25）の外"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "On 15 minute and 1 hour charts, period 14 is the usual faster choice, and period 10 is the shorter alternative.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-aroon-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "文の足は「15 minute and 1 hour」の2つで1つに決まらない"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "On 15 minute and 1 hour charts, period 14 is the usual faster choice, and period 10 is the shorter alternative.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-aroon-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "文の足は「15 minute and 1 hour」の2つで1つに決まらない"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              8,
+              10
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "A shorter-term trader is likely to use a shorter period, but not so short that it generates too much noise (e.g., period below the 8-10 range).",
+            "URL": "https://www.daytrading.com/aroon",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              9,
+              14
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "25-period default works well on daily charts; reduce to 9-14 periods for intraday day trading.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              10,
+              14
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "On intraday charts: Shorter periods (10–14) are more appropriate for faster-moving markets.",
+            "URL": "https://lumleytrading.pages.dev/aroon-oscillator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              30,
+              40
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "In crypto: The 24/7 nature means Aroon responds quickly — may benefit from slightly longer periods (30–40) to reduce noise.",
+            "URL": "https://lumleytrading.pages.dev/aroon-oscillator",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "暗号資産の文"
+          },
+          {
+            "挙げた値": [
+              2,
+              100000
+            ],
+            "範囲の形": "入力できる範囲",
+            "逐語": "optInTimePeriod integer 14 2–100000 Lookback window length",
+            "URL": "https://ta-lib.org/functions/aroon.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ライブラリが受け付ける値。売買の範囲ではない"
+          },
+          {
+            "挙げた値": [
+              25
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "25-period Aroon on 30-minute or daily charts: The traditional setting — best for swing entries and trend confirmation.",
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              14
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A 14-period setting makes the Aroon more reactive to recent price changes, generating crossovers and threshold crossings more frequently.",
+            "URL": "https://capital.com/en-ae/learn/technical-analysis/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              50
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A 50-period setting filters out most short-term fluctuations and reduces crossover frequency.",
+            "URL": "https://capital.com/en-ae/learn/technical-analysis/aroon-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              200
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A longer-term trader who expects to hold positions for months, if not years, and trades off the daily chart might set the Aroon's period to 200 (below).",
+            "URL": "https://www.daytrading.com/aroon",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          0,
+          30
+        ],
+        "範囲の形": "文に両端が在る",
+        "逐語": "Prices are NOT moving lower when Aroon-Down remains in the 0-30 range for an extended period.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じ段落に「However, this does not mean that prices are moving higher.」"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          30
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "For example, a move to 100 in Aroon-Up combined with a decline below 30 in Aroon-Down shows upside strength.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          50
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "The bears have the edge when Aroon-Up is below 50 and Aroon-Down is above 50.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じ文に Aroon Up の条件も在る"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "下げ",
+        "向き": "上側",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 70,
+              "逐語": "Aroon Down above 70 indicates a strong down-trend.",
+              "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に足の名指しが無いので既定に入れる"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Aroon Down above 70 indicates a strong down-trend.",
+          "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "閾値 70 は足と型の名指しが無いのでスキャル・デイトレに入れない（閾値の範囲の文に在る）。Fidelity は「If it remains persistently between 70 and 100, and the Aroon-Up remains between 0 and 30, then a new downtrend is underway.」"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "向き": "下側",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level",
+          "slope"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 50,
+              "逐語": "The Aroon indicators signal a consolidation when both are below 50 and/or both are moving lower with parallel lines.",
+              "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に足の名指しが無いので既定に入れる"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "The Aroon indicators signal a consolidation when both are below 50 and/or both are moving lower with parallel lines.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/aroon",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "2本の両方の条件"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "SHORT",
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level",
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 70,
+              "逐語": "Go short [S] when Aroon Down [red] crosses to above 70 and price is below the 63-Day moving average.",
+              "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に足の名指しが無いので既定に入れる"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Go short [S] when Aroon Down [red] crosses to above 70 and price is below the 63-Day moving average.",
+          "URL": "https://www.incrediblecharts.com/indicators/aroon_oscillator.php",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "閾値 70。足と型の名指しが無いのでスキャル・デイトレに入れない。入ってはいけない場面を除く文：「Do not go short when Aroon Down crosses above 70 because price is above the 63-Day moving average.」（同じページ）。スパイクの弱点：「Aroon Down rises to 100% when a long tail makes a new 25-day low.」「Aroon Down highlights the low, but the strong close is a bull signal, indicating buying support.」（同じページの偽の抜けの例）。therighttrader 戦略のページは表で「Down crosses above 70 while Up is below 50」、門は「Close below a falling 50-period EMA」"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "SHORT",
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [
+          {
+            "名前": "組の相手",
+            "代表の値": "AROONU"
+          }
+        ],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Down crossing above Up may be a signal to sell.",
+          "URL": "https://www.investopedia.com/terms/a/aroon.asp",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "入ってはいけない場面を除く文：「Even if the price is relatively flat, crossovers will occur as eventually a new high or low will be made within the last 25 periods.」（同じページ）"
+        },
+        "型": null
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "閾値のスキャル",
+        "検索の語": [
+          "Aroon Down above 70 short entry crypto strategy",
+          "Aroon indicator scalping settings 5-minute chart Aroon Up threshold",
+          "\"Aroon\" scalping strategy \"1-minute\" OR \"3-minute\" OR \"5-minute\" \"Aroon Up\" 100 entry"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://www.tradingview.com/script/Fiv5syxd-Aroon-Buy-Sell-Custom-TFs/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.tradingsim.com/blog/aroon-indicator",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い",
+            "注": "1分足の文は期間（9）だけ"
+          },
+          {
+            "URL": "https://www.liberatedstocktrader.com/aroon-indicator/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い",
+            "注": "curl 403・Chromium 200"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/G5vl47a0-Aroon-Buy-Sell-5m-Trend-100-Signal-on-1m/",
+            "HTTP": 404,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い",
+            "注": "curl 404・Chromium 404（投稿が消えた）。WebFetch で web.archive.org/web/2025/ を試したが開けない"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "CMF",
+    "元の指標": "CMF（Chaikin Money Flow・Marc Chaikin）",
+    "_注": "材料＝前の調べ（out_c の CMF の1件）・指標データの記録（パラメータの軸 n・資料の表の名前 n（期間））・資料の表（params_review・by_strategy・roles_thresholds・threshold_role）。264番・270番・222番・out_w・指標データの使い方の記録に CMF の行は無い（空）。9種に入らない。2026-11-04 に、使った全ページを curl と Chromium の両方で開き、全部の逐語が本文に在ることを照らした（Fidelity は Chromium が 502・curl が 200、StockDoctor は curl が 403・Chromium が 200、journalplus は curl が開けず Chromium が 200）。前の調べで HTTP 401 だった StockCharts ChartSchool は今日 200 で開けたので、ChartSchool の文を足した。単位は −1〜+1 の比で、選ぶ語の単位に当たる語が無いので、単位の欄は null にした。時間足は文に書いてある足だけを書いた。日足（days・daily）の文は 1d とした。2分足・4時間足は選べる語に無いので null にして注に原文を書いた。",
+    "教科書の役割": [
+      {
+        "区分": "出来高",
+        "逐語": "Chaikin Money Flow measures buying and selling pressure for a given period.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "出来高",
+        "逐語": "Chaikin Money Flow (CMF) is a technical analysis indicator used to measure Money Flow Volume over a set period of time.",
+        "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "出来高",
+        "逐語": "Chaikin Money Flow (CMF) developed by Marc Chaikin is a volume-weighted average of accumulation and distribution over a specified period.",
+        "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/cmf",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "向き",
+        "逐語": "The indicator oscillates above and below the zero line, indicating a bullish or bearish trend.",
+        "URL": "https://en.wikipedia.org/wiki/Chaikin_Analytics",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "The CMF is a trend strength indicator dictated by price and volume data.",
+        "URL": "https://www.daytrading.com/chaikin-money-flow",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "勢い",
+        "逐語": "Chaikin Money Flow is a measure of momentum under the idea held by many market technicians that price follows volume.",
+        "URL": "https://www.daytrading.com/chaikin-money-flow",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": null,
+      "下限": -1,
+      "上限": 1,
+      "逐語": "The resulting Chaikin Money Flow (CMF) indicator is an oscillator that fluctuates between -1 and +1.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "比のため、選ぶ語の単位（値段・%・0〜100 ほか）に当たる語が無い。同じページは「Typically, this oscillator fluctuates between -0.50 and +0.50, with 0 as the centerline.」とも書く（https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf）。TradingView も「Chaikin Money Flow's Value fluctuates between 1 and -1.」と書く。DayTrading.com は「A value of .51 may be the same as a value of 51 on another charting platform; likewise, a value of -0.07 could mean -7 elsewhere.」と、道具により 100 倍の目盛りもあると書く（https://www.daytrading.com/chaikin-money-flow）"
+    },
+    "値の読み方": {
+      "読み方": "プラスは買いの圧力、マイナスは売りの圧力",
+      "向きを持つ": true,
+      "逐語": "A move into positive territory indicates buying pressure, while a move into negative territory indicates selling pressure.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    "出力": [
+      {
+        "名前": "CMF",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "CMF を複数の線として書いた文は無い。ChartSchool は2本目の長い CMF を重ねる使い方を書く（使い方の行に書いた）"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": 20,
+      "逐語": "The ratio needs a complete window before it can be stated, so with the default period the first 19 bars produce no value at all rather than an average over fewer bars.",
+      "URL": "https://senzoukria.com/indicators/chaikin-money-flow",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "既定 20 のとき最初の 19 本は値が出ない（20 本目から出る）と書く。1サイトだけ。pandas-ta は「min_periods = int(kwargs[\"min_periods\"]) if \"min_periods\" in kwargs and kwargs[\"min_periods\"] is not None else length」と、窓の長さぶんを要る本数にする（https://tradingstrategy.ai/docs/_modules/pandas_ta/volume/cmf.html）"
+    },
+    "計算の式": {
+      "逐語": [
+        "1. Money Flow Multiplier = [(Close  -  Low) - (High - Close)] /(High - Low)",
+        "2. Money Flow Volume = Money Flow Multiplier x Volume for the Period",
+        "3. 20-period CMF = 20-period Sum of Money Flow Volume / 20 period Sum of Volume"
+      ],
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "文の上では、指標データの式（((終値−安値)−(高値−終値))/(高値−安値)×出来高 を n 本足し、n 本の出来高の和で割る）と違わない。高値と安値が同じ足は、指標データは (高値−安値) を NaN にする。Senzoukria は「A bar whose high equals its low still contributes its volume to the denominator and zero to the numerator, consistent with how the A/D line treats it.」、LuxAlgo は「When high equals low the multiplier is undefined; implementations typically set MFM to zero for that bar.」と書く。どちらが正しいかは書かない。コードの計算は見ていない"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "n（期間）",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "Once the indicator is chosen from the dropdown list, a CMF indicator is added to the chart with the default setting of 20 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "By default, the indicator is calculated using 20 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "Chaikin Money Flow sums Money Flow Volume for a specific look-back period, typically 20 or 21 days, instead of using a cumulative total.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "Chaikin Money Flow sums Money Flow Volume for a specific look-back period, typically 20 or 21 days, instead of using a cumulative total.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "Any look-back period can be used however the most popular settings would be 20 or 21 days.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "Any look-back period can be used however the most popular settings would be 20 or 21 days.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "The standard CMF period is 21 days.",
+            "URL": "https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "The default number of periods for the Chaikin Money Flow is 21 given it’s most commonly applied to the daily chart.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "Period defaults to 20, Chaikin's original setting and roughly a month of daily sessions; on intraday bars it is simply a 20-bar window.",
+            "URL": "https://senzoukria.com/indicators/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "開発者 Chaikin の元の値として紹介"
+          },
+          {
+            "値": 20,
+            "逐語": "CMF tracks cash flow volumes over a fixed period, usually around 20 days.",
+            "URL": "https://en.wikipedia.org/wiki/Chaikin_Analytics",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "This build follows Marc Chaikin's standard formula directly, with the classic 20-period length and no smoothing or alterations.",
+            "URL": "https://www.luxalgo.com/library/indicator/chaikin-money-flow/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "The calculation is typically based on a 21-day period, aligning with one trading month.",
+            "URL": "https://sentimentrader.com/education/technical-indicators/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "Parameters are based on personal preference but most users start with 20 or 21 periods.",
+            "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 21,
+            "逐語": "Parameters are based on personal preference but most users start with 20 or 21 periods.",
+            "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "3. The Chaikin Money Flow is the sum of the MFV divided by the volume over the chosen period (by default, 14).",
+            "URL": "https://help.ctrader.com/indicators/built-in/volume/chaikin-money-flow/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "cTrader の既定。ほかの出どころの 20・21 と違う"
+          },
+          {
+            "値": 20,
+            "逐語": "ta.volume.ChaikinMoneyFlowIndicator(high: pandas.core.series.Series, low: pandas.core.series.Series, close: pandas.core.series.Series, volume: pandas.core.series.Series, window: int = 20, fillna: bool = False)",
+            "URL": "https://technical-analysis-library-in-python.readthedocs.io/en/latest/ta.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ライブラリ ta"
+          },
+          {
+            "値": 20,
+            "逐語": "length (int): The short period. Default: 20",
+            "URL": "https://tradingstrategy.ai/docs/_modules/pandas_ta/volume/cmf.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "pandas-ta（tradingstrategy.ai に載ったソースの写し）"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 24,
+            "文の時間足": "5m",
+            "逐語": "For short-term traders, applying a 24-period CMF on a 5-minute chart would provide two hours of trend/momentum data.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 36,
+            "文の時間足": "5m",
+            "逐語": "For those trading from the 5-minute chart, a 36-period CMF would interpret the trend from the previous three hours of price data; a 96-period CMF would capture the trend of the past eight hours.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "前の文は「this will not be optimal for day traders who primarily trade from the 5-minute to hourly chart」と、デイトレの人として書く。5分足なのでスキャルに入れた"
+          },
+          {
+            "値": 96,
+            "文の時間足": "5m",
+            "逐語": "For those trading from the 5-minute chart, a 36-period CMF would interpret the trend from the previous three hours of price data; a 96-period CMF would capture the trend of the past eight hours.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "前の文はデイトレの人として書く。5分足なのでスキャルに入れた"
+          },
+          {
+            "値": 21,
+            "文の時間足": "5m",
+            "逐語": "Keep the standard 21 periods and move up to 5 minute bars rather than shortening the lookback.",
+            "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "スキャルの記事の文"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 24,
+            "文の時間足": "1h",
+            "逐語": "In this case, a 24-period CMF would give the trend over the past day (for 24/5 markets, like forex), with a 120-period CMF giving the trend over the past week.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "前の文「Those who use the hourly/60-minute chart typically hold positions over the course of days, rather than intra-day only.」。日をまたいで持つ人向け"
+          },
+          {
+            "値": 120,
+            "文の時間足": "1h",
+            "逐語": "In this case, a 24-period CMF would give the trend over the past day (for 24/5 markets, like forex), with a 120-period CMF giving the trend over the past week.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "日をまたいで持つ人向け"
+          },
+          {
+            "値": 20,
+            "文の時間足": "15m",
+            "逐語": "Intraday 15M\t20\t±0.10 / ±0.25\tBreiteres Neutralband; nur mit Session- oder VWAP-Filter nutzen",
+            "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ドイツ語の表の行（足・期間・水準・注）"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              63,
+              126,
+              252
+            ],
+            "範囲の形": "値を挙げただけ",
+            "文の時間足": "1d",
+            "逐語": "A 63-, 126-, or 252-day period would be more applicable for those looking at intermediate- and longer-term trends.",
+            "URL": "https://www.daytrading.com/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              1,
+              500
+            ],
+            "範囲の形": "入力できる範囲",
+            "逐語": "The accepted range is 1 to 500, and the plot is purple (#ab47bc) by default.",
+            "URL": "https://senzoukria.com/indicators/chaikin-money-flow",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "道具の入力の範囲。売買の範囲ではない"
+          },
+          {
+            "挙げた値": [
+              20,
+              60
+            ],
+            "範囲の形": "値を挙げただけ",
+            "文の時間足": "1d",
+            "逐語": "Chart with 20-day and 60-day CMF indicators, to assess money flow in multiple timeframes",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "図の見出しの文"
+          },
+          {
+            "挙げた値": [
+              10,
+              15
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Shorter periods (10–15) = faster, more signals (good for active traders).",
+            "URL": "https://bitlife.gitbook.io/vooi-academy/trading-strategies/indicators-and-tools/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              30
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Longer periods (30+) = smoother, stronger trend confirmation (good for swing traders).",
+            "URL": "https://bitlife.gitbook.io/vooi-academy/trading-strategies/indicators-and-tools/chaikin-money-flow-cmf",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "30 以上と書く"
+          },
+          {
+            "挙げた値": [
+              14
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Cutting the window below about 14 makes every reading a function of the last few bars, which defeats the purpose of a volume weighted average and produces constant zero line crossings.",
+            "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "14 より短くしない、と書く下の端の文"
+          },
+          {
+            "挙げた値": [
+              20,
+              30
+            ],
+            "範囲の形": "文に両端が在る",
+            "文の時間足": null,
+            "逐語": "4H Krypto und Indizes\t20–30\t±0.05 / ±0.20\tEtwas länger, um 24-Stunden-Noise auszugleichen",
+            "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "4時間足（4H）の暗号資産と指数。4時間足は選べる語に無いので文の時間足は null"
+          },
+          {
+            "挙げた値": [
+              10
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Schnellere Bestätigung\t10\t±0.10\tReagiert auf jede Kerze; nur Divergenz, niemals der Cross",
+            "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "速い確かめ。ダイバージェンスだけに使い、クロスには使わないと書く"
+          },
+          {
+            "挙げた値": [
+              20,
+              21
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "The default is 20 or 21, but the mechanics do not change with the window length.",
+            "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          0.05,
+          -0.05
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Chartists can filter these signals with buffers by setting the bullish threshold a little above zero (+0.05) and the bearish threshold a little below zero (-0.05).",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          0.05,
+          -0.05
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "For example, instead of a Zero Line Cross, a technical analyst may use two separate lines such as .05 and -.05.",
+        "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          0.05,
+          -0.05
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "To reduce false signals, many users expand the threshold for these signals buy requiring the indicator to cross above 0.05 for a buy and below -0.05 for a sell.",
+        "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "band"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 0,
+              "逐語": "For a stock moving sideways, the likely value of CMF would hover near 0 and suggest neither bulls nor bears were in control.",
+              "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "文に在るのは中心の値だけで、両端は文に無い"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "For a stock moving sideways, the likely value of CMF would hover near 0 and suggest neither bulls nor bears were in control.",
+          "URL": "https://help.stockdoctor.com.au/hc/en-us/articles/360000099635-Chaikin-Money-Flow",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "0 の近くに留まるとき横ばい。幅の数は文に無い"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "LONG",
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 0,
+              "逐語": "Bullish Crosses occur when Chaikin Money Flow crosses from below the Zero Line to above the Zero Line. Price then rises.",
+              "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+              "確かめの強さ": "ページの文で確かめた"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Bullish Crosses occur when Chaikin Money Flow crosses from below the Zero Line to above the Zero Line. Price then rises.",
+          "URL": "https://www.tradingview.com/support/solutions/43000501974-chaikin-money-flow-cmf/",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "両方",
+        "向き": "上へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross",
+          "hysteresis"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [
+            {
+              "値": 0.05,
+              "文の時間足": "5m",
+              "逐語": "Dozens of zero crosses per session\tBar interval too short for the window\tMove to 5 minute bars and use the 0.05 buffer levels.",
+              "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "スキャルの記事の表の行。買いは +0.05、売りは −0.05 と読む"
+            },
+            {
+              "値": -0.05,
+              "文の時間足": "5m",
+              "逐語": "Dozens of zero crosses per session\tBar interval too short for the window\tMove to 5 minute bars and use the 0.05 buffer levels.",
+              "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "売りの側"
+            }
+          ],
+          "デイトレ": [
+            {
+              "値": 0.1,
+              "文の時間足": "15m",
+              "逐語": "Intraday 15M\t20\t±0.10 / ±0.25\tBreiteres Neutralband; nur mit Session- oder VWAP-Filter nutzen",
+              "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "15分足は中立の幅を ±0.10 に広げる"
+            },
+            {
+              "値": -0.1,
+              "文の時間足": "15m",
+              "逐語": "Intraday 15M\t20\t±0.10 / ±0.25\tBreiteres Neutralband; nur mit Session- oder VWAP-Filter nutzen",
+              "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "売りの側"
+            }
+          ],
+          "既定": [
+            {
+              "値": 0.05,
+              "逐語": "A move above +0.05 was considered bullish, while a move below -0.05 was considered bearish.",
+              "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "日足の図の例（20-day）"
+            },
+            {
+              "値": -0.05,
+              "逐語": "A move above +0.05 was considered bullish, while a move below -0.05 was considered bearish.",
+              "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "売りは −0.05 を下へ抜ける"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Adding a small buffer reduced the number of bullish and bearish signals.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/chaikin-money-flow-cmf",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "0 の上下に幅を置く。買いは +0.05 を上へ、売りは −0.05 を下へ"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": "レンジ",
+        "玉の向き": "両方",
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Ranges. Der Null-Cross feuert ständig, und das ±0.05-Band wird alle paar Kerzen gekreuzt.",
+          "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "閾値の値（スキャル）",
+        "検索の語": [
+          "Chaikin Money Flow scalping 5-minute settings threshold",
+          "Chaikin Money Flow crypto bitcoin intraday 15-minute strategy CMF threshold"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://geekblog.net/blog/how-to-use-chaikin-money-flow-cmf-for-scalping/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://luxalgo.com/blog/5-best-volume-indicators-for-scalping",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://tradingsim.com/blog/chaikin-money-flow-indicator",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る",
+            "注": "2分足の ±0.20。2分足は選べる足に無い"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/aEq1Ebrp/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.tradingview.com/scripts/bigmoney/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い",
+            "注": "本文の冒頭しか取れず 0.15 の文は本文に無かった"
+          },
+          {
+            "URL": "https://www.quantum-algo.com/de/blog/guides/chaikin-money-flow/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "BB%b",
+    "元の指標": "%b（Bollinger Bands %B・John Bollinger）",
+    "_注": "材料＝bundles/BBpctb.json（前の調べ out_c6_01 の BB%b・指標データの記録と使い方の記録・資料の表・264番・270番・222番・9種の文書 5）。2026-11-04 に、写した逐語をすべて pagecheck（curl と Chromium）で照らした（pandas-ta は wheel の中の bbands.py を照らした）。pocketoption.com は curl・Chromium で開けず、WebFetch で開いた。264番の確かめ直しで「逐語と値が合わない」とされた値の単位と値域（下限 0・上限 1）は写さず、上限・下限の無い形にした。パラメータのスキャル・デイトレの値は、ボリンジャーバンドの設定の文で、%B を名指しした文ではない（9種の文書「%B を名指しした 5分足・スキャルの値」は見つからなかった）。空の要素は WebSearch で探し、The Right Trader（Walking the Bands）・StockSharp・algotest・fxreplay・SentimenTrader・bestscalping の文を足した。%B の値に当てはまる単位の語は選べる語に無いので、単位は null にした。指標データの使い方の記録の行（前提崩れの印・レンジ・flat_up・上側・スキャル 1.0129892・identity_s1_legacy.json:51）は、教科書の文が見つからなかった（222番の判定も「教科書に無い」）。",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "%b tells us where we are in relation to the Bollinger Bands.",
+        "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "Bollinger 本人（ルール15）"
+      },
+      {
+        "区分": "位置",
+        "逐語": "The %B Indicator measures a security's price in relation to the upper and lower Bollinger Bands.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "行き過ぎ",
+        "逐語": "You can use it to identify overbought or oversold conditions and gauge trend strength.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "You can use it to identify overbought or oversold conditions and gauge trend strength.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じ文の「gauge trend strength」。資料の表（roles）の区分は行き過ぎ、指標データの札はオシレーター"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": null,
+      "下限": null,
+      "上限": null,
+      "逐語": "In descending order from the Upper Band: %b Above 1 = Price is Above the Upper Band %b Equal to 1 = Price is at the Upper Band %b Above .50 = Price is Above the Middle Line %b Below .50 = Price is Below the Middle Line %b Equal to 0 = Price is at the Lower Band %b Below 0 = Price is Below the Lower Band Generally speaking .80 and .20 are also relevant levels.",
+      "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "1 より上・0 より下も取る＝上限・下限は無い。帯の中なら 0〜1。単位は選べる語に当てはまる物が無い（0〜100 ではない）。指標データの値域は「分位 [0, 1]」。前の調べの下限 0・上限 1 は、264番で逐語（between .50 and 1）と値が合わないとされたので写さなかった"
+    },
+    "値の読み方": {
+      "読み方": "1 で上の帯、0 で下の帯、0.5 で中央の線。1 より上は上の帯より上、0 より下は下の帯より下。0.80 より上は上の帯に近く、0.20 より下は下の帯に近い",
+      "向きを持つ": true,
+      "逐語": "In descending order from the Upper Band: %b Above 1 = Price is Above the Upper Band %b Equal to 1 = Price is at the Upper Band %b Above .50 = Price is Above the Middle Line %b Below .50 = Price is Below the Middle Line %b Equal to 0 = Price is at the Lower Band %b Below 0 = Price is Below the Lower Band Generally speaking .80 and .20 are also relevant levels.",
+      "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "向き：SentimenTrader「Trend confirmation: Sustained readings above 0.5 align with uptrends; below 0.5 align with downtrends.」（https://sentimentrader.com/education/technical-indicators/bollinger-b）。指標データの向きを持つ＝true、前の調べ＝持つ"
+    },
+    "出力": [
+      {
+        "名前": "BB%b",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった",
+        "注": "出力の本数を書いた文は見つからなかった（1本の線）"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": null,
+      "確かめの強さ": "見つからなかった",
+      "注": "確定に要る本数を書いた文は見つからなかった（StockCharts・TradingView・Bollinger のページの本文を「data point|at least|history」で探して無い）"
+    },
+    "計算の式": {
+      "逐語": "%B = (Price - Lower Band)/(Upper Band - Lower Band)",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "指標データの式（(終値 − (移動平均 − s×標準偏差)) ÷ (2×s×標準偏差)・ddof=0）と同じ形。標準偏差は Bollinger「(We use the population calculation for standard deviation).」（https://www.bollingerbands.com/bollinger-bands）＝母集団（ddof=0）"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "n（移動平均と標準偏差の本数）",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 20,
+            "逐語": "The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.",
+            "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "Bollinger 本人のサイト（ルール9）"
+          },
+          {
+            "値": 20,
+            "逐語": "The default setting for %B is based on the default setting for Bollinger Bands (20,2).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "The time period to be used in calculating the SMA which creates the base for the Upper and Lower Bands. 20 days is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 20,
+            "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 5,
+            "逐語": "length (int): The period. Default: ```5```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "pandas-ta 0.4.71b0 の bbands.py（PyPI の wheel の中）。同じ関数が帯の幅（BBB）と %B（BBP）も返す。ほかの出どころの 20 と食い違う"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 20,
+            "文の時間足": "1m",
+            "逐語": "Bollinger Bands settings for a 1-minute chart are a 20-period simple moving average (middle band) and two outer bands set at a standard deviation level of 2 from the middle band.",
+            "URL": "https://fxopen.com/blog/en/1-minute-scalping-trading-strategies-with-examples/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 20,
+            "文の時間足": "1m",
+            "逐語": "RSI (2 or 3), EMA 9, and Bollinger Bands (20, 2) for scalping at 1 minute.",
+            "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "For scalping on short time frames, you can reduce the period to 10-14, with a multiplier of 1.5-2.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。足は「short time frames」。前の調べの逐語は「10–14」「1.5–2」（今日の本文はハイフン）"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "For scalping on short time frames, you can reduce the period to 10-14, with a multiplier of 1.5-2.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+            "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。足は「1-minute or 5-minute charts」で1つに決まらない"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+            "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "Period for SMA: Reduce to 10-14 periods.",
+            "URL": "https://optionx.trade/blogs/bollinger-bands-scalping-strategy-indian-fno",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。インドの先物・オプションのスキャル。同じページ「For Indian F&O scalping on short timeframes like 1-minute or 5-minute charts, faster reaction times are crucial.」"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "Period for SMA: Reduce to 10-14 periods.",
+            "URL": "https://optionx.trade/blogs/bollinger-bands-scalping-strategy-indian-fno",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 10,
+            "文の時間足": "1m",
+            "逐語": "Some 1-minute scalpers use 10 periods and 1.5 deviations for a faster response.",
+            "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。暗号資産のスキャルのサイト"
+          },
+          {
+            "値": 20,
+            "文の時間足": "5m",
+            "逐語": "Default Values : BollingerPeriod = 20 BollingerDeviation = 2.0m ExitValue = 0.5m StopLossPercent = 2.0m CandleType = TimeSpan.FromMinutes(5) Filters : Category: Mean Reversion Direction: Both Indicators: Bollinger Bands Stops: Yes Complexity: Basic Timeframe: Intraday Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+            "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "StockSharp の戦略の例（Bollinger Percent B Reversion）の既定。スキャルの名指しは無く5分足の既定なのでスキャルに置いた"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 20,
+            "文の時間足": "15m",
+            "逐語": "Day traders who leave 20 and 2 often put them on a 15-minute chart, or use 10 and 1.9 on a 5-minute chart.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。「20 and 2」は 15分足"
+          },
+          {
+            "値": 10,
+            "文の時間足": "5m",
+            "逐語": "Day traders who leave 20 and 2 often put them on a 15-minute chart, or use 10 and 1.9 on a 5-minute chart.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。「10 and 1.9」は 5分足（デイトレの名指し）。同じページの表「20 and 2 Daily default, or 15-minute Bollinger's reference Late on a 5-minute scalp」＝5分足のスキャルでは 20・2 は遅い"
+          },
+          {
+            "値": 20,
+            "文の時間足": null,
+            "逐語": "Adjust the Period Length to your preferred setting (usually 20-21 for day trading).",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。curl と Chromium の両方で開けないため未確認にした（WebFetch の答えはモデルがまとめた文で、本文の逐語の照らしにならない）"
+          },
+          {
+            "値": 21,
+            "文の時間足": null,
+            "逐語": "Adjust the Period Length to your preferred setting (usually 20-21 for day trading).",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。curl と Chromium の両方で開けないため未確認にした（WebFetch の答えはモデルがまとめた文で、本文の逐語の照らしにならない）"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              10,
+              20,
+              50
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "For consistent price containment: If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.",
+            "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "Bollinger 本人（ルール11）。組で書く＝(10, 1.9)・(20, 2)・(50, 2.1)。指標データは n と s を別の範囲（10〜50・1.9〜2.1）で持つ"
+          },
+          {
+            "挙げた値": [
+              50,
+              10
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A Bollinger Band overlay can be set at (50,2.1) for a longer timeframe or at (10,1.9) for a shorter timeframe.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              50
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "For swing or long-term trading, the period can be increased—for example, to 50—and the multiplier to 2.5.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "スイング・長期"
+          },
+          {
+            "挙げた値": [
+              10,
+              15
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Setting Default Faster Note Period 20 10 to 15 shorter responds faster and adds noise Multiplier 2.0 SD 1.5 to 2.5 smaller means tighter bands and more touches Source close close keep the close",
+            "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "暗号資産のスキャルのサイトの設定の表（Faster の欄）"
+          }
+        ]
+      },
+      {
+        "名前": "s",
+        "資料の表の名前": "k（標準偏差の倍率）",
+        "意味": "倍率",
+        "種類": "小数",
+        "既定": [
+          {
+            "値": 2,
+            "逐語": "The default parameters of 20 periods for the moving average and standard deviation calculations, and two standard deviations for the width of the bands are just that, defaults. The actual parameters needed for any given market/task may be different.",
+            "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "「two standard deviations」"
+          },
+          {
+            "値": 2,
+            "逐語": "The default setting for %B is based on the default setting for Bollinger Bands (20,2).",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 2,
+            "逐語": "The number of Standard Deviations away from the SMA that the Upper and Lower Bands should be. 2 is the default.",
+            "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 2,
+            "逐語": "upperband, middleband, lowerband = BBANDS(close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)",
+            "URL": "https://ta-lib.github.io/ta-lib-python/func_groups/overlap_studies.html",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 2.0,
+            "逐語": "lower_std (IntFloat): Lower standard deviation. Default: ```2.0```",
+            "URL": "https://files.pythonhosted.org/packages/be/2f/c67d49afd31c3b02a02ecb5dd07399ed35298042e1b50d166efe2068bb0e/pandas_ta-0.4.71b0-py3-none-any.whl#pandas_ta/volatility/bbands.py",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "bbands.py。upper_std も Default: ```2.0```"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 2,
+            "文の時間足": "1m",
+            "逐語": "Bollinger Bands settings for a 1-minute chart are a 20-period simple moving average (middle band) and two outer bands set at a standard deviation level of 2 from the middle band.",
+            "URL": "https://fxopen.com/blog/en/1-minute-scalping-trading-strategies-with-examples/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 2,
+            "文の時間足": "1m",
+            "逐語": "RSI (2 or 3), EMA 9, and Bollinger Bands (20, 2) for scalping at 1 minute.",
+            "URL": "https://www.mc2.fi/blog/best-rsi-for-scalping",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 1.5,
+            "文の時間足": null,
+            "逐語": "For scalping on short time frames, you can reduce the period to 10-14, with a multiplier of 1.5-2.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）。1.5 は指標データの s の範囲（1.9〜2.1）の外"
+          },
+          {
+            "値": 2,
+            "文の時間足": null,
+            "逐語": "For scalping on short time frames, you can reduce the period to 10-14, with a multiplier of 1.5-2.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 1.5,
+            "文の時間足": null,
+            "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+            "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 2,
+            "文の時間足": null,
+            "逐語": "When applied to scalping, traders often adjust these settings to suit shorter timeframes, such as using a 10-14 period SMA and 1.5-2 standard deviations on 1-minute or 5-minute charts.",
+            "URL": "https://blog.opofinance.com/en/bollinger-bands-scalping-secrets/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 1.5,
+            "文の時間足": null,
+            "逐語": "Standard Deviations: Use 1.5 to 2.",
+            "URL": "https://optionx.trade/blogs/bollinger-bands-scalping-strategy-indian-fno",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 2,
+            "文の時間足": null,
+            "逐語": "Standard Deviations: Use 1.5 to 2.",
+            "URL": "https://optionx.trade/blogs/bollinger-bands-scalping-strategy-indian-fno",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 1.5,
+            "文の時間足": "1m",
+            "逐語": "Some 1-minute scalpers use 10 periods and 1.5 deviations for a faster response.",
+            "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 2.2,
+            "文の時間足": "5m",
+            "逐語": "Shorter timeframes like the 5-minute chart require a slightly wider band (2.2 SD) to account for faster price movements.",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。スキャルの名指しは無い（WebFetch の答え「The article does not mention scalping」）。5分足なのでスキャルに置いた。上の 1.5〜2（狭める）と向きが逆。curl と Chromium の両方で開けないため未確認にした（WebFetch の答えはモデルがまとめた文で、本文の逐語の照らしにならない）"
+          },
+          {
+            "値": 2.0,
+            "文の時間足": "5m",
+            "逐語": "Default Values : BollingerPeriod = 20 BollingerDeviation = 2.0m ExitValue = 0.5m StopLossPercent = 2.0m CandleType = TimeSpan.FromMinutes(5) Filters : Category: Mean Reversion Direction: Both Indicators: Bollinger Bands Stops: Yes Complexity: Basic Timeframe: Intraday Seasonality: No Neural Networks: No Divergence: No Risk Level: Medium",
+            "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "StockSharp の既定"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 2,
+            "文の時間足": "15m",
+            "逐語": "Day traders who leave 20 and 2 often put them on a 15-minute chart, or use 10 and 1.9 on a 5-minute chart.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 1.9,
+            "文の時間足": "5m",
+            "逐語": "Day traders who leave 20 and 2 often put them on a 15-minute chart, or use 10 and 1.9 on a 5-minute chart.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ボリンジャーバンドの設定の文（%B の名指しは無い）"
+          },
+          {
+            "値": 2.1,
+            "文の時間足": "15m",
+            "逐語": "Timeframe Optimal Band Width Signal Strength 5-minute 2.2 SD Moderate 15-minute 2.1 SD Strong 1-hour 2.0 SD Very Strong",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。表の行（WebFetch の答えは表のセルの文字だけを引いた）。デイトレの名指しはページの題（day trading）"
+          },
+          {
+            "値": 2.0,
+            "文の時間足": "1h",
+            "逐語": "Timeframe Optimal Band Width Signal Strength 5-minute 2.2 SD Moderate 15-minute 2.1 SD Strong 1-hour 2.0 SD Very Strong",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。表の行"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              1.9,
+              2,
+              2.1
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "For consistent price containment: If the average is lengthened the number of standard deviations needs to be increased; from 2 at 20 periods, to 2.1 at 50 periods. Likewise, if the average is shortened the number of standard deviations should be reduced; from 2 at 20 periods, to 1.9 at 10 periods.",
+            "URL": "https://www.bollingerbands.com/bollinger-band-rules",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "ルール11の組"
+          },
+          {
+            "挙げた値": [
+              2.1,
+              1.9
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "A Bollinger Band overlay can be set at (50,2.1) for a longer timeframe or at (10,1.9) for a shorter timeframe.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              2.5
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "For swing or long-term trading, the period can be increased—for example, to 50—and the multiplier to 2.5.",
+            "URL": "https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              2.5
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Swing traders who want fewer outside closes can keep length 20 and raise the multiplier to 2.5.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              1.5,
+              2.5
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Setting Default Faster Note Period 20 10 to 15 shorter responds faster and adds noise Multiplier 2.0 SD 1.5 to 2.5 smaller means tighter bands and more touches Source close close keep the close",
+            "URL": "https://bestscalping.pages.dev/docs/indicators/bollinger-bands",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              2.1,
+              2.3
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Set the Standard Deviation to your desired level (you can experiment with 2.1 or 2.3 for more aggressive strategies).",
+            "URL": "https://pocketoption.com/blog/en/interesting/trading-strategies/best-bollinger-band-settings-for-day-trading/",
+            "確かめの強さ": "未確認",
+            "注": "curl は HTTP の番号なし（接続できない）、Chromium は 502。WebFetch で開いた本文の文（WebFetch の答えの引用）。この文は今日の WebFetch の答えに無かった（答えは「recommended standard deviation of \"2.1-2.3.\"」）ので未確認"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          1,
+          0,
+          0.5
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "In descending order from the Upper Band: %b Above 1 = Price is Above the Upper Band %b Equal to 1 = Price is at the Upper Band %b Above .50 = Price is Above the Middle Line %b Below .50 = Price is Below the Middle Line %b Equal to 0 = Price is at the Lower Band %b Below 0 = Price is Below the Lower Band Generally speaking .80 and .20 are also relevant levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "上の帯・下の帯・中央の線"
+      },
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          0.8,
+          0.2
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Generally speaking .80 and .20 are also relevant levels.",
+        "URL": "https://www.tradingview.com/support/solutions/43000501971-bollinger-bands-b-b/",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "形": "値",
+        "単位": null,
+        "挙げた値": [
+          0.8,
+          0.2
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Readings above .80 indicate that price is near the upper band.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/b-indicator",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じページ「Readings below .20 indicate that price is near the lower band.」"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": "レンジ",
+        "玉の向き": "SHORT",
+        "向き": "上側",
+        "時間足": [
+          "15m",
+          "1h"
+        ],
+        "前処理": [],
+        "使える条件の形": [
+          "touch",
+          "level"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Price touches or closes above the upper band.",
+          "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "algotest の「Strategy 2: Bollinger Bounce This is the mean reversion setup.」の売りの条件。同じ節「Best for: Stocks and indices on a 15-minute or 1-hour chart during flat, range-bound sessions.」。文は帯で書き、%B の語は無い（上の帯＝%B 1・SC-PB）。LiteFinance も「When the price approaches or touches the upper Bollinger Band, traders may look for potential sell signals, while a move toward the lower band may prompt them to look for potential buy signals.」（https://www.litefinance.org/blog/for-beginners/best-technical-indicators/bollinger-bands/・横ばいの相場の節）"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "SHORT",
+        "向き": "下へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "A short candidate is a close back below the upper band after a close above it.",
+          "URL": "https://therighttrader.com/learn/indicator-strategies/best-bollinger-bands-settings",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "上の帯より上の終値のあと上の帯より下へ戻る＝%B が 1 を下へ抜ける（文は帯で書き、%B の語は無い）。同じ節の文「The charts that fit are the 5-minute and the 15-minute.」は日中の足の節の文で、この文の足とは読み切れないので時間足は空にした"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "前提崩れの印",
+        "場面": null,
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "The walk ends, for this page, on a close back through the middle band.",
+          "URL": "https://therighttrader.com/learn/indicator-strategies/walking-the-bands",
+          "確かめの強さ": "ページの文で確かめた",
+          "注": "帯に沿う動きの終わり＝%B が 0.5 を戻って抜ける。指標データの前提崩れの印の行（レンジ・SHORT・上側・1.0129892）を支える文は見つからなかった"
+        },
+        "型": null
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "閾値の値（スキャル・デイトレ）",
+        "検索の語": [
+          "%B indicator range-bound market mean reversion sell when %B above 1 short scalping 5-minute %b 0.95 0.05",
+          "Bollinger %B day trading strategy 15-minute short entry %B crosses below 1 exit 0.5"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://doc.stocksharp.com/en/api-examples/0035_Bollinger_B_Reversion",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://doc.stocksharp.com/en/api-examples/0968_Larry_Connors_Bollinger_PercentB",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://fxreplay.com/indicators/bollinger-bands-b-25fa9",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/yXkWPSlU/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://sentimentrader.com/education/technical-indicators/bollinger-b",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://algotest.in/blog/bollinger-bands-strategies-for-indian-traders/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.investopedia.com/terms/p/percentb.asp",
+            "HTTP": 402,
+            "読んだ日": "2026-11-04",
+            "当たる文": "開けない"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "ADX",
+    "元の指標": "ADX（Average Directional Index・Wilder）",
+    "_注": "材料＝前の調べ（out_c6_01 の ADX）・指標データの指標の記録と使い方の記録・資料の表（params_review・by_strategy・roles_thresholds・threshold_role）・264番の候補・270番（閾値の範囲）・222番の照らし・9種の文書の 2 節。2026-11-04 に、前の調べの逐語と新しい逐語を、URL ごとに curl と Chromium で開いて本文で照らした（pagecheck）。新しく探した物（スキャルの期間・使い方の7種・場面の4つ）は WebSearch で探し、開いたページを探した記録に書いた。指標データの使い方の記録の4行（出口の反転 SHORT 下側・LONG 上側／前提崩れの印 SHORT 上側・LONG 下側、どれも 25・CONST_REGISTRY の ADX_TREND）は engine_tuner_gen.py の写しで、教科書の文ではない（264番・222番）。教科書の出口の文は、LONG で ADX が 20 か 25 の下へ抜けたとき・40 より上で下を向いたとき（下の使い方の行）。指標データの代表の値（スキャル 14／デイトレ 7）と、文の値（5分足は 7・10・14、デイトレは 7〜14）は、候補として並べた。どちらが正しいかは書かない。閾値の欄に既定の箱を足した（文が足もスタイルも名指ししない値。依頼書の追加の決まり 3）。",
+    "教科書の役割": [
+      {
+        "区分": "強さ",
+        "逐語": "The Average Directional Index (ADX), shown in black in the chart above, is in turn derived from the smoothed averages of the difference between +DI and -DI; it measures the strength of the trend (regardless of direction) over time.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "curl の本文は「(ADX) , shown」と空白が入るため、Chromium の本文で照らした"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "The Average Directional Index (ADX) is used to measure the strength or weakness of a trend, not the actual direction.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "To analyze trend strength, the focus should be on the ADX line and not the +DI or -DI lines.",
+        "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "区分": "強さ",
+        "逐語": "Wilder's Average Directional Movement Index, a smoothed measure of trend strength derived from the directional indicators (+DI/-DI).",
+        "URL": "https://ta-lib.org/functions/adx.html",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": "0〜100",
+      "下限": 0,
+      "上限": 100,
+      "逐語": "ADX is a bounded oscillator, meaning its readings will fluctuate between 0 and 100.",
+      "URL": "https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "curl は HTTP 200、Chromium は 502。curl の本文で照らした。ほかに TA-Lib の「outReal — Smoothed directional trend-strength index (0-100)」（https://ta-lib.org/functions/adx.html）。TradingView の「DMI has a value between 0 and 100」は DMI 全体の文"
+    },
+    "値の読み方": {
+      "読み方": "大きいほどトレンドが強い。向きは言わない",
+      "向きを持つ": false,
+      "逐語": "Higher values indicate a stronger trend (a common convention treats >25 as trending); says nothing about direction.",
+      "URL": "https://ta-lib.org/functions/adx.html",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "向きが無い＝「says nothing about direction」。StockCharts も「regardless of direction」と書く"
+    },
+    "出力": [
+      {
+        "名前": "ADX",
+        "組の相手": "+DI・−DI",
+        "逐語": "Using these three indicators together, chartists can determine both the direction and strength of the trend.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "ADX・+DI・−DI の3本で1組。TA-Lib の ADX 関数の出力は1本（outReal）"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": 150,
+      "逐語": "Because of Wilder's smoothing techniques, it can take around 150 periods of data to get true ADX values.",
+      "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "同じページに「ADX values with 150 days or more of data will remain consistent.」。TA-Lib は「Numerical Stability: Initial Unstable Period」と書き、本数は書かない（https://ta-lib.org/functions/adx.html）"
+    },
+    "計算の式": {
+      "逐語": "+DI = 100*(+DM_p/TR_p), -DI = 100*(-DM_p/TR_p); DX = 100*|(-DI)-(+DI)| / ((-DI)+(+DI)); first ADX = mean of the first period DX; then ADX = (prevADX*(period-1) + DX)/period.",
+      "URL": "https://ta-lib.org/functions/adx.html",
+      "確かめの強さ": "ページの文で確かめた",
+      "注": "222番の照らし：指標データの _adx_di は ewm(alpha=1/n, adjust=False) で、式の形（(前の値×(n−1)+DX)/n）は同じ。最初の値だけ違う（教科書は最初の n 本の DX の平均から始め、関数は最初の DX から始まる）。どちらが正しいかは書かない"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "n",
+        "資料の表の名前": "period",
+        "意味": "窓",
+        "種類": "整数",
+        "既定": [
+          {
+            "値": 14,
+            "逐語": "The calculation example below is based on a 14-period indicator setting, as recommended by Wilder.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "The time period to be used in calculating the ADX which has a smoothing component (14 is the Default).",
+            "URL": "https://www.tradingview.com/support/solutions/43000502250-directional-movement-dmi/",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "optInTimePeriod integer 14 2–100000 Smoothing/averaging period for DM, TR, and ADX",
+            "URL": "https://ta-lib.org/functions/adx.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "引数の表の1行"
+          },
+          {
+            "値": 14,
+            "逐語": "The default ADX setting is period 14 on both the DI lines and the ADX smooth, from Wilder in 1978.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "curl は 200、Chromium は 503。curl の本文で照らした"
+          },
+          {
+            "値": 14,
+            "逐語": "The default ADX period is set at 14 days.",
+            "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "逐語": "By default, this indicator is calculated using 14 periods.",
+            "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+            "確かめの強さ": "ページの文で確かめた"
+          }
+        ],
+        "スキャル": [
+          {
+            "値": 7,
+            "文の時間足": "5m",
+            "逐語": "Period 7 or 10 on a 5 minute chart reacts faster and spikes more.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "デイトレの名指しの文（Day traders keep 14 on a 15 minute or 1 hour chart.）の次の文。スキャルの名指しは無い。足で分けた"
+          },
+          {
+            "値": 10,
+            "文の時間足": "5m",
+            "逐語": "Period 7 or 10 on a 5 minute chart reacts faster and spikes more.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同上"
+          },
+          {
+            "値": 14,
+            "文の時間足": "5m",
+            "逐語": "On a 5 minute chart, period 14 is 70 minutes. That can work as a filter. If you need strength to show up inside a half hour, try period 10 or 7 and keep the 20 and 25 marks.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "14 は「フィルターにはなる」、速くしたいときは 10 か 7。デイトレの節の文"
+          },
+          {
+            "値": 14,
+            "文の時間足": "5m",
+            "逐語": "Example Time Frame: 5-minute chart. Indicators: 14-period ADX, 50 EMA. Entry Rule: Go long when price is above EMA, +DI > −DI, and ADX > 25. Exit Rule: Take profit at 1.5× risk or when ADX drops below 25.",
+            "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "デイトレの記事の例（5分足）。スキャルの名指しは無い。足で分けた"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "Apply the ADX indicator: Set the ADX period to 14, which is the default setting.",
+            "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "スキャルの記事の文。同じ節の文＝「Choose the right time frame: A 1-minute or 5-minute chart works well for scalping, as it allows you to catch small price swings.」（1分足か5分足で、1つに決まらない）"
+          },
+          {
+            "値": 14,
+            "文の時間足": "5m",
+            "逐語": "Default Values : ADXPeriod = 14 AvgPeriod = 20 Multiplier = 0.1 CandleType = TimeSpan.FromMinutes(5) StopLossPercent = 2",
+            "URL": "https://doc.stocksharp.com/en/api-examples/0252_ADX_Breakout",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "StockSharp の戦略の例（ADX Breakout）の既定値の行。スタイルの名指しは無い（同じページの Filters は「Timeframe: Short-term」）"
+          }
+        ],
+        "デイトレ": [
+          {
+            "値": 7,
+            "文の時間足": null,
+            "逐語": "For day trading on 15-minute to 1-hour charts, periods of 7 to 14 are most common.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文の足＝15-minute to 1-hour charts（幅で1つに決まらない）。この文は FAQ の答えで、Chromium の本文には折りたたみで出ず、curl の本文に在る"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "For day trading on 15-minute to 1-hour charts, periods of 7 to 14 are most common.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同上"
+          },
+          {
+            "値": 7,
+            "文の時間足": "15m",
+            "逐語": "15-minute charts: 7 to 14. At 14 periods, 15-minute ADX covers 3.5 hours of price data. Shorter periods (7 to 10) are common at this resolution because the full-cycle logic breaks down for intraday timeframes.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "デイトレの名指しは無い。足で分けた"
+          },
+          {
+            "値": 14,
+            "文の時間足": "15m",
+            "逐語": "15-minute charts: 7 to 14. At 14 periods, 15-minute ADX covers 3.5 hours of price data. Shorter periods (7 to 10) are common at this resolution because the full-cycle logic breaks down for intraday timeframes.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同上"
+          },
+          {
+            "値": 10,
+            "文の時間足": "15m",
+            "逐語": "15-minute charts: 7 to 14. At 14 periods, 15-minute ADX covers 3.5 hours of price data. Shorter periods (7 to 10) are common at this resolution because the full-cycle logic breaks down for intraday timeframes.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "「Shorter periods (7 to 10)」の上の端"
+          },
+          {
+            "値": 10,
+            "文の時間足": "1h",
+            "逐語": "1-hour charts: 10 to 14. At 14 periods, 1H ADX covers only 14 hours of data.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 14,
+            "文の時間足": "1h",
+            "逐語": "1-hour charts: 10 to 14. At 14 periods, 1H ADX covers only 14 hours of data.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "For intraday crypto on 1-hour and 15-minute charts, test shorter periods (10 to 12) because the 14-period lookback covers a short window at those resolutions.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "暗号資産。原文の足＝1-hour and 15-minute charts（2つで1つに決まらない）。FAQ の答えで curl の本文に在る"
+          },
+          {
+            "値": 12,
+            "文の時間足": null,
+            "逐語": "For intraday crypto on 1-hour and 15-minute charts, test shorter periods (10 to 12) because the 14-period lookback covers a short window at those resolutions.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同上"
+          },
+          {
+            "値": 14,
+            "文の時間足": null,
+            "逐語": "Day traders keep 14 on a 15 minute or 1 hour chart.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "原文の足＝15 minute or 1 hour chart（2つで1つに決まらない）"
+          },
+          {
+            "値": 7,
+            "文の時間足": null,
+            "逐語": "The typical 14-period ADX is effective for most traders, and day traders might shorten it to 7–10 periods for quicker signals.",
+            "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "足は文に無い（day traders）"
+          },
+          {
+            "値": 10,
+            "文の時間足": null,
+            "逐語": "The typical 14-period ADX is effective for most traders, and day traders might shorten it to 7–10 periods for quicker signals.",
+            "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "同上"
+          }
+        ],
+        "範囲の文": [
+          {
+            "挙げた値": [
+              7,
+              21
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "The practical range for most systematic traders is 7 to 21, with 14 as the default starting point.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              7
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Below period 7, ADX readings typically become too erratic to serve as a reliable regime classifier.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "7 より下は乱れる、と書く"
+          },
+          {
+            "挙げた値": [
+              7,
+              10,
+              12,
+              14,
+              18,
+              21
+            ],
+            "範囲の形": "値を挙げただけ",
+            "逐語": "Run your strategy across periods 7, 10, 12, 14, 18, and 21 on a representative historical dataset.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              20,
+              30
+            ],
+            "範囲の形": "文に両端が在る",
+            "逐語": "Longer periods (20 to 30) require more sustained directional movement before ADX reaches confirmation thresholds.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              10,
+              12
+            ],
+            "範囲の形": "文に両端が在る",
+            "文の時間足": "4h",
+            "逐語": "Some traders use 10 to 12 on 4H crypto charts to compensate.",
+            "URL": "https://regimelab.io/blog/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "暗号資産の4時間足"
+          },
+          {
+            "挙げた値": [
+              21
+            ],
+            "範囲の形": "値を挙げただけ",
+            "文の時間足": "1d",
+            "逐語": "If one wild day jerks ADX and you want a calmer filter, use period 21 on the daily chart and leave 20 and 25 where they are.",
+            "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+            "確かめの強さ": "ページの文で確かめた"
+          },
+          {
+            "挙げた値": [
+              2,
+              100000
+            ],
+            "範囲の形": "入力できる範囲",
+            "逐語": "optInTimePeriod integer 14 2–100000 Smoothing/averaging period for DM, TR, and ADX",
+            "URL": "https://ta-lib.org/functions/adx.html",
+            "確かめの強さ": "ページの文で確かめた",
+            "注": "入力として受ける値。勧める範囲ではない"
+          }
+        ]
+      }
+    ],
+    "閾値の範囲の文": [
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          25,
+          20
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "同じページの次の文＝「There appears to be a gray zone between 20 and 25.」"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          20
+        ],
+        "範囲の形": "値を挙げただけ",
+        "逐語": "Many technical analysts use 20 as the key level for ADX.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx",
+        "確かめの強さ": "ページの文で確かめた"
+      },
+      {
+        "形": "値",
+        "単位": "0〜100",
+        "挙げた値": [
+          20,
+          25
+        ],
+        "範囲の形": "強さの区切り",
+        "逐語": "In practice, most chart analysts believe a reading above 25 typically indicates a strong trend, and a reading below 20 usually suggests there is no trend—with no clear signal interpretation existing between 20 and 25.",
+        "URL": "https://www.fidelity.com/viewpoints/active-investor/average-directional-index-ADX",
+        "確かめの強さ": "ページの文で確かめた",
+        "注": "curl の本文で照らした（Chromium は 502）"
+      }
+    ],
+    "使い方": [
+      {
+        "使い方の種類": "場面の判定",
+        "場面": "レンジ",
+        "向き": "下側",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "level"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [
+            {
+              "値": 20,
+              "文の時間足": null,
+              "逐語": "If the ADX is below 20, it suggests weak or no trend, and scalping may not be as effective.",
+              "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "スキャルの記事。足は同じ節に1分足か5分足"
+            }
+          ],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 20,
+              "逐語": "ADX below 20 for any length of time indicates a ranging market;",
+              "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+              "確かめの強さ": "ページの文で確かめた"
+            },
+            {
+              "値": 20,
+              "逐語": "Only run your mean reversion setup when ADX < 20.",
+              "URL": "https://crosstrade.io/learn/technical-indicators/adx",
+              "確かめの強さ": "ページの文で確かめた"
+            },
+            {
+              "値": 20,
+              "逐語": "The Results page will list all securities which are ranging (ADX below 20).",
+              "URL": "https://www.incrediblecharts.com/stock_screener/stock_screener_directional_movement.php",
+              "確かめの強さ": "ページの文で確かめた"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "ADX below 20 for any length of time indicates a ranging market;",
+          "URL": "https://www.incrediblecharts.com/indicators/adx-average_directional_index.php",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null
+      },
+      {
+        "使い方の種類": "入ってはいけない場面を除く条件",
+        "場面": null,
+        "玉の向き": "両方",
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "slope",
+          "diff"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [],
+          "デイトレ": [],
+          "既定": []
+        },
+        "根拠": {
+          "逐語": "Dr Elder suggests waiting until ADX rises 4 steps off its low (e.g. ADX rises to 19 from a low of 15).",
+          "URL": "https://www.incrediblecharts.com/indicators/directional_movement.php",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "ADX が底から 4 上がるまで入らない（Elder の系）。4 は値の差で、閾値の値ではないので閾値は空。前の文＝「Do not trade with DMS until ADX has clearly turned off the bottom.」"
+      },
+      {
+        "使い方の種類": "出口の反転",
+        "場面": null,
+        "玉の向き": "LONG",
+        "向き": "下へ抜ける",
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "cross"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "0〜100",
+          "スキャル": [
+            {
+              "値": 25,
+              "文の時間足": "5m",
+              "逐語": "Example Time Frame: 5-minute chart. Indicators: 14-period ADX, 50 EMA. Entry Rule: Go long when price is above EMA, +DI > −DI, and ADX > 25. Exit Rule: Take profit at 1.5× risk or when ADX drops below 25.",
+              "URL": "https://www.ebc.com/forex/how-to-use-adx-indicator-for-day-trading-5-powerful-tips",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "デイトレの記事の5分足の例。スキャルの名指しは無い。足で分けた"
+            }
+          ],
+          "デイトレ": [],
+          "既定": [
+            {
+              "値": 20,
+              "逐語": "Exit when -DI crosses back above +DI, or when ADX falls back under 20, whichever you wrote first.",
+              "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+              "確かめの強さ": "ページの文で確かめた",
+              "注": "スイング（日足）の節の文"
+            }
+          ]
+        },
+        "根拠": {
+          "逐語": "Exit when -DI crosses back above +DI, or when ADX falls back under 20, whichever you wrote first.",
+          "URL": "https://therighttrader.com/learn/indicator-strategies/best-adx-settings",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null,
+        "注": "指標データの出口の反転の行（SHORT 下側・LONG 上側・25）とは向きが違う。どちらが正しいかは書かない"
+      }
+    ],
+    "探した記録": [
+      {
+        "要素": "パラメータの軸 n のスキャル",
+        "検索の語": [
+          "ADX scalping settings 1-minute 5-minute period threshold",
+          "\"ADX\" scalping strategy \"5-minute\" ADX above 20 period 7 crypto",
+          "\"Scalping (1-5 min charts)\" ADX Length 7-10"
+        ],
+        "開いたページ": [
+          {
+            "URL": "https://tradingbrokers.com/adx-scalping-strategy/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/mREvvoZt/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://forums.babypips.com/t/which-is-the-best-period-time-fot-adx-and-atr-indicators-on-1-5-min-charts/55348",
+            "HTTP": 403,
+            "読んだ日": "2026-11-04",
+            "当たる文": "開けない",
+            "注": "curl・Chromium とも 403。WebFetch も 403。web.archive.org は WebFetch で開けない（「Claude Code is unable to fetch from web.archive.org」と返る）。curl と Chromium では、この環境から web.archive.org を開けない（親が確かめた）。検索の要約は「values are good between 12-15 on 1-5 min charts」と書くが、ページを開けないので値に写さない"
+          },
+          {
+            "URL": "https://doc.stocksharp.com/en/api-examples/0252_ADX_Breakout",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "在る"
+          },
+          {
+            "URL": "https://www.tradingview.com/script/wMRmwpN8-ADX-with-Donchian-Channels/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://www.mql5.com/en/blogs/post/778194",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://fxopen.com/blog/en/what-indicators-do-traders-use-for-scalping/",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          },
+          {
+            "URL": "https://tradelux.ai/blog/adx-for-active-traders-how-to-measure-trend-strength-use-di-crossovers-and-stay-out-of-choppy-markets",
+            "HTTP": 200,
+            "読んだ日": "2026-11-04",
+            "当たる文": "無い"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "名前": "帯pivot",
+    "記録の種類": "部品の記録",
+    "元の指標": "Pivot Points（Standard）",
+    "_注": "部品の見本。幅の数は教科書に見つからなかった",
+    "教科書の役割": [
+      {
+        "区分": "位置",
+        "逐語": "Pivot Points use the prior period's high, low, and close to estimate future support and resistance levels.",
+        "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": "値段",
+      "下限": null,
+      "上限": null,
+      "確かめの強さ": "見つからなかった"
+    },
+    "値の読み方": {
+      "読み方": null,
+      "向きを持つ": null,
+      "確かめの強さ": "見つからなかった"
+    },
+    "出力": [
+      {
+        "名前": "帯pivot",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": null,
+      "確かめの強さ": "見つからなかった"
+    },
+    "計算の式": {
+      "確かめの強さ": "見つからなかった"
+    },
+    "パラメータの軸": [
+      {
+        "名前": "t",
+        "意味": "割合",
+        "種類": "小数",
+        "既定": [
+          {
+            "確かめの強さ": "見つからなかった",
+            "注": "プロジェクトで作った幅の数。教科書の文は見つからなかった"
+          }
+        ],
+        "スキャル": [],
+        "デイトレ": [],
+        "範囲の文": []
+      }
+    ],
+    "閾値の範囲の文": [],
+    "閾値の注": "pivot の線そのものが水準なので、数の閾値の文は見つからなかった",
+    "探した記録": [],
+    "使い方": [
+      {
+        "使い方の種類": "出口の水準を作る材料",
+        "場面": null,
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "touch"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": "値段",
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Pivot Points are significant levels on a chart that traders and investors can use to determine directional movement and potential support/resistance levels.",
+          "URL": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/pivot-points",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null
+      }
+    ]
+  },
+  {
+    "名前": "包み足",
+    "元の指標": "Engulfing（Bulkowski・TA-Lib CDLENGULFING）",
+    "_注": "パラメータも数の閾値も持たない指標の見本",
+    "教科書の役割": [
+      {
+        "区分": "向き",
+        "逐語": "It works very well as a bearish reversal, performing that way 79% of the time",
+        "URL": "https://thepatternsite.com/BearEngulfing.html",
+        "確かめの強さ": "ページの文で確かめた"
+      }
+    ],
+    "値の単位と値域": {
+      "単位": null,
+      "下限": null,
+      "上限": null,
+      "確かめの強さ": "見つからなかった"
+    },
+    "値の読み方": {
+      "読み方": null,
+      "向きを持つ": null,
+      "確かめの強さ": "見つからなかった"
+    },
+    "出力": [
+      {
+        "名前": "包み足",
+        "組の相手": null,
+        "確かめの強さ": "見つからなかった"
+      }
+    ],
+    "確定と期間": {
+      "確定に要る本数": 2,
+      "逐語": "TA_LIB_API int TA_CDLENGULFING_Lookback( void ) { return 2; }",
+      "URL": "https://raw.githubusercontent.com/TA-Lib/ta-lib/main/src/ta_func/ta_CDLENGULFING.c",
+      "確かめの強さ": "ページの文で確かめた"
+    },
+    "計算の式": {
+      "確かめの強さ": "見つからなかった"
+    },
+    "パラメータの軸": [],
+    "閾値の範囲の文": [],
+    "閾値の注": "形が在るか無いかを見る指標で、数の閾値を持たない。逐語＝By overlaps , I mean the body of the black candle has an open above the prior close and a close below the prior open.",
+    "探した記録": [],
+    "使い方": [
+      {
+        "使い方の種類": "入る合図",
+        "場面": null,
+        "玉の向き": "SHORT",
+        "向き": null,
+        "時間足": [],
+        "前処理": [],
+        "使える条件の形": [
+          "candle_dir"
+        ],
+        "合図の形のパラメータ": [],
+        "閾値": {
+          "形": "値",
+          "単位": null,
+          "スキャル": [],
+          "デイトレ": []
+        },
+        "根拠": {
+          "逐語": "Trade upward retracements in a downward price trend -- page 313.",
+          "URL": "https://thepatternsite.com/BearEngulfing.html",
+          "確かめの強さ": "ページの文で確かめた"
+        },
+        "型": null
+      }
+    ]
+  }
+]
