@@ -1961,7 +1961,7 @@ def request_block() -> str:
         cv[k] = {**cv[k], **v}
     forms = [f["名前"] for f in jload(PR / "laws" / "laws.json")["条件の書き方"]]
     sw = jload(SDK / ".claude" / "ratchet" / "indicator_switch.json")
-    targets = sorted(set(data["指標の記録"]) | {"包み足"})   # ★2026-11-05 まこさん「185種を以前にONにしたということね。今は９種のみON」＝相手は material に登録している全部（指標の記録）。オン/オフは探索の切り替えで、教科書の相手を決める物ではない
+    targets = sorted(set(data["指標の記録"]) | set(data.get("部品の記録") or {}) | {"包み足"})   # ★2026-11-05 まこさん「185種を以前にONにしたということね。今は９種のみON」＝相手は material に登録している全部（指標の記録）。オン/オフは探索の切り替えで、教科書の相手を決める物ではない
     missing_nine = [n for n in FIRST_NINE if n not in targets]
     if missing_nine:
         raise SystemExit(f"❌ 先に通す指標が相手に無い: {missing_nine}")
